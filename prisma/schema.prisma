@@ -1,0 +1,264 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:/Users/seanli/smart-warehouse/prisma/dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  language  String   @default("en") // User's preferred language (ISO 639-1 code)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  householdMemberships HouseholdMember[]
+  items               Item[]
+  notifications       Notification[]
+  itemHistory         ItemHistory[]
+  barcodes           Barcode[]
+  accounts           Account[]
+  sessions           Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Household {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  invitationCode String   @unique @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  members  HouseholdMember[]
+  rooms    Room[]
+  items    Item[]
+  categories Category[]
+  notifications Notification[]
+  barcodes  Barcode[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  id          String   @id @default(cuid())
+  userId      String
+  householdId String
+  role        String   @default("USER") // OWNER, USER, VISITOR (multiple OWNERs allowed)
+  joinedAt    DateTime @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, householdId])
+  @@map("household_members")
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  householdId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  cabinets  Cabinet[]
+  items     Item[]
+  oldItemHistory ItemHistory[] @relation("ItemHistoryOldRoom")
+  newItemHistory ItemHistory[] @relation("ItemHistoryNewRoom")
+
+  @@map("rooms")
+}
+
+model Cabinet {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  roomId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  room  Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  items Item[]
+  oldItemHistory ItemHistory[] @relation("ItemHistoryOldCabinet")
+  newItemHistory ItemHistory[] @relation("ItemHistoryNewCabinet")
+
+  @@map("cabinets")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  level       Int      // 1, 2, or 3 for the 3-level hierarchy
+  parentId    String?  // For hierarchical structure
+  householdId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  parent    Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  items     Item[]
+
+  @@map("categories")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  quantity    Int      @default(1)
+  minQuantity Int      @default(0) // Low inventory threshold
+  barcode     String?  // Removed @unique - multiple items can have same barcode
+  qrCode      String?  @unique
+  imageUrl    String?
+  aiDescription String? // AI-generated description
+  language    String? // Language override for this item (ISO 639-1 code)
+  categoryId  String?
+  roomId      String?
+  cabinetId   String?
+  householdId String
+  addedById   String
+  // Taiwan invoice fields
+  buyDate     DateTime? // Date when item was purchased
+  buyCost     Float?    // Cost of the item when purchased
+  buyLocation String?   // Location where item was purchased
+  invoiceNumber String? // Taiwan invoice number if from e-invoice
+  sellerName  String?   // Seller name from invoice
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category  Category?  @relation(fields: [categoryId], references: [id])
+  room      Room?      @relation(fields: [roomId], references: [id])
+  cabinet   Cabinet?   @relation(fields: [cabinetId], references: [id])
+  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  addedBy   User       @relation(fields: [addedById], references: [id])
+  notifications Notification[]
+  history   ItemHistory[]
+
+  @@map("items")
+}
+
+model ItemHistory {
+  id          String   @id @default(cuid())
+  itemId      String
+  action      String   // "created", "moved", "updated", "deleted"
+  description String   // Human-readable description of the action
+  oldRoomId   String?
+  newRoomId   String?
+  oldCabinetId String?
+  newCabinetId String?
+  performedBy String   // User who performed the action
+  createdAt   DateTime @default(now())
+
+  // Relations
+  item      Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  oldRoom   Room? @relation("ItemHistoryOldRoom", fields: [oldRoomId], references: [id])
+  newRoom   Room? @relation("ItemHistoryNewRoom", fields: [newRoomId], references: [id])
+  oldCabinet Cabinet? @relation("ItemHistoryOldCabinet", fields: [oldCabinetId], references: [id])
+  newCabinet Cabinet? @relation("ItemHistoryNewCabinet", fields: [newCabinetId], references: [id])
+  performer User @relation(fields: [performedBy], references: [id])
+
+  @@map("item_history")
+}
+
+model Barcode {
+  id          String   @id @default(cuid())
+  barcode     String   @unique // The actual barcode number
+  name        String   // Product name
+  description String?  // Product description
+  category    String   // Product category
+  subcategory String?  // Product subcategory
+  brand       String?  // Brand name
+  imageUrl    String?  // Product image URL
+  language    String?  // Language of the product data (ISO 639-1 code)
+  confidence  Int      @default(0) // AI confidence score (0-100)
+  source      String   @default("ai") // Source: "ai", "user", "external"
+  isVerified  Boolean  @default(false) // Whether user has verified this data
+  createdBy   String   // User who created/verified this entry
+  householdId String   // Associated household
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User      @relation(fields: [createdBy], references: [id])
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@map("barcodes")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String   // LOW_INVENTORY, ITEM_ADDED, ITEM_UPDATED, SYSTEM
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  userId      String
+  householdId String
+  itemId      String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  item      Item?      @relation(fields: [itemId], references: [id])
+
+  @@map("notifications")
+}
+

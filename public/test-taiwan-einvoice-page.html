@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taiwan E-Invoice Decoder Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .result { background: #f8f9fa; padding: 10px; margin: 10px 0; border-left: 4px solid #3b82f6; border-radius: 4px; }
+        .success { border-left-color: #10b981; }
+        .error { border-left-color: #ef4444; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <h1>🧾 Taiwan E-Invoice QR Code Decoder</h1>
+    
+    <div class="test-section">
+        <h2>Test Taiwan E-Invoice Decoder</h2>
+        <p>Enter Taiwan e-invoice QR code data to test the decoder:</p>
+        
+        <textarea id="qrData" placeholder="Enter Taiwan e-invoice QR code data here...">發票號碼：AB12345678
+發票日期：2024-01-15
+賣方：台灣商店
+總金額：100.00</textarea>
+        
+        <button onclick="testDecoder()">Test Decoder</button>
+        <button onclick="clearResults()">Clear</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Sample Taiwan E-Invoice Formats</h2>
+        <div class="result">
+            <strong>Format 1 - Raw Text:</strong><br>
+            <code>發票號碼：AB12345678<br>發票日期：2024-01-15<br>賣方：台灣商店<br>總金額：100.00</code>
+        </div>
+        
+        <div class="result">
+            <strong>Format 2 - Base64 Encoded:</strong><br>
+            <code>6L+Z6YeM6K+V6K+B77yaQUIxMjM0NTY3OA0K6L+Z6YeM5pel77yaMjAyNC0wMS0xNQ0K6buY5paX77ya5Y+w5YyX5bqX5qChDQrlubPljLfvvJoxMDAuMDA=</code>
+        </div>
+    </div>
+
+    <script>
+        async function testDecoder() {
+            const qrData = document.getElementById('qrData').value.trim();
+            const resultsDiv = document.getElementById('results');
+            
+            if (!qrData) {
+                resultsDiv.innerHTML = '<div class="result error">❌ Please enter QR code data</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div class="result">🔄 Testing Taiwan e-invoice decoder...</div>';
+            
+            try {
+                const response = await fetch('/api/test/taiwan-einvoice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ qrData })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (result.isTaiwanEInvoice) {
+                        if (result.isValid) {
+                            resultsDiv.innerHTML = `
+                                <div class="result success">
+                                    ✅ Taiwan e-invoice decoded successfully!<br><br>
+                                    <strong>Invoice Details:</strong><br>
+                                    • Invoice Number: ${result.invoiceData.invoiceNumber}<br>
+                                    • Date: ${result.invoiceData.invoiceDate}<br>
+                                    • Seller: ${result.invoiceData.sellerName}<br>
+                                    • Total Amount: $${result.invoiceData.totalAmount}<br>
+                                    • Tax Amount: $${result.invoiceData.taxAmount}<br><br>
+                                    
+                                    <strong>Extracted Items (${result.extractedItems.length}):</strong><br>
+                                    ${result.extractedItems.map(item => 
+                                        `• ${item.name} - ${item.quantity} ${item.unit} @ $${item.price}`
+                                    ).join('<br>')}
+                                </div>
+                            `;
+                        } else {
+                            resultsDiv.innerHTML = `
+                                <div class="result error">
+                                    ❌ Taiwan e-invoice detected but invalid: ${result.error}
+                                </div>
+                            `;
+                        }
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div class="result">
+                                ℹ️ This does not appear to be a Taiwan e-invoice QR code.
+                            </div>
+                        `;
+                    }
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ Error: ${result.error}<br>
+                            Status: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}<br>
+                        Make sure you are logged in and the server is running.
+                    </div>
+                `;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('Taiwan e-invoice decoder test page loaded');
+        };
+    </script>
+</body>
+</html>

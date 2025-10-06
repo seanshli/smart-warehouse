@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZH-TW Taiwan Invoice Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #3b82f6;
+            border-radius: 4px;
+        }
+        .success {
+            border-left-color: #10b981;
+        }
+        .error {
+            border-left-color: #ef4444;
+        }
+        .test-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #2563eb;
+        }
+        .language-selector {
+            margin: 15px 0;
+        }
+        .language-selector select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧾 ZH-TW Taiwan Invoice System Test</h1>
+    
+    <div class="test-section">
+        <h2>Language Setting Test</h2>
+        <p>Test the Taiwan e-invoice system with ZH-TW language setting:</p>
+        
+        <div class="language-selector">
+            <label for="languageSelect">Language:</label>
+            <select id="languageSelect" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="zh-TW" selected>繁體中文 (ZH-TW)</option>
+                <option value="zh">简体中文 (ZH)</option>
+                <option value="ja">日本語 (JA)</option>
+            </select>
+        </div>
+        
+        <div class="result success">
+            ✅ <strong>ZH-TW Behavior:</strong> When language is set to ZH-TW, QR codes are automatically assumed to be Taiwan invoices
+        </div>
+        
+        <div class="result">
+            <strong>Features:</strong>
+            <ul>
+                <li>Automatic Taiwan invoice detection for ZH-TW users</li>
+                <li>Photo upload when camera is not available</li>
+                <li>Taiwan invoice parsing and database storage</li>
+                <li>Multilingual support (EN, ZH-TW, ZH, JA)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Taiwan Invoice Detection</h2>
+        <p>Test QR code detection based on language setting:</p>
+        
+        <div class="result">
+            <strong>Test QR Code:</strong><br>
+            <code>發票號碼：AB12345678<br>發票日期：2024-01-15<br>賣方：台灣商店<br>總金額：100.00</code>
+        </div>
+        
+        <button class="test-button" onclick="testInvoiceDetection()">Test Detection</button>
+        
+        <div id="detectionResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Photo Upload Feature</h2>
+        <p>Test the photo upload capability for Taiwan invoices:</p>
+        
+        <div class="result">
+            <strong>Photo Upload Features:</strong>
+            <ul>
+                <li>Drag & drop interface</li>
+                <li>File selection dialog</li>
+                <li>Image processing for QR code extraction</li>
+                <li>Taiwan invoice parsing from images</li>
+            </ul>
+        </div>
+        
+        <button class="test-button" onclick="testPhotoUpload()">Test Photo Upload API</button>
+        
+        <div id="uploadResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Database Integration Test</h2>
+        <p>Test Taiwan invoice storage in database:</p>
+        
+        <button class="test-button" onclick="testDatabaseStorage()">Test Database Storage</button>
+        <button class="test-button" onclick="testDatabaseRetrieval()">Test Database Retrieval</button>
+        
+        <div id="databaseResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>How to Test in the App</h2>
+        <ol>
+            <li>Go to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            <li>Login with: <code>demo@smartwarehouse.com</code> / <code>demo123</code></li>
+            <li>Change language to 繁體中文 (ZH-TW) in settings</li>
+            <li>Click "新增物品" (Add Item)</li>
+            <li>Select "掃描 QR 碼" (Scan QR Code)</li>
+            <li>Camera will be assumed for Taiwan invoices</li>
+            <li>If camera unavailable, photo upload option appears</li>
+            <li>Upload Taiwan invoice photo or scan QR code</li>
+            <li>System automatically detects and parses Taiwan invoice</li>
+        </ol>
+    </div>
+
+    <script>
+        let currentLanguage = 'zh-TW';
+
+        function changeLanguage() {
+            currentLanguage = document.getElementById('languageSelect').value;
+            console.log('Language changed to:', currentLanguage);
+        }
+
+        async function testInvoiceDetection() {
+            const resultsDiv = document.getElementById('detectionResults');
+            resultsDiv.innerHTML = '<div class="result">🔄 Testing invoice detection...</div>';
+            
+            const testQRCode = '發票號碼：AB12345678\n發票日期：2024-01-15\n賣方：台灣商店\n總金額：100.00';
+            
+            try {
+                const response = await fetch('/api/test/taiwan-einvoice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        qrData: testQRCode,
+                        userLanguage: currentLanguage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (result.isTaiwanEInvoice) {
+                        resultsDiv.innerHTML = `
+                            <div class="result success">
+                                ✅ Taiwan invoice detected successfully!<br><br>
+                                <strong>Language:</strong> ${currentLanguage}<br>
+                                <strong>Detection:</strong> ${result.isTaiwanEInvoice ? 'Yes' : 'No'}<br>
+                                <strong>Valid:</strong> ${result.isValid ? 'Yes' : 'No'}<br>
+                                ${result.isValid ? `
+                                    <strong>Invoice Details:</strong><br>
+                                    • Number: ${result.invoiceData.invoiceNumber}<br>
+                                    • Date: ${result.invoiceData.invoiceDate}<br>
+                                    • Seller: ${result.invoiceData.sellerName}<br>
+                                    • Total: $${result.invoiceData.totalAmount}
+                                ` : ''}
+                            </div>
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div class="result error">
+                                ❌ Not detected as Taiwan invoice with language: ${currentLanguage}
+                            </div>
+                        `;
+                    }
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ API Error: ${result.error}<br>
+                            Status: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}<br>
+                        Make sure you are logged in and the server is running.
+                    </div>
+                `;
+            }
+        }
+
+        async function testPhotoUpload() {
+            const resultsDiv = document.getElementById('uploadResults');
+            resultsDiv.innerHTML = '<div class="result">🔄 Testing photo upload API...</div>';
+            
+            try {
+                // Test with a sample base64 image (1x1 pixel PNG)
+                const sampleImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+                
+                const response = await fetch('/api/test/taiwan-einvoice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        qrData: sampleImageBase64,
+                        imageAnalysis: true,
+                        userLanguage: currentLanguage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Photo upload API is working!<br><br>
+                            <strong>Response:</strong> ${result.message || 'Success'}<br>
+                            <strong>Language:</strong> ${currentLanguage}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ Photo upload failed: ${result.error}<br>
+                            Status: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testDatabaseStorage() {
+            const resultsDiv = document.getElementById('databaseResults');
+            resultsDiv.innerHTML = '<div class="result">🔄 Testing database storage...</div>';
+            
+            const sampleInvoiceData = {
+                invoiceNumber: 'TEST12345678',
+                invoiceDate: '2024-01-15',
+                sellerName: '測試商店',
+                sellerTaxId: '12345678',
+                totalAmount: 100.00,
+                taxAmount: 5.00,
+                isValid: true,
+                items: []
+            };
+            
+            try {
+                const response = await fetch('/api/taiwan-invoices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ invoiceData: sampleInvoiceData })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Taiwan invoice saved to database!<br><br>
+                            <strong>Item ID:</strong> ${result.item.id}<br>
+                            <strong>Name:</strong> ${result.item.name}<br>
+                            <strong>Invoice Number:</strong> ${result.invoiceData.invoiceNumber}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ Database storage failed: ${result.error}<br>
+                            Status: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testDatabaseRetrieval() {
+            const resultsDiv = document.getElementById('databaseResults');
+            
+            try {
+                const response = await fetch('/api/taiwan-invoices', {
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const existingContent = resultsDiv.innerHTML;
+                    resultsDiv.innerHTML = existingContent + `
+                        <div class="result success">
+                            ✅ Taiwan invoices retrieved from database!<br><br>
+                            <strong>Count:</strong> ${result.count} invoices<br>
+                            <strong>Invoices:</strong><br>
+                            ${result.invoices.map(invoice => 
+                                `• ${invoice.name} (${invoice.createdAt})`
+                            ).join('<br>')}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML += `
+                        <div class="result error">
+                            ❌ Database retrieval failed: ${result.error}<br>
+                            Status: ${response.status}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('ZH-TW Taiwan Invoice test page loaded');
+            console.log('Current language:', currentLanguage);
+        };
+    </script>
+</body>
+</html>

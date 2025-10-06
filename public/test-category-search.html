@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Search Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #3b82f6;
+            border-radius: 4px;
+        }
+        .success {
+            border-left-color: #10b981;
+        }
+        .error {
+            border-left-color: #ef4444;
+        }
+        .test-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Category Search Test</h1>
+    
+    <div class="test-section">
+        <h2>Category Search Fix Verification</h2>
+        <p>The category search has been fixed to include subcategories when searching by parent category.</p>
+        
+        <h3>Expected Results:</h3>
+        <div class="result success">
+            ✅ <strong>Food & Beverages</strong> should return:
+            <ul>
+                <li>Mini Oreo Original Cookies (in Cookies subcategory)</li>
+            </ul>
+        </div>
+        
+        <div class="result success">
+            ✅ <strong>Personal Care</strong> should return:
+            <ul>
+                <li>Taiwan Pure Water Wet Wipes (in Wet Wipes subcategory)</li>
+            </ul>
+        </div>
+        
+        <div class="result success">
+            ✅ <strong>上衣</strong> should return:
+            <ul>
+                <li>米色短袖T-Shirt (in T-Shirt subcategory)</li>
+                <li>白色 短袖T恤 (in T-Shirt subcategory)</li>
+            </ul>
+        </div>
+        
+        <button class="test-button" onclick="testCategorySearch()">Test Category Search</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>How to Test in the App</h2>
+        <ol>
+            <li>Go to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+            <li>Login with: <code>demo@smartwarehouse.com</code> / <code>demo123</code></li>
+            <li>Click the search button (🔍)</li>
+            <li>Select "Food & Beverages" from the Category dropdown</li>
+            <li>Leave search box empty and click "搜尋" (Search)</li>
+            <li>You should see "Mini Oreo Original Cookies" in the results</li>
+        </ol>
+        
+        <h3>Test Cases:</h3>
+        <ul>
+            <li><strong>Food & Beverages</strong> → Should show Mini Oreo Cookies</li>
+            <li><strong>Personal Care</strong> → Should show Taiwan Wet Wipes</li>
+            <li><strong>上衣</strong> → Should show T-Shirts</li>
+            <li><strong>Cookies</strong> (subcategory) → Should show Mini Oreo Cookies</li>
+            <li><strong>Wet Wipes</strong> (subcategory) → Should show Taiwan Wet Wipes</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>What Was Fixed</h2>
+        <div class="result">
+            <strong>Problem:</strong> Category search only matched exact category names, but items are stored in subcategories.
+            <br><br>
+            <strong>Solution:</strong> Updated the search API to include subcategories when searching by parent category:
+            <pre>
+where.category = {
+  OR: [
+    { name: category },           // Direct match
+    { parent: { name: category } } // Match subcategories
+  ]
+}
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        async function testCategorySearch() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">🔄 Testing category search...</div>';
+            
+            try {
+                // Test Food & Beverages category
+                const response = await fetch('/api/items?category=Food & Beverages', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const items = await response.json();
+                    
+                    if (items.length > 0) {
+                        resultsDiv.innerHTML = `
+                            <div class="result success">
+                                ✅ Category search is working! Found ${items.length} items:
+                                <ul>
+                                    ${items.map(item => `
+                                        <li>
+                                            <strong>${item.name}</strong>
+                                            ${item.category ? ` (${item.category.name})` : ''}
+                                            ${item.room ? ` in ${item.room.name}` : ''}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div class="result error">
+                                ❌ No items found. This could mean:
+                                <ul>
+                                    <li>You need to be logged in</li>
+                                    <li>Category name doesn't match exactly</li>
+                                    <li>Items don't have categories assigned</li>
+                                </ul>
+                            </div>
+                        `;
+                    }
+                } else {
+                    const errorData = await response.json();
+                    resultsDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ API Error: ${errorData.error || 'Unknown error'}
+                            <br>Status: ${response.status}
+                            <br><br>You need to be logged in to test the API directly.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Network Error: ${error.message}
+                        <br><br>Make sure the server is running at http://localhost:3000
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

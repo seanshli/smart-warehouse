@@ -3,132 +3,74 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
+
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const itemId = params.id
     const userId = (session?.user as any)?.id
+    const itemId = params.id
     const body = await request.json()
-    const { quantity, reason } = body
 
-    if (!quantity || quantity <= 0) {
-      return NextResponse.json({ error: 'Valid quantity is required' }, { status: 400 })
-    }
-
-    // Get user's household
-    const household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
-          }
-        }
-      }
-    })
-
-    if (!household) {
-      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
-    }
-
-    // Verify item belongs to user's household
+    // Verify user has access to this item
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
-        householdId: household.id
-      },
-      include: {
-        room: true,
-        cabinet: true,
-        category: true
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
       }
     })
 
     if (!item) {
-      return NextResponse.json({ error: 'Item not found or access denied' }, { status: 404 })
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    if (item.quantity < quantity) {
-      return NextResponse.json(
-        { error: `Insufficient quantity. Available: ${item.quantity}, Requested: ${quantity}` },
-        { status: 400 }
-      )
+    const checkoutQuantity = parseInt(body.quantity)
+    const reason = body.reason || 'Checked out'
+
+    if (checkoutQuantity <= 0) {
+      return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
     }
 
-    // Use transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
-      // Update item quantity
-      const updatedItem = await tx.item.update({
-        where: {
-          id: itemId
-        },
-        data: {
-          quantity: item.quantity - quantity,
-          updatedAt: new Date()
-        },
-        include: {
-          room: true,
-          cabinet: true,
-          category: true
-        }
-      })
+    if (checkoutQuantity > item.quantity) {
+      return NextResponse.json({ error: 'Cannot checkout more items than available' }, { status: 400 })
+    }
 
-      // Log checkout in item history
-      await tx.itemHistory.create({
-        data: {
-          itemId: itemId,
-          action: 'checkout',
-          description: `Checked out ${quantity} ${item.name}${reason ? ` - Reason: ${reason}` : ''}`,
-          performedBy: userId
-        }
-      })
-
-      // Check if quantity is now below threshold and create notification
-      if (updatedItem.quantity <= updatedItem.minQuantity) {
-        await tx.notification.create({
-          data: {
-            type: 'LOW_INVENTORY',
-            title: 'Low Inventory Alert',
-            message: `${item.name} is running low (${updatedItem.quantity} remaining)`,
-            userId: userId,
-            householdId: household.id,
-            itemId: itemId
+    // Update the item quantity
+    const newQuantity = item.quantity - checkoutQuantity
+    const updatedItem = await prisma.item.update({
+      where: { id: itemId },
+      data: {
+        quantity: newQuantity,
+        updatedAt: new Date()
+      },
+      include: {
+        category: {
+          include: {
+            parent: true
           }
-        })
+        },
+        room: true,
+        cabinet: true
       }
-
-      // If quantity reaches 0, create out-of-stock notification
-      if (updatedItem.quantity === 0) {
-        await tx.notification.create({
-          data: {
-            type: 'OUT_OF_STOCK',
-            title: 'Out of Stock Alert',
-            message: `${item.name} is now out of stock`,
-            userId: userId,
-            householdId: household.id,
-            itemId: itemId
-          }
-        })
-      }
-
-      return updatedItem
     })
 
-    return NextResponse.json({
-      message: 'Items checked out successfully',
-      item: result,
-      quantityCheckedOut: quantity,
-      remainingQuantity: result.quantity
-    })
+    // Activity logging removed for now
+
+    return NextResponse.json(updatedItem)
   } catch (error) {
     console.error('Error checking out item:', error)
-    return NextResponse.json(
-      { error: 'Failed to checkout item' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to checkout item' }, { status: 500 })
   }
 }

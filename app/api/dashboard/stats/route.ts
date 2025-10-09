@@ -67,41 +67,20 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Recent activities (last 5) - including checkouts
-      prisma.itemHistory.findMany({
+      // Recent items (last 5)
+      prisma.item.findMany({
         where: {
-          item: {
-            householdId: household.id
-          }
-        },
-        include: {
-          item: {
-            select: {
-              id: true,
-              name: true,
-              room: {
-                select: {
-                  name: true
-                }
-              },
-              cabinet: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          performer: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
+          householdId: household.id
         },
         orderBy: {
           createdAt: 'desc'
         },
-        take: 5
+        take: 5,
+        include: {
+          room: true,
+          cabinet: true,
+          category: true
+        }
       })
     ])
 

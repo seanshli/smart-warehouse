@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       where: {
         members: {
           some: {
-            userId: (session.user as any).id
+            userId: (session?.user as any)?.id
           }
         }
       }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         household: {
           members: {
             some: {
-              userId: (session.user as any).id
+              userId: (session?.user as any)?.id
             }
           }
         }

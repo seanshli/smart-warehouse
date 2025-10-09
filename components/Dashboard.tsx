@@ -18,14 +18,20 @@ import {
 } from '@heroicons/react/24/outline'
 import AddItemModal from './AddItemModal'
 import SearchModal from './SearchModal'
+import EditItemModal from './EditItemModal'
+import MoveItemModal from './MoveItemModal'
+import CheckoutModal from './CheckoutModal'
+import ItemHistoryModal from './ItemHistoryModal'
 import RoomManagement from './RoomManagement'
 import CategoryManagement from './CategoryManagement'
+import SearchPage from './SearchPage'
 import { CompactLanguageSelector, useLanguage } from './LanguageProvider'
 import NotificationCenter from './NotificationCenter'
 import Activities from './Activities'
 import { useHousehold, PermissionGate } from './HouseholdProvider'
 import { HouseholdMemberManagement } from './HouseholdMemberManagement'
 import ItemsList from './ItemsList'
+import DuplicateItemsModal from './DuplicateItemsModal'
 
 function HouseholdSwitcher() {
   const { memberships, activeHouseholdId, setActiveHousehold } = useHousehold()
@@ -55,12 +61,19 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [showEditItem, setShowEditItem] = useState(false)
+  const [showMoveItem, setShowMoveItem] = useState(false)
+  const [showCheckoutItem, setShowCheckoutItem] = useState(false)
+  const [showItemHistory, setShowItemHistory] = useState(false)
+  const [showDuplicateItems, setShowDuplicateItems] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
 
   const tabs = [
     { id: 'dashboard', name: t('dashboard'), icon: HomeIcon },
+    { id: 'search', name: t('search'), icon: MagnifyingGlassIcon },
     { id: 'items', name: t('items'), icon: ArchiveBoxIcon },
-    { id: 'rooms', name: t('rooms'), icon: MapPinIcon, permission: 'canManageRooms' },
-    { id: 'categories', name: t('categories'), icon: CubeIcon, permission: 'canManageCategories' },
+    { id: 'rooms', name: t('rooms'), icon: MapPinIcon },
+    { id: 'categories', name: t('categories'), icon: CubeIcon },
     { id: 'activities', name: t('activities'), icon: ClockIcon },
     { id: 'notifications', name: t('notifications'), icon: BellIcon },
     { id: 'members', name: t('members'), icon: UsersIcon, permission: 'canManageMembers' },
@@ -69,42 +82,49 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+      <header className="bg-white shadow-sm border-b pt-safe-area-inset-top">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16 flex-wrap gap-1 sm:gap-2">
+            <div className="flex items-center min-w-0">
+              <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {t('smartWarehouse')}
               </h1>
               {household && (
-                <div className="ml-4 text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-2">
-                  <span>{household.name} • {role}</span>
+                <div className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-1 sm:space-x-2 truncate">
+                  <span className="truncate">{household.name}<span className="hidden sm:inline"> • {role}</span></span>
                   {/* Household switcher */}
                   <HouseholdSwitcher />
                 </div>
               )}
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1 sm:space-x-4">
               <button
                 onClick={() => setShowAddItem(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
               >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                {t('addItem')}
+                <PlusIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">{t('addItem')}</span>
+              </button>
+              <button
+                onClick={() => setShowDuplicateItems(true)}
+                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <ArchiveBoxIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Duplicates</span>
               </button>
               
               <button
                 onClick={() => setShowSearch(true)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
-                <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
-                {t('search')}
+                <MagnifyingGlassIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">{t('search')}</span>
               </button>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 <CompactLanguageSelector />
-                <div className="text-sm text-gray-700">
+                <div className="hidden lg:block text-sm text-gray-700">
                   {t('welcome')}, {session?.user?.name || session?.user?.email}
                 </div>
                 <button
@@ -113,9 +133,10 @@ export default function Dashboard() {
                     // Navigate to dedicated sign out page
                     window.location.href = '/auth/signout'
                   }}
-                  className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-1"
                 >
-                  {t('signOut')}
+                  <span className="hidden sm:inline">{t('signOut')}</span>
+                  <span className="sm:hidden">{t('signOut').slice(0, 4)}</span>
                 </button>
               </div>
             </div>
@@ -125,8 +146,8 @@ export default function Dashboard() {
 
       {/* Navigation Tabs */}
       <nav className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          <div className="flex space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap pb-1 sm:pb-2">
             {tabs.map((tab) => {
               // Check if user has permission for this tab
               if (tab.permission && (!permissions || !permissions[tab.permission as keyof typeof permissions])) {
@@ -137,14 +158,14 @@ export default function Dashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
                     activeTab === tab.id
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
-                  }`}
+                  } flex-shrink-0`}
                 >
-                  <tab.icon className="h-5 w-5 inline mr-2" />
-                  {tab.name}
+                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 inline mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{tab.name}</span>
                 </button>
               )
             })}
@@ -153,28 +174,33 @@ export default function Dashboard() {
       </nav>
 
              {/* Main Content */}
-             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+             <main className="max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-6 lg:px-8">
                {activeTab === 'dashboard' && <DashboardContent />}
+               {activeTab === 'search' && <SearchPage />}
                {activeTab === 'items' && (
                  <div className="px-4 py-6 sm:px-0">
                    <ItemsList 
                      showCategory={true}
                      showLocation={true}
                      onItemEdit={(item) => {
-                       // TODO: Implement edit functionality
-                       console.log('Edit item:', item)
+                       console.log('Dashboard: Edit handler called for item:', item.name)
+                       setSelectedItem(item)
+                       setShowEditItem(true)
                      }}
                      onItemMove={(item) => {
-                       // TODO: Implement move functionality
-                       console.log('Move item:', item)
+                       console.log('Dashboard: Move handler called for item:', item.name)
+                       setSelectedItem(item)
+                       setShowMoveItem(true)
                      }}
                      onItemCheckout={(item) => {
-                       // TODO: Implement checkout functionality
-                       console.log('Checkout item:', item)
+                       console.log('Dashboard: Checkout handler called for item:', item.name)
+                       setSelectedItem(item)
+                       setShowCheckoutItem(true)
                      }}
                      onItemHistory={(item) => {
-                       // TODO: Implement history functionality
-                       console.log('View history for item:', item)
+                       console.log('Dashboard: History handler called for item:', item.name)
+                       setSelectedItem(item)
+                       setShowItemHistory(true)
                      }}
                    />
                  </div>
@@ -195,6 +221,92 @@ export default function Dashboard() {
       {showSearch && (
         <SearchModal onClose={() => setShowSearch(false)} />
       )}
+      {showEditItem && selectedItem && (
+        <EditItemModal 
+          item={selectedItem} 
+          onClose={() => {
+            setShowEditItem(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            // Refresh the items list
+            window.location.reload()
+          }}
+        />
+      )}
+      {showMoveItem && selectedItem && (
+        <MoveItemModal 
+          item={selectedItem} 
+          onClose={() => {
+            setShowMoveItem(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            // Refresh the items list
+            window.location.reload()
+          }}
+        />
+      )}
+      {showCheckoutItem && selectedItem && (
+        <CheckoutModal 
+          item={selectedItem} 
+          onClose={() => {
+            setShowCheckoutItem(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            // Refresh the items list
+            window.location.reload()
+          }}
+        />
+      )}
+      {showItemHistory && selectedItem && (
+        <ItemHistoryModal 
+          item={selectedItem} 
+          onClose={() => {
+            setShowItemHistory(false)
+            setSelectedItem(null)
+          }} 
+        />
+      )}
+      {showDuplicateItems && (
+        <DuplicateItemsModal 
+          onClose={() => setShowDuplicateItems(false)}
+          onSuccess={() => {
+            // Refresh items list if needed
+          }}
+        />
+      )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 sm:hidden z-50">
+        <div className="flex justify-around">
+          {tabs.slice(0, 4).map((tab) => {
+            // Check if user has permission for this tab
+            if (tab.permission && (!permissions || !permissions[tab.permission as keyof typeof permissions])) {
+              return null
+            }
+            
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center py-2 px-1 text-xs ${
+                  activeTab === tab.id
+                    ? 'text-primary-600'
+                    : 'text-gray-500'
+                }`}
+              >
+                <tab.icon className="h-5 w-5 mb-1" />
+                <span className="truncate max-w-16">{tab.name}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Add bottom padding for mobile navigation */}
+      <div className="h-16 sm:hidden"></div>
     </div>
   )
 }
@@ -266,20 +378,20 @@ function DashboardContent() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="px-2 sm:px-4 py-4 sm:py-6 sm:px-0">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
         <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <CubeIcon className="h-6 w-6 text-gray-400" />
+                <CubeIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     {t('totalItems')}
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.totalItems}
                   </dd>
                 </dl>
@@ -289,17 +401,17 @@ function DashboardContent() {
         </div>
 
         <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <MapPinIcon className="h-6 w-6 text-gray-400" />
+                <MapPinIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     {t('rooms')}
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.totalRooms}
                   </dd>
                 </dl>
@@ -309,17 +421,17 @@ function DashboardContent() {
         </div>
 
         <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <BellIcon className="h-6 w-6 text-gray-400" />
+                <BellIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     {t('lowStockItems')}
                   </dt>
-                  <dd className="text-lg font-medium text-red-600">
+                  <dd className="text-base sm:text-lg font-medium text-red-600">
                     {loading ? '...' : stats.lowStockItems}
                   </dd>
                 </dl>
@@ -329,17 +441,17 @@ function DashboardContent() {
         </div>
 
         <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <UserGroupIcon className="h-6 w-6 text-gray-400" />
+                <UserGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     {t('householdMembers')}
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.householdMembers}
                   </dd>
                 </dl>
@@ -443,6 +555,7 @@ function DashboardContent() {
           />
         </div>
       </div>
+
     </div>
   )
 }

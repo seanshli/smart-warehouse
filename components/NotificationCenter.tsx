@@ -176,7 +176,7 @@ export default function NotificationCenter() {
                   </p>
                   {notification.item && (
                     <p className="mt-1 text-xs text-gray-500">
-                      Item: {notification.item.name}
+                      Item: {notification.item?.name || 'Unknown Item'}
                     </p>
                   )}
                 </div>

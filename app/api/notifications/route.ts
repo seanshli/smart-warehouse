@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -16,7 +16,7 @@ export async function GET() {
       where: {
         members: {
           some: {
-            userId: session.user.id
+            userId: (session?.user as any)?.id
           }
         }
       }
@@ -28,7 +28,7 @@ export async function GET() {
 
     const notifications = await prisma.notification.findMany({
       where: {
-        userId: session.user.id,
+        userId: (session?.user as any)?.id,
         householdId: household.id
       },
       include: {

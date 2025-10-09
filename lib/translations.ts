@@ -17,14 +17,35 @@ export interface Translations {
   edit: string
   delete: string
   save: string
+  saving: string
   cancel: string
   back: string
   next: string
   close: string
   optional: string
   move: string
+  moving: string
   checkout: string
+  checkingOut: string
   history: string
+  editItem: string
+  moveItem: string
+  checkoutItem: string
+  itemHistory: string
+  moveToRoom: string
+  checkoutQuantity: string
+  reason: string
+  moveConfirmation: string
+  
+  // Duplicate Detection
+  potentialDuplicate: string
+  newItem: string
+  similarItemsFound: string
+  similarItems: string
+  similar: string
+  createNewItem: string
+  useExistingItem: string
+  location: string
   editCabinet: string
   updateCabinet: string
   deleteCabinet: string
@@ -40,7 +61,6 @@ export interface Translations {
   allCategories: string
   allRooms: string
   clearFilters: string
-  similar: string
   noSuggestionsFound: string
   noItemsFound: string
   lowStock: string
@@ -49,6 +69,8 @@ export interface Translations {
   roomManagement: string
   categoryManagement: string
   masterBedroom: string
+  bedroom: string
+  defaultCabinet: string
   mainLivingArea: string
   kitchen: string
   cabinets: string
@@ -78,7 +100,6 @@ export interface Translations {
   
   // Form labels
   itemDetails: string
-  location: string
   whereIsThisItemStored: string
   selectARoom: string
   selectACabinet: string
@@ -221,19 +242,6 @@ export interface Translations {
   invoiceItems: string
   processingTaiwanInvoice: string
   cameraNotAvailable: string
-  
-  // Invitation Codes
-  invitationCode: string
-  shareInvitationCode: string
-  regenerateInvitationCode: string
-  copyInvitationCode: string
-  invitationCodeInstructions: string
-  joinWithInvitationCode: string
-  enterInvitationCode: string
-  invalidInvitationCode: string
-  householdNotFound: string
-  alreadyMemberOfHousehold: string
-  alreadyMemberOfAnotherHousehold: string
 }
 
 // English translations (default)
@@ -254,14 +262,34 @@ const en: Translations = {
   edit: 'Edit',
   delete: 'Delete',
   save: 'Save',
+  saving: 'Saving...',
   cancel: 'Cancel',
   back: 'Back',
   next: 'Next',
   close: 'Close',
   optional: 'Optional',
   move: 'Move',
+  moving: 'Moving...',
   checkout: 'Checkout',
+  checkingOut: 'Checking out...',
   history: 'History',
+  editItem: 'Edit Item',
+  moveItem: 'Move Item',
+  checkoutItem: 'Checkout Item',
+  itemHistory: 'Item History',
+  moveToRoom: 'Move to Room',
+  checkoutQuantity: 'Checkout Quantity',
+  reason: 'Reason',
+  moveConfirmation: 'Moving to',
+  
+  // Duplicate Detection
+  potentialDuplicate: 'Potential Duplicate Item',
+  newItem: 'New Item',
+  similarItemsFound: 'Similar items found',
+  similarItems: 'Similar Items',
+  createNewItem: 'Create New Item',
+  useExistingItem: 'Use Existing Item',
+  location: 'Location',
   editCabinet: 'Edit Cabinet',
   updateCabinet: 'Update Cabinet',
   deleteCabinet: 'Delete Cabinet',
@@ -286,6 +314,8 @@ const en: Translations = {
   roomManagement: 'Room Management',
   categoryManagement: 'Category Management',
   masterBedroom: 'Master bedroom',
+  bedroom: 'Bedroom',
+  defaultCabinet: 'Default Cabinet',
   mainLivingArea: 'Main living area',
   kitchen: 'Kitchen',
   cabinets: 'Cabinets',
@@ -315,7 +345,6 @@ const en: Translations = {
   
   // Form labels
   itemDetails: 'Item Details',
-  location: 'Location',
   whereIsThisItemStored: 'Where is this item stored?',
   selectARoom: 'Select a room',
   selectACabinet: 'Select a cabinet',
@@ -510,6 +539,8 @@ const zhTW: Translations = {
   roomManagement: '房間管理',
   categoryManagement: '分類管理',
   masterBedroom: '主臥室',
+  bedroom: '臥室',
+  defaultCabinet: '預設櫥櫃',
   mainLivingArea: '主要起居區域',
   kitchen: '廚房',
   cabinets: '櫥櫃',

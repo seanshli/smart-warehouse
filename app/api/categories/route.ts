@@ -128,33 +128,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Log category creation in activity history
-    try {
-      // Create a dummy item to associate with this category for logging purposes
-      const categoryLogItem = await prisma.item.create({
-        data: {
-          name: `[CATEGORY] ${name}`,
-          description: `Category activity log for ${name}`,
-          quantity: 1,
-          roomId: null, // No room for category logs
-          householdId: household.id,
-          categoryId: category.id,
-          addedById: userId
-        }
-      })
-
-      await prisma.itemHistory.create({
-        data: {
-          itemId: categoryLogItem.id,
-          action: 'category_created',
-          description: `Category "${name}" was created`,
-          performedBy: userId
-        }
-      })
-    } catch (logError) {
-      console.error('Error logging category creation:', logError)
-      // Don't fail the request if logging fails
-    }
+    // Note: Activity logging removed as Activity model doesn't exist in schema
 
     return NextResponse.json(category)
   } catch (error) {

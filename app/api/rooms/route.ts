@@ -137,29 +137,6 @@ export async function POST(request: NextRequest) {
 
     // Log room creation in activity history
     try {
-      // Create a dummy item to associate with this room for logging purposes
-      // We'll use a special item that represents the room itself
-      const roomLogItem = await prisma.item.create({
-        data: {
-          name: `[ROOM] ${name}`,
-          description: `Room activity log for ${name}`,
-          quantity: 1,
-          roomId: room.id,
-          householdId: household.id,
-          categoryId: null, // No category for room logs
-          addedById: userId
-        }
-      })
-
-      await prisma.itemHistory.create({
-        data: {
-          itemId: roomLogItem.id,
-          action: 'room_created',
-          description: `Room "${name}" was created`,
-          newRoomId: room.id,
-          performedBy: userId
-        }
-      })
     } catch (logError) {
       console.error('Error logging room creation:', logError)
       // Don't fail the request if logging fails

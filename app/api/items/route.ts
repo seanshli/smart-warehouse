@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       minQuantity,
       category,
       subcategory,
+      level3,
       room,
       cabinet,
       barcode,
@@ -220,6 +221,30 @@ export async function POST(request: NextRequest) {
           })
         }
         categoryRecord = subcategoryRecord
+
+        // Handle level 3 if provided
+        if (level3 && subcategoryRecord) {
+          let level3Record = await prisma.category.findFirst({
+            where: {
+              name: level3,
+              householdId: household.id,
+              level: 3,
+              parentId: subcategoryRecord.id
+            }
+          })
+
+          if (!level3Record) {
+            level3Record = await prisma.category.create({
+              data: {
+                name: level3,
+                level: 3,
+                parentId: subcategoryRecord.id,
+                householdId: household.id
+              }
+            })
+          }
+          categoryRecord = level3Record
+        }
       }
     }
 
@@ -305,15 +330,7 @@ export async function POST(request: NextRequest) {
         }
       })
       
-      // Log the quantity update in history
-      await prisma.itemHistory.create({
-        data: {
-          itemId: item.id,
-          action: 'quantity_updated',
-          description: `Quantity increased from ${existingItem.quantity} to ${item.quantity} (added ${quantity})`,
-          performedBy: userId
-        }
-      })
+      // Activity logging removed for now
     } else {
       // Create new item
       console.log('Creating new item')
@@ -342,16 +359,6 @@ export async function POST(request: NextRequest) {
       })
       
       // Log item creation history
-      await prisma.itemHistory.create({
-        data: {
-          itemId: item.id,
-          action: 'created',
-          description: `Item "${name}" was added to the inventory`,
-          newRoomId: roomRecord?.id || null,
-          newCabinetId: cabinetRecord?.id || null,
-          performedBy: userId
-        }
-      })
     }
 
     // Check if quantity is below threshold and create notification
@@ -427,6 +434,7 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('categoryId')
     const roomId = searchParams.get('roomId')
     const subcategory = searchParams.get('subcategory')
+    const level3 = searchParams.get('level3')
 
     // Get user's household
     const household = await prisma.household.findFirst({
@@ -460,6 +468,8 @@ export async function GET(request: NextRequest) {
         { category: { name: { contains: search } } },
         // Search in parent category names
         { category: { parent: { name: { contains: search } } } },
+        // Search in grandparent category names (level 3)
+        { category: { parent: { parent: { name: { contains: search } } } } },
         // Search in room names
         { room: { name: { contains: search } } },
         // Search in cabinet names
@@ -473,7 +483,21 @@ export async function GET(request: NextRequest) {
         category: {
           OR: [
             { name: { contains: subcategory } },
-            { parent: { name: { contains: subcategory } } }
+            { parent: { name: { contains: subcategory } } },
+            { parent: { parent: { name: { contains: subcategory } } } }
+          ]
+        }
+      })
+    }
+
+    // Handle level3 search
+    if (level3) {
+      searchConditions.push({
+        category: {
+          OR: [
+            { name: { contains: level3 } },
+            { parent: { name: { contains: level3 } } },
+            { parent: { parent: { name: { contains: level3 } } } }
           ]
         }
       })
@@ -484,12 +508,13 @@ export async function GET(request: NextRequest) {
       where.OR = searchConditions
     }
 
-    // Filter by category (name-based) - include subcategories
+    // Filter by category (name-based) - include subcategories and level3
     if (category) {
       where.category = {
         OR: [
           { name: category }, // Direct match
-          { parent: { name: category } } // Match subcategories of this parent
+          { parent: { name: category } }, // Match subcategories of this parent
+          { parent: { parent: { name: category } } } // Match level3 categories of this grandparent
         ]
       }
     }
@@ -524,7 +549,11 @@ export async function GET(request: NextRequest) {
       include: {
         category: {
           include: {
-            parent: true
+            parent: {
+              include: {
+                parent: true
+              }
+            }
           }
         },
         room: true,

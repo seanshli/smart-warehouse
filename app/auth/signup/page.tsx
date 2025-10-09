@@ -185,11 +185,11 @@ export default function SignUp() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {joinMode ? `Join ${householdInfo?.name}` : 'Create your account'}
+            {joinMode ? `Join ${(householdInfo as any)?.name}` : 'Create your account'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {joinMode ? (
-              `You're joining ${householdInfo?.name} with ${householdInfo?.membersCount} existing members`
+              `You're joining ${(householdInfo as any)?.name} with ${(householdInfo as any)?.membersCount} existing members`
             ) : (
               'Join Smart Warehouse to manage your household inventory'
             )}

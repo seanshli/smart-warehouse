@@ -36,43 +36,16 @@ export async function GET(request: NextRequest) {
         }
       },
       include: {
-        performer: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
-        item: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        oldRoom: {
-          select: {
-            name: true
-          }
-        },
-        newRoom: {
-          select: {
-            name: true
-          }
-        },
-        oldCabinet: {
-          select: {
-            name: true
-          }
-        },
-        newCabinet: {
-          select: {
-            name: true
-          }
-        }
+        item: true,
+        performer: true,
+        oldRoom: true,
+        newRoom: true,
+        oldCabinet: true,
+        newCabinet: true
       },
       orderBy: {
         createdAt: 'desc'
-      },
-      take: 50 // Limit to 50 most recent activities
+      }
     })
 
     return NextResponse.json(activities)

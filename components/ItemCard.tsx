@@ -48,19 +48,36 @@ export default function ItemCard({
   onHistory,
   className = ''
 }: ItemCardProps) {
+  // Handle null or invalid items
+  if (!item || !item.id || !item.name) {
+    console.warn('ItemCard received invalid item:', item)
+    return null
+  }
   const { t } = useLanguage()
   const [imageError, setImageError] = useState(false)
+
+  // Function to translate room and cabinet names
+  const translateLocationName = (name: string) => {
+    const translations: Record<string, string> = {
+      'Bedroom': t('bedroom'),
+      'Default Cabinet': t('defaultCabinet'),
+      'Kitchen': t('kitchen'),
+      'Living Room': t('mainLivingArea'),
+      'Garage': 'Garage',
+    }
+    return translations[name] || name
+  }
 
   const handleImageError = () => {
     setImageError(true)
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow ${className}`}>
-      <div className="flex items-start space-x-3">
+    <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 hover:shadow-md transition-shadow ${className}`}>
+      <div className="flex items-start space-x-2 sm:space-x-3">
         {/* Item Photo */}
         <div className="flex-shrink-0">
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
             {item.imageUrl && !imageError ? (
               <img
                 src={item.imageUrl}
@@ -70,14 +87,14 @@ export default function ItemCard({
                 onLoad={() => setImageError(false)}
               />
             ) : (
-              <PhotoIcon className="w-6 h-6 text-gray-400" />
+              <PhotoIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
             )}
           </div>
         </div>
 
         {/* Item Details */}
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+          <h4 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate">
             {item.name}
           </h4>
           
@@ -108,7 +125,9 @@ export default function ItemCard({
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   <span className="font-medium">{t('category')}:</span>{' '}
                   {item.category.parent 
-                    ? `${item.category.parent.name} > ${item.category.name}`
+                    ? item.category.parent.parent
+                      ? `${item.category.parent.parent.name} > ${item.category.parent.name} > ${item.category.name}`
+                      : `${item.category.parent.name} > ${item.category.name}`
                     : item.category.name
                   }
                 </div>
@@ -117,8 +136,8 @@ export default function ItemCard({
               {showLocation && (item.room || item.cabinet) && (
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   <span className="font-medium">{t('whereIsThisItemStored')}:</span>{' '}
-                  {item.room?.name}
-                  {item.cabinet && ` → ${item.cabinet.name}`}
+                  {item.room?.name ? translateLocationName(item.room.name) : ''}
+                  {item.cabinet && ` → ${translateLocationName(item.cabinet.name)}`}
                 </div>
               )}
             </div>
@@ -127,11 +146,22 @@ export default function ItemCard({
 
         {/* Action Buttons */}
         {(onEdit || onMove || onCheckout || onHistory) && (
-          <div className="flex flex-col space-y-1">
+          <div className="flex flex-col space-y-2 bg-gray-50 p-2 rounded-lg">
             {onEdit && (
               <button
-                onClick={() => onEdit(item)}
-                className="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Edit button clicked for item:', item)
+                  console.log('Item name:', item?.name)
+                  console.log('onEdit function:', onEdit)
+                  if (item && onEdit) {
+                    onEdit(item)
+                  } else {
+                    console.error('Item or onEdit is null/undefined')
+                  }
+                }}
+                className="p-3 sm:p-2 text-blue-600 bg-blue-100 hover:text-blue-800 hover:bg-blue-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"
                 title={t('edit')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,8 +172,13 @@ export default function ItemCard({
             
             {onMove && (
               <button
-                onClick={() => onMove(item)}
-                className="p-1 text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Move button clicked for item:', item.name)
+                  onMove(item)
+                }}
+                className="p-3 sm:p-2 text-green-600 bg-green-100 hover:text-green-800 hover:bg-green-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"
                 title={t('move')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,8 +189,13 @@ export default function ItemCard({
             
             {onCheckout && (
               <button
-                onClick={() => onCheckout(item)}
-                className="p-1 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Checkout button clicked for item:', item.name)
+                  onCheckout(item)
+                }}
+                className="p-3 sm:p-2 text-purple-600 bg-purple-100 hover:text-purple-800 hover:bg-purple-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"
                 title={t('checkout')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,8 +206,13 @@ export default function ItemCard({
             
             {onHistory && (
               <button
-                onClick={() => onHistory(item)}
-                className="p-1 text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('History button clicked for item:', item.name)
+                  onHistory(item)
+                }}
+                className="p-3 sm:p-2 text-yellow-600 bg-yellow-100 hover:text-yellow-800 hover:bg-yellow-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"
                 title={t('history')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

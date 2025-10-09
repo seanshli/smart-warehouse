@@ -94,7 +94,7 @@ export default function ItemsList({
   // Filter items on the client side as well for better responsiveness
   const filteredItems = items.filter(item => {
     const matchesSearch = !searchTerm || 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesCategory = !selectedCategory || 
@@ -177,6 +177,17 @@ export default function ItemsList({
             : 'Start by adding some items to your inventory.'
           }
         </p>
+        <div className="mt-4">
+          <button
+            onClick={() => {
+              // Force hard refresh
+              window.location.reload();
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Force Refresh Page
+          </button>
+        </div>
       </div>
     )
   }
@@ -202,10 +213,22 @@ export default function ItemsList({
             item={item}
             showCategory={showCategory}
             showLocation={showLocation}
-            onEdit={onItemEdit}
-            onMove={onItemMove}
-            onCheckout={onItemCheckout}
-            onHistory={onItemHistory}
+            onEdit={(itemData) => {
+              console.log('ItemsList: onItemEdit called for:', itemData.name)
+              onItemEdit?.(itemData)
+            }}
+            onMove={(itemData) => {
+              console.log('ItemsList: onItemMove called for:', itemData.name)
+              onItemMove?.(itemData)
+            }}
+            onCheckout={(itemData) => {
+              console.log('ItemsList: onItemCheckout called for:', itemData.name)
+              onItemCheckout?.(itemData)
+            }}
+            onHistory={(itemData) => {
+              console.log('ItemsList: onItemHistory called for:', itemData.name)
+              onItemHistory?.(itemData)
+            }}
           />
         ))}
       </div>

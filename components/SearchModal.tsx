@@ -154,11 +154,15 @@ export default function SearchModal({ onClose }: SearchModalProps) {
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('Search results for "' + searchTerm + '":', data)
         setResults(data)
+        if (data.length === 0) {
+          toast(`No items found for "${searchTerm}"`)
+        }
       } else {
         const errorData = await response.json()
-        console.error('Search API error:', errorData)
-        toast.error(errorData.error || 'Search failed')
+        console.error('Search failed:', response.status, errorData)
+        toast.error(errorData.error || `Search failed (${response.status})`)
       }
     } catch (error) {
       console.error('Search error:', error)

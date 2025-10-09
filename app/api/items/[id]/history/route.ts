@@ -3,70 +3,58 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.id) {
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const userId = (session?.user as any)?.id
     const itemId = params.id
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
+    // Verify user has access to this item
+    const item = await prisma.item.findFirst({
       where: {
-        members: {
-          some: {
-            userId: session.user.id
+        id: itemId,
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
       }
     })
 
-    if (!household) {
-      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
-    }
-
-    // Verify item belongs to user's household
-    const item = await prisma.item.findFirst({
-      where: {
-        id: itemId,
-        householdId: household.id
-      }
-    })
-
     if (!item) {
-      return NextResponse.json({ error: 'Item not found or access denied' }, { status: 404 })
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    const history = await prisma.itemHistory.findMany({
+    // Get activities for this item
+    const activities = await prisma.itemHistory.findMany({
       where: {
         itemId: itemId
       },
       include: {
-        performer: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
-        oldRoom: { select: { name: true } },
-        newRoom: { select: { name: true } },
-        oldCabinet: { select: { name: true } },
-        newCabinet: { select: { name: true } },
+        performer: true,
+        oldRoom: true,
+        newRoom: true,
+        oldCabinet: true,
+        newCabinet: true
       },
       orderBy: {
         createdAt: 'desc'
       }
     })
 
-    return NextResponse.json(history)
+    return NextResponse.json(activities)
   } catch (error) {
     console.error('Error fetching item history:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch item history' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch item history' }, { status: 500 })
   }
 }

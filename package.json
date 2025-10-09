@@ -6,6 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "export": "next export",
+    "build:pwa": "next build && next export",
+    "build:production": "NODE_ENV=production next build && next export",
+    "cap:copy": "npm run build:pwa && npx cap copy",
+    "cap:copy:production": "npm run build:production && npx cap copy",
+    "ios": "npm run cap:copy && npx cap open ios",
+    "ios:production": "npm run cap:copy:production && npx cap open ios",
     "lint": "next lint",
     "setup": "node scripts/setup.js",
     "seed": "node scripts/seed.js",
@@ -17,6 +24,8 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.3.2",
@@ -44,6 +53,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^18",

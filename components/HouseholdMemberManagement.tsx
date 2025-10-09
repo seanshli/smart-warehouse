@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useHousehold, PermissionGate, RoleGate } from './HouseholdProvider'
 import { UserRole } from '@/lib/permissions'
+import toast from 'react-hot-toast'
 
 interface Member {
   id: string

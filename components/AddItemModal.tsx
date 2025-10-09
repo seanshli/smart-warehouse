@@ -68,8 +68,10 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   const [categories, setCategories] = useState<any[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('')
+  const [selectedLevel3Id, setSelectedLevel3Id] = useState('')
   const [aiReviewSelectedCategoryId, setAiReviewSelectedCategoryId] = useState('')
   const [aiReviewSelectedSubcategoryId, setAiReviewSelectedSubcategoryId] = useState('')
+  const [aiReviewSelectedLevel3Id, setAiReviewSelectedLevel3Id] = useState('')
 
   // Room and cabinet data
   const [rooms, setRooms] = useState<any[]>([])
@@ -84,6 +86,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
     minQuantity: 0,
     category: '',
     subcategory: '',
+    level3: '',
     room: '',
     cabinet: '',
     barcode: '',
@@ -176,32 +179,48 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   const handleImageUpload = async (file: File) => {
     setIsProcessing(true)
     try {
+      console.log('Processing image file:', file.name, file.size, file.type)
+      
       const reader = new FileReader()
       reader.onload = async (e) => {
         const base64 = e.target?.result as string
         const base64Data = base64.split(',')[1]
         
+        console.log('Image loaded, base64 length:', base64Data.length)
         setPreview(base64)
         
-               // Use AI to recognize the item
-               const result = await callAIRecognition('image', base64Data)
+        // Use AI to recognize the item
+        const result = await callAIRecognition('image', base64Data)
 
-               console.log('AI Recognition Result:', result)
+        console.log('AI Recognition Result:', result)
 
-               // Store AI result for review
-               setAiResult(result)
-               setFormData(prev => ({
-                 ...prev,
-                 imageUrl: base64
-               }))
+        // Store AI result for review
+        setAiResult(result)
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: base64
+        }))
 
-               setStep('ai-review')
-               toast.success('AI recognition completed! Please review the results.')
+        // If AI recognition failed (no API key), still allow manual entry
+        if (result && result.name === 'Unknown Item' && result.description.includes('AI recognition not available')) {
+          toast('AI recognition not available. Please enter item details manually.', { icon: 'ℹ️' })
+          setStep('details')
+        } else {
+          setStep('ai-review')
+          toast.success('AI recognition completed! Please review the results.')
+        }
       }
+      
+      reader.onerror = () => {
+        console.error('FileReader error')
+        toast.error('Failed to read image file')
+        setIsProcessing(false)
+      }
+      
       reader.readAsDataURL(file)
     } catch (error) {
+      console.error('Image upload error:', error)
       toast.error('Failed to process image')
-    } finally {
       setIsProcessing(false)
     }
   }
@@ -876,6 +895,60 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                        </div>
                      </div>
 
+                     {/* Level 3 Category - Only show if subcategory has children */}
+                     {categories
+                       .find(cat => cat.id === aiReviewSelectedCategoryId)
+                       ?.children?.find((child: any) => child.id === aiReviewSelectedSubcategoryId)
+                       ?.children?.length > 0 && (
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700">
+                           Level 3 Category
+                         </label>
+                         <div className="flex gap-2">
+                           <select
+                             value={aiReviewSelectedLevel3Id}
+                             onChange={(e) => {
+                               const level3Id = e.target.value
+                               setAiReviewSelectedLevel3Id(level3Id)
+                               const selectedLevel3 = categories
+                                 .find(cat => cat.id === aiReviewSelectedCategoryId)
+                                 ?.children?.find((child: any) => child.id === aiReviewSelectedSubcategoryId)
+                                 ?.children?.find((level3: any) => level3.id === level3Id)
+                               if (selectedLevel3) {
+                                 setAiResult((prev: any) => ({ 
+                                   ...prev, 
+                                   level3: selectedLevel3.name
+                                 }))
+                               }
+                             }}
+                             className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                             disabled={!aiReviewSelectedSubcategoryId}
+                           >
+                             <option value="">Select Level 3 Category</option>
+                             {categories
+                               .find(cat => cat.id === aiReviewSelectedCategoryId)
+                               ?.children?.find((child: any) => child.id === aiReviewSelectedSubcategoryId)
+                               ?.children?.map((level3: any) => (
+                                 <option key={level3.id} value={level3.id}>
+                                   {level3.name}
+                                 </option>
+                               ))}
+                           </select>
+                           <input
+                             type="text"
+                             placeholder="Or enter custom"
+                             value={aiReviewSelectedLevel3Id ? '' : aiResult?.level3 || ''}
+                             onChange={(e) => {
+                               if (!aiReviewSelectedLevel3Id) {
+                                 setAiResult((prev: any) => ({ ...prev, level3: e.target.value }))
+                               }
+                             }}
+                             className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                           />
+                         </div>
+                       </div>
+                     )}
+
                     <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
@@ -1041,6 +1114,60 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                   />
                 </div>
               </div>
+
+              {/* Level 3 Category - Only show if subcategory has children */}
+              {categories
+                .find(cat => cat.id === selectedCategoryId)
+                ?.children?.find((child: any) => child.id === selectedSubcategoryId)
+                ?.children?.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Level 3 Category
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedLevel3Id}
+                      onChange={(e) => {
+                        const level3Id = e.target.value
+                        setSelectedLevel3Id(level3Id)
+                        const selectedLevel3 = categories
+                          .find(cat => cat.id === selectedCategoryId)
+                          ?.children?.find((child: any) => child.id === selectedSubcategoryId)
+                          ?.children?.find((level3: any) => level3.id === level3Id)
+                        if (selectedLevel3) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            level3: selectedLevel3.name
+                          }))
+                        }
+                      }}
+                      className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      disabled={!selectedSubcategoryId}
+                    >
+                      <option value="">Select Level 3 Category</option>
+                      {categories
+                        .find(cat => cat.id === selectedCategoryId)
+                        ?.children?.find((child: any) => child.id === selectedSubcategoryId)
+                        ?.children?.map((level3: any) => (
+                          <option key={level3.id} value={level3.id}>
+                            {level3.name}
+                          </option>
+                        ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Or enter custom"
+                      value={selectedLevel3Id ? '' : formData.level3}
+                      onChange={(e) => {
+                        if (!selectedLevel3Id) {
+                          setFormData(prev => ({ ...prev, level3: e.target.value }))
+                        }
+                      }}
+                      className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                    />
+                  </div>
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">

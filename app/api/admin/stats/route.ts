@@ -16,10 +16,16 @@ export async function GET() {
 
   // Simple per-day/hour counts for last 7 days using createdAt
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
   const events = await prisma.itemHistory.findMany({
-    where: { createdAt: { gte: since } },
-    select: { createdAt: true },
-    orderBy: { createdAt: 'asc' }
+    where: {
+      createdAt: {
+        gte: since
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
   })
 
   const perDay: Record<string, number> = {}

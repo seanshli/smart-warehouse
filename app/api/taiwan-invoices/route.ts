@@ -60,14 +60,6 @@ export async function POST(request: NextRequest) {
     })
 
     // Log the invoice creation
-    await prisma.itemHistory.create({
-      data: {
-        itemId: invoiceItem.id,
-        action: 'taiwan_invoice_created',
-        description: `台灣發票 ${parsedInvoice.invoiceNumber} 已新增到庫存`,
-        performedBy: (session?.user as any)?.id
-      }
-    })
 
     return NextResponse.json({
       success: true,

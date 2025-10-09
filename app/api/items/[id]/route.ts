@@ -3,114 +3,170 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.id) {
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const userId = (session?.user as any)?.id
     const itemId = params.id
-    const body = await request.json()
-    const { roomId, cabinetId } = body
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: session.user.id
-          }
-        }
-      }
-    })
-
-    if (!household) {
-      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
-    }
-
-    // Verify item belongs to user's household
-    const existingItem = await prisma.item.findFirst({
+    const item = await prisma.item.findFirst({
       where: {
         id: itemId,
-        householdId: household.id
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
       },
       include: {
+        category: {
+          include: {
+            parent: true
+          }
+        },
         room: true,
         cabinet: true
       }
     })
 
-    if (!existingItem) {
-      return NextResponse.json({ error: 'Item not found or access denied' }, { status: 404 })
+    if (!item) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    // Verify new room belongs to user's household
-    if (roomId) {
-      const newRoom = await prisma.room.findFirst({
-        where: {
-          id: roomId,
-          householdId: household.id
-        }
-      })
-      if (!newRoom) {
-        return NextResponse.json({ error: 'Destination room not found or access denied' }, { status: 404 })
-      }
+    return NextResponse.json(item)
+  } catch (error) {
+    console.error('Error fetching item:', error)
+    return NextResponse.json({ error: 'Failed to fetch item' }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!(session?.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify new cabinet belongs to the new room and user's household
-    if (cabinetId) {
-      const newCabinet = await prisma.cabinet.findFirst({
-        where: {
-          id: cabinetId,
-          roomId: roomId,
-          room: {
-            householdId: household.id
+    const userId = (session?.user as any)?.id
+    const itemId = params.id
+    const body = await request.json()
+
+    // Verify user has access to this item
+    const item = await prisma.item.findFirst({
+      where: {
+        id: itemId,
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
-      })
-      if (!newCabinet) {
-        return NextResponse.json({ error: 'Destination cabinet not found or access denied' }, { status: 404 })
       }
+    })
+
+    if (!item) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
     // Update the item
     const updatedItem = await prisma.item.update({
-      where: {
-        id: itemId
-      },
+      where: { id: itemId },
       data: {
-        roomId: roomId || null,
-        cabinetId: cabinetId || null
+        name: body.name,
+        description: body.description,
+        quantity: body.quantity,
+        minQuantity: body.minQuantity,
+        categoryId: body.categoryId,
+        roomId: body.roomId,
+        cabinetId: body.cabinetId,
+        imageUrl: body.imageUrl,
+        updatedAt: new Date()
       },
       include: {
+        category: {
+          include: {
+            parent: true
+          }
+        },
         room: true,
-        cabinet: true,
-        category: true
+        cabinet: true
       }
     })
 
-    // Log item move history
+    // Create activity record
     await prisma.itemHistory.create({
       data: {
         itemId: itemId,
-        action: 'moved',
-        description: `Item "${existingItem.name}" was moved`,
-        oldRoomId: existingItem.roomId,
-        newRoomId: roomId || null,
-        oldCabinetId: existingItem.cabinetId,
-        newCabinetId: cabinetId || null,
-        performedBy: session.user.id
+        action: 'updated',
+        description: `Item "${updatedItem.name}" was updated`,
+        performedBy: userId
       }
     })
 
     return NextResponse.json(updatedItem)
   } catch (error) {
     console.error('Error updating item:', error)
-    return NextResponse.json(
-      { error: 'Failed to update item' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update item' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!(session?.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = (session?.user as any)?.id
+    const itemId = params.id
+
+    // Verify user has access to this item
+    const item = await prisma.item.findFirst({
+      where: {
+        id: itemId,
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      }
+    })
+
+    if (!item) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
+    }
+
+    // Create activity record before deletion
+
+    // Delete the item
+    await prisma.item.delete({
+      where: { id: itemId }
+    })
+
+    return NextResponse.json({ message: 'Item deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting item:', error)
+    return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 })
   }
 }

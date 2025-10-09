@@ -10,7 +10,7 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -20,7 +20,7 @@ export async function PATCH(
     const notification = await prisma.notification.updateMany({
       where: {
         id: params.id,
-        userId: session.user.id
+        userId: (session?.user as any)?.id
       },
       data: {
         isRead

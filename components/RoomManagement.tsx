@@ -79,13 +79,34 @@ export default function RoomManagement() {
 
   const handleRoomClick = async (room: Room) => {
     try {
+      if (!room || !room.id) {
+        console.error('Invalid room object:', room)
+        return
+      }
+      
       // Fetch detailed room data including items
       const response = await fetch(`/api/rooms/${room.id}/items`)
       if (response.ok) {
         const roomDetail = await response.json()
-        setSelectedRoomForDetail(roomDetail)
-        setViewMode('detail')
+        console.log('Room detail response:', roomDetail)
+        
+        if (roomDetail && roomDetail.id) {
+          // Ensure cabinets have valid items
+          if (roomDetail.cabinets) {
+            roomDetail.cabinets = roomDetail.cabinets.map((cabinet: any) => ({
+              ...cabinet,
+              items: cabinet.items ? cabinet.items.filter((item: any) => item && item.id && item.name) : []
+            }))
+          }
+          setSelectedRoomForDetail(roomDetail)
+          setViewMode('detail')
+        } else {
+          console.error('Invalid room detail response:', roomDetail)
+          setSelectedRoomForDetail(room)
+          setViewMode('detail')
+        }
       } else {
+        console.error('Failed to fetch room details, response status:', response.status)
         // Fallback to basic room data
         setSelectedRoomForDetail(room)
         setViewMode('detail')
@@ -475,7 +496,7 @@ export default function RoomManagement() {
       )}
 
       {/* Room Detail View */}
-      {viewMode === 'detail' && selectedRoomForDetail && (
+      {viewMode === 'detail' && selectedRoomForDetail && selectedRoomForDetail.id && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-6">
             <button
@@ -512,8 +533,15 @@ export default function RoomManagement() {
             <div className="p-6">
               {/* Cabinets and Items */}
               <div className="space-y-6">
-                {selectedRoomForDetail.cabinets && selectedRoomForDetail.cabinets.length > 0 ? (
-                  selectedRoomForDetail.cabinets.map((cabinet: any) => (
+                {selectedRoomForDetail.cabinets && Array.isArray(selectedRoomForDetail.cabinets) && selectedRoomForDetail.cabinets.length > 0 ? (
+                  selectedRoomForDetail.cabinets.map((cabinet: any, cabinetIndex: number) => {
+                    // Safety check for cabinet
+                    if (!cabinet || !cabinet.id) {
+                      console.warn(`Skipping invalid cabinet at index ${cabinetIndex}:`, cabinet)
+                      return null
+                    }
+                    
+                    return (
                     <div key={cabinet.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center">
@@ -547,15 +575,24 @@ export default function RoomManagement() {
                       </div>
                       
                       {/* Items in Cabinet */}
-                      {cabinet.items && cabinet.items.length > 0 ? (
+                      {cabinet.items && Array.isArray(cabinet.items) && cabinet.items.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {cabinet.items.map((item: any) => (
-                            <ItemCard
-                              key={item.id}
-                              item={item}
-                              onEdit={() => {
-                                // TODO: Implement edit functionality
-                              }}
+                          {cabinet.items.map((item: any, index: number) => {
+                            // Skip items that are null or missing required fields
+                            if (!item || !item.id || !item.name) {
+                              console.warn(`Skipping invalid item at index ${index}:`, item)
+                              return null
+                            }
+                            
+                            return (
+                              <ItemCard
+                                key={item.id}
+                                item={item}
+                                onEdit={(item) => {
+                                  console.log('Room: Edit item called for:', item?.name || 'Unknown Item')
+                                  // For now, just show an alert since we don't have the modal state here
+                                  alert(`Edit functionality for "${item?.name || 'Unknown Item'}" - This would open the edit modal`)
+                                }}
                               onMove={() => {
                                 setSelectedItemForMove(item)
                                 setMoveToRoom(item.roomId || '')
@@ -570,13 +607,15 @@ export default function RoomManagement() {
                                 handleViewHistory(item)
                               }}
                             />
-                          ))}
+                            )
+                          })}
                         </div>
                       ) : (
                         <p className="text-gray-500 text-sm">{t('noItemsInThisCabinet')}</p>
                       )}
                     </div>
-                  ))
+                    )
+                  }).filter(Boolean)
                 ) : (
                   <div className="text-center py-8">
                     <CubeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -586,6 +625,22 @@ export default function RoomManagement() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Error fallback for room detail view */}
+      {viewMode === 'detail' && (!selectedRoomForDetail || !selectedRoomForDetail.id) && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 className="text-red-800 font-medium">Error loading room details</h3>
+            <p className="text-red-600 text-sm mt-1">There was an error loading the room details. Please try again.</p>
+            <button
+              onClick={handleBackToList}
+              className="mt-3 inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50"
+            >
+              Back to Rooms
+            </button>
           </div>
         </div>
       )}
@@ -1032,20 +1087,21 @@ export default function RoomManagement() {
       )}
 
       {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={showCheckout}
-        onClose={() => {
-          setShowCheckout(false)
-          setSelectedItemForCheckout(null)
-        }}
-        item={selectedItemForCheckout}
-        onCheckoutSuccess={() => {
-          // Refresh the room data to show updated quantities
-          if (selectedRoomForDetail) {
-            handleRoomClick(selectedRoomForDetail)
-          }
-        }}
-      />
+      {showCheckout && selectedItemForCheckout && (
+        <CheckoutModal
+          onClose={() => {
+            setShowCheckout(false)
+            setSelectedItemForCheckout(null)
+          }}
+          item={selectedItemForCheckout}
+          onSuccess={() => {
+            // Refresh the room data to show updated quantities
+            if (selectedRoomForDetail) {
+              handleRoomClick(selectedRoomForDetail)
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -7,7 +7,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -68,7 +68,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!(session?.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -130,14 +130,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       })
 
       if (roomLogItem) {
-        await prisma.itemHistory.create({
-          data: {
-            itemId: roomLogItem.id,
-            action: 'room_deleted',
-            description: `Room "${room.name}" was deleted`,
-            performedBy: userId
-          }
-        })
       }
     } catch (logError) {
       console.error('Error logging room deletion:', logError)

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ClockIcon, UserIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, UserIcon, ArrowRightIcon, PlusIcon, PencilIcon, ArrowsRightLeftIcon, ShoppingCartIcon, HomeIcon, XMarkIcon, FolderIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
 
 interface Activity {
@@ -60,23 +60,23 @@ export default function Activities() {
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'created':
-        return '🆕'
+        return <PlusIcon className="h-4 w-4" />
       case 'moved':
-        return '🔄'
+        return <ArrowsRightLeftIcon className="h-4 w-4" />
       case 'quantity_updated':
-        return '📊'
+        return <PencilIcon className="h-4 w-4" />
       case 'updated':
-        return '✏️'
+        return <PencilIcon className="h-4 w-4" />
       case 'room_created':
-        return '🏠'
+        return <HomeIcon className="h-4 w-4" />
       case 'room_deleted':
-        return '❌🏠'
+        return <XMarkIcon className="h-4 w-4" />
       case 'category_created':
-        return '📂'
+        return <FolderIcon className="h-4 w-4" />
       case 'category_deleted':
-        return '❌📂'
+        return <TrashIcon className="h-4 w-4" />
       default:
-        return '📝'
+        return <ClockIcon className="h-4 w-4" />
     }
   }
 
@@ -214,8 +214,8 @@ export default function Activities() {
               <div key={activity.id} className="p-6 hover:bg-gray-50">
                 <div className="flex items-start space-x-4">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm">{getActionIcon(activity.action)}</span>
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                      {getActionIcon(activity.action)}
                     </div>
                   </div>
                   
@@ -227,7 +227,7 @@ export default function Activities() {
                         </span>
                         {activity.item && (
                           <span className="text-sm font-medium text-gray-900">
-                            {activity.item.name}
+                            {activity.item?.name || 'Unknown Item'}
                           </span>
                         )}
                       </div>

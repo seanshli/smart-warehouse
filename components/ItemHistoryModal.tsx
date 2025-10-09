@@ -30,10 +30,10 @@ interface Item {
 
 interface Activity {
   id: string
-  type: string
+  action: string
   description: string
   createdAt: string
-  userId: string
+  performedBy: string
   user?: {
     name: string
     email: string

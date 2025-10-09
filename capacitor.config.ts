@@ -23,8 +23,6 @@ const config: CapacitorConfig = {
     preferredContentMode: 'mobile'
   },
   android: {
-    // Allow external access
-    allowsBackForwardNavigationGestures: true,
     // Configure for external hosting
     overrideUserAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15'
   }

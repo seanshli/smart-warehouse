@@ -125,8 +125,8 @@ export default function ItemCard({
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   <span className="font-medium">{t('category')}:</span>{' '}
                   {item.category.parent 
-                    ? item.category.parent.parent
-                      ? `${item.category.parent.parent.name} > ${item.category.parent.name} > ${item.category.name}`
+                    ? (item.category.parent as any).parent
+                      ? `${(item.category.parent as any).parent.name} > ${item.category.parent.name} > ${item.category.name}`
                       : `${item.category.parent.name} > ${item.category.name}`
                     : item.category.name
                   }

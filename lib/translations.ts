@@ -700,6 +700,19 @@ const zhTW: Translations = {
   invoiceItems: '發票項目',
   processingTaiwanInvoice: '正在處理台灣發票...',
   cameraNotAvailable: '相機不可用，請上傳照片',
+  
+  // Invitation Codes
+  invitationCode: '邀請碼',
+  shareInvitationCode: '分享此代碼給其他人讓他們加入您的家庭',
+  regenerateInvitationCode: '重新生成',
+  copyInvitationCode: '複製到剪貼板',
+  invitationCodeInstructions: '• 與家庭成員分享此代碼以邀請他們\n• 新用戶可以在註冊時輸入此代碼加入您的家庭\n• 如果懷疑代碼已洩露，請重新生成',
+  joinWithInvitationCode: '使用邀請碼加入',
+  enterInvitationCode: '輸入邀請碼（可選）',
+  invalidInvitationCode: '無效的邀請碼',
+  householdNotFound: '找不到家庭',
+  alreadyMemberOfHousehold: '您已經是此家庭的成員',
+  alreadyMemberOfAnotherHousehold: '您已經是另一個家庭的成員',
 }
 
 // Simplified Chinese translations (zh)

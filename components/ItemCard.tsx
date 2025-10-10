@@ -59,7 +59,7 @@ export default function ItemCard({
   // Function to translate room and cabinet names
   const translateLocationName = (name: string) => {
     const translations: Record<string, string> = {
-      'Bedroom': t('bedroom'),
+      'Master Bedroom': t('masterBedroom'),
       'Default Cabinet': t('defaultCabinet'),
       'Kitchen': t('kitchen'),
       'Living Room': t('mainLivingArea'),

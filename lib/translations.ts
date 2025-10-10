@@ -242,6 +242,19 @@ export interface Translations {
   invoiceItems: string
   processingTaiwanInvoice: string
   cameraNotAvailable: string
+  
+  // Default Rooms
+  kitchen: string
+  livingRoom: string
+  bedroom: string
+  garage: string
+  
+  // Default Categories
+  electronics: string
+  tools: string
+  clothing: string
+  books: string
+  miscellaneous: string
 }
 
 // English translations (default)
@@ -487,6 +500,19 @@ const en: Translations = {
   householdNotFound: 'Household not found',
   alreadyMemberOfHousehold: 'You are already a member of this household',
   alreadyMemberOfAnotherHousehold: 'You are already a member of another household',
+  
+  // Default Rooms
+  kitchen: 'Kitchen',
+  livingRoom: 'Living Room',
+  bedroom: 'Bedroom',
+  garage: 'Garage',
+  
+  // Default Categories
+  electronics: 'Electronics',
+  tools: 'Tools',
+  clothing: 'Clothing',
+  books: 'Books',
+  miscellaneous: 'Miscellaneous',
 }
 
 // Traditional Chinese translations (zh-TW)
@@ -732,6 +758,19 @@ const zhTW: Translations = {
   householdNotFound: '找不到家庭',
   alreadyMemberOfHousehold: '您已經是此家庭的成員',
   alreadyMemberOfAnotherHousehold: '您已經是另一個家庭的成員',
+  
+  // Default Rooms
+  kitchen: '廚房',
+  livingRoom: '客廳',
+  bedroom: '臥室',
+  garage: '車庫',
+  
+  // Default Categories
+  electronics: '電子產品',
+  tools: '工具',
+  clothing: '服裝',
+  books: '書籍',
+  miscellaneous: '其他',
 }
 
 // Simplified Chinese translations (zh)
@@ -977,6 +1016,19 @@ const zh: Translations = {
   householdNotFound: '找不到家庭',
   alreadyMemberOfHousehold: '您已经是此家庭的成员',
   alreadyMemberOfAnotherHousehold: '您已经是另一个家庭的成员',
+  
+  // Default Rooms
+  kitchen: '厨房',
+  livingRoom: '客厅',
+  bedroom: '卧室',
+  garage: '车库',
+  
+  // Default Categories
+  electronics: '电子产品',
+  tools: '工具',
+  clothing: '服装',
+  books: '书籍',
+  miscellaneous: '其他',
 }
 
 // Japanese translations (ja)
@@ -1222,6 +1274,19 @@ const ja: Translations = {
   householdNotFound: '世帯が見つかりません',
   alreadyMemberOfHousehold: 'あなたは既にこの世帯のメンバーです',
   alreadyMemberOfAnotherHousehold: 'あなたは既に別の世帯のメンバーです',
+  
+  // Default Rooms
+  kitchen: 'キッチン',
+  livingRoom: 'リビングルーム',
+  bedroom: 'ベッドルーム',
+  garage: 'ガレージ',
+  
+  // Default Categories
+  electronics: '電子機器',
+  tools: '工具',
+  clothing: '衣類',
+  books: '本',
+  miscellaneous: 'その他',
 }
 
 // Translation registry

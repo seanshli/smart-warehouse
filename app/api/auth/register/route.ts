@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createUserWithCredentials, storeUserPassword } from '@/lib/credentials'
 import bcrypt from 'bcryptjs'
+import { translations } from '@/lib/translations'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -113,12 +114,16 @@ export async function POST(request: NextRequest) {
 
     // Only create default rooms and categories for new households
     if (!invitationCode) {
+      // Get user's language preference (default to 'en' if not set)
+      const userLanguage = user.language || 'en'
+      const t = translations[userLanguage] || translations.en
+      
       // Create some default rooms
       const defaultRooms = [
-        { name: 'Kitchen', description: 'Kitchen area' },
-        { name: 'Living Room', description: 'Main living area' },
-        { name: 'Bedroom', description: 'Bedroom' },
-        { name: 'Garage', description: 'Garage and storage' }
+        { name: t.kitchen, description: t.kitchen },
+        { name: t.livingRoom, description: t.livingRoom },
+        { name: t.bedroom, description: t.bedroom },
+        { name: t.garage, description: t.garage }
       ]
 
       for (const roomData of defaultRooms) {
@@ -132,12 +137,12 @@ export async function POST(request: NextRequest) {
 
       // Create some default categories
       const defaultCategories = [
-        { name: 'Electronics', description: 'Electronic devices and accessories', level: 1 },
-        { name: 'Kitchen', description: 'Kitchen utensils and appliances', level: 1 },
-        { name: 'Tools', description: 'Hand tools and equipment', level: 1 },
-        { name: 'Clothing', description: 'Clothing and accessories', level: 1 },
-        { name: 'Books', description: 'Books and reading materials', level: 1 },
-        { name: 'Miscellaneous', description: 'Other items', level: 1 }
+        { name: t.electronics, description: t.electronics, level: 1 },
+        { name: t.kitchen, description: t.kitchen, level: 1 },
+        { name: t.tools, description: t.tools, level: 1 },
+        { name: t.clothing, description: t.clothing, level: 1 },
+        { name: t.books, description: t.books, level: 1 },
+        { name: t.miscellaneous, description: t.miscellaneous, level: 1 }
       ]
 
       for (const categoryData of defaultCategories) {

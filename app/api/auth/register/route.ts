@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       const defaultRooms = [
         { name: t.kitchen, description: t.kitchen },
         { name: t.livingRoom, description: t.livingRoom },
-        { name: t.bedroom, description: t.bedroom },
+        { name: t.masterBedroom, description: t.masterBedroom },
         { name: t.garage, description: t.garage }
       ]
 

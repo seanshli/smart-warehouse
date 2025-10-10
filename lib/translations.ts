@@ -69,10 +69,8 @@ export interface Translations {
   roomManagement: string
   categoryManagement: string
   masterBedroom: string
-  bedroom: string
   defaultCabinet: string
   mainLivingArea: string
-  kitchen: string
   cabinets: string
   noCabinetsInThisRoom: string
   clickToViewDetails: string
@@ -504,7 +502,7 @@ const en: Translations = {
   // Default Rooms
   kitchen: 'Kitchen',
   livingRoom: 'Living Room',
-  bedroom: 'Bedroom',
+  masterBedroom: 'Master Bedroom',
   garage: 'Garage',
   
   // Default Categories
@@ -762,7 +760,7 @@ const zhTW: Translations = {
   // Default Rooms
   kitchen: '廚房',
   livingRoom: '客廳',
-  bedroom: '臥室',
+  masterBedroom: '主臥室',
   garage: '車庫',
   
   // Default Categories
@@ -1020,7 +1018,7 @@ const zh: Translations = {
   // Default Rooms
   kitchen: '厨房',
   livingRoom: '客厅',
-  bedroom: '卧室',
+  masterBedroom: '主卧室',
   garage: '车库',
   
   // Default Categories
@@ -1278,7 +1276,7 @@ const ja: Translations = {
   // Default Rooms
   kitchen: 'キッチン',
   livingRoom: 'リビングルーム',
-  bedroom: 'ベッドルーム',
+  masterBedroom: 'マスターベッドルーム',
   garage: 'ガレージ',
   
   // Default Categories

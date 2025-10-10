@@ -244,7 +244,6 @@ export interface Translations {
   // Default Rooms
   kitchen: string
   livingRoom: string
-  bedroom: string
   garage: string
   
   // Default Categories

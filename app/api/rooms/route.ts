@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { createPrismaClient } from '@/lib/prisma-factory'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  let prisma = createPrismaClient()
+  
   try {
     const session = await getServerSession(authOptions)
     
@@ -76,10 +78,14 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch rooms' },
       { status: 500 }
     )
+  } finally {
+    await prisma.$disconnect()
   }
 }
 
 export async function POST(request: NextRequest) {
+  let prisma = createPrismaClient()
+  
   try {
     const session = await getServerSession(authOptions)
     
@@ -152,6 +158,8 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create room' },
       { status: 500 }
     )
+  } finally {
+    await prisma.$disconnect()
   }
 }
 

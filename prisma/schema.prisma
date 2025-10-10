@@ -169,17 +169,17 @@ model Item {
   imageUrl    String?
   aiDescription String? // AI-generated description
   language    String? // Language override for this item (ISO 639-1 code)
-  categoryId  String?
-  roomId      String?
-  cabinetId   String?
-  householdId String
-  addedById   String
+  categoryId  String?  @map("category_id")
+  roomId      String?  @map("room_id")
+  cabinetId   String?  @map("cabinet_id")
+  householdId String   @map("household_id")
+  addedById   String   @map("added_by_id")
   // Taiwan invoice fields
-  buyDate     DateTime? // Date when item was purchased
-  buyCost     Float?    // Cost of the item when purchased
-  buyLocation String?   // Location where item was purchased
-  invoiceNumber String? // Taiwan invoice number if from e-invoice
-  sellerName  String?   // Seller name from invoice
+  buyDate     DateTime? @map("buy_date") // Date when item was purchased
+  buyCost     Float?    @map("buy_cost") // Cost of the item when purchased
+  buyLocation String?   @map("buy_location") // Location where item was purchased
+  invoiceNumber String? @map("invoice_number") // Taiwan invoice number if from e-invoice
+  sellerName  String?   @map("seller_name") // Seller name from invoice
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -197,14 +197,14 @@ model Item {
 
 model ItemHistory {
   id          String   @id @default(cuid())
-  itemId      String
+  itemId      String   @map("item_id")
   action      String   // "created", "moved", "updated", "deleted"
   description String   // Human-readable description of the action
-  oldRoomId   String?
-  newRoomId   String?
-  oldCabinetId String?
-  newCabinetId String?
-  performedBy String   // User who performed the action
+  oldRoomId   String?  @map("old_room_id")
+  newRoomId   String?  @map("new_room_id")
+  oldCabinetId String? @map("old_cabinet_id")
+  newCabinetId String? @map("new_cabinet_id")
+  performedBy String   @map("performed_by") // User who performed the action
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -231,8 +231,8 @@ model Barcode {
   confidence  Int      @default(0) // AI confidence score (0-100)
   source      String   @default("ai") // Source: "ai", "user", "external"
   isVerified  Boolean  @default(false) // Whether user has verified this data
-  createdBy   String   // User who created/verified this entry
-  householdId String   // Associated household
+  createdBy   String   @map("created_by") // User who created/verified this entry
+  householdId String   @map("household_id") // Associated household
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -249,9 +249,9 @@ model Notification {
   title       String
   message     String
   isRead      Boolean  @default(false)
-  userId      String
-  householdId String
-  itemId      String?
+  userId      String   @map("user_id")
+  householdId String   @map("household_id")
+  itemId      String?  @map("item_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations

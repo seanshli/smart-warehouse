@@ -53,12 +53,12 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Low stock items count
+      // Low stock items count (simplified for now)
       prisma.item.count({
         where: {
           householdId: household.id,
           quantity: {
-            lte: prisma.item.fields.minQuantity
+            lte: 5 // Simple threshold for low stock
           }
         }
       }),

@@ -91,10 +91,10 @@ model Household {
 
 model HouseholdMember {
   id          String   @id @default(cuid())
-  userId      String
-  householdId String
+  userId      String   @map("user_id")
+  householdId String   @map("household_id")
   role        String   @default("USER") // OWNER, USER, VISITOR (multiple OWNERs allowed)
-  joinedAt    DateTime @default(now())
+  joinedAt    DateTime @default(now()) @map("joined_at")
 
   // Relations
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -108,7 +108,7 @@ model Room {
   id          String   @id @default(cuid())
   name        String
   description String?
-  householdId String
+  householdId String   @map("household_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -126,7 +126,7 @@ model Cabinet {
   id          String   @id @default(cuid())
   name        String
   description String?
-  roomId      String
+  roomId      String   @map("room_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -144,8 +144,8 @@ model Category {
   name        String
   description String?
   level       Int      // 1, 2, or 3 for the 3-level hierarchy
-  parentId    String?  // For hierarchical structure
-  householdId String
+  parentId    String?  @map("parent_id") // For hierarchical structure
+  householdId String   @map("household_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

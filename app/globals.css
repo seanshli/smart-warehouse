@@ -31,6 +31,16 @@ body {
     text-wrap: balance;
   }
   
+  /* Fix input field text color */
+  input, textarea, select {
+    color: rgb(17, 24, 39) !important; /* text-gray-900 */
+    background-color: white !important;
+  }
+  
+  input::placeholder, textarea::placeholder {
+    color: rgb(107, 114, 128) !important; /* text-gray-500 */
+  }
+  
   /* Safe area insets for mobile devices */
   .pt-safe-area-inset-top {
     padding-top: env(safe-area-inset-top);

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!(session?.user as any)?.id) {
+    if (!session?.user || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'No session found' }, { status: 401 })
     }
 

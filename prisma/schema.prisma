@@ -74,7 +74,7 @@ model Household {
   id             String   @id @default(cuid())
   name           String
   description    String?
-  invitationCode String   @unique @default(cuid())
+  invitationCode String   @unique @default(cuid()) @map("invitation_code")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

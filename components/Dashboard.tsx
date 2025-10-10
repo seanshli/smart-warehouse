@@ -337,7 +337,8 @@ function DashboardContent() {
           totalItems: data.totalItems || 0,
           totalRooms: data.totalRooms || 0,
           lowStockItems: data.lowStockItems || 0,
-          householdMembers: data.householdMembers || 0
+          householdMembers: data.householdMembers || 0,
+          recentActivities: data.recentActivities || []
         })
       } else {
         console.error('Failed to fetch dashboard stats')
@@ -346,7 +347,8 @@ function DashboardContent() {
           totalItems: 0,
           totalRooms: 0,
           lowStockItems: 0,
-          householdMembers: 0
+          householdMembers: 0,
+          recentActivities: []
         })
       }
     } catch (error) {
@@ -356,7 +358,8 @@ function DashboardContent() {
         totalItems: 0,
         totalRooms: 0,
         lowStockItems: 0,
-        householdMembers: 0
+        householdMembers: 0,
+        recentActivities: []
       })
     } finally {
       setLoading(false)

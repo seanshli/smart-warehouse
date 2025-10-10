@@ -27,6 +27,7 @@ export async function createUserWithCredentials(credentials: UserCredentials) {
     data: {
       email: email.toLowerCase(),
       name: name || email.split('@')[0],
+      language: 'en'
     }
   })
 

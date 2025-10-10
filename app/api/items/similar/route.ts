@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Simple similarity calculation based on name and description
 function calculateSimilarity(itemName: string, itemDescription: string, existingName: string, existingDescription?: string): number {
   const nameSimilarity = calculateStringSimilarity(itemName.toLowerCase(), existingName.toLowerCase())

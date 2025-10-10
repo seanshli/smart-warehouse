@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { isAdminEmail } from '@/lib/admin'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 async function ensureAdmin() {
   const session = await getServerSession(authOptions)
   const email = session?.user?.email || null

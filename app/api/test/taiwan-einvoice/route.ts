@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { decodeTaiwanEInvoice, decodeTaiwanReceipt, isTaiwanEInvoice, extractItemsFromTaiwanInvoice } from '@/lib/taiwan-einvoice-decoder'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Extract QR codes and barcode from base64 image data
  * Based on Taiwan e-invoice specification from iReceipt library

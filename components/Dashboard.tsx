@@ -332,12 +332,32 @@ function DashboardContent() {
       const response = await fetch('/api/test-dashboard')
       if (response.ok) {
         const data = await response.json()
-        setStats(data)
+        // Map the test-dashboard response to the expected stats format
+        setStats({
+          totalItems: data.totalItems || 0,
+          totalRooms: data.totalRooms || 0,
+          lowStockItems: data.lowStockItems || 0,
+          householdMembers: data.householdMembers || 0
+        })
       } else {
         console.error('Failed to fetch dashboard stats')
+        // Set default stats to prevent crashes
+        setStats({
+          totalItems: 0,
+          totalRooms: 0,
+          lowStockItems: 0,
+          householdMembers: 0
+        })
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
+      // Set default stats to prevent crashes
+      setStats({
+        totalItems: 0,
+        totalRooms: 0,
+        lowStockItems: 0,
+        householdMembers: 0
+      })
     } finally {
       setLoading(false)
     }

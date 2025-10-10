@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createUserWithCredentials, storeUserPassword } from '@/lib/credentials'
 import bcrypt from 'bcryptjs'
-import { translations } from '@/lib/translations'
+import { getTranslations } from '@/lib/translations'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     if (!invitationCode) {
       // Get user's language preference (default to 'en' if not set)
       const userLanguage = user.language || 'en'
-      const t = translations[userLanguage] || translations.en
+      const t = getTranslations(userLanguage)
       
       // Create some default rooms
       const defaultRooms = [

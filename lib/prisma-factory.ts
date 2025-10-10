@@ -6,7 +6,7 @@ export function createPrismaClient(): PrismaClient {
   const timestamp = Date.now()
   const randomId = Math.random().toString(36).substring(7)
   const connectionParams = process.env.NODE_ENV === 'production' 
-    ? `?connection_limit=1&pool_timeout=20&connect_timeout=60&prepared_statements=false&timestamp=${timestamp}_${randomId}`
+    ? `?sslmode=require&connection_limit=1&pool_timeout=20&connect_timeout=60&prepared_statements=false&pgbouncer=true&statement_timeout=30000&timestamp=${timestamp}_${randomId}`
     : ''
   
   return new PrismaClient({
@@ -15,6 +15,11 @@ export function createPrismaClient(): PrismaClient {
       db: {
         url: process.env.DATABASE_URL + connectionParams,
       },
+    },
+    // Add transaction options to prevent prepared statement conflicts
+    transactionOptions: {
+      maxWait: 5000, // 5 seconds
+      timeout: 10000, // 10 seconds
     },
   })
 }

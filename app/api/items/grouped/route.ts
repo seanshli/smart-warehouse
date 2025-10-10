@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createPrismaClient } from '@/lib/prisma-factory'
+import { prisma } from '@/lib/prisma-safe'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  let prisma = createPrismaClient()
-  
   try {
     const session = await getServerSession(authOptions)
     
@@ -116,7 +114,5 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch grouped items' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

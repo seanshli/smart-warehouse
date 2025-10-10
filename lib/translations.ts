@@ -323,7 +323,6 @@ const en: Translations = {
   // Room Management
   roomManagement: 'Room Management',
   categoryManagement: 'Category Management',
-  masterBedroom: 'Master bedroom',
   defaultCabinet: 'Default Cabinet',
   mainLivingArea: 'Main living area',
   cabinets: 'Cabinets',
@@ -579,7 +578,6 @@ const zhTW: Translations = {
   // Room Management
   roomManagement: '房間管理',
   categoryManagement: '分類管理',
-  masterBedroom: '主臥室',
   defaultCabinet: '預設櫥櫃',
   mainLivingArea: '主要起居區域',
   cabinets: '櫥櫃',
@@ -835,7 +833,6 @@ const zh: Translations = {
   // Room Management
   roomManagement: '房间管理',
   categoryManagement: '分类管理',
-  masterBedroom: '主卧室',
   defaultCabinet: '默认橱柜',
   mainLivingArea: '主要起居区域',
   cabinets: '橱柜',
@@ -1091,7 +1088,6 @@ const ja: Translations = {
   // Room Management
   roomManagement: '部屋管理',
   categoryManagement: 'カテゴリ管理',
-  masterBedroom: 'マスターベッドルーム',
   defaultCabinet: 'デフォルトキャビネット',
   mainLivingArea: 'メインリビングエリア',
   cabinets: 'キャビネット',

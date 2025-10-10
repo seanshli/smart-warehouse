@@ -329,7 +329,7 @@ function DashboardContent() {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/dashboard/stats')
+      const response = await fetch('/api/test-dashboard')
       if (response.ok) {
         const data = await response.json()
         setStats(data)

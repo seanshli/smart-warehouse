@@ -73,7 +73,7 @@ export default function ItemsList({
       if (selectedCategory) params.append('category', selectedCategory)
       if (selectedRoom) params.append('room', selectedRoom)
       
-      const url = `/api/items/grouped${params.toString() ? '?' + params.toString() : ''}`
+      const url = `/api/items/grouped-direct${params.toString() ? '?' + params.toString() : ''}`
       const response = await fetch(url)
       
       if (response.ok) {

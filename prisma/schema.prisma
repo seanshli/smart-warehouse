@@ -163,12 +163,12 @@ model Item {
   name        String
   description String?
   quantity    Int      @default(1)
-  minQuantity Int      @default(0) // Low inventory threshold
+  minQuantity Int      @default(0) @map("min_quantity") // Low inventory threshold
   barcode     String?  // Removed @unique - multiple items can have same barcode
-  qrCode      String?  @unique
-  imageUrl    String?
-  aiDescription String? // AI-generated description
-  language    String? // Language override for this item (ISO 639-1 code)
+  qrCode      String?  @unique @map("qr_code")
+  imageUrl    String?  @map("image_url")
+  aiDescription String? @map("ai_description") // AI-generated description
+  language    String?  @map("language") // Language override for this item (ISO 639-1 code)
   categoryId  String?  @map("category_id")
   roomId      String?  @map("room_id")
   cabinetId   String?  @map("cabinet_id")

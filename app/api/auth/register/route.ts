@@ -140,8 +140,7 @@ export async function POST(request: NextRequest) {
           data: {
             name: t.mainCabinet,
             description: t.mainCabinet,
-            roomId: room.id,
-            householdId: household.id
+            roomId: room.id
           }
         })
       }

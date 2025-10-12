@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Actual Room Endpoint</title>
+</head>
+<body>
+    <h1>Test Actual Room Endpoint</h1>
+    <p>This tests the exact endpoint the frontend calls: /api/rooms/[id]/items</p>
+    
+    <button onclick="testActualEndpoint()">Test Actual Endpoint</button>
+    <div id="result"></div>
+
+    <script>
+        async function testActualEndpoint() {
+            try {
+                // Get rooms first
+                const roomsResponse = await fetch('/api/rooms');
+                const roomsData = await roomsResponse.json();
+                
+                if (!roomsData || !roomsData.rooms || roomsData.rooms.length === 0) {
+                    document.getElementById('result').innerHTML = '<p>No rooms found</p>';
+                    return;
+                }
+                
+                const firstRoom = roomsData.rooms[0];
+                document.getElementById('result').innerHTML = `
+                    <h3>Testing Room: ${firstRoom.name} (${firstRoom.id})</h3>
+                    <p>Calling: /api/rooms/${firstRoom.id}/items</p>
+                `;
+                
+                // Test the actual endpoint the frontend calls
+                const response = await fetch(`/api/rooms/${firstRoom.id}/items`);
+                
+                document.getElementById('result').innerHTML += `
+                    <h4>Response Status: ${response.status}</h4>
+                    <h4>Response Headers:</h4>
+                    <pre>${JSON.stringify([...response.headers.entries()], null, 2)}</pre>
+                `;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('result').innerHTML += `
+                        <h4>Response Data:</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    document.getElementById('result').innerHTML += `
+                        <h4>Error Response:</h4>
+                        <pre>${errorText}</pre>
+                    `;
+                }
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h3>Exception:</h3>
+                    <pre>${error.message}</pre>
+                    <h3>Stack:</h3>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

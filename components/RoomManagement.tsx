@@ -7,6 +7,7 @@ import CheckoutModal from './CheckoutModal'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 import ItemCard from './ItemCard'
+import { getTranslations } from '@/lib/translations'
 
 interface Room {
   id: string
@@ -28,8 +29,47 @@ interface Cabinet {
 }
 
 export default function RoomManagement() {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const { activeHouseholdId } = useHousehold()
+
+  // Function to translate room names based on their original English names
+  const translateRoomName = (roomName: string) => {
+    const t = getTranslations(currentLanguage)
+    
+    // Map of original English names to translation keys
+    const roomNameMap: Record<string, string> = {
+      'Living Room': t.livingRoom,
+      'Master Bedroom': t.masterBedroom,
+      'Kid Room': t.kidRoom,
+      'Kitchen': t.kitchen,
+      'Garage': t.garage,
+      // Add any other default room names that might exist
+      '客廳': t.livingRoom, // If somehow Chinese names are stored
+      '主臥室': t.masterBedroom,
+      '小孩房': t.kidRoom,
+      '廚房': t.kitchen,
+      '車庫': t.garage
+    }
+    
+    return roomNameMap[roomName] || roomName // Return translated name or original if not found
+  }
+
+  // Function to translate cabinet names based on their original English names
+  const translateCabinetName = (cabinetName: string) => {
+    const t = getTranslations(currentLanguage)
+    
+    // Map of original English names to translation keys
+    const cabinetNameMap: Record<string, string> = {
+      'Main Cabinet': t.mainCabinet,
+      '主櫥櫃': t.mainCabinet,
+      '側櫥櫃': '側櫥櫃', // Keep as is if already in Chinese
+      '孩子衣櫥': '孩子衣櫥', // Keep as is if already in Chinese
+      '右櫥櫃': '右櫥櫃', // Keep as is if already in Chinese
+      '左櫥櫃': '左櫥櫃' // Keep as is if already in Chinese
+    }
+    
+    return cabinetNameMap[cabinetName] || cabinetName // Return translated name or original if not found
+  }
   const [rooms, setRooms] = useState<Room[]>([])
   const [showAddRoom, setShowAddRoom] = useState(false)
   const [showAddCabinet, setShowAddCabinet] = useState(false)
@@ -433,7 +473,7 @@ export default function RoomManagement() {
                     </div>
                     <div className="ml-4 flex-1">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {room.name}
+                        {translateRoomName(room.name)}
                       </h3>
                       {room.description && (
                         <p className="text-sm text-gray-500 mt-1">
@@ -484,7 +524,7 @@ export default function RoomManagement() {
                           <li key={cabinet.id} className="py-2 flex items-center justify-between">
                             <div className="flex items-center">
                               <CubeIcon className="h-5 w-5 text-gray-500 mr-2" />
-                              <span className="text-sm text-gray-700">{cabinet.name}</span>
+                              <span className="text-sm text-gray-700">{translateCabinetName(cabinet.name)}</span>
                             </div>
                             <span className="text-xs text-gray-500">{cabinet._count.items} {t('items')}</span>
                           </li>
@@ -536,7 +576,7 @@ export default function RoomManagement() {
                 <MapPinIcon className="h-8 w-8 text-primary-600 mr-3" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    {selectedRoomForDetail.name}
+                    {translateRoomName(selectedRoomForDetail.name)}
                   </h1>
                   {selectedRoomForDetail.description && (
                     <p className="text-gray-600 mt-1">
@@ -567,7 +607,7 @@ export default function RoomManagement() {
                         <div className="flex items-center">
                           <CubeIcon className="h-6 w-6 text-gray-600 mr-2" />
                           <h3 className="text-lg font-medium text-gray-900">
-                            {cabinet.name}
+                            {translateCabinetName(cabinet.name)}
                           </h3>
                           <div className="flex items-center space-x-1">
                             <button
@@ -742,7 +782,7 @@ export default function RoomManagement() {
                     <option value="">Choose a room</option>
                     {rooms && Array.isArray(rooms) ? rooms.map((room) => (
                       <option key={room.id} value={room.id}>
-                        {room.name}
+                        {translateRoomName(room.name)}
                       </option>
                     )) : null}
                   </select>
@@ -819,7 +859,7 @@ export default function RoomManagement() {
                     <option value="">Select a room</option>
                     {rooms && Array.isArray(rooms) ? rooms.map((room) => (
                       <option key={room.id} value={room.id}>
-                        {room.name}
+                        {translateRoomName(room.name)}
                       </option>
                     )) : null}
                   </select>
@@ -838,7 +878,7 @@ export default function RoomManagement() {
                     <option value="">No specific cabinet</option>
                     {moveToRoom && rooms && Array.isArray(rooms) ? rooms.find(r => r.id === moveToRoom)?.cabinets?.map((cabinet) => (
                       <option key={cabinet.id} value={cabinet.id}>
-                        {cabinet.name}
+                        {translateCabinetName(cabinet.name)}
                       </option>
                     )) : null}
                   </select>

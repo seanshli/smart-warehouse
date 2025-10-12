@@ -94,12 +94,15 @@ export default function RoomManagement() {
         console.log('Room detail response:', roomDetail)
         
         if (roomDetail && roomDetail.id) {
-          // Ensure cabinets have valid items
-          if (roomDetail.cabinets) {
+          // Ensure cabinets have valid items and are arrays
+          if (roomDetail.cabinets && Array.isArray(roomDetail.cabinets)) {
             roomDetail.cabinets = roomDetail.cabinets.map((cabinet: any) => ({
               ...cabinet,
-              items: cabinet.items ? cabinet.items.filter((item: any) => item && item.id && item.name) : []
+              items: cabinet.items && Array.isArray(cabinet.items) ? cabinet.items.filter((item: any) => item && item.id && item.name) : []
             }))
+          } else {
+            // Ensure cabinets is always an array
+            roomDetail.cabinets = []
           }
           setSelectedRoomForDetail(roomDetail)
           setViewMode('detail')
@@ -416,7 +419,7 @@ export default function RoomManagement() {
 
           {/* Rooms Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {rooms.map((room) => (
+            {rooms && Array.isArray(rooms) ? rooms.map((room) => (
               <div 
                 key={room.id} 
                 className="bg-white overflow-hidden shadow rounded-lg cursor-pointer hover:shadow-lg transition-shadow duration-200"
@@ -474,7 +477,7 @@ export default function RoomManagement() {
                     <h4 className="text-sm font-medium text-gray-900 mb-3">
                       {t('cabinets')} ({room.cabinets.length})
                     </h4>
-                    {room.cabinets.length > 0 ? (
+                    {room.cabinets && Array.isArray(room.cabinets) && room.cabinets.length > 0 ? (
                       <ul className="divide-y divide-gray-200">
                         {room.cabinets.map((cabinet) => (
                           <li key={cabinet.id} className="py-2 flex items-center justify-between">
@@ -492,7 +495,11 @@ export default function RoomManagement() {
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full text-center text-gray-500 py-8">
+                No rooms found. Add a room to get started.
+              </div>
+            )}
           </div>
 
           {rooms.length === 0 && (
@@ -732,11 +739,11 @@ export default function RoomManagement() {
                     required
                   >
                     <option value="">Choose a room</option>
-                    {rooms.map((room) => (
+                    {rooms && Array.isArray(rooms) ? rooms.map((room) => (
                       <option key={room.id} value={room.id}>
                         {room.name}
                       </option>
-                    ))}
+                    )) : null}
                   </select>
                 </div>
                 <div>
@@ -809,11 +816,11 @@ export default function RoomManagement() {
                     required
                   >
                     <option value="">Select a room</option>
-                    {rooms.map((room) => (
+                    {rooms && Array.isArray(rooms) ? rooms.map((room) => (
                       <option key={room.id} value={room.id}>
                         {room.name}
                       </option>
-                    ))}
+                    )) : null}
                   </select>
                 </div>
 
@@ -828,11 +835,11 @@ export default function RoomManagement() {
                     disabled={!moveToRoom}
                   >
                     <option value="">No specific cabinet</option>
-                    {moveToRoom && rooms.find(r => r.id === moveToRoom)?.cabinets.map((cabinet) => (
+                    {moveToRoom && rooms && Array.isArray(rooms) ? rooms.find(r => r.id === moveToRoom)?.cabinets?.map((cabinet) => (
                       <option key={cabinet.id} value={cabinet.id}>
                         {cabinet.name}
                       </option>
-                    ))}
+                    )) : null}
                   </select>
                 </div>
               </div>
@@ -871,7 +878,7 @@ export default function RoomManagement() {
                 History: {selectedItemForHistory.name}
               </h3>
               
-              {itemHistory.length > 0 ? (
+              {itemHistory && Array.isArray(itemHistory) && itemHistory.length > 0 ? (
                 <div className="space-y-4">
                   {itemHistory.map((historyItem: any) => (
                     <div key={historyItem.id} className="border-l-4 border-blue-500 pl-4 py-2">

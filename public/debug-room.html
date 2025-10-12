@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Room Click</title>
+</head>
+<body>
+    <h1>Debug Room Click Issue</h1>
+    
+    <h2>Step 1: Test Room API</h2>
+    <button onclick="testRoomAPI()">Test Room API</button>
+    <div id="api-result"></div>
+    
+    <h2>Step 2: Test Room Detail</h2>
+    <div id="room-detail-test"></div>
+
+    <script>
+        let rooms = [];
+        
+        async function testRoomAPI() {
+            try {
+                const response = await fetch('/api/debug/room-click');
+                const result = await response.json();
+                
+                document.getElementById('api-result').innerHTML = `
+                    <h3>API Response:</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+                
+                rooms = result.allRooms || [];
+                
+                if (rooms.length > 0) {
+                    let html = '<h3>Test Room Details:</h3>';
+                    rooms.forEach(room => {
+                        html += `
+                            <div style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">
+                                <strong>${room.name}</strong> (ID: ${room.id})
+                                <br>Items: ${room._count.items}
+                                <br>Cabinets: ${room.cabinets.length}
+                                <button onclick="testRoomDetail('${room.id}')">Test Detail</button>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('room-detail-test').innerHTML = html;
+                }
+            } catch (error) {
+                document.getElementById('api-result').innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testRoomDetail(roomId) {
+            try {
+                console.log('Testing room detail for:', roomId);
+                const response = await fetch(`/api/debug/room-click?roomId=${roomId}`);
+                const result = await response.json();
+                
+                console.log('Room detail result:', result);
+                
+                const roomElement = document.querySelector(`button[onclick="testRoomDetail('${roomId}')"]`);
+                if (roomElement) {
+                    roomElement.parentElement.innerHTML += `
+                        <div style="margin-top: 10px; padding: 10px; background: #f0f0f0;">
+                            <strong>Detail Result:</strong>
+                            <pre style="font-size: 12px;">${JSON.stringify(result.roomDetail, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error testing room detail:', error);
+                const roomElement = document.querySelector(`button[onclick="testRoomDetail('${roomId}')"]`);
+                if (roomElement) {
+                    roomElement.parentElement.innerHTML += `
+                        <div style="margin-top: 10px; padding: 10px; background: #ffe6e6;">
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

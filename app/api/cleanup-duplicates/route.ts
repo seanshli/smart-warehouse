@@ -132,18 +132,44 @@ export async function POST(request: NextRequest) {
         for (let i = 1; i < categoryGroup.length; i++) {
           const categoryToDelete = categoryGroup[i]
           
-          // Only delete if it has no items
+          // Only delete if it has no items and no children
           if (categoryToDelete._count.items === 0) {
-            await prisma.category.delete({
-              where: { id: categoryToDelete.id }
-            })
-            deletedCategories.push({
-              id: categoryToDelete.id,
-              name: categoryToDelete.name,
-              level: categoryToDelete.level,
-              type: 'category',
-              reason: 'Deleted (no items)'
-            })
+            try {
+              // Verify the category still exists before deleting
+              const existingCategory = await prisma.category.findUnique({
+                where: { id: categoryToDelete.id }
+              })
+              
+              if (existingCategory) {
+                await prisma.category.delete({
+                  where: { id: categoryToDelete.id }
+                })
+                deletedCategories.push({
+                  id: categoryToDelete.id,
+                  name: categoryToDelete.name,
+                  level: categoryToDelete.level,
+                  type: 'category',
+                  reason: 'Deleted (no items)'
+                })
+              } else {
+                deletedCategories.push({
+                  id: categoryToDelete.id,
+                  name: categoryToDelete.name,
+                  level: categoryToDelete.level,
+                  type: 'category',
+                  reason: 'Already deleted'
+                })
+              }
+            } catch (deleteError) {
+              console.error(`Failed to delete category ${categoryToDelete.name} (${categoryToDelete.id}):`, deleteError)
+              deletedCategories.push({
+                id: categoryToDelete.id,
+                name: categoryToDelete.name,
+                level: categoryToDelete.level,
+                type: 'category',
+                reason: `Delete failed: ${deleteError instanceof Error ? deleteError.message : 'Unknown error'}`
+              })
+            }
           } else {
             deletedCategories.push({
               id: categoryToDelete.id,

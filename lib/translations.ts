@@ -1357,7 +1357,16 @@ export function translateCategoryName(categoryName: string, languageCode: string
 // Get a specific translation key
 export function t(languageCode: string, key: keyof Translations): string {
   const translation = getTranslations(languageCode)
-  return translation[key] || translations['en'][key] || key
+  const value = translation[key]
+  if (typeof value === 'string') {
+    return value
+  }
+  // Fallback to English translation
+  const englishValue = translations['en'][key]
+  if (typeof englishValue === 'string') {
+    return englishValue
+  }
+  return key
 }
 
 // Hook for React components

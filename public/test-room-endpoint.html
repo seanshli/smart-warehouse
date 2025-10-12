@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Room Endpoint</title>
+</head>
+<body>
+    <h1>Test Room Endpoint</h1>
+    <button onclick="testRoomEndpoint()">Test Room API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testRoomEndpoint() {
+            try {
+                // First, get all rooms
+                const roomsResponse = await fetch('/api/rooms');
+                const roomsData = await roomsResponse.json();
+                
+                document.getElementById('result').innerHTML = `
+                    <h2>All Rooms:</h2>
+                    <pre>${JSON.stringify(roomsData, null, 2)}</pre>
+                `;
+                
+                // If we have rooms, test clicking on the first one
+                if (roomsData && roomsData.length > 0) {
+                    const firstRoom = roomsData[0];
+                    document.getElementById('result').innerHTML += `
+                        <h2>Testing Room Detail for: ${firstRoom.name}</h2>
+                        <p>Room ID: ${firstRoom.id}</p>
+                        <button onclick="testRoomDetail('${firstRoom.id}')">Test Room Detail</button>
+                        <div id="detail-result"></div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h2>Error:</h2>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testRoomDetail(roomId) {
+            try {
+                const response = await fetch(`/api/rooms/${roomId}/items`);
+                const result = await response.json();
+                
+                document.getElementById('detail-result').innerHTML = `
+                    <h3>Room Detail Response:</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('detail-result').innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

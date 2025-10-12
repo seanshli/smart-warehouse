@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
     }
 
-    // Find duplicate rooms
+    // === CLEANUP DUPLICATE ROOMS ===
     const rooms = await prisma.room.findMany({
       where: {
         householdId: household.id
@@ -77,13 +77,15 @@ export async function POST(request: NextRequest) {
             deletedRooms.push({
               id: roomToDelete.id,
               name: roomToDelete.name,
-              reason: 'No items'
+              type: 'room',
+              reason: 'Deleted (no items)'
             })
           } else {
             deletedRooms.push({
               id: roomToDelete.id,
               name: roomToDelete.name,
-              reason: 'Has items - not deleted'
+              type: 'room',
+              reason: 'Kept (has items)'
             })
           }
         }
@@ -92,12 +94,85 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // === CLEANUP DUPLICATE CATEGORIES ===
+    const categories = await prisma.category.findMany({
+      where: {
+        householdId: household.id
+      },
+      include: {
+        _count: {
+          select: { items: true }
+        }
+      },
+      orderBy: {
+        createdAt: 'asc' // Keep the oldest one
+      }
+    })
+
+    // Group categories by name, level, and parentId (exact duplicates)
+    const categoryGroups = categories.reduce((acc, category) => {
+      const key = `${category.name}_${category.level}_${category.parentId || 'null'}`
+      if (!acc[key]) {
+        acc[key] = []
+      }
+      acc[key].push(category)
+      return acc
+    }, {} as Record<string, any[]>)
+
+    let cleanedCategories = []
+    let deletedCategories = []
+
+    // For each group with duplicates, keep the oldest and delete the rest
+    for (const [key, categoryGroup] of Object.entries(categoryGroups)) {
+      if (categoryGroup.length > 1) {
+        // Keep the first (oldest) category
+        cleanedCategories.push(categoryGroup[0])
+        
+        // Delete the rest
+        for (let i = 1; i < categoryGroup.length; i++) {
+          const categoryToDelete = categoryGroup[i]
+          
+          // Only delete if it has no items
+          if (categoryToDelete._count.items === 0) {
+            await prisma.category.delete({
+              where: { id: categoryToDelete.id }
+            })
+            deletedCategories.push({
+              id: categoryToDelete.id,
+              name: categoryToDelete.name,
+              level: categoryToDelete.level,
+              type: 'category',
+              reason: 'Deleted (no items)'
+            })
+          } else {
+            deletedCategories.push({
+              id: categoryToDelete.id,
+              name: categoryToDelete.name,
+              level: categoryToDelete.level,
+              type: 'category',
+              reason: 'Kept (has items)'
+            })
+          }
+        }
+      } else {
+        cleanedCategories.push(categoryGroup[0])
+      }
+    }
+
     return NextResponse.json({
       message: 'Duplicate cleanup completed',
-      totalRooms: rooms.length,
-      cleanedRooms: cleanedRooms.length,
-      deletedRooms: deletedRooms,
-      remainingDuplicates: Object.entries(roomGroups).filter(([_, group]) => group.length > 1).length
+      rooms: {
+        total: rooms.length,
+        cleaned: cleanedRooms.length,
+        deleted: deletedRooms,
+        remainingDuplicates: Object.entries(roomGroups).filter(([_, group]) => group.length > 1).length
+      },
+      categories: {
+        total: categories.length,
+        cleaned: cleanedCategories.length,
+        deleted: deletedCategories,
+        remainingDuplicates: Object.entries(categoryGroups).filter(([_, group]) => group.length > 1).length
+      }
     })
   } catch (error) {
     console.error('Error cleaning up duplicates:', error)

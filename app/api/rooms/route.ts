@@ -136,6 +136,25 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Check for duplicate room name in the same household
+    const existingRoom = await prisma.room.findFirst({
+      where: {
+        name: name,
+        householdId: household.id
+      }
+    })
+
+    if (existingRoom) {
+      return NextResponse.json(
+        { 
+          error: 'Room with this name already exists',
+          duplicateName: name,
+          suggestion: `Consider using a different name or check if you meant to edit the existing "${name}" room.`
+        },
+        { status: 409 }
+      )
+    }
+
     const room = await prisma.room.create({
       data: {
         name,

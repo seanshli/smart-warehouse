@@ -46,6 +46,31 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Category not found or access denied' }, { status: 404 })
     }
 
+    // Check for duplicate category name if name is being changed
+    if (name && name !== category.name) {
+      const existingCategory = await prisma.category.findFirst({
+        where: {
+          name: name,
+          householdId: household.id,
+          level: category.level,
+          parentId: category.parentId,
+          id: { not: categoryId } // Exclude current category
+        }
+      })
+
+      if (existingCategory) {
+        const levelText = category.level === 1 ? 'main category' : category.level === 2 ? 'subcategory' : 'sub-subcategory'
+        return NextResponse.json(
+          { 
+            error: `${levelText} with this name already exists`,
+            duplicateName: name,
+            suggestion: `Consider using a different name or check if you meant to edit the existing "${name}" ${levelText}.`
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Update the category
     const updatedCategory = await prisma.category.update({
       where: {

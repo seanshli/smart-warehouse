@@ -127,6 +127,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check for duplicate category name in the same household and level
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        name: name,
+        householdId: household.id,
+        level: level,
+        parentId: parentId || null // Also check if it's under the same parent
+      }
+    })
+
+    if (existingCategory) {
+      const levelText = level === 1 ? 'main category' : level === 2 ? 'subcategory' : 'sub-subcategory'
+      return NextResponse.json(
+        { 
+          error: `${levelText} with this name already exists`,
+          duplicateName: name,
+          suggestion: `Consider using a different name or check if you meant to edit the existing "${name}" ${levelText}.`
+        },
+        { status: 409 }
+      )
+    }
+
     const category = await prisma.category.create({
       data: {
         name,

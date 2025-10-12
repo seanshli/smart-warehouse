@@ -46,6 +46,28 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Room not found or access denied' }, { status: 404 })
     }
 
+    // Check for duplicate room name if name is being changed
+    if (name && name !== room.name) {
+      const existingRoom = await prisma.room.findFirst({
+        where: {
+          name: name,
+          householdId: household.id,
+          id: { not: roomId } // Exclude current room
+        }
+      })
+
+      if (existingRoom) {
+        return NextResponse.json(
+          { 
+            error: 'Room with this name already exists',
+            duplicateName: name,
+            suggestion: `Consider using a different name or check if you meant to edit the existing "${name}" room.`
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Update the room
     const updatedRoom = await prisma.room.update({
       where: {

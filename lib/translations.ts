@@ -256,6 +256,11 @@ export interface Translations {
   clothing: string
   books: string
   miscellaneous: string
+  
+  // Category Name Translations (for existing categories)
+  categoryNameTranslations: {
+    [key: string]: string
+  }
 }
 
 // English translations (default)
@@ -515,6 +520,15 @@ const en: Translations = {
   clothing: 'Clothing',
   books: 'Books',
   miscellaneous: 'Miscellaneous',
+  
+  // Category Name Translations (for existing categories)
+  categoryNameTranslations: {
+    'Electronics': 'Electronics',
+    'Tools': 'Tools',
+    'Clothing': 'Clothing',
+    'Books': 'Books',
+    'Miscellaneous': 'Miscellaneous'
+  },
 }
 
 // Traditional Chinese translations (zh-TW)
@@ -774,6 +788,15 @@ const zhTW: Translations = {
   clothing: '服裝',
   books: '書籍',
   miscellaneous: '其他',
+  
+  // Category Name Translations (for existing categories)
+  categoryNameTranslations: {
+    'Electronics': '電子產品',
+    'Tools': '工具',
+    'Clothing': '服裝',
+    'Books': '書籍',
+    'Miscellaneous': '其他'
+  },
 }
 
 // Simplified Chinese translations (zh)
@@ -1033,6 +1056,15 @@ const zh: Translations = {
   clothing: '服装',
   books: '书籍',
   miscellaneous: '其他',
+  
+  // Category Name Translations (for existing categories)
+  categoryNameTranslations: {
+    'Electronics': '电子产品',
+    'Tools': '工具',
+    'Clothing': '服装',
+    'Books': '书籍',
+    'Miscellaneous': '其他'
+  },
 }
 
 // Japanese translations (ja)
@@ -1292,6 +1324,15 @@ const ja: Translations = {
   clothing: '衣類',
   books: '本',
   miscellaneous: 'その他',
+  
+  // Category Name Translations (for existing categories)
+  categoryNameTranslations: {
+    'Electronics': '電子機器',
+    'Tools': '工具',
+    'Clothing': '衣類',
+    'Books': '本',
+    'Miscellaneous': 'その他'
+  },
 }
 
 // Translation registry
@@ -1305,6 +1346,12 @@ const translations: Record<string, Translations> = {
 // Get translations for a specific language
 export function getTranslations(languageCode: string): Translations {
   return translations[languageCode] || translations['en']
+}
+
+// Helper function to translate category names
+export function translateCategoryName(categoryName: string, languageCode: string): string {
+  const t = getTranslations(languageCode)
+  return t.categoryNameTranslations[categoryName] || categoryName
 }
 
 // Get a specific translation key

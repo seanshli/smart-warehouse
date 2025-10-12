@@ -208,7 +208,12 @@ export default function RoomManagement() {
         setShowAddRoom(false)
         fetchRooms()
       } else {
-        toast.error('Failed to add room')
+        const errorData = await response.json()
+        if (response.status === 409) {
+          toast.error(`${errorData.error}. ${errorData.suggestion}`)
+        } else {
+          toast.error(errorData.error || 'Failed to add room')
+        }
       }
     } catch (error) {
       toast.error('An error occurred')

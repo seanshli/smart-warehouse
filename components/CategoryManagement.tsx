@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, CubeIcon, ChevronRightIcon, TrashIcon, PencilIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+import { translateCategoryName } from '@/lib/translations'
 
 interface Category {
   id: string
@@ -18,7 +19,7 @@ interface Category {
 }
 
 export default function CategoryManagement() {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [categories, setCategories] = useState<Category[]>([])
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -119,7 +120,12 @@ export default function CategoryManagement() {
         setShowAddCategory(false)
         await fetchCategories() // Wait for categories to refresh
       } else {
-        toast.error('Failed to add category')
+        const errorData = await response.json()
+        if (response.status === 409) {
+          toast.error(`${errorData.error}. ${errorData.suggestion}`)
+        } else {
+          toast.error(errorData.error || 'Failed to add category')
+        }
       }
     } catch (error) {
       toast.error('An error occurred')
@@ -350,7 +356,7 @@ export default function CategoryManagement() {
               onClick={() => handleCategoryClick(category)}
             >
               <h4 className="text-sm font-medium text-gray-900 hover:text-primary-600 transition-colors">
-                {category.name}
+                {translateCategoryName(category.name, currentLanguage)}
                 <span className="ml-2 text-xs text-gray-500">
                   (Level {category.level})
                 </span>
@@ -550,7 +556,7 @@ export default function CategoryManagement() {
                           <option value="">Choose a grandparent category</option>
                           {getGrandParentCategories().map((category) => (
                             <option key={category.id} value={category.id}>
-                              {category.name}
+                              {translateCategoryName(category.name, currentLanguage)}
                             </option>
                           ))}
                         </select>
@@ -584,7 +590,7 @@ export default function CategoryManagement() {
                         </option>
                         {getParentCategories(newCategoryLevel, newCategoryGrandParent).map((category) => (
                           <option key={category.id} value={category.id}>
-                            {category.name}
+                            {translateCategoryName(category.name, currentLanguage)}
                           </option>
                         ))}
                         {newCategoryLevel === 3 && getParentCategories(newCategoryLevel, newCategoryGrandParent).length === 0 && newCategoryGrandParent && (
@@ -821,7 +827,7 @@ export default function CategoryManagement() {
                           <option value="">Select a grandparent category</option>
                           {getGrandParentCategories().map((category) => (
                             <option key={category.id} value={category.id}>
-                              {category.name}
+                              {translateCategoryName(category.name, currentLanguage)}
                             </option>
                           ))}
                         </select>

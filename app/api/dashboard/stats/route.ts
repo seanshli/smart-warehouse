@@ -53,15 +53,13 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Low stock items count (simplified for now)
-      prisma.item.count({
-        where: {
-          householdId: household.id,
-          quantity: {
-            lte: 5 // Simple threshold for low stock
-          }
-        }
-      }),
+      // Low stock items count (quantity <= minQuantity)
+      prisma.$queryRaw`
+        SELECT COUNT(*) as count 
+        FROM items 
+        WHERE "household_id" = ${household.id} 
+        AND quantity <= "min_quantity"
+      ` as any,
       
       // Household members count
       prisma.householdMember.count({
@@ -87,10 +85,13 @@ export async function GET(request: NextRequest) {
       })
     ])
 
+    // Extract count from raw query result
+    const lowStockCount = Array.isArray(lowStockItems) ? (lowStockItems[0] as any)?.count || 0 : 0
+
     return NextResponse.json({
       totalItems,
       totalRooms,
-      lowStockItems,
+      lowStockItems: lowStockCount,
       householdMembers,
       recentActivities: recentItems
     })

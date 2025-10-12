@@ -118,11 +118,12 @@ export async function POST(request: NextRequest) {
       const userLanguage = user.language || 'en'
       const t = getTranslations(userLanguage)
       
-      // Create some default rooms
+      // Create some default rooms in preferred order
       const defaultRooms = [
-        { name: t.kitchen, description: t.kitchen },
         { name: t.livingRoom, description: t.livingRoom },
         { name: t.masterBedroom, description: t.masterBedroom },
+        { name: t.kidRoom, description: t.kidRoom },
+        { name: t.kitchen, description: t.kitchen },
         { name: t.garage, description: t.garage }
       ]
 

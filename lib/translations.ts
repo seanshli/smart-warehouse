@@ -244,6 +244,7 @@ export interface Translations {
   // Default Rooms
   kitchen: string
   livingRoom: string
+  kidRoom: string
   garage: string
   
   // Default Categories
@@ -499,6 +500,7 @@ const en: Translations = {
   kitchen: 'Kitchen',
   livingRoom: 'Living Room',
   masterBedroom: 'Master Bedroom',
+  kidRoom: 'Kids Room',
   garage: 'Garage',
   
   // Default Categories
@@ -754,6 +756,7 @@ const zhTW: Translations = {
   kitchen: '廚房',
   livingRoom: '客廳',
   masterBedroom: '主臥室',
+  kidRoom: '兒童房',
   garage: '車庫',
   
   // Default Categories
@@ -1009,6 +1012,7 @@ const zh: Translations = {
   kitchen: '厨房',
   livingRoom: '客厅',
   masterBedroom: '主卧室',
+  kidRoom: '儿童房',
   garage: '车库',
   
   // Default Categories
@@ -1264,6 +1268,7 @@ const ja: Translations = {
   kitchen: 'キッチン',
   livingRoom: 'リビングルーム',
   masterBedroom: 'マスターベッドルーム',
+  kidRoom: '子供部屋',
   garage: 'ガレージ',
   
   // Default Categories

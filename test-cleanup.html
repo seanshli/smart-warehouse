@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Duplicate Cleanup</title>
+</head>
+<body>
+    <h1>Test Duplicate Room Cleanup</h1>
+    <button onclick="cleanupDuplicates()">Clean Up Duplicate Rooms</button>
+    <div id="result"></div>
+
+    <script>
+        async function cleanupDuplicates() {
+            try {
+                const response = await fetch('/api/cleanup-duplicates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('result').innerHTML = `
+                    <h2>Cleanup Results:</h2>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h2>Error:</h2>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

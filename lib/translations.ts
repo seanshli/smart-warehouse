@@ -247,6 +247,9 @@ export interface Translations {
   kidRoom: string
   garage: string
   
+  // Default Cabinets
+  mainCabinet: string
+  
   // Default Categories
   electronics: string
   tools: string
@@ -502,6 +505,9 @@ const en: Translations = {
   masterBedroom: 'Master Bedroom',
   kidRoom: 'Kids Room',
   garage: 'Garage',
+  
+  // Default Cabinets
+  mainCabinet: 'Main Cabinet',
   
   // Default Categories
   electronics: 'Electronics',
@@ -759,6 +765,9 @@ const zhTW: Translations = {
   kidRoom: '兒童房',
   garage: '車庫',
   
+  // Default Cabinets
+  mainCabinet: '主櫥櫃',
+  
   // Default Categories
   electronics: '電子產品',
   tools: '工具',
@@ -1015,6 +1024,9 @@ const zh: Translations = {
   kidRoom: '儿童房',
   garage: '车库',
   
+  // Default Cabinets
+  mainCabinet: '主橱柜',
+  
   // Default Categories
   electronics: '电子产品',
   tools: '工具',
@@ -1270,6 +1282,9 @@ const ja: Translations = {
   masterBedroom: 'マスターベッドルーム',
   kidRoom: '子供部屋',
   garage: 'ガレージ',
+  
+  // Default Cabinets
+  mainCabinet: 'メインキャビネット',
   
   // Default Categories
   electronics: '電子機器',

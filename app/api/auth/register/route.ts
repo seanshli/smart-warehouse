@@ -128,9 +128,19 @@ export async function POST(request: NextRequest) {
       ]
 
       for (const roomData of defaultRooms) {
-        await prisma.room.create({
+        const room = await prisma.room.create({
           data: {
             ...roomData,
+            householdId: household.id
+          }
+        })
+        
+        // Create a default "Main Cabinet" for each room
+        await prisma.cabinet.create({
+          data: {
+            name: t.mainCabinet,
+            description: t.mainCabinet,
+            roomId: room.id,
             householdId: household.id
           }
         })

@@ -329,9 +329,10 @@ function DashboardContent() {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/test-dashboard')
+      const response = await fetch('/api/dashboard/stats')
       if (response.ok) {
         const data = await response.json()
+        console.log('Dashboard API Response:', data)
         // Map the test-dashboard response to the expected stats format
         setStats({
           totalItems: data.totalItems || 0,

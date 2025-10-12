@@ -96,7 +96,12 @@ export async function GET(request: NextRequest) {
       totalRooms,
       lowStockItems,
       householdMembers,
-      recentActivities: recentItems
+      recentActivities: recentItems,
+      debug: {
+        lowStockCalculation: lowStockItems,
+        householdId: household.id,
+        userId: userId
+      }
     })
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)

@@ -57,7 +57,26 @@ export async function GET() {
     })
 
     // Return all categories - let the frontend build the hierarchy
-    return NextResponse.json(categories)
+    // Add debug information for duplicate checking
+    const nameCounts = categories.reduce((acc, category) => {
+      const key = `${category.name}_${category.level}_${category.parentId || 'null'}`
+      acc[key] = (acc[key] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    const duplicates = Object.entries(nameCounts)
+      .filter(([key, count]) => count > 1)
+      .map(([key, count]) => ({ key, count }))
+
+    return NextResponse.json({
+      categories,
+      debug: {
+        totalCategories: categories.length,
+        nameCounts,
+        duplicates,
+        householdId: household.id
+      }
+    })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(

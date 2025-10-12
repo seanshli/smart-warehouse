@@ -71,7 +71,25 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(rooms)
+    // Add debug information for duplicate checking
+    const nameCounts = rooms.reduce((acc, room) => {
+      acc[room.name] = (acc[room.name] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    const duplicates = Object.entries(nameCounts)
+      .filter(([name, count]) => count > 1)
+      .map(([name, count]) => ({ name, count }))
+
+    return NextResponse.json({
+      rooms,
+      debug: {
+        totalRooms: rooms.length,
+        nameCounts,
+        duplicates,
+        householdId: householdIdToUse
+      }
+    })
   } catch (error) {
     console.error('Error fetching rooms:', error)
     return NextResponse.json(

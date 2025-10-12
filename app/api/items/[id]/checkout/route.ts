@@ -74,10 +74,8 @@ export async function POST(
       data: {
         itemId: itemId,
         action: 'checkout',
-        details: `Item checked out. Quantity decreased from ${item.quantity} to ${newQuantity}`,
-        performerId: userId,
-        oldQuantity: item.quantity,
-        newQuantity: newQuantity
+        description: `Item checked out. Quantity decreased from ${item.quantity} to ${newQuantity}`,
+        performedBy: userId
       }
     })
 

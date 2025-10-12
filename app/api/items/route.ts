@@ -338,10 +338,8 @@ export async function POST(request: NextRequest) {
         data: {
           itemId: item.id,
           action: 'quantity_updated',
-          details: `Quantity increased from ${existingItem.quantity} to ${item.quantity}`,
-          performerId: userId,
-          oldQuantity: existingItem.quantity,
-          newQuantity: item.quantity
+          description: `Quantity increased from ${existingItem.quantity} to ${item.quantity}`,
+          performedBy: userId
         }
       })
     } else {
@@ -376,9 +374,8 @@ export async function POST(request: NextRequest) {
         data: {
           itemId: item.id,
           action: 'created',
-          details: `Item "${name}" created with quantity ${quantity}`,
-          performerId: userId,
-          newQuantity: quantity,
+          description: `Item "${name}" created with quantity ${quantity}`,
+          performedBy: userId,
           newRoomId: roomRecord?.id,
           newCabinetId: cabinetRecord?.id
         }

@@ -70,7 +70,8 @@ export default function RoomManagement() {
       const response = await fetch(`/api/rooms${params}`)
       if (response.ok) {
         const data = await response.json()
-        setRooms(data)
+        console.log('Rooms API response:', data)
+        setRooms(data.rooms || data) // Handle both old and new API response formats
       }
     } catch (error) {
       console.error('Error fetching rooms:', error)

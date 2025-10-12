@@ -69,7 +69,17 @@ export async function POST(
       }
     })
 
-    // Activity logging removed for now
+    // Log checkout activity
+    await prisma.itemHistory.create({
+      data: {
+        itemId: itemId,
+        action: 'checkout',
+        details: `Item checked out. Quantity decreased from ${item.quantity} to ${newQuantity}`,
+        performerId: userId,
+        oldQuantity: item.quantity,
+        newQuantity: newQuantity
+      }
+    })
 
     return NextResponse.json(updatedItem)
   } catch (error) {

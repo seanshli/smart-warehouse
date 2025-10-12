@@ -333,7 +333,17 @@ export async function POST(request: NextRequest) {
         }
       })
       
-      // Activity logging removed for now
+      // Log item quantity update
+      await prisma.itemHistory.create({
+        data: {
+          itemId: item.id,
+          action: 'quantity_updated',
+          details: `Quantity increased from ${existingItem.quantity} to ${item.quantity}`,
+          performerId: userId,
+          oldQuantity: existingItem.quantity,
+          newQuantity: item.quantity
+        }
+      })
     } else {
       // Create new item
       console.log('Creating new item')
@@ -361,7 +371,18 @@ export async function POST(request: NextRequest) {
         }
       })
       
-      // Log item creation history
+      // Log item creation
+      await prisma.itemHistory.create({
+        data: {
+          itemId: item.id,
+          action: 'created',
+          details: `Item "${name}" created with quantity ${quantity}`,
+          performerId: userId,
+          newQuantity: quantity,
+          newRoomId: roomRecord?.id,
+          newCabinetId: cabinetRecord?.id
+        }
+      })
     }
 
     // Check if quantity is below threshold and create notification

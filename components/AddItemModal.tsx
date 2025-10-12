@@ -121,7 +121,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        setCategories(data)
+        setCategories(data.categories || data)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -136,7 +136,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
         const response = await fetch('/api/rooms')
         if (response.ok) {
           const roomsData = await response.json()
-          setRooms(roomsData)
+          setRooms(roomsData.rooms || roomsData) // Handle both old and new API response formats
         }
       } catch (error) {
         console.error('Failed to fetch rooms:', error)

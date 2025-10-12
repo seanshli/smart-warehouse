@@ -102,7 +102,7 @@ export default function SearchModal({ onClose }: SearchModalProps) {
 
       if (roomsResponse.ok) {
         const roomsData = await roomsResponse.json()
-        setRooms(roomsData)
+        setRooms(roomsData.rooms || roomsData) // Handle both old and new API response formats
       }
     } catch (error) {
       console.error('Error fetching categories and rooms:', error)

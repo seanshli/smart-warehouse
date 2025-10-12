@@ -81,7 +81,8 @@ export default function CategoryManagement() {
           return roots
         }
         
-        const hierarchicalData = buildHierarchy(data)
+        console.log('Categories API response:', data)
+        const hierarchicalData = buildHierarchy(data.categories || data)
         console.log('Hierarchical categories:', hierarchicalData)
         setCategories(hierarchicalData)
       }

@@ -81,8 +81,11 @@ export default function RoomManagement() {
     try {
       if (!room || !room.id) {
         console.error('Invalid room object:', room)
+        toast.error('Invalid room selected')
         return
       }
+      
+      console.log('Fetching room details for:', room.id)
       
       // Fetch detailed room data including items
       const response = await fetch(`/api/rooms/${room.id}/items`)
@@ -102,18 +105,22 @@ export default function RoomManagement() {
           setViewMode('detail')
         } else {
           console.error('Invalid room detail response:', roomDetail)
+          toast.error('Failed to load room details')
           setSelectedRoomForDetail(room)
           setViewMode('detail')
         }
       } else {
-        console.error('Failed to fetch room details, response status:', response.status)
-        // Fallback to basic room data
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Error fetching room details:', response.status, errorData)
+        toast.error(`Failed to load room: ${errorData.error || 'Unknown error'}`)
+        // Fallback to basic room info
         setSelectedRoomForDetail(room)
         setViewMode('detail')
       }
     } catch (error) {
-      console.error('Error fetching room details:', error)
-      // Fallback to basic room data
+      console.error('Exception in handleRoomClick:', error)
+      toast.error('An error occurred while loading the room')
+      // Fallback to basic room info
       setSelectedRoomForDetail(room)
       setViewMode('detail')
     }

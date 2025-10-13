@@ -663,17 +663,25 @@ export default function RoomManagement() {
                   <button 
                     onClick={async () => {
                       try {
+                        console.log('Starting category cleanup...')
                         const response = await fetch('/api/cleanup-category-duplicates', { method: 'POST' })
+                        console.log('Category cleanup response status:', response.status)
                         const result = await response.json()
+                        console.log('Category cleanup result:', result)
+                        
                         if (response.ok) {
-                          console.log('Category cleanup result:', result)
-                          alert(`Category cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          if (result.cleanupResults && result.cleanupResults.length > 0) {
+                            alert(`Category cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          } else {
+                            alert('No duplicate categories found to clean up.')
+                          }
                           // Refresh the page to show updated categories
                           window.location.reload()
                         } else {
                           alert(`Category cleanup error: ${result.error}`)
                         }
                       } catch (error) {
+                        console.error('Category cleanup error:', error)
                         alert(`Category cleanup error: ${error}`)
                       }
                     }}

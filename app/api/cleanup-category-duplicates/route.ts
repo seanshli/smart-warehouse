@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🧹 Starting category cleanup for household: ${household.name}`)
     console.log(`📋 Found ${household.categories.length} categories`)
+    console.log('Categories:', household.categories.map(c => ({ name: c.name, id: c.id, createdAt: c.createdAt })))
 
     // Group categories by their cross-language equivalents
     const categoryGroups = new Map<string, any[]>()
@@ -76,6 +77,12 @@ export async function POST(request: NextRequest) {
     }
     
     const cleanupResults: any[] = []
+    
+    console.log('Category groups:', Array.from(categoryGroups.entries()).map(([key, cats]) => ({
+      key,
+      count: cats.length,
+      categories: cats.map(c => c.name)
+    })))
     
     // Find and clean up duplicates
     for (const [normalizedKey, categories] of Array.from(categoryGroups.entries())) {

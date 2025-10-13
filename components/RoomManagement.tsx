@@ -553,8 +553,64 @@ export default function RoomManagement() {
 
           {/* Debug Information Panel */}
           {showDebugInfo && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-4">🔍 Debug Information</h3>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-yellow-800">🔍 Debug Information</h3>
+                
+                {/* Cleanup Buttons - Top */}
+                <div className="space-x-2">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/cleanup-duplicates', { method: 'POST' })
+                        const result = await response.json()
+                        if (response.ok) {
+                          console.log('Room cleanup result:', result)
+                          alert(`Room cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          fetchRooms() // Refresh the room list
+                        } else {
+                          alert(`Room cleanup error: ${result.error}`)
+                        }
+                      } catch (error) {
+                        alert(`Room cleanup error: ${error}`)
+                      }
+                    }}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                  >
+                    🧹 Clean Rooms
+                  </button>
+                  
+                  <button 
+                    onClick={async () => {
+                      try {
+                        console.log('Starting category cleanup...')
+                        const response = await fetch('/api/cleanup-category-duplicates', { method: 'POST' })
+                        console.log('Category cleanup response status:', response.status)
+                        const result = await response.json()
+                        console.log('Category cleanup result:', result)
+                        
+                        if (response.ok) {
+                          if (result.cleanupResults && result.cleanupResults.length > 0) {
+                            alert(`Category cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          } else {
+                            alert('No duplicate categories found to clean up.')
+                          }
+                          // Refresh the page to show updated categories
+                          window.location.reload()
+                        } else {
+                          alert(`Category cleanup error: ${result.error}`)
+                        }
+                      } catch (error) {
+                        console.error('Category cleanup error:', error)
+                        alert(`Category cleanup error: ${error}`)
+                      }
+                    }}
+                    className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-xs"
+                  >
+                    🗂️ Clean Categories
+                  </button>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Translation Test */}

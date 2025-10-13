@@ -66,7 +66,9 @@ export default function ItemsList({
 
   // Expose refresh function to parent component
   useEffect(() => {
+    console.log('ItemsList: onRef callback available:', !!onRef)
     if (onRef) {
+      console.log('ItemsList: Calling onRef with fetchGroupedItems function')
       onRef(fetchGroupedItems)
     }
   }, [onRef])

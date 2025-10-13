@@ -183,7 +183,10 @@ export default function Dashboard() {
                    <ItemsList 
                      showCategory={true}
                      showLocation={true}
-                     onRef={setRefreshItemsList}
+                     onRef={(refreshFn) => {
+                       console.log('Dashboard: ItemsList onRef called with function:', typeof refreshFn)
+                       setRefreshItemsList(refreshFn)
+                     }}
                      onItemEdit={(item) => {
                        console.log('Dashboard: Edit handler called for item:', item.name)
                        setSelectedItem(item)
@@ -232,10 +235,19 @@ export default function Dashboard() {
           }}
           onSuccess={() => {
             // Refresh the items list
-            if (refreshItemsList) {
-              refreshItemsList()
-            } else {
-              // Fallback to page reload if refresh function not available
+            console.log('EditItemModal onSuccess called, refreshItemsList:', typeof refreshItemsList)
+            try {
+              if (refreshItemsList && typeof refreshItemsList === 'function') {
+                console.log('Calling refreshItemsList function')
+                refreshItemsList()
+              } else {
+                console.log('refreshItemsList not available, falling back to page reload')
+                // Fallback to page reload if refresh function not available
+                window.location.reload()
+              }
+            } catch (error) {
+              console.error('Error in onSuccess callback:', error)
+              // Fallback to page reload on error
               window.location.reload()
             }
           }}

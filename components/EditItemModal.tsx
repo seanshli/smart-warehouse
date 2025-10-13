@@ -61,6 +61,15 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
   const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
   const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
+  
+  // Debug logging for selected category
+  useEffect(() => {
+    console.log('EditItemModal - Selected category changed:', selectedCategory)
+    if (selectedCategory) {
+      const selectedCat = categories.find(cat => cat.id === selectedCategory)
+      console.log('EditItemModal - Selected category details:', selectedCat)
+    }
+  }, [selectedCategory, categories])
   const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
   const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
   const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null)
@@ -69,6 +78,28 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   useEffect(() => {
     fetchCategoriesAndRooms()
   }, [activeHouseholdId])
+
+  // Also fetch data when modal opens
+  useEffect(() => {
+    if (item.id) {
+      fetchCategoriesAndRooms()
+    }
+  }, [item.id])
+
+  // Update selected values when item data changes
+  useEffect(() => {
+    setSelectedCategory(item.category?.id || '')
+    setSelectedRoom(item.room?.id || '')
+    setSelectedCabinet(item.cabinet?.id || '')
+    setFormData({
+      name: item.name,
+      description: item.description || '',
+      quantity: item.quantity,
+      minQuantity: item.minQuantity,
+      imageUrl: item.imageUrl || ''
+    })
+    setImagePreview(item.imageUrl || null)
+  }, [item])
 
   useEffect(() => {
     if (selectedRoom) {
@@ -96,31 +127,42 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
         const categoriesData = await categoriesResponse.json()
         console.log('Categories API response:', categoriesData)
         
-        // Handle different response formats
+        // Handle different response formats - the API now returns { categories: [...], debug: {...} }
         const categoriesArray = Array.isArray(categoriesData) ? categoriesData : 
                                categoriesData.categories || 
                                (categoriesData.data ? categoriesData.data : [])
         
-        const flattenCategories = (cats: any[], parent?: any): any[] => {
+        const flattenCategories = (cats: any[], parent?: any, level = 0): any[] => {
           let result: any[] = []
           if (Array.isArray(cats)) {
             cats.forEach(cat => {
               const categoryData = { 
                 id: cat.id, 
                 name: cat.name, 
-                level: cat.level,
+                level: cat.level || level,
                 parent: parent ? { name: parent.name } : undefined
               }
               result.push(categoryData)
               if (cat.children && cat.children.length > 0) {
-                result = result.concat(flattenCategories(cat.children, cat))
+                result = result.concat(flattenCategories(cat.children, cat, level + 1))
               }
             })
           }
           return result
         }
+        
+        // First flatten the categories to include all levels
         const flattenedCategories = flattenCategories(categoriesArray)
-        console.log('EditItemModal - Loaded categories:', flattenedCategories.length)
+        
+        // Sort by level first, then by name for better dropdown display
+        flattenedCategories.sort((a, b) => {
+          if (a.level !== b.level) {
+            return a.level - b.level
+          }
+          return a.name.localeCompare(b.name)
+        })
+        
+        console.log('EditItemModal - Loaded categories:', flattenedCategories.length, flattenedCategories)
         setCategories(flattenedCategories)
       }
 
@@ -128,12 +170,12 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
         const roomsData = await roomsResponse.json()
         console.log('Rooms API response:', roomsData)
         
-        // Handle different response formats
+        // Handle different response formats - the API now returns { rooms: [...], debug: {...} }
         const roomsArray = Array.isArray(roomsData) ? roomsData : 
                           roomsData.rooms || 
                           (roomsData.data ? roomsData.data : [])
         
-        console.log('EditItemModal - Loaded rooms:', roomsArray.length)
+        console.log('EditItemModal - Loaded rooms:', roomsArray.length, roomsArray)
         setRooms(roomsArray)
       }
     } catch (error) {
@@ -372,6 +414,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                 <option value="">{t('selectCategory')}</option>
                 {categories.map(category => (
                   <option key={category.id} value={category.id}>
+                    {category.level > 0 ? '  '.repeat(category.level) + '└ ' : ''}
                     {category.parent ? `${category.parent.name} > ${category.name}` : category.name}
                   </option>
                 ))}

@@ -97,13 +97,24 @@ export default function RoomManagement() {
     
     const translatedName = cabinetNameMap[cabinetName] || cabinetName
     
-    // Debug logging
+    // Enhanced debug logging - check for exact match and similar names
+    const similarNames = Object.keys(cabinetNameMap).filter(key => 
+      key.toLowerCase().includes(cabinetName.toLowerCase()) || 
+      cabinetName.toLowerCase().includes(key.toLowerCase())
+    )
+    
     console.log('Cabinet translation debug:', {
       originalName: cabinetName,
+      originalNameLength: cabinetName.length,
+      originalNameChars: cabinetName.split('').map(c => c.charCodeAt(0)),
       currentLanguage,
       translatedName,
       isTranslated: cabinetNameMap[cabinetName] !== undefined,
-      availableKeys: Object.keys(cabinetNameMap)
+      availableKeys: Object.keys(cabinetNameMap),
+      similarNames,
+      cabinetNameMapEntry: cabinetNameMap[cabinetName],
+      exactMatch: cabinetNameMap[cabinetName] || 'NOT_FOUND',
+      tValue: t('mainCabinet')
     })
     
     return translatedName // Return translated name or original if not found
@@ -564,6 +575,19 @@ export default function RoomManagement() {
                   </div>
                 </div>
 
+                {/* Cabinet Translation Test */}
+                <div className="bg-white p-4 rounded border">
+                  <h4 className="font-semibold mb-2">Cabinet Translation Test</h4>
+                  <div className="space-y-1">
+                    <div>"Main Cabinet" → "{translateCabinetName('Main Cabinet')}"</div>
+                    <div>"主櫥櫃" → "{translateCabinetName('主櫥櫃')}"</div>
+                    <div>"側櫥櫃" → "{translateCabinetName('側櫥櫃')}"</div>
+                    <div>"孩子衣櫥" → "{translateCabinetName('孩子衣櫥')}"</div>
+                    <div>"右櫥櫃" → "{translateCabinetName('右櫥櫃')}"</div>
+                    <div>"左櫥櫃" → "{translateCabinetName('左櫥櫃')}"</div>
+                  </div>
+                </div>
+
                 {/* Current Rooms */}
                 <div className="bg-white p-4 rounded border">
                   <h4 className="font-semibold mb-2">Current Rooms ({rooms.length})</h4>
@@ -594,26 +618,48 @@ export default function RoomManagement() {
                 <p>2. Check if "Kids Room" changes to "兒童房"</p>
                 <p>3. Look at browser console for detailed debug logs</p>
                 
-                <div className="mt-4">
+                <div className="mt-4 space-x-2">
                   <button 
                     onClick={async () => {
                       try {
                         const response = await fetch('/api/cleanup-duplicates', { method: 'POST' })
                         const result = await response.json()
                         if (response.ok) {
-                          console.log('Cleanup result:', result)
-                          alert(`Cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          console.log('Room cleanup result:', result)
+                          alert(`Room cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
                           fetchRooms() // Refresh the room list
                         } else {
-                          alert(`Error: ${result.error}`)
+                          alert(`Room cleanup error: ${result.error}`)
                         }
                       } catch (error) {
-                        alert(`Error: ${error}`)
+                        alert(`Room cleanup error: ${error}`)
                       }
                     }}
                     className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
                   >
                     🧹 Clean Up Duplicate Rooms
+                  </button>
+                  
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/cleanup-category-duplicates', { method: 'POST' })
+                        const result = await response.json()
+                        if (response.ok) {
+                          console.log('Category cleanup result:', result)
+                          alert(`Category cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          // Refresh the page to show updated categories
+                          window.location.reload()
+                        } else {
+                          alert(`Category cleanup error: ${result.error}`)
+                        }
+                      } catch (error) {
+                        alert(`Category cleanup error: ${error}`)
+                      }
+                    }}
+                    className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 text-sm"
+                  >
+                    🗂️ Clean Up Duplicate Categories
                   </button>
                 </div>
               </div>

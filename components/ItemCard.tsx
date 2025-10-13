@@ -56,6 +56,9 @@ export default function ItemCard({
   const { t } = useLanguage()
   const [imageError, setImageError] = useState(false)
 
+  // Debug logging for image URL
+  console.log('ItemCard - Image URL:', item.imageUrl ? `${item.imageUrl.substring(0, 50)}...` : 'No image URL')
+
   // Function to translate room and cabinet names
   const translateLocationName = (name: string) => {
     const translations: Record<string, string> = {
@@ -69,6 +72,7 @@ export default function ItemCard({
   }
 
   const handleImageError = () => {
+    console.log('Image failed to load:', item.imageUrl)
     setImageError(true)
   }
 

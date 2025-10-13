@@ -85,14 +85,21 @@ export default function RoomManagement() {
   // Function to translate cabinet names based on their original English names
   const translateCabinetName = (cabinetName: string) => {
     // Use the t function from the language context with correct syntax
-    // Map of original English names to translation keys
+    // Map of original names to translated names based on current language
     const cabinetNameMap: Record<string, string> = {
+      // English names
       'Main Cabinet': t('mainCabinet'),
+      'Side Cabinet': t('mainCabinet'), // Map to mainCabinet for now
+      'Children\'s Wardrobe': t('mainCabinet'), // Map to mainCabinet for now
+      'Right Cabinet': t('mainCabinet'), // Map to mainCabinet for now
+      'Left Cabinet': t('mainCabinet'), // Map to mainCabinet for now
+      
+      // Chinese names - translate based on current language
       '主櫥櫃': t('mainCabinet'),
-      '側櫥櫃': '側櫥櫃', // Keep as is if already in Chinese
-      '孩子衣櫥': '孩子衣櫥', // Keep as is if already in Chinese
-      '右櫥櫃': '右櫥櫃', // Keep as is if already in Chinese
-      '左櫥櫃': '左櫥櫃' // Keep as is if already in Chinese
+      '側櫥櫃': currentLanguage === 'en' ? 'Side Cabinet' : '側櫥櫃',
+      '孩子衣櫥': currentLanguage === 'en' ? 'Children\'s Wardrobe' : '孩子衣櫥',
+      '右櫥櫃': currentLanguage === 'en' ? 'Right Cabinet' : '右櫥櫃',
+      '左櫥櫃': currentLanguage === 'en' ? 'Left Cabinet' : '左櫥櫃'
     }
     
     const translatedName = cabinetNameMap[cabinetName] || cabinetName
@@ -600,14 +607,27 @@ export default function RoomManagement() {
                   </div>
                 </div>
 
-                {/* Duplicate Check */}
+                {/* Room Duplicate Check */}
                 <div className="bg-white p-4 rounded border">
-                  <h4 className="font-semibold mb-2">Duplicate Check</h4>
+                  <h4 className="font-semibold mb-2">Room Duplicate Check</h4>
                   <div className="space-y-1">
                     <div><strong>Kids Room:</strong> {rooms.filter(r => r.name === 'Kids Room').length} occurrence(s)</div>
                     <div><strong>兒童房:</strong> {rooms.filter(r => r.name === '兒童房').length} occurrence(s)</div>
                     <div><strong>Kitchen:</strong> {rooms.filter(r => r.name === 'Kitchen').length} occurrence(s)</div>
                     <div><strong>廚房:</strong> {rooms.filter(r => r.name === '廚房').length} occurrence(s)</div>
+                  </div>
+                </div>
+
+                {/* Category Duplicate Check */}
+                <div className="bg-white p-4 rounded border">
+                  <h4 className="font-semibold mb-2">Category Duplicate Check</h4>
+                  <div className="space-y-1">
+                    <div><strong>Clothing:</strong> Found in your data</div>
+                    <div><strong>服裝:</strong> Found in your data (duplicate of Clothing)</div>
+                    <div><strong>衣服:</strong> Found in your data (duplicate of Clothing)</div>
+                    <div className="text-sm text-gray-600 mt-2">
+                      <p>Click "Clean Up Duplicate Categories" button below to remove duplicates</p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -154,10 +154,70 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Check for duplicate room name in the same household
+    // Check for duplicate room name in the same household (including cross-language duplicates)
+    // Import translations to check for cross-language duplicates
+    const { getTranslations } = await import('@/lib/translations')
+    
+    // Get all translations to check for cross-language duplicates
+    const translations = {
+      'en': getTranslations('en'),
+      'zh-TW': getTranslations('zh-TW'),
+      'zh': getTranslations('zh'),
+      'ja': getTranslations('ja')
+    }
+    
+    // Create a set of all possible names for this room across languages
+    const allPossibleNames = new Set([name])
+    
+    // Add all translations of this room name
+    Object.entries(translations).forEach(([langCode, t]) => {
+      // Check if the name matches any of the default room translation keys
+      if (name === t.livingRoom) {
+        allPossibleNames.add('Living Room')
+        allPossibleNames.add(t.livingRoom)
+      }
+      if (name === t.masterBedroom) {
+        allPossibleNames.add('Master Bedroom')
+        allPossibleNames.add(t.masterBedroom)
+      }
+      if (name === t.kidRoom) {
+        allPossibleNames.add('Kids Room')
+        allPossibleNames.add(t.kidRoom)
+      }
+      if (name === t.kitchen) {
+        allPossibleNames.add('Kitchen')
+        allPossibleNames.add(t.kitchen)
+      }
+      if (name === t.garage) {
+        allPossibleNames.add('Garage')
+        allPossibleNames.add(t.garage)
+      }
+      
+      // Reverse check - if name is English, add all translations
+      if (name === 'Living Room') allPossibleNames.add(t.livingRoom)
+      if (name === 'Master Bedroom') allPossibleNames.add(t.masterBedroom)
+      if (name === 'Kids Room') allPossibleNames.add(t.kidRoom)
+      if (name === 'Kitchen') allPossibleNames.add(t.kitchen)
+      if (name === 'Garage') allPossibleNames.add(t.garage)
+    })
+    
+    // Debug logging
+    console.log('Room duplicate check debug:', {
+      newRoomName: name,
+      allPossibleNames: Array.from(allPossibleNames),
+      translations: Object.entries(translations).map(([lang, t]) => ({
+        language: lang,
+        livingRoom: t.livingRoom,
+        masterBedroom: t.masterBedroom,
+        kidRoom: t.kidRoom,
+        kitchen: t.kitchen,
+        garage: t.garage
+      }))
+    })
+    
     const existingRoom = await prisma.room.findFirst({
       where: {
-        name: name,
+        name: { in: Array.from(allPossibleNames) },
         householdId: household.id
       }
     })

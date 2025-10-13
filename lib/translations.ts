@@ -795,7 +795,17 @@ const zhTW: Translations = {
     'Tools': '工具',
     'Clothing': '服裝',
     'Books': '書籍',
-    'Miscellaneous': '其他'
+    'Miscellaneous': '其他',
+    'Kitchen': '廚房',
+    'Food': '食物',
+    'Beverages': '飲料',
+    'Medicine': '藥品',
+    'Toiletries': '盥洗用品',
+    'Cleaning': '清潔用品',
+    'Office': '辦公用品',
+    'Sports': '運動用品',
+    'Toys': '玩具',
+    'Garden': '園藝用品'
   },
 }
 
@@ -1063,7 +1073,17 @@ const zh: Translations = {
     'Tools': '工具',
     'Clothing': '服装',
     'Books': '书籍',
-    'Miscellaneous': '其他'
+    'Miscellaneous': '其他',
+    'Kitchen': '厨房',
+    'Food': '食物',
+    'Beverages': '饮料',
+    'Medicine': '药品',
+    'Toiletries': '盥洗用品',
+    'Cleaning': '清洁用品',
+    'Office': '办公用品',
+    'Sports': '运动用品',
+    'Toys': '玩具',
+    'Garden': '园艺用品'
   },
 }
 
@@ -1331,7 +1351,17 @@ const ja: Translations = {
     'Tools': '工具',
     'Clothing': '衣類',
     'Books': '本',
-    'Miscellaneous': 'その他'
+    'Miscellaneous': 'その他',
+    'Kitchen': 'キッチン',
+    'Food': '食品',
+    'Beverages': '飲料',
+    'Medicine': '薬品',
+    'Toiletries': '洗面用品',
+    'Cleaning': '清掃用品',
+    'Office': '事務用品',
+    'Sports': 'スポーツ用品',
+    'Toys': 'おもちゃ',
+    'Garden': '園芸用品'
   },
 }
 

@@ -7,7 +7,6 @@ import CheckoutModal from './CheckoutModal'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 import ItemCard from './ItemCard'
-import { getTranslations } from '@/lib/translations'
 
 interface Room {
   id: string
@@ -34,41 +33,80 @@ export default function RoomManagement() {
 
   // Function to translate room names based on their original English names
   const translateRoomName = (roomName: string) => {
-    const t = getTranslations(currentLanguage)
-    
+    // Use the t function from the language context with correct syntax
     // Map of original English names to translation keys
     const roomNameMap: Record<string, string> = {
-      'Living Room': t.livingRoom,
-      'Master Bedroom': t.masterBedroom,
-      'Kid Room': t.kidRoom,
-      'Kitchen': t.kitchen,
-      'Garage': t.garage,
+      'Living Room': t('livingRoom'),
+      'Master Bedroom': t('masterBedroom'),
+      'Kids Room': t('kidRoom'), // Note: English is "Kids Room", not "Kid Room"
+      'Kid Room': t('kidRoom'), // Keep both for compatibility
+      'Kitchen': t('kitchen'),
+      'Garage': t('garage'),
       // Add any other default room names that might exist
-      '客廳': t.livingRoom, // If somehow Chinese names are stored
-      '主臥室': t.masterBedroom,
-      '小孩房': t.kidRoom,
-      '廚房': t.kitchen,
-      '車庫': t.garage
+      '客廳': t('livingRoom'), // If somehow Chinese names are stored
+      '主臥室': t('masterBedroom'),
+      '小孩房': t('kidRoom'),
+      '兒童房': t('kidRoom'), // Also map the correct Chinese translation
+      '廚房': t('kitchen'),
+      '車庫': t('garage')
     }
     
-    return roomNameMap[roomName] || roomName // Return translated name or original if not found
+    const translatedName = roomNameMap[roomName] || roomName
+    
+    // Enhanced debug logging - check for exact match and similar names
+    const similarNames = Object.keys(roomNameMap).filter(key => 
+      key.toLowerCase().includes(roomName.toLowerCase()) || 
+      roomName.toLowerCase().includes(key.toLowerCase())
+    )
+    
+    console.log('Room translation debug:', {
+      originalName: roomName,
+      originalNameLength: roomName.length,
+      originalNameChars: roomName.split('').map(c => c.charCodeAt(0)),
+      currentLanguage,
+      translatedName,
+      isTranslated: roomNameMap[roomName] !== undefined,
+      availableKeys: Object.keys(roomNameMap),
+      similarNames,
+      roomNameMapEntry: roomNameMap[roomName],
+      exactMatch: roomNameMap[roomName] || 'NOT_FOUND',
+      tValues: {
+        livingRoom: t('livingRoom'),
+        masterBedroom: t('masterBedroom'),
+        kidRoom: t('kidRoom'),
+        kitchen: t('kitchen'),
+        garage: t('garage')
+      }
+    })
+    
+    return translatedName // Return translated name or original if not found
   }
 
   // Function to translate cabinet names based on their original English names
   const translateCabinetName = (cabinetName: string) => {
-    const t = getTranslations(currentLanguage)
-    
+    // Use the t function from the language context with correct syntax
     // Map of original English names to translation keys
     const cabinetNameMap: Record<string, string> = {
-      'Main Cabinet': t.mainCabinet,
-      '主櫥櫃': t.mainCabinet,
+      'Main Cabinet': t('mainCabinet'),
+      '主櫥櫃': t('mainCabinet'),
       '側櫥櫃': '側櫥櫃', // Keep as is if already in Chinese
       '孩子衣櫥': '孩子衣櫥', // Keep as is if already in Chinese
       '右櫥櫃': '右櫥櫃', // Keep as is if already in Chinese
       '左櫥櫃': '左櫥櫃' // Keep as is if already in Chinese
     }
     
-    return cabinetNameMap[cabinetName] || cabinetName // Return translated name or original if not found
+    const translatedName = cabinetNameMap[cabinetName] || cabinetName
+    
+    // Debug logging
+    console.log('Cabinet translation debug:', {
+      originalName: cabinetName,
+      currentLanguage,
+      translatedName,
+      isTranslated: cabinetNameMap[cabinetName] !== undefined,
+      availableKeys: Object.keys(cabinetNameMap)
+    })
+    
+    return translatedName // Return translated name or original if not found
   }
   const [rooms, setRooms] = useState<Room[]>([])
   const [showAddRoom, setShowAddRoom] = useState(false)
@@ -89,6 +127,7 @@ export default function RoomManagement() {
   const [itemHistory, setItemHistory] = useState<any[]>([])
   const [showEditRoom, setShowEditRoom] = useState(false)
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
   const [editRoomName, setEditRoomName] = useState('')
   const [editRoomDescription, setEditRoomDescription] = useState('')
   const [showEditCabinet, setShowEditCabinet] = useState(false)
@@ -104,6 +143,28 @@ export default function RoomManagement() {
     fetchRooms()
   }, [activeHouseholdId])
 
+  // Force re-render when language changes to update translations
+  useEffect(() => {
+    console.log('=== LANGUAGE CHANGE DEBUG ===')
+    console.log('Language changed to:', currentLanguage)
+    console.log('Translation test - Kids Room should be:', t('kidRoom'))
+    console.log('Translation test - Kitchen should be:', t('kitchen'))
+    console.log('Translation test - Garage should be:', t('garage'))
+    console.log('Translation test - Living Room should be:', t('livingRoom'))
+    console.log('Translation test - Master Bedroom should be:', t('masterBedroom'))
+    
+    // Test the translation function directly
+    console.log('=== TRANSLATION FUNCTION TEST ===')
+    const testNames = ['Kids Room', 'Kitchen', 'Garage', 'Living Room', 'Master Bedroom']
+    testNames.forEach(name => {
+      const translated = translateRoomName(name)
+      console.log(`"${name}" -> "${translated}"`)
+    })
+    console.log('=== END TRANSLATION FUNCTION TEST ===')
+    
+    // The component will automatically re-render when currentLanguage changes
+  }, [currentLanguage])
+
   const fetchRooms = async () => {
     try {
       const params = activeHouseholdId ? `?householdId=${encodeURIComponent(activeHouseholdId)}` : ''
@@ -111,6 +172,14 @@ export default function RoomManagement() {
       if (response.ok) {
         const data = await response.json()
         console.log('Rooms API response:', data)
+        
+        // Debug: Log each room name and its translation
+        if (data.rooms) {
+          data.rooms.forEach((room: any) => {
+            console.log(`Room "${room.name}" -> translated to: "${translateRoomName(room.name)}"`)
+          })
+        }
+        
         setRooms(data.rooms || data) // Handle both old and new API response formats
       }
     } catch (error) {
@@ -442,6 +511,12 @@ export default function RoomManagement() {
             <h2 className="text-2xl font-bold text-gray-900">{t('roomManagement')}</h2>
             <div className="flex space-x-2">
               <button
+                onClick={() => setShowDebugInfo(!showDebugInfo)}
+                className="inline-flex items-center px-4 py-2 border border-yellow-300 text-sm font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
+              >
+                🔍 Debug
+              </button>
+              <button
                 onClick={() => setShowAddRoom(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
               >
@@ -457,6 +532,70 @@ export default function RoomManagement() {
               </button>
             </div>
           </div>
+
+          {/* Debug Information Panel */}
+          {showDebugInfo && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-yellow-800 mb-4">🔍 Debug Information</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Translation Test */}
+                <div className="bg-white p-4 rounded border">
+                  <h4 className="font-semibold mb-2">Translation Test</h4>
+                  <p><strong>Current Language:</strong> {currentLanguage}</p>
+                  <div className="mt-2 space-y-1">
+                    <div><strong>Kids Room:</strong> {t('kidRoom')}</div>
+                    <div><strong>Kitchen:</strong> {t('kitchen')}</div>
+                    <div><strong>Garage:</strong> {t('garage')}</div>
+                    <div><strong>Living Room:</strong> {t('livingRoom')}</div>
+                    <div><strong>Master Bedroom:</strong> {t('masterBedroom')}</div>
+                  </div>
+                </div>
+
+                {/* Room Translation Test */}
+                <div className="bg-white p-4 rounded border">
+                  <h4 className="font-semibold mb-2">Room Translation Test</h4>
+                  <div className="space-y-1">
+                    <div>"Kids Room" → "{translateRoomName('Kids Room')}"</div>
+                    <div>"Kitchen" → "{translateRoomName('Kitchen')}"</div>
+                    <div>"Garage" → "{translateRoomName('Garage')}"</div>
+                    <div>"Living Room" → "{translateRoomName('Living Room')}"</div>
+                    <div>"Master Bedroom" → "{translateRoomName('Master Bedroom')}"</div>
+                  </div>
+                </div>
+
+                {/* Current Rooms */}
+                <div className="bg-white p-4 rounded border">
+                  <h4 className="font-semibold mb-2">Current Rooms ({rooms.length})</h4>
+                  <div className="space-y-1">
+                    {rooms.map(room => (
+                      <div key={room.id}>
+                        <strong>Original:</strong> "{room.name}" → <strong>Translated:</strong> "{translateRoomName(room.name)}"
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duplicate Check */}
+                <div className="bg-white p-4 rounded border">
+                  <h4 className="font-semibold mb-2">Duplicate Check</h4>
+                  <div className="space-y-1">
+                    <div><strong>Kids Room:</strong> {rooms.filter(r => r.name === 'Kids Room').length} occurrence(s)</div>
+                    <div><strong>兒童房:</strong> {rooms.filter(r => r.name === '兒童房').length} occurrence(s)</div>
+                    <div><strong>Kitchen:</strong> {rooms.filter(r => r.name === 'Kitchen').length} occurrence(s)</div>
+                    <div><strong>廚房:</strong> {rooms.filter(r => r.name === '廚房').length} occurrence(s)</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-sm text-yellow-700">
+                <p><strong>Instructions:</strong></p>
+                <p>1. Switch language from English to Chinese (ZH-TW)</p>
+                <p>2. Check if "Kids Room" changes to "兒童房"</p>
+                <p>3. Look at browser console for detailed debug logs</p>
+              </div>
+            </div>
+          )}
 
           {/* Rooms Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-result {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Translation Test</h1>
+        <p>This page tests the translation functionality directly.</p>
+        
+        <button onclick="testTranslations()">Test Translation API</button>
+        <button onclick="testRoomNames()">Test Room Name Translations</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function testTranslations() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test-result">Testing translation API...</div>';
+
+            try {
+                const response = await fetch('/api/test-duplicate-detection');
+                const data = await response.json();
+
+                if (response.ok) {
+                    let html = '<div class="test-result success">Translation API Test Results:</div>';
+                    html += '<div class="test-result">';
+                    html += JSON.stringify(data, null, 2);
+                    html += '</div>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<div class="test-result error">API Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="test-result error">Network Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testRoomNames() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test-result">Testing room name translations...</div>';
+
+            try {
+                // Test the translation logic directly
+                const testNames = ['Kids Room', 'Kitchen', 'Garage', 'Living Room', 'Master Bedroom'];
+                const languages = ['en', 'zh-TW', 'zh', 'ja'];
+                
+                let html = '<div class="test-result success">Room Name Translation Test:</div>';
+                
+                // Get translations from API
+                const response = await fetch('/api/test-duplicate-detection');
+                const data = await response.json();
+                
+                if (response.ok && data.translations) {
+                    html += '<div class="test-result">';
+                    html += '<h3>Translation Mappings:</h3>';
+                    
+                    testNames.forEach(testName => {
+                        html += `<strong>${testName}:</strong><br>`;
+                        data.translations.forEach(lang => {
+                            let translatedName = testName;
+                            
+                            // Map English names to translations
+                            if (testName === 'Kids Room') translatedName = lang.kidRoom;
+                            else if (testName === 'Kitchen') translatedName = lang.kitchen;
+                            else if (testName === 'Garage') translatedName = lang.garage;
+                            else if (testName === 'Living Room') translatedName = lang.livingRoom;
+                            else if (testName === 'Master Bedroom') translatedName = lang.masterBedroom;
+                            
+                            html += `  ${lang.language}: ${translatedName}<br>`;
+                        });
+                        html += '<br>';
+                    });
+                    
+                    html += '</div>';
+                } else {
+                    html += `<div class="test-result error">Failed to get translations: ${data.error}</div>`;
+                }
+                
+                resultsDiv.innerHTML = html;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="test-result error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', function() {
+            console.log('Translation test page loaded');
+            testTranslations();
+        });
+    </script>
+</body>
+</html>

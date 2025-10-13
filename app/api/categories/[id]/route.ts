@@ -48,9 +48,58 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Check for duplicate category name if name is being changed
     if (name && name !== category.name) {
+      // Import translations to check for cross-language duplicates
+      const { getTranslations } = await import('@/lib/translations')
+      
+      // Get all translations to check for cross-language duplicates
+      const translations = {
+        'en': getTranslations('en'),
+        'zh-TW': getTranslations('zh-TW'),
+        'zh': getTranslations('zh'),
+        'ja': getTranslations('ja')
+      }
+      
+      // Create a set of all possible names for this category across languages
+      const allPossibleNames = new Set([name])
+      
+      // Add all translations of this name
+      Object.values(translations).forEach(t => {
+        // Check if this name matches any translation key
+        if (t.categoryNameTranslations && t.categoryNameTranslations[name]) {
+          allPossibleNames.add(t.categoryNameTranslations[name])
+        }
+        // Also check reverse mapping - if this name is a translation of an English name
+        Object.entries(t.categoryNameTranslations || {}).forEach(([englishName, translatedName]) => {
+          if (translatedName === name) {
+            allPossibleNames.add(englishName)
+          }
+        })
+      })
+      
+      // Also check against the default category translations from the translation keys
+      // This ensures we catch cases where categories are created using the translation keys directly
+      Object.entries(translations).forEach(([langCode, t]) => {
+        // Check if the name matches any of the default category translation keys
+        if (name === t.electronics) allPossibleNames.add('Electronics')
+        if (name === t.tools) allPossibleNames.add('Tools')
+        if (name === t.clothing) allPossibleNames.add('Clothing')
+        if (name === t.books) allPossibleNames.add('Books')
+        if (name === t.miscellaneous) allPossibleNames.add('Miscellaneous')
+        if (name === t.kitchen) allPossibleNames.add('Kitchen')
+        
+        // Reverse check - if name is English, add all translations
+        if (name === 'Electronics') allPossibleNames.add(t.electronics)
+        if (name === 'Tools') allPossibleNames.add(t.tools)
+        if (name === 'Clothing') allPossibleNames.add(t.clothing)
+        if (name === 'Books') allPossibleNames.add(t.books)
+        if (name === 'Miscellaneous') allPossibleNames.add(t.miscellaneous)
+        if (name === 'Kitchen') allPossibleNames.add(t.kitchen)
+      })
+      
+      // Check for existing categories with any of these names
       const existingCategory = await prisma.category.findFirst({
         where: {
-          name: name,
+          name: { in: Array.from(allPossibleNames) },
           householdId: household.id,
           level: category.level,
           parentId: category.parentId,
@@ -62,9 +111,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         const levelText = category.level === 1 ? 'main category' : category.level === 2 ? 'subcategory' : 'sub-subcategory'
         return NextResponse.json(
           { 
-            error: `${levelText} with this name already exists`,
+            error: `${levelText} with this name already exists (including translations)`,
             duplicateName: name,
-            suggestion: `Consider using a different name or check if you meant to edit the existing "${name}" ${levelText}.`
+            existingName: existingCategory.name,
+            suggestion: `Consider using a different name or check if you meant to edit the existing "${existingCategory.name}" ${levelText}.`
           },
           { status: 409 }
         )

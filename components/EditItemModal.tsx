@@ -52,6 +52,8 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
   const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
   const [selectedCabinet, setSelectedCabinet] = useState('')
+  const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   useEffect(() => {
     fetchCategoriesAndRooms()
@@ -74,29 +76,45 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
 
       if (categoriesResponse.ok) {
         const categoriesData = await categoriesResponse.json()
+        console.log('Categories API response:', categoriesData)
+        
+        // Handle different response formats
+        const categoriesArray = Array.isArray(categoriesData) ? categoriesData : 
+                               categoriesData.categories || 
+                               (categoriesData.data ? categoriesData.data : [])
+        
         const flattenCategories = (cats: any[], parent?: any): any[] => {
           let result: any[] = []
-          cats.forEach(cat => {
-            const categoryData = { 
-              id: cat.id, 
-              name: cat.name, 
-              level: cat.level,
-              parent: parent ? { name: parent.name } : undefined
-            }
-            result.push(categoryData)
-            if (cat.children && cat.children.length > 0) {
-              result = result.concat(flattenCategories(cat.children, cat))
-            }
-          })
+          if (Array.isArray(cats)) {
+            cats.forEach(cat => {
+              const categoryData = { 
+                id: cat.id, 
+                name: cat.name, 
+                level: cat.level,
+                parent: parent ? { name: parent.name } : undefined
+              }
+              result.push(categoryData)
+              if (cat.children && cat.children.length > 0) {
+                result = result.concat(flattenCategories(cat.children, cat))
+              }
+            })
+          }
           return result
         }
-        const flattenedCategories = flattenCategories(categoriesData)
+        const flattenedCategories = flattenCategories(categoriesArray)
         setCategories(flattenedCategories)
       }
 
       if (roomsResponse.ok) {
         const roomsData = await roomsResponse.json()
-        setRooms(roomsData)
+        console.log('Rooms API response:', roomsData)
+        
+        // Handle different response formats
+        const roomsArray = Array.isArray(roomsData) ? roomsData : 
+                          roomsData.rooms || 
+                          (roomsData.data ? roomsData.data : [])
+        
+        setRooms(roomsArray)
       }
     } catch (error) {
       console.error('Error fetching categories and rooms:', error)
@@ -114,6 +132,29 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
     } catch (error) {
       console.error('Error fetching cabinets:', error)
       toast.error('Failed to load cabinets.')
+    }
+  }
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setIsUploadingImage(true)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string
+        setImagePreview(base64)
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: base64
+        }))
+        setIsUploadingImage(false)
+        toast.success('Image uploaded successfully!')
+      }
+      reader.onerror = () => {
+        toast.error('Failed to read image file')
+        setIsUploadingImage(false)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -245,6 +286,56 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                   onChange={(e) => setFormData(prev => ({ ...prev, minQuantity: parseInt(e.target.value) || 0 }))}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 />
+              </div>
+            </div>
+
+            {/* Image Upload Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('itemPhoto')}
+              </label>
+              <div className="flex items-center space-x-4">
+                {/* Current Image Preview */}
+                {imagePreview && (
+                  <div className="flex-shrink-0">
+                    <img
+                      src={imagePreview}
+                      alt="Item preview"
+                      className="h-20 w-20 object-cover rounded-lg border border-gray-300"
+                    />
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploadingImage}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer disabled:opacity-50"
+                  >
+                    <PhotoIcon className="h-4 w-4 mr-2" />
+                    {isUploadingImage ? t('uploading') : (imagePreview ? t('changePhoto') : t('addPhoto'))}
+                  </label>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null)
+                        setFormData(prev => ({ ...prev, imageUrl: '' }))
+                      }}
+                      className="ml-2 text-sm text-red-600 hover:text-red-800"
+                    >
+                      {t('removePhoto')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

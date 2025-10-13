@@ -70,6 +70,13 @@ export interface Translations {
   searchByCategory: string
   searchByLocation: string
   
+  // Image upload
+  itemPhoto: string
+  addPhoto: string
+  changePhoto: string
+  removePhoto: string
+  uploading: string
+  
   // Room Management
   roomManagement: string
   categoryManagement: string
@@ -338,6 +345,13 @@ const en: Translations = {
   searchByDescription: 'Search by description',
   searchByCategory: 'Search by category',
   searchByLocation: 'Search by location',
+  
+  // Image upload
+  itemPhoto: 'Item Photo',
+  addPhoto: 'Add Photo',
+  changePhoto: 'Change Photo',
+  removePhoto: 'Remove',
+  uploading: 'Uploading...',
   
   // Room Management
   roomManagement: 'Room Management',
@@ -611,6 +625,13 @@ const zhTW: Translations = {
   searchByDescription: '依描述搜尋',
   searchByCategory: '依分類搜尋',
   searchByLocation: '依位置搜尋',
+  
+  // Image upload
+  itemPhoto: '物品照片',
+  addPhoto: '新增照片',
+  changePhoto: '更換照片',
+  removePhoto: '移除',
+  uploading: '上傳中...',
   
   // Room Management
   roomManagement: '房間管理',
@@ -895,6 +916,13 @@ const zh: Translations = {
   searchByCategory: '按分类搜索',
   searchByLocation: '按位置搜索',
   
+  // Image upload
+  itemPhoto: '物品照片',
+  addPhoto: '添加照片',
+  changePhoto: '更换照片',
+  removePhoto: '移除',
+  uploading: '上传中...',
+  
   // Room Management
   roomManagement: '房间管理',
   categoryManagement: '分类管理',
@@ -1177,6 +1205,13 @@ const ja: Translations = {
   searchByDescription: '説明で検索',
   searchByCategory: 'カテゴリで検索',
   searchByLocation: '場所で検索',
+  
+  // Image upload
+  itemPhoto: 'アイテム写真',
+  addPhoto: '写真を追加',
+  changePhoto: '写真を変更',
+  removePhoto: '削除',
+  uploading: 'アップロード中...',
   
   // Room Management
   roomManagement: '部屋管理',

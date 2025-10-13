@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     console.log(`📋 Found ${household.rooms.length} rooms`)
 
     // Group rooms by their cross-language equivalents
-    const roomGroups = new Map()
+    const roomGroups = new Map<string, any[]>()
     
     for (const room of household.rooms) {
       // Create a normalized key for cross-language matching
@@ -73,19 +73,19 @@ export async function POST(request: NextRequest) {
       if (!roomGroups.has(normalizedKey)) {
         roomGroups.set(normalizedKey, [])
       }
-      roomGroups.get(normalizedKey).push(room)
+      roomGroups.get(normalizedKey)!.push(room)
     }
     
-    const cleanupResults = []
+    const cleanupResults: any[] = []
     
     // Find and clean up duplicates
-    for (const [normalizedKey, rooms] of roomGroups) {
+    for (const [normalizedKey, rooms] of Array.from(roomGroups.entries())) {
       if (rooms.length > 1) {
         console.log(`🔄 Found ${rooms.length} duplicate rooms for "${normalizedKey}":`)
-        rooms.forEach(room => console.log(`  - "${room.name}" (ID: ${room.id}, Created: ${room.createdAt})`))
+        rooms.forEach((room: any) => console.log(`  - "${room.name}" (ID: ${room.id}, Created: ${room.createdAt})`))
         
         // Sort by creation date - keep the oldest one
-        rooms.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        rooms.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         const keepRoom = rooms[0]
         const deleteRooms = rooms.slice(1)
         
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Group rooms by their cross-language equivalents
-    const roomGroups = new Map()
+    const roomGroups = new Map<string, any[]>()
     
     for (const room of household.rooms) {
       // Create a normalized key for cross-language matching
@@ -236,17 +236,17 @@ export async function GET(request: NextRequest) {
       if (!roomGroups.has(normalizedKey)) {
         roomGroups.set(normalizedKey, [])
       }
-      roomGroups.get(normalizedKey).push(room)
+      roomGroups.get(normalizedKey)!.push(room)
     }
     
     // Find duplicates
-    const duplicates = []
-    for (const [normalizedKey, rooms] of roomGroups) {
+    const duplicates: any[] = []
+    for (const [normalizedKey, rooms] of Array.from(roomGroups.entries())) {
       if (rooms.length > 1) {
-        rooms.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        rooms.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         duplicates.push({
           normalizedKey,
-          rooms: rooms.map(room => ({
+          rooms: rooms.map((room: any) => ({
             id: room.id,
             name: room.name,
             createdAt: room.createdAt,

@@ -1381,7 +1381,44 @@ export function getTranslations(languageCode: string): Translations {
 // Helper function to translate category names
 export function translateCategoryName(categoryName: string, languageCode: string): string {
   const t = getTranslations(languageCode)
-  return t.categoryNameTranslations[categoryName] || categoryName
+  
+  // First try direct mapping (English to Chinese)
+  if (t.categoryNameTranslations[categoryName]) {
+    return t.categoryNameTranslations[categoryName]
+  }
+  
+  // Then try reverse mapping (Chinese to English)
+  // If current language is English, translate Chinese names to English
+  if (languageCode === 'en') {
+    const chineseToEnglish: Record<string, string> = {
+      '電子產品': 'Electronics',
+      '工具': 'Tools', 
+      '服裝': 'Clothing',
+      '衣服': 'Clothing',
+      '書籍': 'Books',
+      '其他': 'Miscellaneous',
+      '廚房': 'Kitchen',
+      '食物': 'Food',
+      '飲料': 'Beverages',
+      '藥品': 'Medicine',
+      '盥洗用品': 'Toiletries',
+      '清潔用品': 'Cleaning',
+      '辦公用品': 'Office',
+      '運動用品': 'Sports',
+      '玩具': 'Toys',
+      '園藝用品': 'Garden',
+      // Sub-level categories
+      '上衣': 'Upper Garment',
+      'T-shirt': 'T-shirt'
+    }
+    
+    if (chineseToEnglish[categoryName]) {
+      return chineseToEnglish[categoryName]
+    }
+  }
+  
+  // If no translation found, return original name
+  return categoryName
 }
 
 // Get a specific translation key

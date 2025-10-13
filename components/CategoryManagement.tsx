@@ -472,6 +472,45 @@ export default function CategoryManagement() {
         </div>
       )}
 
+      {/* Category Cleanup Section */}
+      <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-orange-800">Duplicate Category Cleanup</h3>
+            <p className="text-sm text-orange-700">Remove duplicate categories (Clothing, 服裝, 衣服, etc.)</p>
+          </div>
+          <button 
+            onClick={async () => {
+              try {
+                console.log('Starting category cleanup...')
+                const response = await fetch('/api/cleanup-category-duplicates', { method: 'POST' })
+                console.log('Category cleanup response status:', response.status)
+                const result = await response.json()
+                console.log('Category cleanup result:', result)
+                
+                if (response.ok) {
+                  if (result.cleanupResults && result.cleanupResults.length > 0) {
+                    alert(`Category cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                  } else {
+                    alert('No duplicate categories found to clean up.')
+                  }
+                  // Refresh the categories to show updated list
+                  fetchCategories()
+                } else {
+                  alert(`Category cleanup error: ${result.error}`)
+                }
+              } catch (error) {
+                console.error('Category cleanup error:', error)
+                alert(`Category cleanup error: ${error}`)
+              }
+            }}
+            className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 font-bold text-lg"
+          >
+            🗂️ CLEAN DUPLICATE CATEGORIES
+          </button>
+        </div>
+      </div>
+
       {/* Category Tree */}
       <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">

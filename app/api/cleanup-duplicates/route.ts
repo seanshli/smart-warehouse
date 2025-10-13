@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createPrismaClient } from '@/lib/prisma-factory'
 
+// Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
@@ -25,185 +26,250 @@ export async function POST(request: NextRequest) {
             userId: userId
           }
         }
+      },
+      include: {
+        rooms: {
+          include: {
+            cabinets: {
+              include: {
+                items: true
+              }
+            },
+            items: true
+          }
+        }
       }
     })
 
     if (!household) {
-      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+      return NextResponse.json({ error: 'No household found' }, { status: 404 })
     }
 
-    // === CLEANUP DUPLICATE ROOMS ===
-    const rooms = await prisma.room.findMany({
-      where: {
-        householdId: household.id
-      },
-      include: {
-        _count: {
-          select: { items: true }
-        }
-      },
-      orderBy: {
-        createdAt: 'asc' // Keep the oldest one
+    console.log(`🧹 Starting cleanup for household: ${household.name}`)
+    console.log(`📋 Found ${household.rooms.length} rooms`)
+
+    // Group rooms by their cross-language equivalents
+    const roomGroups = new Map()
+    
+    for (const room of household.rooms) {
+      // Create a normalized key for cross-language matching
+      let normalizedKey = room.name.toLowerCase()
+      
+      // Map Chinese names to English equivalents for grouping
+      const chineseToEnglish: Record<string, string> = {
+        '車庫': 'garage',
+        '廚房': 'kitchen', 
+        '客廳': 'living room',
+        '主臥室': 'master bedroom',
+        '兒童房': 'kids room',
+        '小孩房': 'kids room'
       }
-    })
-
-    // Group rooms by name
-    const roomGroups = rooms.reduce((acc, room) => {
-      if (!acc[room.name]) {
-        acc[room.name] = []
+      
+      // If it's a Chinese name, normalize to English equivalent
+      if (chineseToEnglish[room.name]) {
+        normalizedKey = chineseToEnglish[room.name]
       }
-      acc[room.name].push(room)
-      return acc
-    }, {} as Record<string, any[]>)
-
-    let cleanedRooms = []
-    let deletedRooms = []
-
-    // For each group with duplicates, keep the oldest and delete the rest
-    for (const [roomName, roomGroup] of Object.entries(roomGroups)) {
-      if (roomGroup.length > 1) {
-        // Keep the first (oldest) room
-        cleanedRooms.push(roomGroup[0])
+      
+      if (!roomGroups.has(normalizedKey)) {
+        roomGroups.set(normalizedKey, [])
+      }
+      roomGroups.get(normalizedKey).push(room)
+    }
+    
+    const cleanupResults = []
+    
+    // Find and clean up duplicates
+    for (const [normalizedKey, rooms] of roomGroups) {
+      if (rooms.length > 1) {
+        console.log(`🔄 Found ${rooms.length} duplicate rooms for "${normalizedKey}":`)
+        rooms.forEach(room => console.log(`  - "${room.name}" (ID: ${room.id}, Created: ${room.createdAt})`))
         
-        // Delete the rest
-        for (let i = 1; i < roomGroup.length; i++) {
-          const roomToDelete = roomGroup[i]
+        // Sort by creation date - keep the oldest one
+        rooms.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        const keepRoom = rooms[0]
+        const deleteRooms = rooms.slice(1)
+        
+        console.log(`  ✅ Keeping: "${keepRoom.name}" (oldest)`)
+        
+        const deletedRooms = []
+        
+        for (const roomToDelete of deleteRooms) {
+          console.log(`  🗑️  Deleting: "${roomToDelete.name}"`)
           
-          // Only delete if it has no items
-          if (roomToDelete._count.items === 0) {
-            await prisma.room.delete({
-              where: { id: roomToDelete.id }
+          // Count items and cabinets to be deleted
+          const itemCount = roomToDelete.items.length
+          const cabinetCount = roomToDelete.cabinets.length
+          let totalCabinetItems = 0
+          
+          for (const cabinet of roomToDelete.cabinets) {
+            totalCabinetItems += cabinet.items.length
+          }
+          
+          // Delete associated items first
+          await prisma.item.deleteMany({
+            where: { roomId: roomToDelete.id }
+          })
+          
+          // Delete associated cabinets and their items
+          for (const cabinet of roomToDelete.cabinets) {
+            // Delete cabinet items
+            await prisma.item.deleteMany({
+              where: { cabinetId: cabinet.id }
             })
-            deletedRooms.push({
-              id: roomToDelete.id,
-              name: roomToDelete.name,
-              type: 'room',
-              reason: 'Deleted (no items)'
-            })
-          } else {
-            deletedRooms.push({
-              id: roomToDelete.id,
-              name: roomToDelete.name,
-              type: 'room',
-              reason: 'Kept (has items)'
+            
+            // Delete cabinet
+            await prisma.cabinet.delete({
+              where: { id: cabinet.id }
             })
           }
+          
+          // Delete the room
+          await prisma.room.delete({
+            where: { id: roomToDelete.id }
+          })
+          
+          deletedRooms.push({
+            name: roomToDelete.name,
+            id: roomToDelete.id,
+            itemsDeleted: itemCount,
+            cabinetsDeleted: cabinetCount,
+            cabinetItemsDeleted: totalCabinetItems
+          })
         }
-      } else {
-        cleanedRooms.push(roomGroup[0])
+        
+        cleanupResults.push({
+          normalizedKey,
+          kept: keepRoom.name,
+          deleted: deletedRooms
+        })
       }
     }
-
-    // === CLEANUP DUPLICATE CATEGORIES ===
-    const categories = await prisma.category.findMany({
-      where: {
-        householdId: household.id
-      },
+    
+    // Get final room counts
+    const finalHousehold = await prisma.household.findFirst({
+      where: { id: household.id },
       include: {
-        _count: {
-          select: { items: true }
-        }
-      },
-      orderBy: {
-        createdAt: 'asc' // Keep the oldest one
+        rooms: true
       }
     })
-
-    // Group categories by name, level, and parentId (exact duplicates)
-    const categoryGroups = categories.reduce((acc, category) => {
-      const key = `${category.name}_${category.level}_${category.parentId || 'null'}`
-      if (!acc[key]) {
-        acc[key] = []
-      }
-      acc[key].push(category)
+    
+    const finalRoomCounts = finalHousehold?.rooms.reduce((acc, room) => {
+      acc[room.name] = (acc[room.name] || 0) + 1
       return acc
-    }, {} as Record<string, any[]>)
-
-    let cleanedCategories = []
-    let deletedCategories = []
-
-    // For each group with duplicates, keep the oldest and delete the rest
-    for (const [key, categoryGroup] of Object.entries(categoryGroups)) {
-      if (categoryGroup.length > 1) {
-        // Keep the first (oldest) category
-        cleanedCategories.push(categoryGroup[0])
-        
-        // Delete the rest
-        for (let i = 1; i < categoryGroup.length; i++) {
-          const categoryToDelete = categoryGroup[i]
-          
-          // Only delete if it has no items and no children
-          if (categoryToDelete._count.items === 0) {
-            try {
-              // Verify the category still exists before deleting
-              const existingCategory = await prisma.category.findUnique({
-                where: { id: categoryToDelete.id }
-              })
-              
-              if (existingCategory) {
-                await prisma.category.delete({
-                  where: { id: categoryToDelete.id }
-                })
-                deletedCategories.push({
-                  id: categoryToDelete.id,
-                  name: categoryToDelete.name,
-                  level: categoryToDelete.level,
-                  type: 'category',
-                  reason: 'Deleted (no items)'
-                })
-              } else {
-                deletedCategories.push({
-                  id: categoryToDelete.id,
-                  name: categoryToDelete.name,
-                  level: categoryToDelete.level,
-                  type: 'category',
-                  reason: 'Already deleted'
-                })
-              }
-            } catch (deleteError) {
-              console.error(`Failed to delete category ${categoryToDelete.name} (${categoryToDelete.id}):`, deleteError)
-              deletedCategories.push({
-                id: categoryToDelete.id,
-                name: categoryToDelete.name,
-                level: categoryToDelete.level,
-                type: 'category',
-                reason: `Delete failed: ${deleteError instanceof Error ? deleteError.message : 'Unknown error'}`
-              })
-            }
-          } else {
-            deletedCategories.push({
-              id: categoryToDelete.id,
-              name: categoryToDelete.name,
-              level: categoryToDelete.level,
-              type: 'category',
-              reason: 'Kept (has items)'
-            })
-          }
-        }
-      } else {
-        cleanedCategories.push(categoryGroup[0])
-      }
-    }
-
+    }, {} as Record<string, number>) || {}
+    
+    console.log('✅ Cleanup completed successfully!')
+    
     return NextResponse.json({
-      message: 'Duplicate cleanup completed',
-      rooms: {
-        total: rooms.length,
-        cleaned: cleanedRooms.length,
-        deleted: deletedRooms,
-        remainingDuplicates: Object.entries(roomGroups).filter(([_, group]) => group.length > 1).length
-      },
-      categories: {
-        total: categories.length,
-        cleaned: cleanedCategories.length,
-        deleted: deletedCategories,
-        remainingDuplicates: Object.entries(categoryGroups).filter(([_, group]) => group.length > 1).length
-      }
+      success: true,
+      message: 'Duplicate rooms cleaned up successfully',
+      cleanupResults,
+      beforeCount: household.rooms.length,
+      afterCount: finalHousehold?.rooms.length || 0,
+      finalRoomCounts,
+      householdId: household.id
     })
+    
   } catch (error) {
-    console.error('Error cleaning up duplicates:', error)
+    console.error('❌ Error during cleanup:', error)
     return NextResponse.json(
       { error: 'Failed to cleanup duplicates', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+export async function GET(request: NextRequest) {
+  let prisma = createPrismaClient()
+  
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user || !(session.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    const userId = (session.user as any).id
+
+    // Get user's household
+    const household = await prisma.household.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: userId
+          }
+        }
+      },
+      include: {
+        rooms: true
+      }
+    })
+
+    if (!household) {
+      return NextResponse.json({ error: 'No household found' }, { status: 404 })
+    }
+
+    // Group rooms by their cross-language equivalents
+    const roomGroups = new Map()
+    
+    for (const room of household.rooms) {
+      // Create a normalized key for cross-language matching
+      let normalizedKey = room.name.toLowerCase()
+      
+      // Map Chinese names to English equivalents for grouping
+      const chineseToEnglish: Record<string, string> = {
+        '車庫': 'garage',
+        '廚房': 'kitchen', 
+        '客廳': 'living room',
+        '主臥室': 'master bedroom',
+        '兒童房': 'kids room',
+        '小孩房': 'kids room'
+      }
+      
+      // If it's a Chinese name, normalize to English equivalent
+      if (chineseToEnglish[room.name]) {
+        normalizedKey = chineseToEnglish[room.name]
+      }
+      
+      if (!roomGroups.has(normalizedKey)) {
+        roomGroups.set(normalizedKey, [])
+      }
+      roomGroups.get(normalizedKey).push(room)
+    }
+    
+    // Find duplicates
+    const duplicates = []
+    for (const [normalizedKey, rooms] of roomGroups) {
+      if (rooms.length > 1) {
+        rooms.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        duplicates.push({
+          normalizedKey,
+          rooms: rooms.map(room => ({
+            id: room.id,
+            name: room.name,
+            createdAt: room.createdAt,
+            willKeep: room === rooms[0]
+          }))
+        })
+      }
+    }
+    
+    return NextResponse.json({
+      householdId: household.id,
+      totalRooms: household.rooms.length,
+      duplicates,
+      roomCounts: household.rooms.reduce((acc, room) => {
+        acc[room.name] = (acc[room.name] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+    })
+    
+  } catch (error) {
+    console.error('❌ Error checking duplicates:', error)
+    return NextResponse.json(
+      { error: 'Failed to check duplicates' },
       { status: 500 }
     )
   } finally {

@@ -593,6 +593,29 @@ export default function RoomManagement() {
                 <p>1. Switch language from English to Chinese (ZH-TW)</p>
                 <p>2. Check if "Kids Room" changes to "兒童房"</p>
                 <p>3. Look at browser console for detailed debug logs</p>
+                
+                <div className="mt-4">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/cleanup-duplicates', { method: 'POST' })
+                        const result = await response.json()
+                        if (response.ok) {
+                          console.log('Cleanup result:', result)
+                          alert(`Cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                          fetchRooms() // Refresh the room list
+                        } else {
+                          alert(`Error: ${result.error}`)
+                        }
+                      } catch (error) {
+                        alert(`Error: ${error}`)
+                      }
+                    }}
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
+                  >
+                    🧹 Clean Up Duplicate Rooms
+                  </button>
+                </div>
               </div>
             </div>
           )}

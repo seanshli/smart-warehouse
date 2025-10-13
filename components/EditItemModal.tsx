@@ -25,6 +25,7 @@ interface Item {
     name: string
   }
   cabinet?: {
+    id?: string
     name: string
   }
 }
@@ -38,6 +39,16 @@ interface EditItemModalProps {
 export default function EditItemModal({ item, onClose, onSuccess }: EditItemModalProps) {
   const { t } = useLanguage()
   const { activeHouseholdId } = useHousehold()
+  
+  // Debug logging for item data
+  console.log('EditItemModal - Item data:', {
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    room: item.room,
+    cabinet: item.cabinet,
+    imageUrl: item.imageUrl ? 'Has image URL' : 'No image URL'
+  })
   const [formData, setFormData] = useState({
     name: item.name,
     description: item.description || '',
@@ -51,7 +62,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
   const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
   const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
-  const [selectedCabinet, setSelectedCabinet] = useState('')
+  const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
   const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
@@ -64,6 +75,13 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
       fetchCabinets(selectedRoom)
     }
   }, [selectedRoom])
+
+  // Fetch cabinets on mount if room is already selected
+  useEffect(() => {
+    if (item.room?.id) {
+      fetchCabinets(item.room.id)
+    }
+  }, [])
 
   const fetchCategoriesAndRooms = async () => {
     if (!activeHouseholdId) return
@@ -102,6 +120,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
           return result
         }
         const flattenedCategories = flattenCategories(categoriesArray)
+        console.log('EditItemModal - Loaded categories:', flattenedCategories.length)
         setCategories(flattenedCategories)
       }
 
@@ -114,6 +133,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                           roomsData.rooms || 
                           (roomsData.data ? roomsData.data : [])
         
+        console.log('EditItemModal - Loaded rooms:', roomsArray.length)
         setRooms(roomsArray)
       }
     } catch (error) {

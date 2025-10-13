@@ -558,7 +558,7 @@ export default function RoomManagement() {
                 <h3 className="text-lg font-semibold text-yellow-800">🔍 Debug Information</h3>
                 
                 {/* Cleanup Buttons - Top */}
-                <div className="space-x-2">
+                <div className="flex space-x-2">
                   <button 
                     onClick={async () => {
                       try {
@@ -575,9 +575,9 @@ export default function RoomManagement() {
                         alert(`Room cleanup error: ${error}`)
                       }
                     }}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm font-bold border-2 border-red-700"
                   >
-                    🧹 Clean Rooms
+                    🧹 CLEAN ROOMS
                   </button>
                   
                   <button 
@@ -605,9 +605,9 @@ export default function RoomManagement() {
                         alert(`Category cleanup error: ${error}`)
                       }
                     }}
-                    className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-xs"
+                    className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 text-sm font-bold border-2 border-orange-700"
                   >
-                    🗂️ Clean Categories
+                    🗂️ CLEAN CATEGORIES
                   </button>
                 </div>
               </div>
@@ -749,6 +749,45 @@ export default function RoomManagement() {
               </div>
             </div>
           )}
+
+          {/* Standalone Category Cleanup Button */}
+          <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-orange-800">Category Cleanup</h3>
+                <p className="text-sm text-orange-700">Remove duplicate categories (Clothing, 服裝, 衣服)</p>
+              </div>
+              <button 
+                onClick={async () => {
+                  try {
+                    console.log('Starting category cleanup...')
+                    const response = await fetch('/api/cleanup-category-duplicates', { method: 'POST' })
+                    console.log('Category cleanup response status:', response.status)
+                    const result = await response.json()
+                    console.log('Category cleanup result:', result)
+                    
+                    if (response.ok) {
+                      if (result.cleanupResults && result.cleanupResults.length > 0) {
+                        alert(`Category cleanup completed! Deleted ${result.cleanupResults.length} duplicate groups.`)
+                      } else {
+                        alert('No duplicate categories found to clean up.')
+                      }
+                      // Refresh the page to show updated categories
+                      window.location.reload()
+                    } else {
+                      alert(`Category cleanup error: ${result.error}`)
+                    }
+                  } catch (error) {
+                    console.error('Category cleanup error:', error)
+                    alert(`Category cleanup error: ${error}`)
+                  }
+                }}
+                className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 font-bold text-lg"
+              >
+                🗂️ CLEAN DUPLICATE CATEGORIES
+              </button>
+            </div>
+          </div>
 
           {/* Rooms Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

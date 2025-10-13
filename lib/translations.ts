@@ -64,6 +64,11 @@ export interface Translations {
   noSuggestionsFound: string
   noItemsFound: string
   lowStock: string
+  searchTips: string
+  searchByName: string
+  searchByDescription: string
+  searchByCategory: string
+  searchByLocation: string
   
   // Room Management
   roomManagement: string
@@ -328,6 +333,11 @@ const en: Translations = {
   noSuggestionsFound: 'No suggestions found',
   noItemsFound: 'No items found matching your search.',
   lowStock: 'Low Stock',
+  searchTips: 'Search Tips',
+  searchByName: 'Search by item name',
+  searchByDescription: 'Search by description',
+  searchByCategory: 'Search by category',
+  searchByLocation: 'Search by location',
   
   // Room Management
   roomManagement: 'Room Management',
@@ -596,6 +606,11 @@ const zhTW: Translations = {
   noSuggestionsFound: '未找到建議',
   noItemsFound: '未找到符合搜尋條件的物品。',
   lowStock: '庫存不足',
+  searchTips: '搜尋提示',
+  searchByName: '依物品名稱搜尋',
+  searchByDescription: '依描述搜尋',
+  searchByCategory: '依分類搜尋',
+  searchByLocation: '依位置搜尋',
   
   // Room Management
   roomManagement: '房間管理',
@@ -874,6 +889,11 @@ const zh: Translations = {
   noSuggestionsFound: '未找到建议',
   noItemsFound: '未找到符合搜索条件的物品。',
   lowStock: '库存不足',
+  searchTips: '搜索提示',
+  searchByName: '按物品名称搜索',
+  searchByDescription: '按描述搜索',
+  searchByCategory: '按分类搜索',
+  searchByLocation: '按位置搜索',
   
   // Room Management
   roomManagement: '房间管理',
@@ -1152,6 +1172,11 @@ const ja: Translations = {
   noSuggestionsFound: '提案が見つかりません',
   noItemsFound: '検索条件に一致するアイテムが見つかりません。',
   lowStock: '在庫不足',
+  searchTips: '検索のヒント',
+  searchByName: 'アイテム名で検索',
+  searchByDescription: '説明で検索',
+  searchByCategory: 'カテゴリで検索',
+  searchByLocation: '場所で検索',
   
   // Room Management
   roomManagement: '部屋管理',

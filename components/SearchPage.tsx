@@ -191,13 +191,13 @@ export default function SearchPage() {
       {!hasSearched && (
         <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Search Tips
+            {t('searchTips')}
           </h3>
           <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <li>• Search by item name</li>
-            <li>• Search by description</li>
-            <li>• Search by category</li>
-            <li>• Search by location</li>
+            <li>• {t('searchByName')}</li>
+            <li>• {t('searchByDescription')}</li>
+            <li>• {t('searchByCategory')}</li>
+            <li>• {t('searchByLocation')}</li>
           </ul>
         </div>
       )}

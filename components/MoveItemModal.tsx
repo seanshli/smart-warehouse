@@ -65,7 +65,14 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
       const response = await fetch(`/api/rooms?householdId=${activeHouseholdId}`, { credentials: 'include' })
       if (response.ok) {
         const roomsData = await response.json()
-        setRooms(roomsData)
+        console.log('MoveItemModal - Rooms API response:', roomsData)
+        
+        // Handle different response formats
+        const roomsArray = Array.isArray(roomsData) ? roomsData : 
+                          roomsData.rooms || 
+                          (roomsData.data ? roomsData.data : [])
+        
+        setRooms(roomsArray)
       }
     } catch (error) {
       console.error('Error fetching rooms:', error)
@@ -78,7 +85,14 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
       const response = await fetch(`/api/cabinets?roomId=${roomId}`, { credentials: 'include' })
       if (response.ok) {
         const cabinetsData = await response.json()
-        setCabinets(cabinetsData)
+        console.log('MoveItemModal - Cabinets API response:', cabinetsData)
+        
+        // Handle different response formats
+        const cabinetsArray = Array.isArray(cabinetsData) ? cabinetsData : 
+                             cabinetsData.cabinets || 
+                             (cabinetsData.data ? cabinetsData.data : [])
+        
+        setCabinets(cabinetsArray)
       }
     } catch (error) {
       console.error('Error fetching cabinets:', error)

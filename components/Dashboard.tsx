@@ -67,6 +67,7 @@ export default function Dashboard() {
   const [showItemHistory, setShowItemHistory] = useState(false)
   const [showDuplicateItems, setShowDuplicateItems] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
 
   const tabs = [
     { id: 'dashboard', name: t('dashboard'), icon: HomeIcon },
@@ -182,6 +183,7 @@ export default function Dashboard() {
                    <ItemsList 
                      showCategory={true}
                      showLocation={true}
+                     onRef={setRefreshItemsList}
                      onItemEdit={(item) => {
                        console.log('Dashboard: Edit handler called for item:', item.name)
                        setSelectedItem(item)
@@ -230,7 +232,12 @@ export default function Dashboard() {
           }}
           onSuccess={() => {
             // Refresh the items list
-            window.location.reload()
+            if (refreshItemsList) {
+              refreshItemsList()
+            } else {
+              // Fallback to page reload if refresh function not available
+              window.location.reload()
+            }
           }}
         />
       )}

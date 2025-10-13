@@ -39,6 +39,7 @@ interface ItemsListProps {
   searchTerm?: string
   selectedCategory?: string
   selectedRoom?: string
+  onRef?: (refreshFn: () => void) => void
 }
 
 export default function ItemsList({
@@ -51,7 +52,8 @@ export default function ItemsList({
   className = '',
   searchTerm = '',
   selectedCategory = '',
-  selectedRoom = ''
+  selectedRoom = '',
+  onRef
 }: ItemsListProps) {
   const { t } = useLanguage()
   const [items, setItems] = useState<Item[]>([])
@@ -61,6 +63,13 @@ export default function ItemsList({
   useEffect(() => {
     fetchGroupedItems()
   }, [])
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (onRef) {
+      onRef(fetchGroupedItems)
+    }
+  }, [onRef])
 
   const fetchGroupedItems = async () => {
     try {

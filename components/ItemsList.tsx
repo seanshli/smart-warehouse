@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from './LanguageProvider'
 import ItemCard from './ItemCard'
 
@@ -60,23 +60,13 @@ export default function ItemsList({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchGroupedItems()
-  }, [])
-
-  // Expose refresh function to parent component
-  useEffect(() => {
-    console.log('ItemsList: onRef callback available:', !!onRef)
-    if (onRef) {
-      console.log('ItemsList: Calling onRef with fetchGroupedItems function')
-      onRef(fetchGroupedItems)
-    }
-  }, [onRef])
-
-  const fetchGroupedItems = async () => {
+  const fetchGroupedItems = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+      
+      // Add a small delay to prevent rapid-fire requests
+      await new Promise(resolve => setTimeout(resolve, 100))
       
       // Build query parameters
       const params = new URLSearchParams()
@@ -85,14 +75,23 @@ export default function ItemsList({
       if (selectedRoom) params.append('room', selectedRoom)
       
       const url = `/api/items/grouped-direct${params.toString() ? '?' + params.toString() : ''}`
+      console.log('ItemsList: Fetching from URL:', url)
       const response = await fetch(url)
       
       if (response.ok) {
         const data = await response.json()
+        console.log('ItemsList: Successfully fetched', data.length, 'items')
         setItems(data)
       } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to fetch items')
+        let errorMessage = 'Failed to fetch items'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+        }
+        console.error('ItemsList: API error:', response.status, errorMessage)
+        setError(errorMessage)
       }
     } catch (err) {
       console.error('Error fetching grouped items:', err)
@@ -100,7 +99,20 @@ export default function ItemsList({
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm, selectedCategory, selectedRoom])
+
+  useEffect(() => {
+    fetchGroupedItems()
+  }, [fetchGroupedItems])
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    console.log('ItemsList: onRef callback available:', !!onRef)
+    if (onRef) {
+      console.log('ItemsList: Calling onRef with fetchGroupedItems function')
+      onRef(fetchGroupedItems)
+    }
+  }, [onRef, fetchGroupedItems])
 
   // Filter items on the client side as well for better responsiveness
   const filteredItems = items.filter(item => {

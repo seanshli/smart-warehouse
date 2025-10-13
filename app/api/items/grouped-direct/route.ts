@@ -6,9 +6,38 @@ import { prisma } from '@/lib/prisma'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
+// Simple in-memory rate limiting to prevent abuse
+const requestCounts = new Map<string, { count: number; lastReset: number }>()
+const RATE_LIMIT_WINDOW = 60000 // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10
+
+function isRateLimited(identifier: string): boolean {
+  const now = Date.now()
+  const userRequests = requestCounts.get(identifier)
+  
+  if (!userRequests || now - userRequests.lastReset > RATE_LIMIT_WINDOW) {
+    requestCounts.set(identifier, { count: 1, lastReset: now })
+    return false
+  }
+  
+  if (userRequests.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true
+  }
+  
+  userRequests.count++
+  return false
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
+    
+    // Rate limiting
+    const identifier = (session?.user as any)?.id || 'anonymous'
+    if (isRateLimited(identifier)) {
+      console.log('Rate limited request from:', identifier)
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
     
     // Temporary: Use demo user if no session for testing
     let userId = (session?.user as any)?.id
@@ -45,20 +74,29 @@ export async function GET(request: NextRequest) {
 
     console.log('Grouped-direct API: Household ID:', household.id)
 
-    // Get items using Prisma
-    const items = await prisma.item.findMany({
-      where: {
-        householdId: household.id
-      },
-      include: {
-        category: true,
-        room: true,
-        cabinet: true
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    })
+    // Get items using Prisma with better error handling
+    let items
+    try {
+      items = await prisma.item.findMany({
+        where: {
+          householdId: household.id
+        },
+        include: {
+          category: true,
+          room: true,
+          cabinet: true
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      })
+    } catch (dbError) {
+      console.error('Database error:', dbError)
+      return NextResponse.json(
+        { error: 'Database connection failed', details: dbError instanceof Error ? dbError.message : 'Unknown database error' },
+        { status: 503 }
+      )
+    }
 
     console.log('Grouped-direct API: Found', items.length, 'items')
 

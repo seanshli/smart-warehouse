@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { 
   HomeIcon, 
@@ -68,6 +68,12 @@ export default function Dashboard() {
   const [showDuplicateItems, setShowDuplicateItems] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
+
+  // Memoized callback to prevent infinite re-renders
+  const handleItemsListRef = useCallback((refreshFn: () => void) => {
+    console.log('Dashboard: ItemsList onRef called with function:', typeof refreshFn)
+    setRefreshItemsList(refreshFn)
+  }, [])
 
   const tabs = [
     { id: 'dashboard', name: t('dashboard'), icon: HomeIcon },
@@ -183,10 +189,7 @@ export default function Dashboard() {
                    <ItemsList 
                      showCategory={true}
                      showLocation={true}
-                     onRef={(refreshFn) => {
-                       console.log('Dashboard: ItemsList onRef called with function:', typeof refreshFn)
-                       setRefreshItemsList(refreshFn)
-                     }}
+                     onRef={handleItemsListRef}
                      onItemEdit={(item) => {
                        console.log('Dashboard: Edit handler called for item:', item.name)
                        setSelectedItem(item)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { CacheInvalidation } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -93,6 +94,10 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Clear cache after cleanup
+    CacheInvalidation.clearItemCache(household.id)
+    console.log('Panasonic cleanup: Cleared cache for household:', household.id)
 
     return NextResponse.json({
       message: 'Panasonic duplicates cleaned up successfully',

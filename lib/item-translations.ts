@@ -44,7 +44,10 @@ export const ITEM_TRANSLATIONS: ItemTranslation[] = [
 ]
 
 export function translateItemContent(content: string, targetLanguage: string): string {
-  if (targetLanguage !== 'en') return content
+  if (targetLanguage !== 'en') {
+    console.log('Translation skipped - target language is not English:', targetLanguage)
+    return content
+  }
   
   // Create a lookup map for faster access
   const translationMap = new Map<string, string>()
@@ -52,7 +55,16 @@ export function translateItemContent(content: string, targetLanguage: string): s
     translationMap.set(translation.original, translation.english)
   })
   
-  return translationMap.get(content) || content
+  const result = translationMap.get(content) || content
+  
+  // Debug logging
+  if (result !== content) {
+    console.log('Translation applied:', { original: content, translated: result })
+  } else {
+    console.log('No translation found for:', content)
+  }
+  
+  return result
 }
 
 export function addItemTranslation(original: string, english: string, type: 'name' | 'description') {

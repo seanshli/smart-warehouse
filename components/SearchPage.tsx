@@ -14,6 +14,7 @@ interface SearchResult {
   minQuantity: number
   imageUrl?: string
   category?: {
+    id: string
     name: string
     level: number
     parent?: {
@@ -22,9 +23,11 @@ interface SearchResult {
     }
   }
   room?: {
+    id: string
     name: string
   }
   cabinet?: {
+    id: string
     name: string
   }
 }

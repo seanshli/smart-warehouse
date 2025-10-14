@@ -88,14 +88,41 @@ export async function GET(request: NextRequest) {
     // Get items using Prisma with better error handling
     let items
     try {
+      // Optimized query with selective field loading
       items = await prisma.item.findMany({
         where: {
           householdId: household.id
         },
-        include: {
-          category: true,
-          room: true,
-          cabinet: true
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          quantity: true,
+          minQuantity: true,
+          barcode: true,
+          imageUrl: true,
+          householdId: true,
+          categoryId: true,
+          roomId: true,
+          cabinetId: true,
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          room: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          cabinet: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
         },
         orderBy: {
           name: 'asc'

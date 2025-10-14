@@ -1,0 +1,121 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { translateItemContent } from '@/lib/item-translations'
+
+// Use Edge Runtime for better performance
+export const runtime = 'edge'
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!(session?.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = (session?.user as any)?.id
+
+    // Get user's household
+    const household = await prisma.household.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: userId
+          }
+        }
+      }
+    })
+
+    if (!household) {
+      console.log('No household found for user:', userId)
+      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+    }
+
+    console.log('Grouped-direct-cached API: Household ID:', household.id)
+
+    // Simplified query - only get essential data
+    const items = await prisma.item.findMany({
+      where: {
+        householdId: household.id
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        quantity: true,
+        minQuantity: true,
+        imageUrl: true,
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        cabinet: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    })
+
+    console.log('Grouped-direct-cached API: Found', items.length, 'items')
+
+    // Get user's language preference for translation
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { language: true }
+    })
+    const userLanguage = user?.language || 'en'
+
+    // Transform the results with translation
+    const transformedItems = items.map(item => ({
+      id: item.id,
+      name: translateItemContent(item.name, userLanguage),
+      description: translateItemContent(item.description || '', userLanguage),
+      quantity: item.quantity,
+      minQuantity: item.minQuantity,
+      imageUrl: item.imageUrl,
+      householdId: household.id,
+      categoryId: item.category?.id,
+      roomId: item.room?.id,
+      cabinetId: item.cabinet?.id,
+      category: item.category ? { id: item.category.id, name: item.category.name } : null,
+      room: item.room ? { id: item.room.id, name: item.room.name } : null,
+      cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null,
+      itemIds: [item.id]
+    }))
+
+    // Set cache headers for browser/CDN caching
+    const response = NextResponse.json(transformedItems)
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    
+    return response
+
+  } catch (error) {
+    console.error('Error fetching grouped items (cached):', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch grouped items',
+        details: errorMessage
+      },
+      { status: 500 }
+    )
+  }
+}

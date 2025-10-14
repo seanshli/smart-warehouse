@@ -43,19 +43,24 @@ export const ITEM_TRANSLATIONS: ItemTranslation[] = [
   }
 ]
 
+// Import dynamic translation system
+import { translateText } from './dynamic-translations'
+
 export function translateItemContent(content: string, targetLanguage: string): string {
   if (targetLanguage !== 'en') {
     console.log('Translation skipped - target language is not English:', targetLanguage)
     return content
   }
   
-  // Create a lookup map for faster access
-  const translationMap = new Map<string, string>()
+  // Create fallback translations map
+  const fallbackTranslations: Record<string, string> = {}
+  
+  // Add item translations
   ITEM_TRANSLATIONS.forEach(translation => {
-    translationMap.set(translation.original, translation.english)
+    fallbackTranslations[translation.original] = translation.english
   })
   
-  // Also add activity description translations
+  // Add activity description translations
   const activityTranslations: Record<string, string> = {
     '物品已更新': 'Item updated',
     '物品已新增': 'Item added',
@@ -68,22 +73,38 @@ export function translateItemContent(content: string, targetLanguage: string): s
     '物品「Beige Cotton T-Shirt」已建立,數量為1': 'Item "Beige Cotton T-Shirt" created with quantity 1'
   }
   
-  // Check activity translations first
-  if (activityTranslations[content]) {
-    console.log('Activity translation applied:', { original: content, translated: activityTranslations[content] })
-    return activityTranslations[content]
+  // Merge all fallback translations
+  Object.assign(fallbackTranslations, activityTranslations)
+  
+  // Check fallback translations first (fastest)
+  if (fallbackTranslations[content]) {
+    console.log('Fallback translation applied:', { original: content, translated: fallbackTranslations[content] })
+    return fallbackTranslations[content]
   }
   
-  const result = translationMap.get(content) || content
-  
-  // Debug logging
-  if (result !== content) {
-    console.log('Translation applied:', { original: content, translated: result })
-  } else {
-    console.log('No translation found for:', content)
+  // For new content not in fallback, return original (will be translated dynamically when AI is available)
+  console.log('No translation found for:', content)
+  return content
+}
+
+// Async version for dynamic translation (use this for new items)
+export async function translateItemContentAsync(content: string, targetLanguage: string): Promise<string> {
+  if (targetLanguage !== 'en') {
+    return content
   }
   
-  return result
+  // Create fallback translations map
+  const fallbackTranslations: Record<string, string> = {}
+  ITEM_TRANSLATIONS.forEach(translation => {
+    fallbackTranslations[translation.original] = translation.english
+  })
+  
+  try {
+    return await translateText(content, targetLanguage, fallbackTranslations)
+  } catch (error) {
+    console.error('Dynamic translation error:', error)
+    return fallbackTranslations[content] || content
+  }
 }
 
 export function addItemTranslation(original: string, english: string, type: 'name' | 'description') {

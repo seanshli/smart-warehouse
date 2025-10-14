@@ -250,7 +250,7 @@ export default function Activities() {
                     
                     <div className="mt-2 flex items-center text-xs text-gray-500">
                       <UserIcon className="h-3 w-3 mr-1" />
-                      & {activity.performedBy || 'demo'}
+                      & {activity.performer?.name || activity.performer?.email || 'demo'}
                     </div>
                   </div>
                 </div>

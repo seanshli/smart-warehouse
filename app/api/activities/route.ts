@@ -139,8 +139,7 @@ export async function GET(request: NextRequest) {
       
       return {
         ...activity,
-        description: translatedDescription,
-        performedBy: activity.performer?.name || activity.performer?.email || 'demo'
+        description: translatedDescription
       }
     })
 

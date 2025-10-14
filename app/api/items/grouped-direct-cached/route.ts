@@ -3,9 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { translateItemContent } from '@/lib/item-translations'
-
-// Use Edge Runtime for better performance
-export const runtime = 'edge'
+import { cache, CacheKeys } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -37,6 +35,15 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Grouped-direct-cached API: Household ID:', household.id)
+
+    // Check cache first
+    const cacheKey = CacheKeys.groupedItems(household.id)
+    const cachedData = cache.get(cacheKey)
+    
+    if (cachedData) {
+      console.log('Grouped-direct-cached API: Returning cached data for household:', household.id)
+      return NextResponse.json(cachedData)
+    }
 
     // Simplified query - only get essential data
     const items = await prisma.item.findMany({
@@ -100,6 +107,10 @@ export async function GET(request: NextRequest) {
       cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null,
       itemIds: [item.id]
     }))
+
+    // Cache the result for 5 minutes
+    cache.set(cacheKey, transformedItems, 5 * 60 * 1000)
+    console.log('Grouped-direct-cached API: Cached data for household:', household.id)
 
     // Set cache headers for browser/CDN caching
     const response = NextResponse.json(transformedItems)

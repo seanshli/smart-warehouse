@@ -189,6 +189,9 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
         console.log('Image loaded, base64 length:', base64Data.length)
         setPreview(base64)
         
+        // Show AI processing message
+        toast.loading('🤖 ChatGPT is analyzing your image...', { id: 'ai-processing' })
+        
         // Use AI to recognize the item
         const result = await callAIRecognition('image', base64Data)
 
@@ -201,13 +204,16 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
           imageUrl: base64
         }))
 
+        // Dismiss loading toast
+        toast.dismiss('ai-processing')
+        
         // If AI recognition failed (no API key), still allow manual entry
         if (result && result.name === 'Unknown Item' && result.description.includes('AI recognition not available')) {
           toast('AI recognition not available. Please enter item details manually.', { icon: 'ℹ️' })
           setStep('details')
         } else {
           setStep('ai-review')
-          toast.success('AI recognition completed! Please review the results.')
+          toast.success('✅ AI recognition completed! Please review the results.')
         }
       }
       
@@ -243,13 +249,21 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
     
     setIsProcessing(true)
     try {
-           const result = await callAIRecognition('barcode', barcodeValue)
+      // Show AI processing message
+      toast.loading('🤖 ChatGPT is analyzing the barcode...', { id: 'ai-processing' })
+      
+      const result = await callAIRecognition('barcode', barcodeValue)
 
-           // Store AI result for review
-           setAiResult(result)
-           setStep('ai-review')
-           toast.success('AI recognition completed! Please review the results.')
+      // Dismiss loading toast
+      toast.dismiss('ai-processing')
+
+      // Store AI result for review
+      setAiResult(result)
+      setStep('ai-review')
+      toast.success('✅ AI recognition completed! Please review the results.')
     } catch (error) {
+      // Dismiss loading toast
+      toast.dismiss('ai-processing')
       toast.error('Failed to recognize barcode')
       // If AI fails, offer manual input option
       toast('AI recognition failed. You can fill in details manually.', {
@@ -277,18 +291,26 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
     // For QR codes, we'll treat them similar to barcodes
     setIsProcessing(true)
     try {
-           const result = await callAIRecognition('barcode', qrValue)
+      // Show AI processing message
+      toast.loading('🤖 ChatGPT is analyzing the QR code...', { id: 'ai-processing' })
+      
+      const result = await callAIRecognition('barcode', qrValue)
 
-           // Store AI result for review
-           setAiResult(result)
+      // Dismiss loading toast
+      toast.dismiss('ai-processing')
+
+      // Store AI result for review
+      setAiResult(result)
            setFormData(prev => ({
              ...prev,
              qrCode: qrValue
            }))
 
            setStep('ai-review')
-           toast.success('AI recognition completed! Please review the results.')
+           toast.success('✅ AI recognition completed! Please review the results.')
     } catch (error) {
+      // Dismiss loading toast
+      toast.dismiss('ai-processing')
       toast.error('Failed to recognize QR code')
     } finally {
       setIsProcessing(false)

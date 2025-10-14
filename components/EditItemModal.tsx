@@ -125,6 +125,11 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
 
   // Update selected values when item data changes
   useEffect(() => {
+    console.log('EditItemModal - Item data changed, updating form:', {
+      categoryId: item.category?.id,
+      roomId: item.room?.id,
+      cabinetId: item.cabinet?.id
+    })
     setSelectedCategory(item.category?.id || '')
     setSelectedRoom(item.room?.id || '')
     setSelectedCabinet(item.cabinet?.id || '')
@@ -214,6 +219,12 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
         
         console.log('EditItemModal - Loaded categories:', flattenedCategories.length, flattenedCategories)
         setCategories(flattenedCategories)
+        
+        // After categories are loaded, ensure selected category is set if item has one
+        if (item.category?.id) {
+          console.log('Setting selected category after categories loaded:', item.category.id)
+          setSelectedCategory(item.category.id)
+        }
       }
 
       if (roomsResponse.ok) {
@@ -227,6 +238,12 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
         
         console.log('EditItemModal - Loaded rooms:', roomsArray.length, roomsArray)
         setRooms(roomsArray)
+        
+        // After rooms are loaded, ensure selected room is set if item has one
+        if (item.room?.id) {
+          console.log('Setting selected room after rooms loaded:', item.room.id)
+          setSelectedRoom(item.room.id)
+        }
       }
     } catch (error) {
       console.error('Error fetching categories and rooms:', error)
@@ -239,7 +256,14 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
       const response = await fetch(`/api/cabinets?roomId=${roomId}`, { credentials: 'include' })
       if (response.ok) {
         const cabinetsData = await response.json()
+        console.log('EditItemModal - Loaded cabinets for room:', roomId, cabinetsData)
         setCabinets(cabinetsData)
+        
+        // After cabinets are loaded, ensure selected cabinet is set if item has one
+        if (item.cabinet?.id && item.room?.id === roomId) {
+          console.log('Setting selected cabinet after cabinets loaded:', item.cabinet.id)
+          setSelectedCabinet(item.cabinet.id)
+        }
       }
     } catch (error) {
       console.error('Error fetching cabinets:', error)

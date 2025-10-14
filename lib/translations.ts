@@ -92,6 +92,7 @@ export interface Translations {
   dresser: string
   rightCabinet: string
   middleCabinet: string
+  sideCabinet: string
   
   // Item Management
   description: string
@@ -207,6 +208,15 @@ export interface Translations {
   itemAddedDescription: string
   itemMovedDescription: string
   quantityUpdatedDescription: string
+  
+  // Activity descriptions with parameters
+  itemCreatedWithQuantity: string
+  itemCreated: string
+  quantityIncreasedFromTo: string
+  quantityDecreasedFromTo: string
+  itemMovedFromTo: string
+  itemUpdated: string
+  itemDeleted: string
   testActivityDescription: string
   categoryCreatedDescription: string
   categoryDeletedDescription: string
@@ -367,6 +377,7 @@ const en: Translations = {
   dresser: 'Dresser',
   rightCabinet: 'Right Cabinet',
   middleCabinet: 'Middle Cabinet',
+  sideCabinet: 'Side Cabinet',
   
   // Item Management
   description: 'Description',
@@ -469,6 +480,15 @@ const en: Translations = {
   itemAddedDescription: 'Item was added to inventory',
   itemMovedDescription: 'Item was moved to a different location',
   quantityUpdatedDescription: 'Item quantity was updated',
+  
+  // Activity descriptions with parameters
+  itemCreatedWithQuantity: 'Item "{itemName}" created with quantity {quantity}',
+  itemCreated: 'Item created',
+  quantityIncreasedFromTo: 'Quantity increased from {from} to {to}',
+  quantityDecreasedFromTo: 'Quantity decreased from {from} to {to}',
+  itemMovedFromTo: '{itemName} moved from {from} to {to}',
+  itemUpdated: 'Item updated',
+  itemDeleted: 'Item deleted',
   testActivityDescription: 'Test activity to verify activities API',
   categoryCreatedDescription: 'Category was created',
   categoryDeletedDescription: 'Category was deleted',
@@ -647,6 +667,7 @@ const zhTW: Translations = {
   dresser: '梳妝台',
   rightCabinet: '右櫥櫃',
   middleCabinet: '中櫥櫃',
+  sideCabinet: '側櫥櫃',
   
   // Item Management
   description: '描述',
@@ -749,6 +770,15 @@ const zhTW: Translations = {
   itemAddedDescription: '物品已新增到庫存中',
   itemMovedDescription: '物品已移動到不同位置',
   quantityUpdatedDescription: '物品數量已更新',
+  
+  // Activity descriptions with parameters
+  itemCreatedWithQuantity: '物品「{itemName}」已建立，數量為 {quantity}',
+  itemCreated: '物品已建立',
+  quantityIncreasedFromTo: '數量從 {from} 增加到 {to}',
+  quantityDecreasedFromTo: '數量從 {from} 減少到 {to}',
+  itemMovedFromTo: '{itemName} 從 {from} 移動到 {to}',
+  itemUpdated: '物品已更新',
+  itemDeleted: '物品已刪除',
   testActivityDescription: '測試活動以驗證活動 API 功能',
   categoryCreatedDescription: '分類已建立',
   categoryDeletedDescription: '分類已刪除',
@@ -937,6 +967,7 @@ const zh: Translations = {
   dresser: '梳妆台',
   rightCabinet: '右橱柜',
   middleCabinet: '中橱柜',
+  sideCabinet: '侧橱柜',
   
   // Item Management
   description: '描述',
@@ -1040,6 +1071,13 @@ const zh: Translations = {
   itemMovedDescription: '物品已移动到不同位置',
   quantityUpdatedDescription: '物品数量已更新',
   testActivityDescription: '测试活动以验证活动 API 功能',
+  itemCreatedWithQuantity: '物品「{itemName}」已创建，数量为 {quantity}',
+  itemCreated: '物品已创建',
+  quantityIncreasedFromTo: '数量从 {from} 增加到 {to}',
+  quantityDecreasedFromTo: '数量从 {from} 减少到 {to}',
+  itemMovedFromTo: '{itemName} 从 {from} 移动到 {to}',
+  itemUpdated: '物品已更新',
+  itemDeleted: '物品已删除',
   categoryCreatedDescription: '分类已创建',
   categoryDeletedDescription: '分类已删除',
   roomCreatedDescription: '房间已创建',
@@ -1227,6 +1265,7 @@ const ja: Translations = {
   dresser: 'ドレッサー',
   rightCabinet: '右キャビネット',
   middleCabinet: '中央キャビネット',
+  sideCabinet: 'サイドキャビネット',
   
   // Item Management
   description: '説明',
@@ -1330,6 +1369,13 @@ const ja: Translations = {
   itemMovedDescription: 'アイテムが別の場所に移動されました',
   quantityUpdatedDescription: 'アイテムの数量が更新されました',
   testActivityDescription: 'アクティビティ API の機能を検証するテスト',
+  itemCreatedWithQuantity: 'アイテム「{itemName}」が作成されました（数量: {quantity}）',
+  itemCreated: 'アイテムが作成されました',
+  quantityIncreasedFromTo: '数量が {from} から {to} に増加しました',
+  quantityDecreasedFromTo: '数量が {from} から {to} に減少しました',
+  itemMovedFromTo: '{itemName} が {from} から {to} に移動されました',
+  itemUpdated: 'アイテムが更新されました',
+  itemDeleted: 'アイテムが削除されました',
   categoryCreatedDescription: 'カテゴリが作成されました',
   categoryDeletedDescription: 'カテゴリが削除されました',
   roomCreatedDescription: '部屋が作成されました',

@@ -146,29 +146,10 @@ export default function Activities() {
     }
   }
 
-  const getActivityDescription = (action: string) => {
-    switch (action) {
-      case 'created':
-      case 'item_added':
-        return t('itemAddedDescription')
-      case 'moved':
-      case 'item_moved':
-        return t('itemMovedDescription')
-      case 'quantity_updated':
-        return t('quantityUpdatedDescription')
-      case 'test_activity':
-        return t('testActivityDescription')
-      case 'category_created':
-        return t('categoryCreatedDescription')
-      case 'category_deleted':
-        return t('categoryDeletedDescription')
-      case 'room_created':
-        return t('roomCreatedDescription')
-      case 'room_deleted':
-        return t('roomDeletedDescription')
-      default:
-        return null // Use original description for other actions
-    }
+  const getActivityDescription = (activity: Activity) => {
+    // Always use the stored description from the database
+    // This allows for dynamic content like item names, room names, etc.
+    return activity.description
   }
 
   if (loading) {
@@ -238,7 +219,7 @@ export default function Activities() {
                     </div>
                     
                     <p className="mt-2 text-sm text-gray-600">
-                      {getActivityDescription(activity.action) || activity.description}
+                      {getActivityDescription(activity)}
                     </p>
                     
                     {/* Show location changes for move actions */}

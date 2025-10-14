@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PhotoIcon, CubeIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
+import { translateCategoryName } from '@/lib/translations'
 
 interface Item {
   id: string
@@ -53,7 +54,7 @@ export default function ItemCard({
     console.warn('ItemCard received invalid item:', item)
     return null
   }
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [imageError, setImageError] = useState(false)
 
   // Debug logging for image URL
@@ -63,10 +64,17 @@ export default function ItemCard({
   const translateLocationName = (name: string) => {
     const translations: Record<string, string> = {
       'Master Bedroom': t('masterBedroom'),
+      '主臥室': t('masterBedroom'),
       'Default Cabinet': t('defaultCabinet'),
+      '主櫃': t('defaultCabinet'),
       'Kitchen': t('kitchen'),
+      '廚房': t('kitchen'),
       'Living Room': t('mainLivingArea'),
-      'Garage': 'Garage',
+      '客廳': t('mainLivingArea'),
+      'Garage': t('garage'),
+      '車庫': t('garage'),
+      '側櫥櫃': t('sideCabinet'),
+      'Side Cabinet': t('sideCabinet'),
     }
     return translations[name] || name
   }
@@ -130,9 +138,9 @@ export default function ItemCard({
                   <span className="font-medium">{t('category')}:</span>{' '}
                   {item.category.parent 
                     ? (item.category.parent as any).parent
-                      ? `${(item.category.parent as any).parent.name} > ${item.category.parent.name} > ${item.category.name}`
-                      : `${item.category.parent.name} > ${item.category.name}`
-                    : item.category.name
+                      ? `${translateCategoryName((item.category.parent as any).parent.name, currentLanguage)} > ${translateCategoryName(item.category.parent.name, currentLanguage)} > ${translateCategoryName(item.category.name, currentLanguage)}`
+                      : `${translateCategoryName(item.category.parent.name, currentLanguage)} > ${translateCategoryName(item.category.name, currentLanguage)}`
+                    : translateCategoryName(item.category.name, currentLanguage)
                   }
                 </div>
               )}

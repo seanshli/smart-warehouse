@@ -47,11 +47,11 @@ class MemoryCache {
   clearPattern(pattern: string): void {
     const regex = new RegExp(pattern)
     const keys = Array.from(this.cache.keys())
-    for (const key of keys) {
+    keys.forEach(key => {
       if (regex.test(key)) {
         this.cache.delete(key)
       }
-    }
+    })
   }
 
   // Get cache statistics
@@ -61,13 +61,13 @@ class MemoryCache {
     let active = 0
 
     const values = Array.from(this.cache.values())
-    for (const entry of values) {
+    values.forEach(entry => {
       if (now - entry.timestamp > entry.ttl) {
         expired++
       } else {
         active++
       }
-    }
+    })
 
     return {
       total: this.cache.size,

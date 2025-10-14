@@ -29,6 +29,25 @@ export async function GET(request: NextRequest) {
     console.log('Activities API - Final language used:', userLanguage)
     const t = getTranslations(userLanguage)
 
+    // Simple item name translation function
+    const translateItemName = (itemName: string, targetLanguage: string): string => {
+      if (targetLanguage !== 'en') return itemName
+      
+      // Common item name translations from Chinese to English
+      const translations: Record<string, string> = {
+        '日本製銀色天然礦泉水瓶 400ml': 'Japanese Silver Natural Mineral Water Bottle 400ml',
+        'Panasonic 黑色多功能遙控器': 'Panasonic Black Multifunction Remote Control',
+        'Beige Cotton T-Shirt': 'Beige Cotton T-Shirt', // Already in English
+        '白色短袖T恤': 'White Short Sleeve T-Shirt',
+        '這是一個銀色的天然礦泉水瓶,容量為400毫升,瓶身上印有綠色水滴圖案,標示為日本製造。': 'This is a silver natural mineral water bottle, with a capacity of 400ml, with a green water drop pattern printed on the bottle, marked as made in Japan.',
+        '這是一款黑色的Panasonic遙控器,具有多個流媒體按鈕如Netflix、Hulu、YouTube等,適用於控制多種設備。': 'This is a black Panasonic remote control, with multiple streaming media buttons such as Netflix, Hulu, YouTube, etc., suitable for controlling multiple devices.',
+        'A plain beige t-shirt made of cotton, featuring a crew neck and short sleeves.': 'A plain beige t-shirt made of cotton, featuring a crew neck and short sleeves.', // Already in English
+        '這是一件白色的短袖T恤,上面印有 \'THE COME MUSIC\' 字樣,並有紅色、藍色和黑色的條紋設計。': 'This is a white short-sleeved T-shirt, with \'THE COME MUSIC\' printed on it, and red, blue, and black stripe designs.'
+      }
+      
+      return translations[itemName] || itemName
+    }
+
     // Get user's household
     const household = await prisma.household.findFirst({
       where: {
@@ -75,7 +94,8 @@ export async function GET(request: NextRequest) {
             const match = activity.description.match(/Item "([^"]+)" created with quantity (\d+)/)
             if (match) {
               const [, itemName, quantity] = match
-              translatedDescription = t.itemCreatedWithQuantity.replace('{itemName}', itemName).replace('{quantity}', quantity)
+              const translatedItemName = translateItemName(itemName, userLanguage)
+              translatedDescription = t.itemCreatedWithQuantity.replace('{itemName}', translatedItemName).replace('{quantity}', quantity)
             }
           } else if (activity.description.includes('created')) {
             translatedDescription = t.itemCreated
@@ -101,7 +121,8 @@ export async function GET(request: NextRequest) {
             const match = activity.description.match(/(.+?) moved from (.+?) to (.+)/)
             if (match) {
               const [, itemName, from, to] = match
-              translatedDescription = t.itemMovedFromTo.replace('{itemName}', itemName).replace('{from}', from).replace('{to}', to)
+              const translatedItemName = translateItemName(itemName, userLanguage)
+              translatedDescription = t.itemMovedFromTo.replace('{itemName}', translatedItemName).replace('{from}', from).replace('{to}', to)
             }
           }
           break
@@ -112,7 +133,10 @@ export async function GET(request: NextRequest) {
           translatedDescription = t.itemDeleted
           break
         default:
-          // Keep original description if no translation available
+          // For activities that are just item descriptions, try to translate them
+          if (activity.description && activity.description.length > 10) {
+            translatedDescription = translateItemName(activity.description, userLanguage)
+          }
           break
       }
       

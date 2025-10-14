@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { XMarkIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+import { translateCategoryName } from '@/lib/translations'
 import { useHousehold } from './HouseholdProvider'
 
 interface Item {
@@ -39,6 +40,7 @@ interface EditItemModalProps {
 export default function EditItemModal({ item, onClose, onSuccess }: EditItemModalProps) {
   const { t } = useLanguage()
   const { activeHouseholdId } = useHousehold()
+  const { currentLanguage } = useLanguage()
   
   // Debug logging for item data
   console.log('EditItemModal - Item data:', {
@@ -57,7 +59,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
     imageUrl: item.imageUrl || ''
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [categories, setCategories] = useState<Array<{id: string, name: string, level: number, parent?: {name: string}}>>([])
+  const [categories, setCategories] = useState<Array<{id: string, name: string, level: number, parent?: {name: string}, pathNames?: string[], label?: string}>>([])
   const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
   const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
   const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
@@ -74,6 +76,41 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
   const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+
+  // Local room translator to reflect current language in dropdowns
+  const translateRoomDisplayName = (roomName: string): string => {
+    const englishToKey: Record<string, string> = {
+      'Living Room': (t as any)('livingRoom'),
+      'Kitchen': (t as any)('kitchen'),
+      'Bedroom': (t as any)('bedroom'),
+      'Master Bedroom': (t as any)('masterBedroom'),
+      'Kids Room': (t as any)('kidsRoom'),
+      'Bathroom': (t as any)('bathroom'),
+      'Garage': (t as any)('garage'),
+      'Dining Room': (t as any)('diningRoom'),
+      'Study': (t as any)('study'),
+    }
+    const chineseToEnglish: Record<string, string> = {
+      '客廳': 'Living Room',
+      '廚房': 'Kitchen',
+      '臥室': 'Bedroom',
+      '主臥室': 'Master Bedroom',
+      '兒童房': 'Kids Room',
+      '浴室': 'Bathroom',
+      '車庫': 'Garage',
+      '餐廳': 'Dining Room',
+      '書房': 'Study',
+    }
+    // If current language is English and we got Chinese, map to English
+    if (currentLanguage === 'en' && chineseToEnglish[roomName]) {
+      return chineseToEnglish[roomName]
+    }
+    // If we have a known English key, return translation via t()
+    if (englishToKey[roomName]) {
+      return englishToKey[roomName]
+    }
+    return roomName
+  }
 
   useEffect(() => {
     fetchCategoriesAndRooms()
@@ -132,19 +169,22 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                                categoriesData.categories || 
                                (categoriesData.data ? categoriesData.data : [])
         
-        const flattenCategories = (cats: any[], parent?: any, level = 0): any[] => {
+        const flattenCategories = (cats: any[], parent?: any, level = 0, parentPath: string[] = []): any[] => {
           let result: any[] = []
           if (Array.isArray(cats)) {
             cats.forEach(cat => {
+              const currentPath = parent ? [...parentPath, parent.name, cat.name] : [cat.name]
               const categoryData = { 
                 id: cat.id, 
                 name: cat.name, 
                 level: cat.level || level,
-                parent: parent ? { name: parent.name } : undefined
+                parent: parent ? { name: parent.name } : undefined,
+                pathNames: parent ? [...parentPath, parent.name, cat.name] : [cat.name],
+                label: (parent ? currentPath : [cat.name]).join(' > ')
               }
               result.push(categoryData)
               if (cat.children && cat.children.length > 0) {
-                result = result.concat(flattenCategories(cat.children, cat, level + 1))
+                result = result.concat(flattenCategories(cat.children, cat, level + 1, parent ? [...parentPath, parent.name] : [cat.name]))
               }
             })
           }
@@ -152,14 +192,24 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
         }
         
         // First flatten the categories to include all levels
-        const flattenedCategories = flattenCategories(categoriesArray)
+        let flattenedCategories = flattenCategories(categoriesArray)
+
+        // De-duplicate by label (keep the first occurrence)
+        const dedupedByLabel = new Map<string, any>()
+        flattenedCategories.forEach(cat => {
+          const key = cat.label || cat.name
+          if (!dedupedByLabel.has(key)) {
+            dedupedByLabel.set(key, cat)
+          }
+        })
+        flattenedCategories = Array.from(dedupedByLabel.values())
         
         // Sort by level first, then by name for better dropdown display
         flattenedCategories.sort((a, b) => {
           if (a.level !== b.level) {
             return a.level - b.level
           }
-          return a.name.localeCompare(b.name)
+          return (a.label || a.name).localeCompare(b.label || b.name)
         })
         
         console.log('EditItemModal - Loaded categories:', flattenedCategories.length, flattenedCategories)
@@ -412,12 +462,17 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">{t('selectCategory')}</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.level > 0 ? '  '.repeat(category.level) + '└ ' : ''}
-                    {category.parent ? `${category.parent.name} > ${category.name}` : category.name}
-                  </option>
-                ))}
+                {categories.map(category => {
+                  // Build translated label using path if available
+                  const label = category.pathNames && category.pathNames.length > 0
+                    ? category.pathNames
+                        .map(name => translateCategoryName(name, currentLanguage))
+                        .join(' > ')
+                    : translateCategoryName(category.name, currentLanguage)
+                  return (
+                    <option key={category.id} value={category.id}>{label}</option>
+                  )
+                })}
               </select>
             </div>
 
@@ -435,9 +490,9 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                   }}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="">Select Room</option>
+                  <option value="">{(t as any)('selectRoom')}</option>
                   {rooms.map(room => (
-                    <option key={room.id} value={room.id}>{room.name}</option>
+                    <option key={room.id} value={room.id}>{translateRoomDisplayName(room.name)}</option>
                   ))}
                 </select>
               </div>
@@ -453,7 +508,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                   disabled={!selectedRoom}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select Cabinet</option>
+                  <option value="">{(t as any)('selectCabinet')}</option>
                   {cabinets.map(cabinet => (
                     <option key={cabinet.id} value={cabinet.id}>{cabinet.name}</option>
                   ))}

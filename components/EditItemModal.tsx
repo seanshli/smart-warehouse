@@ -112,6 +112,37 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
     return roomName
   }
 
+  // Local cabinet translator to reflect current language in dropdowns
+  const translateCabinetDisplayName = (cabinetName: string): string => {
+    const englishToKey: Record<string, string> = {
+      'Main Cabinet': (t as any)('mainCabinet'),
+      'Side Cabinet': (t as any)('sideCabinet'),
+      'Default Cabinet': (t as any)('defaultCabinet'),
+      'Closet': (t as any)('closet'),
+      'Dresser': (t as any)('dresser'),
+      'Right Cabinet': (t as any)('rightCabinet'),
+      'Middle Cabinet': (t as any)('middleCabinet'),
+    }
+    const chineseToEnglish: Record<string, string> = {
+      '主櫥櫃': 'Main Cabinet',
+      '側櫥櫃': 'Side Cabinet',
+      '主櫃': 'Main Cabinet',
+      '側櫃': 'Side Cabinet',
+      '右櫥櫃': 'Right Cabinet',
+      '左櫥櫃': 'Left Cabinet',
+      '中間櫥櫃': 'Middle Cabinet',
+    }
+    // If current language is English and we got Chinese, map to English
+    if (currentLanguage === 'en' && chineseToEnglish[cabinetName]) {
+      return chineseToEnglish[cabinetName]
+    }
+    // If we have a known English key, return translation via t()
+    if (englishToKey[cabinetName]) {
+      return englishToKey[cabinetName]
+    }
+    return cabinetName
+  }
+
   useEffect(() => {
     fetchCategoriesAndRooms()
   }, [activeHouseholdId])
@@ -534,7 +565,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
                 >
                   <option value="">{(t as any)('selectCabinet')}</option>
                   {cabinets.map(cabinet => (
-                    <option key={cabinet.id} value={cabinet.id}>{cabinet.name}</option>
+                    <option key={cabinet.id} value={cabinet.id}>{translateCabinetDisplayName(cabinet.name)}</option>
                   ))}
                 </select>
               </div>

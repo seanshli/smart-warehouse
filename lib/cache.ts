@@ -46,7 +46,8 @@ class MemoryCache {
   // Clear cache entries that match a pattern (useful for cache invalidation)
   clearPattern(pattern: string): void {
     const regex = new RegExp(pattern)
-    for (const key of this.cache.keys()) {
+    const keys = Array.from(this.cache.keys())
+    for (const key of keys) {
       if (regex.test(key)) {
         this.cache.delete(key)
       }
@@ -59,7 +60,8 @@ class MemoryCache {
     let expired = 0
     let active = 0
 
-    for (const entry of this.cache.values()) {
+    const values = Array.from(this.cache.values())
+    for (const entry of values) {
       if (now - entry.timestamp > entry.ttl) {
         expired++
       } else {

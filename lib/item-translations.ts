@@ -55,6 +55,25 @@ export function translateItemContent(content: string, targetLanguage: string): s
     translationMap.set(translation.original, translation.english)
   })
   
+  // Also add activity description translations
+  const activityTranslations: Record<string, string> = {
+    '物品已更新': 'Item updated',
+    '物品已新增': 'Item added',
+    '數量已更新': 'Quantity updated',
+    '數量從1增加到2': 'Quantity increased from 1 to 2',
+    '數量從2增加到3': 'Quantity increased from 2 to 3',
+    '物品「日本製銀色天然礦泉水瓶400ml」已建立,數量為1': 'Item "Japanese Silver Natural Mineral Water Bottle 400ml" created with quantity 1',
+    '物品「Panasonic 黑色多功能遙控器」已建立,數量為1': 'Item "Panasonic Black Multifunction Remote Control" created with quantity 1',
+    '物品「白色短袖T恤」已建立,數量為1': 'Item "White Short Sleeve T-Shirt" created with quantity 1',
+    '物品「Beige Cotton T-Shirt」已建立,數量為1': 'Item "Beige Cotton T-Shirt" created with quantity 1'
+  }
+  
+  // Check activity translations first
+  if (activityTranslations[content]) {
+    console.log('Activity translation applied:', { original: content, translated: activityTranslations[content] })
+    return activityTranslations[content]
+  }
+  
   const result = translationMap.get(content) || content
   
   // Debug logging

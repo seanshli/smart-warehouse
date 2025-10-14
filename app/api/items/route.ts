@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { CacheInvalidation } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -413,6 +414,10 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity
       })) : []
     }
+    
+    // Clear cache after successful item creation/update
+    CacheInvalidation.clearItemCache(household.id)
+    console.log('Items API: Cleared cache for household:', household.id)
     
     return NextResponse.json(response)
   } catch (error: any) {

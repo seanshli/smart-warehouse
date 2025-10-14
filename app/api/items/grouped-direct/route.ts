@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { translateItemContent } from '@/lib/item-translations'
+import { cache, CacheKeys } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -75,6 +76,15 @@ export async function GET(request: NextRequest) {
 
     console.log('Grouped-direct API: Household ID:', household.id)
 
+    // Check cache first
+    const cacheKey = CacheKeys.groupedItems(household.id)
+    const cachedData = cache.get(cacheKey)
+    
+    if (cachedData) {
+      console.log('Grouped-direct API: Returning cached data for household:', household.id)
+      return NextResponse.json(cachedData)
+    }
+
     // Get items using Prisma with better error handling
     let items
     try {
@@ -128,6 +138,10 @@ export async function GET(request: NextRequest) {
       cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null,
       itemIds: [item.id] // Track all item IDs for this group
     }))
+
+    // Cache the result for 5 minutes
+    cache.set(cacheKey, transformedItems, 5 * 60 * 1000)
+    console.log('Grouped-direct API: Cached data for household:', household.id)
 
     return NextResponse.json(transformedItems)
   } catch (error) {

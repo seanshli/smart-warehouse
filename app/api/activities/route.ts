@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getTranslations } from '@/lib/translations'
 import { translateItemContent } from '@/lib/item-translations'
+import { cache, CacheKeys } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -30,12 +31,7 @@ export async function GET(request: NextRequest) {
     console.log('Activities API - Final language used:', userLanguage)
     const t = getTranslations(userLanguage)
 
-    // Use centralized translation function
-    const translateItemName = (itemName: string, targetLanguage: string): string => {
-      return translateItemContent(itemName, targetLanguage)
-    }
-
-    // Get user's household
+    // Get user's household for cache key
     const household = await prisma.household.findFirst({
       where: {
         members: {
@@ -47,7 +43,21 @@ export async function GET(request: NextRequest) {
     })
 
     if (!household) {
-      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+      return NextResponse.json({ error: 'No household found' }, { status: 404 })
+    }
+
+    // Check cache first
+    const cacheKey = CacheKeys.activities(household.id, userId)
+    const cachedData = cache.get(cacheKey)
+    
+    if (cachedData) {
+      console.log('Activities API: Returning cached data for household:', household.id)
+      return NextResponse.json(cachedData)
+    }
+
+    // Use centralized translation function
+    const translateItemName = (itemName: string, targetLanguage: string): string => {
+      return translateItemContent(itemName, targetLanguage)
     }
 
     // Fetch all item history for items in the user's household
@@ -132,6 +142,10 @@ export async function GET(request: NextRequest) {
         description: translatedDescription
       }
     })
+
+    // Cache the result for 2 minutes (activities change more frequently)
+    cache.set(cacheKey, translatedActivities, 2 * 60 * 1000)
+    console.log('Activities API: Cached data for household:', household.id)
 
     return NextResponse.json(translatedActivities)
   } catch (error) {

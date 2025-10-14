@@ -24,6 +24,9 @@ export async function GET(request: NextRequest) {
     })
     
     const userLanguage = user?.language || 'en'
+    console.log('Activities API - User ID:', userId)
+    console.log('Activities API - User language from DB:', user?.language)
+    console.log('Activities API - Final language used:', userLanguage)
     const t = getTranslations(userLanguage)
 
     // Get user's household

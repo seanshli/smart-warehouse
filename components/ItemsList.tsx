@@ -12,17 +12,18 @@ interface Item {
   minQuantity: number
   imageUrl?: string
   category?: {
-    id?: string
+    id: string
     name: string
     parent?: {
       name: string
     }
   }
   room?: {
-    id?: string
+    id: string
     name: string
   }
   cabinet?: {
+    id: string
     name: string
   }
   itemIds?: string[] // Track all item IDs for this group (optional)

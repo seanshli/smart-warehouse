@@ -178,18 +178,18 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
           let result: any[] = []
           if (Array.isArray(cats)) {
             cats.forEach(cat => {
-              const currentPath = parent ? [...parentPath, parent.name, cat.name] : [cat.name]
+              const currentPath = parent ? [...parentPath, cat.name] : [cat.name]
               const categoryData = { 
                 id: cat.id, 
                 name: cat.name, 
                 level: cat.level || level,
                 parent: parent ? { name: parent.name } : undefined,
-                pathNames: parent ? [...parentPath, parent.name, cat.name] : [cat.name],
-                label: (parent ? currentPath : [cat.name]).join(' > ')
+                pathNames: parent ? [...parentPath, cat.name] : [cat.name],
+                label: currentPath.join(' > ')
               }
               result.push(categoryData)
               if (cat.children && cat.children.length > 0) {
-                result = result.concat(flattenCategories(cat.children, cat, level + 1, parent ? [...parentPath, parent.name] : [cat.name]))
+                result = result.concat(flattenCategories(cat.children, cat, level + 1, currentPath))
               }
             })
           }

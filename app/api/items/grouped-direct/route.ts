@@ -113,9 +113,9 @@ export async function GET(request: NextRequest) {
       categoryId: item.categoryId,
       roomId: item.roomId,
       cabinetId: item.cabinetId,
-      category: item.category ? { name: item.category.name } : null,
-      room: item.room ? { name: item.room.name } : null,
-      cabinet: item.cabinet ? { name: item.cabinet.name } : null,
+      category: item.category ? { id: item.category.id, name: item.category.name } : null,
+      room: item.room ? { id: item.room.id, name: item.room.name } : null,
+      cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null,
       itemIds: [item.id] // Track all item IDs for this group
     }))
 

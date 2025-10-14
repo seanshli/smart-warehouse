@@ -647,7 +647,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
         )}
 
                {step === 'ai-review' && (
-                 <div className="space-y-6">
+                 <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                    <div className="text-center">
                      <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                        AI Recognition Results
@@ -697,11 +697,11 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
 
                    {preview && (
                      <div className="text-center">
-                       <img src={preview} alt="Preview" className="mx-auto h-32 w-32 object-cover rounded-lg" />
+                       <img src={preview} alt="Preview" className="mx-auto h-20 w-20 object-cover rounded-lg" />
                      </div>
                    )}
 
-                   <div className="space-y-4">
+                   <div className="space-y-3">
                      {/* Taiwan Invoice Items Display */}
                      {aiResult?.showInvoiceItems && aiResult?.invoiceItems && (
                        <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-md p-4 mb-4">
@@ -987,7 +987,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                     </div>
                    </div>
 
-                   <div className="flex justify-between">
+                   <div className="flex justify-between pt-4 border-t border-gray-200 bg-white sticky bottom-0">
                      <button
                        onClick={() => setStep('input')}
                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

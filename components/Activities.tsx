@@ -32,13 +32,18 @@ interface Activity {
 }
 
 export default function Activities() {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchActivities()
   }, [])
+
+  // Re-fetch activities when language changes
+  useEffect(() => {
+    fetchActivities()
+  }, [currentLanguage])
 
   const fetchActivities = async () => {
     try {

@@ -10,8 +10,8 @@ const config: CapacitorConfig = {
     url: process.env.CAP_SERVER_URL || 'https://your-domain.com',
     cleartext: false // HTTPS required for production
   } : {
-    // Development: Point to local dev server
-    url: process.env.CAP_SERVER_URL || 'http://10.68.1.183:3000',
+    // Development: Point to local dev server with external access
+    url: process.env.CAP_SERVER_URL || 'http://172.20.10.4:3000',
     cleartext: true // Allow HTTP for development
   },
   ios: {

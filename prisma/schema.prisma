@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,254 +8,218 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  language  String   @default("en") // User's preferred language (ISO 639-1 code)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
+  id                   String            @id @default(dbgenerated("(gen_random_uuid())::text"))
+  email                String            @unique
+  name                 String?
+  image                String?
+  language             String?           @default("en")
+  createdAt            DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  accounts             Account[]
+  barcodes             Barcode[]
   householdMemberships HouseholdMember[]
-  items               Item[]
-  notifications       Notification[]
-  itemHistory         ItemHistory[]
-  barcodes           Barcode[]
-  accounts           Account[]
-  sessions           Session[]
+  itemHistory          ItemHistory[]
+  items                Item[]
+  notifications        Notification[]
+  sessions             Session[]
 
   @@map("users")
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+  id                  String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id             String
+  type                String
+  provider            String
+  provider_account_id String
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+  users               User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+  @@unique([provider, provider_account_id])
   @@map("accounts")
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  session_token String   @unique
+  user_id       String
+  expires       DateTime @db.Timestamptz(6)
+  users         User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("sessions")
 }
 
 model VerificationToken {
   identifier String
-  token      String   @unique
-  expires    DateTime
+  token      String
+  expires    DateTime @db.Timestamptz(6)
 
-  @@unique([identifier, token])
+  @@id([identifier, token])
   @@map("verification_tokens")
 }
 
 model Household {
-  id             String   @id @default(cuid())
+  id             String            @id @default(dbgenerated("(gen_random_uuid())::text"))
   name           String
   description    String?
-  invitationCode String   @unique @default(cuid()) @map("invitation_code")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  members  HouseholdMember[]
-  rooms    Room[]
-  items    Item[]
-  categories Category[]
-  notifications Notification[]
-  barcodes  Barcode[]
+  invitationCode String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  createdAt      DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  categories     Category[]
+  members        HouseholdMember[]
+  items          Item[]
+  rooms          Room[]
 
   @@map("households")
 }
 
 model HouseholdMember {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  householdId String   @map("household_id")
-  role        String   @default("USER") // OWNER, USER, VISITOR (multiple OWNERs allowed)
-  joinedAt    DateTime @default(now()) @map("joined_at")
-
-  // Relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId      String    @map("user_id")
+  householdId String    @map("household_id")
+  role        String?   @default("USER")
+  joinedAt    DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, householdId])
   @@map("household_members")
 }
 
 model Room {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  householdId String   @map("household_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  cabinets  Cabinet[]
-  items     Item[]
-  oldItemHistory ItemHistory[] @relation("ItemHistoryOldRoom")
+  id             String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name           String
+  description    String?
+  householdId    String        @map("household_id")
+  createdAt      DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cabinets       Cabinet[]
   newItemHistory ItemHistory[] @relation("ItemHistoryNewRoom")
+  oldItemHistory ItemHistory[] @relation("ItemHistoryOldRoom")
+  items          Item[]
+  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("rooms")
 }
 
 model Cabinet {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  roomId      String   @map("room_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  room  Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  items Item[]
-  oldItemHistory ItemHistory[] @relation("ItemHistoryOldCabinet")
+  id             String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name           String
+  description    String?
+  roomId         String        @map("room_id")
+  createdAt      DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  room           Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   newItemHistory ItemHistory[] @relation("ItemHistoryNewCabinet")
+  oldItemHistory ItemHistory[] @relation("ItemHistoryOldCabinet")
+  items          Item[]
 
   @@map("cabinets")
 }
 
 model Category {
-  id          String   @id @default(cuid())
+  id          String     @id @default(dbgenerated("(gen_random_uuid())::text"))
   name        String
   description String?
-  level       Int      // 1, 2, or 3 for the 3-level hierarchy
-  parentId    String?  @map("parent_id") // For hierarchical structure
-  householdId String   @map("household_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  parent    Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
-  items     Item[]
+  level       Int
+  parentId    String?    @map("parent_id")
+  householdId String     @map("household_id")
+  createdAt   DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  household   Household  @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onUpdate: NoAction)
+  children    Category[] @relation("CategoryHierarchy")
+  items       Item[]
 
   @@map("categories")
 }
 
 model Item {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  quantity    Int      @default(1)
-  minQuantity Int      @default(0) @map("min_quantity") // Low inventory threshold
-  barcode     String?  // Removed @unique - multiple items can have same barcode
-  qrCode      String?  // No mapping - column might not exist yet
-  imageUrl    String?  // No mapping - column might not exist yet
-  aiDescription String? // AI-generated description (no mapping - column doesn't exist yet)
-  language    String?  @map("language") // Language override for this item (ISO 639-1 code)
-  categoryId  String?  @map("category_id")
-  roomId      String?  @map("room_id")
-  cabinetId   String?  @map("cabinet_id")
-  householdId String   @map("household_id")
-  addedById   String   @map("added_by_id")
-  // Taiwan invoice fields
-  buyDate     DateTime? @map("buy_date") // Date when item was purchased
-  buyCost     Float?    @map("buy_cost") // Cost of the item when purchased
-  buyLocation String?   @map("buy_location") // Location where item was purchased
-  invoiceNumber String? @map("invoice_number") // Taiwan invoice number if from e-invoice
-  sellerName  String?   @map("seller_name") // Seller name from invoice
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  category  Category?  @relation(fields: [categoryId], references: [id])
-  room      Room?      @relation(fields: [roomId], references: [id])
-  cabinet   Cabinet?   @relation(fields: [cabinetId], references: [id])
-  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  addedBy   User       @relation(fields: [addedById], references: [id])
+  id            String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name          String
+  description   String?
+  quantity      Int            @default(1)
+  minQuantity   Int?           @default(0) @map("min_quantity")
+  image_url     String?
+  barcode       String?
+  qr_code       String?
+  categoryId    String?        @map("category_id")
+  roomId        String?        @map("room_id")
+  cabinetId     String?        @map("cabinet_id")
+  householdId   String         @map("household_id")
+  addedById     String         @map("added_by_id")
+  createdAt     DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  qrCode        String?
+  imageUrl      String?
+  aiDescription String?
+  language      String?        @map("language")
+  buyDate       DateTime?      @map("buy_date") @db.Timestamp(6)
+  buyCost       Float?         @map("buy_cost") @db.Real
+  buyLocation   String?        @map("buy_location")
+  invoiceNumber String?        @map("invoice_number")
+  sellerName    String?        @map("seller_name")
+  history       ItemHistory[]
+  addedBy       User           @relation(fields: [addedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  cabinet       Cabinet?       @relation(fields: [cabinetId], references: [id], onUpdate: NoAction)
+  category      Category?      @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  room          Room?          @relation(fields: [roomId], references: [id], onUpdate: NoAction)
   notifications Notification[]
-  history   ItemHistory[]
 
   @@map("items")
 }
 
 model ItemHistory {
-  id          String   @id @default(cuid())
-  itemId      String   @map("item_id")
-  action      String   // "created", "moved", "updated", "deleted"
-  description String   // Human-readable description of the action
-  oldRoomId   String?  @map("old_room_id")
-  newRoomId   String?  @map("new_room_id")
-  oldCabinetId String? @map("old_cabinet_id")
-  newCabinetId String? @map("new_cabinet_id")
-  performedBy String   @map("performed_by") // User who performed the action
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  // Relations
-  item      Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  oldRoom   Room? @relation("ItemHistoryOldRoom", fields: [oldRoomId], references: [id])
-  newRoom   Room? @relation("ItemHistoryNewRoom", fields: [newRoomId], references: [id])
-  oldCabinet Cabinet? @relation("ItemHistoryOldCabinet", fields: [oldCabinetId], references: [id])
-  newCabinet Cabinet? @relation("ItemHistoryNewCabinet", fields: [newCabinetId], references: [id])
-  performer User @relation(fields: [performedBy], references: [id])
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  itemId       String    @map("item_id")
+  action       String
+  description  String?
+  performedBy  String    @map("performed_by")
+  oldRoomId    String?   @map("old_room_id")
+  newRoomId    String?   @map("new_room_id")
+  oldCabinetId String?   @map("old_cabinet_id")
+  newCabinetId String?   @map("new_cabinet_id")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  item         Item      @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  newCabinet   Cabinet?  @relation("ItemHistoryNewCabinet", fields: [newCabinetId], references: [id], onUpdate: NoAction)
+  newRoom      Room?     @relation("ItemHistoryNewRoom", fields: [newRoomId], references: [id], onUpdate: NoAction)
+  oldCabinet   Cabinet?  @relation("ItemHistoryOldCabinet", fields: [oldCabinetId], references: [id], onUpdate: NoAction)
+  oldRoom      Room?     @relation("ItemHistoryOldRoom", fields: [oldRoomId], references: [id], onUpdate: NoAction)
+  performer    User      @relation(fields: [performedBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("item_history")
 }
 
 model Barcode {
-  id          String   @id @default(cuid())
-  barcode     String   @unique // The actual barcode number
-  name        String   // Product name
-  description String?  // Product description
-  category    String   // Product category
-  subcategory String?  // Product subcategory
-  brand       String?  // Brand name
-  imageUrl    String?  // Product image URL
-  language    String?  // Language of the product data (ISO 639-1 code)
-  confidence  Int      @default(0) // AI confidence score (0-100)
-  source      String   @default("ai") // Source: "ai", "user", "external"
-  isVerified  Boolean  @default(false) // Whether user has verified this data
-  createdBy   String   @map("created_by") // User who created/verified this entry
-  householdId String   @map("household_id") // Associated household
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  user      User      @relation(fields: [createdBy], references: [id])
-  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id      String
+  barcode      String
+  product_name String?
+  description  String?
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  users        User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("barcodes")
 }
 
 model Notification {
-  id          String   @id @default(cuid())
-  type        String   // LOW_INVENTORY, ITEM_ADDED, ITEM_UPDATED, SYSTEM
-  title       String
-  message     String
-  isRead      Boolean  @default(false)
-  userId      String   @map("user_id")
-  householdId String   @map("household_id")
-  itemId      String?  @map("item_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  item      Item?      @relation(fields: [itemId], references: [id])
+  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId    String    @map("user_id")
+  itemId    String?   @map("item_id")
+  type      String
+  title     String
+  message   String
+  read      Boolean?  @default(false)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  item      Item?     @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("notifications")
 }
-

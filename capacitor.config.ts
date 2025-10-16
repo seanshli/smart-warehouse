@@ -6,8 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'out',
   // Configure server based on environment
   server: process.env.NODE_ENV === 'production' ? {
-    // Production: Point to external HTTPS domain
-    url: process.env.CAP_SERVER_URL || 'https://your-domain.com',
+    // Production: Point to Vercel deployment
+    url: process.env.CAP_SERVER_URL || 'https://smart-warehouse-five.vercel.app',
     cleartext: false // HTTPS required for production
   } : {
     // Development: Point to local dev server with external access

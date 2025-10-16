@@ -14,6 +14,7 @@
     "cap:copy:production": "npm run build:production && npx cap copy",
     "ios": "npm run cap:copy && npx cap open ios",
     "ios:production": "npm run cap:copy:production && npx cap open ios",
+    "build:mobile:production": "./scripts/build-production-mobile.sh",
     "setup:external": "./scripts/setup-external-access.sh",
     "lint": "next lint",
     "setup": "node scripts/setup.js",

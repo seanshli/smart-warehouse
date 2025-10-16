@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { translateRoomName, translateCabinetName, translateCategoryName, translateItemContentEnhanced } from '@/lib/location-translations'
 import OpenAI from 'openai'
 
 // Force dynamic rendering for this route
@@ -152,29 +153,29 @@ Be specific and helpful. If they're looking for something specific, suggest rela
       index === self.findIndex(t => t.id === item.id)
     )
 
-    const results = uniqueItems.map(item => ({
+    const results = await Promise.all(uniqueItems.map(async item => ({
       id: item.id,
-      name: item.name,
-      description: item.description || '',
+      name: await translateItemContentEnhanced(item.name, userLanguage),
+      description: await translateItemContentEnhanced(item.description || '', userLanguage),
       quantity: item.quantity,
       minQuantity: item.minQuantity,
       imageUrl: item.imageUrl,
       category: item.category ? {
         id: item.category.id,
-        name: item.category.name,
+        name: translateCategoryName(item.category.name, userLanguage),
         parent: item.category.parent ? {
-          name: item.category.parent.name
+          name: translateCategoryName(item.category.parent.name, userLanguage)
         } : undefined
       } : undefined,
       room: item.room ? {
         id: item.room.id,
-        name: item.room.name
+        name: translateRoomName(item.room.name, userLanguage)
       } : undefined,
       cabinet: item.cabinet ? {
         id: item.cabinet.id,
-        name: item.cabinet.name
+        name: translateCabinetName(item.cabinet.name, userLanguage)
       } : undefined
-    }))
+    })))
 
     return NextResponse.json({ 
       results,

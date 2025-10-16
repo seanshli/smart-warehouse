@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { translateRoomName, translateCabinetName, translateCategoryName, translateItemContentEnhanced } from '@/lib/location-translations'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's household
-    const user = await prisma.user.findUnique({
+    const userRecord = await prisma.user.findUnique({
       where: { id: (session?.user as any)?.id },
       include: {
         householdMemberships: {
@@ -33,11 +34,11 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (!user || !user.householdMemberships.length) {
+    if (!userRecord || !userRecord.householdMemberships.length) {
       return NextResponse.json({ error: 'No household found' }, { status: 404 })
     }
 
-    const householdId = user.householdMemberships[0].household.id
+    const householdId = userRecord.householdMemberships[0].household.id
 
     // Search for items that match the query
     const items = await prisma.item.findMany({
@@ -94,30 +95,37 @@ export async function GET(request: NextRequest) {
       take: 50 // Limit results to 50 items
     })
 
-    // Format the results
-    const results = items.map(item => ({
+    // Get user's language preference for translation
+    const userLang = await prisma.user.findUnique({
+      where: { id: (session?.user as any)?.id },
+      select: { language: true }
+    })
+    const userLanguage = userLang?.language || 'en'
+
+    // Format the results with translation
+    const results = await Promise.all(items.map(async item => ({
       id: item.id,
-      name: item.name,
-      description: item.description || '',
+      name: await translateItemContentEnhanced(item.name, userLanguage),
+      description: await translateItemContentEnhanced(item.description || '', userLanguage),
       quantity: item.quantity,
       minQuantity: item.minQuantity,
       imageUrl: item.imageUrl,
       category: item.category ? {
         id: item.category.id,
-        name: item.category.name,
+        name: translateCategoryName(item.category.name, userLanguage),
         parent: item.category.parent ? {
-          name: item.category.parent.name
+          name: translateCategoryName(item.category.parent.name, userLanguage)
         } : undefined
       } : undefined,
       room: item.room ? {
         id: item.room.id,
-        name: item.room.name
+        name: translateRoomName(item.room.name, userLanguage)
       } : undefined,
       cabinet: item.cabinet ? {
         id: item.cabinet.id,
-        name: item.cabinet.name
+        name: translateCabinetName(item.cabinet.name, userLanguage)
       } : undefined
-    }))
+    })))
 
     return NextResponse.json({ results })
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, CubeIcon, ChevronRightIcon, TrashIcon, PencilIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
-import { translateCategoryName } from '@/lib/translations'
+import { translateCategoryName } from '@/lib/location-translations'
 
 interface Category {
   id: string

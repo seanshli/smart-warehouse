@@ -34,7 +34,7 @@ interface Activity {
   description: string
   createdAt: string
   performedBy: string
-  user?: {
+  performer?: {
     name: string
     email: string
   }
@@ -188,9 +188,9 @@ export default function ItemHistoryModal({ item, onClose }: ItemHistoryModalProp
                       <p className="text-sm text-gray-600 mt-1">
                         {activity.description}
                       </p>
-                      {activity.user && (
+                      {activity.performer && (
                         <p className="text-xs text-gray-500 mt-1">
-                          by {activity.user.name || activity.user.email}
+                          by {activity.performer.name || activity.performer.email}
                         </p>
                       )}
                     </div>

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { translateItemContent } from '@/lib/item-translations'
+import { translateRoomName, translateCabinetName, translateCategoryName, translateItemContentEnhanced } from '@/lib/location-translations'
 import { cache, CacheKeys } from '@/lib/cache'
 
 // Force dynamic rendering for this route
@@ -90,11 +91,11 @@ export async function GET(request: NextRequest) {
     })
     const userLanguage = user?.language || 'en'
 
-    // Transform the results with translation
-    const transformedItems = items.map(item => ({
+    // Transform the results with comprehensive translation
+    const transformedItems = await Promise.all(items.map(async item => ({
       id: item.id,
-      name: translateItemContent(item.name, userLanguage),
-      description: translateItemContent(item.description || '', userLanguage),
+      name: await translateItemContentEnhanced(item.name, userLanguage),
+      description: await translateItemContentEnhanced(item.description || '', userLanguage),
       quantity: item.quantity,
       minQuantity: item.minQuantity,
       imageUrl: item.imageUrl,
@@ -102,11 +103,20 @@ export async function GET(request: NextRequest) {
       categoryId: item.category?.id,
       roomId: item.room?.id,
       cabinetId: item.cabinet?.id,
-      category: item.category ? { id: item.category.id, name: item.category.name } : null,
-      room: item.room ? { id: item.room.id, name: item.room.name } : null,
-      cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null,
+      category: item.category ? { 
+        id: item.category.id, 
+        name: translateCategoryName(item.category.name, userLanguage) 
+      } : null,
+      room: item.room ? { 
+        id: item.room.id, 
+        name: translateRoomName(item.room.name, userLanguage) 
+      } : null,
+      cabinet: item.cabinet ? { 
+        id: item.cabinet.id, 
+        name: translateCabinetName(item.cabinet.name, userLanguage) 
+      } : null,
       itemIds: [item.id]
-    }))
+    })))
 
     // Cache the result for 5 minutes
     cache.set(cacheKey, transformedItems, 5 * 60 * 1000)

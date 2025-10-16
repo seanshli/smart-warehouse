@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { translateRoomName, translateCabinetName, translateCategoryName, translateItemContentEnhanced } from '@/lib/location-translations'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -31,13 +32,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
     }
 
+    // Get user's language preference for translation
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { language: true }
+    })
+    const userLanguage = user?.language || 'en'
+
     // Get dashboard statistics
     const [
       totalItems,
       totalRooms,
       lowStockItems,
       householdMembers,
-      recentItems
+      recentActivities
     ] = await Promise.all([
       // Total items count
       prisma.item.count({
@@ -74,33 +82,71 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Recent items (last 5)
-      prisma.item.findMany({
+      // Recent activities (last 10)
+      prisma.itemHistory.findMany({
         where: {
-          householdId: household.id
+          item: {
+            householdId: household.id
+          }
         },
         orderBy: {
           createdAt: 'desc'
         },
-        take: 5,
+        take: 10,
         include: {
-          room: true,
-          cabinet: true,
-          category: true
+          performer: {
+            select: {
+              name: true,
+              email: true
+            }
+          },
+          item: {
+            include: {
+              room: true,
+              cabinet: true,
+              category: true
+            }
+          }
         }
       })
     ])
+
+    // Transform activities with translation
+    const transformedActivities = await Promise.all(recentActivities.map(async (activity) => ({
+      id: activity.id,
+      action: activity.action,
+      description: await translateItemContentEnhanced(activity.description, userLanguage),
+      createdAt: activity.createdAt,
+      performer: activity.performer,
+      item: activity.item ? {
+        id: activity.item.id,
+        name: await translateItemContentEnhanced(activity.item.name, userLanguage),
+        room: activity.item.room ? {
+          id: activity.item.room.id,
+          name: translateRoomName(activity.item.room.name, userLanguage)
+        } : null,
+        cabinet: activity.item.cabinet ? {
+          id: activity.item.cabinet.id,
+          name: translateCabinetName(activity.item.cabinet.name, userLanguage)
+        } : null,
+        category: activity.item.category ? {
+          id: activity.item.category.id,
+          name: translateCategoryName(activity.item.category.name, userLanguage)
+        } : null
+      } : null
+    })))
 
     return NextResponse.json({
       totalItems,
       totalRooms,
       lowStockItems,
       householdMembers,
-      recentActivities: recentItems,
+      recentActivities: transformedActivities,
       debug: {
         lowStockCalculation: lowStockItems,
         householdId: household.id,
-        userId: userId
+        userId: userId,
+        userLanguage: userLanguage
       }
     })
   } catch (error) {

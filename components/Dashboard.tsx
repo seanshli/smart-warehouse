@@ -182,7 +182,30 @@ export default function Dashboard() {
 
              {/* Main Content */}
              <main className="max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-6 lg:px-8">
-               {activeTab === 'dashboard' && <DashboardContent />}
+               {activeTab === 'dashboard' && (
+                 <DashboardContent 
+                   onItemEdit={(item) => {
+                     console.log('Dashboard: Edit handler called for item:', item.name)
+                     setSelectedItem(item)
+                     setShowEditItem(true)
+                   }}
+                   onItemMove={(item) => {
+                     console.log('Dashboard: Move handler called for item:', item.name)
+                     setSelectedItem(item)
+                     setShowMoveItem(true)
+                   }}
+                   onItemCheckout={(item) => {
+                     console.log('Dashboard: Checkout handler called for item:', item.name)
+                     setSelectedItem(item)
+                     setShowCheckoutItem(true)
+                   }}
+                   onItemHistory={(item) => {
+                     console.log('Dashboard: History handler called for item:', item.name)
+                     setSelectedItem(item)
+                     setShowItemHistory(true)
+                   }}
+                 />
+               )}
                {activeTab === 'search' && <SearchPage />}
                {activeTab === 'items' && (
                  <div className="px-4 py-6 sm:px-0">
@@ -333,7 +356,17 @@ export default function Dashboard() {
   )
 }
 
-function DashboardContent() {
+function DashboardContent({ 
+  onItemEdit, 
+  onItemMove, 
+  onItemCheckout, 
+  onItemHistory 
+}: {
+  onItemEdit: (item: any) => void
+  onItemMove: (item: any) => void
+  onItemCheckout: (item: any) => void
+  onItemHistory: (item: any) => void
+}) {
   const { t } = useLanguage()
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -582,22 +615,10 @@ function DashboardContent() {
           <ItemsList 
             showCategory={true}
             showLocation={true}
-            onItemEdit={(item) => {
-              // TODO: Implement edit functionality
-              console.log('Edit item:', item)
-            }}
-            onItemMove={(item) => {
-              // TODO: Implement move functionality
-              console.log('Move item:', item)
-            }}
-            onItemCheckout={(item) => {
-              // TODO: Implement checkout functionality
-              console.log('Checkout item:', item)
-            }}
-            onItemHistory={(item) => {
-              // TODO: Implement history functionality
-              console.log('View history for item:', item)
-            }}
+            onItemEdit={onItemEdit}
+            onItemMove={onItemMove}
+            onItemCheckout={onItemCheckout}
+            onItemHistory={onItemHistory}
           />
         </div>
       </div>

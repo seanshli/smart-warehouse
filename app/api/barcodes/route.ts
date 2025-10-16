@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const barcodeRecord = await prisma.barcode.findFirst({
       where: {
         barcode: barcode,
-        householdId: household.id
+        user_id: userId
       }
     })
 
@@ -110,37 +110,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or update barcode record
-    const barcodeRecord = await prisma.barcode.upsert({
+    const existingBarcode = await prisma.barcode.findFirst({
       where: {
-        barcode: barcode
-      },
-      update: {
-        name,
-        description,
-        category,
-        subcategory,
-        brand,
-        imageUrl,
-        confidence: confidence || 0,
-        source,
-        isVerified,
-        updatedAt: new Date()
-      },
-      create: {
-        barcode,
-        name,
-        description,
-        category,
-        subcategory,
-        brand,
-        imageUrl,
-        confidence: confidence || 0,
-        source,
-        isVerified,
-        createdBy: userId,
-        householdId: household.id
+        barcode: barcode,
+        user_id: userId
       }
     })
+
+    let barcodeRecord
+    if (existingBarcode) {
+      barcodeRecord = await prisma.barcode.update({
+        where: {
+          id: existingBarcode.id
+        },
+        data: {
+          product_name: name,
+          description
+        }
+      })
+    } else {
+      barcodeRecord = await prisma.barcode.create({
+        data: {
+          user_id: userId,
+          barcode: barcode,
+          product_name: name,
+          description
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,

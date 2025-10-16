@@ -34,11 +34,13 @@ export async function GET() {
   const perDay: Record<string, number> = {}
   const perHour: Record<string, number> = {}
   for (const e of events) {
-    const d = new Date(e.createdAt)
-    const dayKey = d.toISOString().slice(0, 10)
-    const hourKey = d.toISOString().slice(0, 13)
-    perDay[dayKey] = (perDay[dayKey] || 0) + 1
-    perHour[hourKey] = (perHour[hourKey] || 0) + 1
+    if (e.createdAt) {
+      const d = new Date(e.createdAt)
+      const dayKey = d.toISOString().slice(0, 10)
+      const hourKey = d.toISOString().slice(0, 13)
+      perDay[dayKey] = (perDay[dayKey] || 0) + 1
+      perHour[hourKey] = (perHour[hourKey] || 0) + 1
+    }
   }
 
   return NextResponse.json({ users, households, items, perDay, perHour })

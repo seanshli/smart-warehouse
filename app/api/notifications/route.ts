@@ -31,8 +31,7 @@ export async function GET() {
 
     const notifications = await prisma.notification.findMany({
       where: {
-        userId: (session?.user as any)?.id,
-        householdId: household.id
+        userId: (session?.user as any)?.id
       },
       include: {
         item: {

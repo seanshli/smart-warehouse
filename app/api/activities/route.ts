@@ -82,30 +82,30 @@ export async function GET(request: NextRequest) {
 
     // Translate activity descriptions based on user's language
     const translatedActivities = activities.map(activity => {
-      let translatedDescription = activity.description
+      let translatedDescription = activity.description || ''
       
       // Translate common activity descriptions
       switch (activity.action) {
         case 'created':
-          if (activity.description.includes('created with quantity')) {
+          if (activity.description && activity.description.includes('created with quantity')) {
             const match = activity.description.match(/Item "([^"]+)" created with quantity (\d+)/)
             if (match) {
               const [, itemName, quantity] = match
               const translatedItemName = translateItemName(itemName, userLanguage)
               translatedDescription = t.itemCreatedWithQuantity.replace('{itemName}', translatedItemName).replace('{quantity}', quantity)
             }
-          } else if (activity.description.includes('created')) {
+          } else if (activity.description && activity.description.includes('created')) {
             translatedDescription = t.itemCreated
           }
           break
         case 'quantity_updated':
-          if (activity.description.includes('Quantity increased from')) {
+          if (activity.description && activity.description.includes('Quantity increased from')) {
             const match = activity.description.match(/Quantity increased from (\d+) to (\d+)/)
             if (match) {
               const [, from, to] = match
               translatedDescription = t.quantityIncreasedFromTo.replace('{from}', from).replace('{to}', to)
             }
-          } else if (activity.description.includes('Quantity decreased from')) {
+          } else if (activity.description && activity.description.includes('Quantity decreased from')) {
             const match = activity.description.match(/Quantity decreased from (\d+) to (\d+)/)
             if (match) {
               const [, from, to] = match
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
           }
           break
         case 'moved':
-          if (activity.description.includes('moved from')) {
+          if (activity.description && activity.description.includes('moved from')) {
             const match = activity.description.match(/(.+?) moved from (.+?) to (.+)/)
             if (match) {
               const [, itemName, from, to] = match

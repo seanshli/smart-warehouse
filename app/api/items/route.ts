@@ -391,7 +391,6 @@ export async function POST(request: NextRequest) {
           title: 'Low Inventory Alert',
           message: `${name} is running low (${item.quantity} remaining)`,
           userId: userId,
-          householdId: household.id,
           itemId: item.id
         }
       })

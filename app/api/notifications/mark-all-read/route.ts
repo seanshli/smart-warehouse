@@ -32,11 +32,10 @@ export async function PATCH() {
     await prisma.notification.updateMany({
       where: {
         userId: (session?.user as any)?.id,
-        householdId: household.id,
-        isRead: false
+        read: false
       },
       data: {
-        isRead: true
+        read: true
       }
     })
 

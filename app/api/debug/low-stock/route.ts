@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate low stock items
-    const lowStockItems = items.filter(item => item.quantity <= item.minQuantity)
+    const lowStockItems = items.filter(item => item.minQuantity !== null && item.quantity <= item.minQuantity)
 
     return NextResponse.json({
       totalItems: items.length,
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
           name: item.name,
           quantity: item.quantity,
           minQuantity: item.minQuantity,
-          isLowStock: item.quantity <= item.minQuantity
+          isLowStock: item.minQuantity !== null && item.quantity <= item.minQuantity
         }))
       }
     })

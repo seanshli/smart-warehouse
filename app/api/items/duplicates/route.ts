@@ -142,9 +142,11 @@ export async function POST(request: NextRequest) {
     const totalQuantity = sourceItems.reduce((sum, item) => sum + item.quantity, 0) + targetItem.quantity
 
     // Get the most recent item's details for description and other fields
-    const mostRecentItem = [targetItem, ...sourceItems].sort((a, b) => 
-      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    )[0]
+    const mostRecentItem = [targetItem, ...sourceItems].sort((a, b) => {
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+      return dateB - dateA
+    })[0]
 
     // Update target item with combined quantity and best description
     const updatedItem = await prisma.item.update({

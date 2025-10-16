@@ -87,7 +87,11 @@ export async function GET(request: NextRequest) {
         existingItem.itemIds.push(item.id)
         
         // Update min quantity to be the minimum of all grouped items
-        existingItem.minQuantity = Math.min(existingItem.minQuantity, item.minQuantity)
+        if (item.minQuantity !== null) {
+          existingItem.minQuantity = existingItem.minQuantity !== null 
+            ? Math.min(existingItem.minQuantity, item.minQuantity)
+            : item.minQuantity
+        }
         
         // Keep the most recent image URL if available
         if (item.imageUrl && !existingItem.imageUrl) {

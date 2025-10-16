@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
           minQuantity: true
         }
       }).then(items => {
-        return items.filter(item => item.quantity <= item.minQuantity).length
+        return items.filter(item => item.minQuantity !== null && item.quantity <= item.minQuantity).length
       }),
       
       // Household members count
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     const transformedActivities = await Promise.all(recentActivities.map(async (activity) => ({
       id: activity.id,
       action: activity.action,
-      description: await translateItemContentEnhanced(activity.description, userLanguage),
+      description: await translateItemContentEnhanced(activity.description || '', userLanguage),
       createdAt: activity.createdAt,
       performer: activity.performer,
       item: activity.item ? {

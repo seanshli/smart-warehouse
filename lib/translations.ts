@@ -69,6 +69,7 @@ export interface Translations {
   searchByDescription: string
   searchByCategory: string
   searchByLocation: string
+  useChatGPT: string
   
   // Image upload
   itemPhoto: string
@@ -355,6 +356,7 @@ const en: Translations = {
   searchByDescription: 'Search by description',
   searchByCategory: 'Search by category',
   searchByLocation: 'Search by location',
+  useChatGPT: 'Use ChatGPT Search',
   
   // Image upload
   itemPhoto: 'Item Photo',
@@ -645,6 +647,7 @@ const zhTW: Translations = {
   searchByDescription: '依描述搜尋',
   searchByCategory: '依分類搜尋',
   searchByLocation: '依位置搜尋',
+  useChatGPT: '使用 ChatGPT 搜尋',
   
   // Image upload
   itemPhoto: '物品照片',
@@ -945,6 +948,7 @@ const zh: Translations = {
   searchByDescription: '按描述搜索',
   searchByCategory: '按分类搜索',
   searchByLocation: '按位置搜索',
+  useChatGPT: '使用 ChatGPT 搜索',
   
   // Image upload
   itemPhoto: '物品照片',
@@ -1243,6 +1247,7 @@ const ja: Translations = {
   searchByDescription: '説明で検索',
   searchByCategory: 'カテゴリで検索',
   searchByLocation: '場所で検索',
+  useChatGPT: 'ChatGPT 検索を使用',
   
   // Image upload
   itemPhoto: 'アイテム写真',

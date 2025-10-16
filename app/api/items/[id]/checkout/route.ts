@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { CacheInvalidation } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -78,6 +79,12 @@ export async function POST(
         performedBy: userId
       }
     })
+
+    // Clear cache after checkout to ensure UI reflects updated quantity
+    if (item.householdId) {
+      CacheInvalidation.clearItemCache(item.householdId)
+      console.log('Checkout: Cleared cache for household:', item.householdId)
+    }
 
     return NextResponse.json(updatedItem)
   } catch (error) {

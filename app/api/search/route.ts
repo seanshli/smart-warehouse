@@ -103,17 +103,18 @@ export async function GET(request: NextRequest) {
       minQuantity: item.minQuantity,
       imageUrl: item.imageUrl,
       category: item.category ? {
+        id: item.category.id,
         name: item.category.name,
-        level: item.category.level,
         parent: item.category.parent ? {
-          name: item.category.parent.name,
-          level: item.category.parent.level
+          name: item.category.parent.name
         } : undefined
       } : undefined,
       room: item.room ? {
+        id: item.room.id,
         name: item.room.name
       } : undefined,
       cabinet: item.cabinet ? {
+        id: item.cabinet.id,
         name: item.cabinet.name
       } : undefined
     }))

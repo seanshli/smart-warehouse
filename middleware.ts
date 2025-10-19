@@ -24,11 +24,7 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-auth')) {
     const token = await getToken({ req: request })
     
-    // For now, allow admin access for specific admin users
-    // TODO: Implement proper database admin check once schema is updated
-    const isAdminUser = token?.email === 'admin@smartwarehouse.com' || token?.email === 'seanshlitw@gmail.com'
-    
-    if (!token || !isAdminUser) {
+    if (!token || !(token as any).isAdmin) {
       return NextResponse.redirect(new URL('/admin-auth/signin', request.url))
     }
   }

@@ -21,6 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Dashboard', href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
     { name: 'Households', href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
     { name: 'Items', href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
+    { name: 'Admin Users', href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
     { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },
     { name: 'Settings', href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },
   ]

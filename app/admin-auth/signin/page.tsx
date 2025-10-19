@@ -37,11 +37,8 @@ export default function AdminSignIn() {
       // Check if user has admin privileges
       const session = await getSession()
       
-      // For now, allow admin access if using admin credentials
-      // TODO: Implement proper database admin check once schema is updated
-      const isAdminUser = email === 'admin@smartwarehouse.com' || email === 'seanshlitw@gmail.com'
-      
-      if (!isAdminUser) {
+      // Verify admin privileges in database
+      if (!(session?.user as any)?.isAdmin) {
         setError('Access denied. Admin privileges required.')
         return
       }

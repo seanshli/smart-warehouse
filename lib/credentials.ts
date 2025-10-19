@@ -69,7 +69,10 @@ userPasswords.set('alice@smartwarehouse.com', '$2a$12$ku6P4rxZKDlIk7izcIg5Ju.n4U
 userPasswords.set('bob@smartwarehouse.com', '$2a$12$kAcPGBchdjazScmI/pwwIeWTnH9Febvh2ysmU2rt7FwcCcWY2n2Y6') // bob123
 userPasswords.set('carol@smartwarehouse.com', '$2a$12$OQy9yYPnHDY8OhzM9OrYv.B4kQ1YyYMCmSBiZDWtCscmjpIvLALOi') // carol123
 userPasswords.set('test@example.com', '$2a$12$pELsndmn.5SPc2hMwH5EPOmajTz82iWMQVhpq/jM3INGdZifV2us2') // test123
-userPasswords.set('seanshlitw@gmail.com', '$2a$12$wkmI66puO7cXxmrqKcJLpO3IGHO3.2.l93bKVBD0jue5rttfpI.UK') // smtengo888
+userPasswords.set('seanshlitw@gmail.com', '$2a$12$wkmI66puO7cXxmrqKcJLpO3IGHO3.2.l93bKVBD0jue5rttfpI.UK') // smtengo888 (ADMIN)
+
+// Admin user credentials
+userPasswords.set('admin@smartwarehouse.com', '$2a$12$S4kSMrpyxqLDXWtloRdNjOb1y2T2BOR7n7VVo.HI1Y7brxY.Ca64a') // admin123
 
 export function storeUserPassword(email: string, hashedPassword: string) {
   userPasswords.set(email.toLowerCase(), hashedPassword)

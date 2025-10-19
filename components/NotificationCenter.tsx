@@ -9,7 +9,7 @@ interface Notification {
   type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'SYSTEM'
   title: string
   message: string
-  isRead: boolean
+  read: boolean
   createdAt: string
   item?: {
     name: string
@@ -45,13 +45,13 @@ export default function NotificationCenter() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ isRead: true }),
+        body: JSON.stringify({ read: true }),
       })
 
       if (response.ok) {
         setNotifications(prev =>
           prev.map(notif =>
-            notif.id === notificationId ? { ...notif, isRead: true } : notif
+            notif.id === notificationId ? { ...notif, read: true } : notif
           )
         )
       }
@@ -68,7 +68,7 @@ export default function NotificationCenter() {
 
       if (response.ok) {
         setNotifications(prev =>
-          prev.map(notif => ({ ...notif, isRead: true }))
+          prev.map(notif => ({ ...notif, read: true }))
         )
         toast.success('All notifications marked as read')
       }
@@ -102,7 +102,7 @@ export default function NotificationCenter() {
     }
   }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  const unreadCount = notifications.filter(n => !n.read).length
 
   if (isLoading) {
     return (
@@ -139,7 +139,7 @@ export default function NotificationCenter() {
             <div
               key={notification.id}
               className={`border-l-4 p-4 rounded-r-lg ${
-                notification.isRead 
+                notification.read 
                   ? 'bg-white border-gray-200' 
                   : getNotificationColor(notification.type)
               }`}
@@ -151,7 +151,7 @@ export default function NotificationCenter() {
                 <div className="ml-3 flex-1">
                   <div className="flex items-center justify-between">
                     <h3 className={`text-sm font-medium ${
-                      notification.isRead ? 'text-gray-900' : 'text-gray-900'
+                      notification.read ? 'text-gray-900' : 'text-gray-900'
                     }`}>
                       {notification.title}
                     </h3>
@@ -159,7 +159,7 @@ export default function NotificationCenter() {
                       <span className="text-xs text-gray-500">
                         {new Date(notification.createdAt).toLocaleDateString()}
                       </span>
-                      {!notification.isRead && (
+                      {!notification.read && (
                         <button
                           onClick={() => markAsRead(notification.id)}
                           className="text-xs text-primary-600 hover:text-primary-800"

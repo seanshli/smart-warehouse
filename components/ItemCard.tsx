@@ -168,10 +168,14 @@ export default function ItemCard({
                   console.log('Edit button clicked for item:', item)
                   console.log('Item name:', item?.name)
                   console.log('onEdit function:', onEdit)
+                  console.log('Button click event:', e)
                   if (item && onEdit) {
+                    console.log('Calling onEdit with item:', item)
                     onEdit(item)
                   } else {
                     console.error('Item or onEdit is null/undefined')
+                    console.error('Item:', item)
+                    console.error('onEdit:', onEdit)
                   }
                 }}
                 className="p-3 sm:p-2 text-blue-600 bg-blue-100 hover:text-blue-800 hover:bg-blue-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"

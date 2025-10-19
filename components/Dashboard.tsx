@@ -186,6 +186,7 @@ export default function Dashboard() {
                  <DashboardContent 
                    onItemEdit={(item) => {
                      console.log('Dashboard: Edit handler called for item:', item.name)
+                     console.log('Dashboard: Full item object:', item)
                      setSelectedItem(item)
                      setShowEditItem(true)
                    }}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Item Clicking</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .item-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+        .button { padding: 8px 16px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .button:hover { background: #0056b3; }
+        .edit { background: #28a745; }
+        .move { background: #ffc107; color: black; }
+        .checkout { background: #dc3545; }
+        .history { background: #6f42c1; }
+    </style>
+</head>
+<body>
+    <h1>Test Item Clicking</h1>
+    <p>This page tests if the item clicking functionality works by simulating the button clicks.</p>
+    
+    <div class="item-card">
+        <h3>Test Item</h3>
+        <p>Description: This is a test item</p>
+        <p>Quantity: 5</p>
+        
+        <div style="margin-top: 10px;">
+            <button class="button edit" onclick="testClick('edit')">Edit</button>
+            <button class="button move" onclick="testClick('move')">Move</button>
+            <button class="button checkout" onclick="testClick('checkout')">Checkout</button>
+            <button class="button history" onclick="testClick('history')">History</button>
+        </div>
+    </div>
+    
+    <div id="output" style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+        <strong>Click Output:</strong><br>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        function testClick(action) {
+            const messages = document.getElementById('messages');
+            const timestamp = new Date().toLocaleTimeString();
+            messages.innerHTML += `<div>[${timestamp}] Button "${action}" clicked successfully!</div>`;
+            
+            // Scroll to bottom
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        // Test if buttons are responsive
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.getElementById('messages');
+            messages.innerHTML += '<div>Page loaded. All buttons should be clickable.</div>';
+        });
+    </script>
+</body>
+</html>

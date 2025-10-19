@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from "next-auth/jwt"
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Handle CORS for all API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const response = NextResponse.next()
@@ -18,10 +19,26 @@ export function middleware(request: NextRequest) {
     
     return response
   }
+
+  // Handle admin authentication
+  if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-auth')) {
+    const token = await getToken({ req: request })
+    
+    if (!token || !(token as any).isAdmin) {
+      return NextResponse.redirect(new URL('/admin-auth/signin', request.url))
+    }
+  }
   
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: [
+    '/api/:path*',
+    '/admin/:path*',
+    '/admin-auth/:path*',
+    '/dashboard/:path*',
+    '/items/:path*',
+    '/search/:path*'
+  ],
 }

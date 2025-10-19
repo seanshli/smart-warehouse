@@ -13,6 +13,7 @@ model User {
   name                 String?
   image                String?
   language             String?           @default("en")
+  isAdmin              Boolean           @default(false)
   createdAt            DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   accounts             Account[]

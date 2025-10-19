@@ -170,7 +170,7 @@ export default function NotificationCenter() {
                     </div>
                   </div>
                   <p className={`mt-1 text-sm ${
-                    notification.isRead ? 'text-gray-600' : 'text-gray-700'
+                    notification.read ? 'text-gray-600' : 'text-gray-700'
                   }`}>
                     {notification.message}
                   </p>

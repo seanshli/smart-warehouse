@@ -18,11 +18,21 @@ interface AnalyticsData {
   perHour: Record<string, number>
 }
 
+interface AdminUser {
+  id: string
+  email: string
+  name: string
+  adminRole: string
+  language: string
+}
+
 export default function AdminAnalyticsPage() {
   const { data: session } = useSession()
   const [data, setData] = useState<AnalyticsData | null>(null)
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('all')
 
   useEffect(() => {
     loadAnalytics()
@@ -32,12 +42,22 @@ export default function AdminAnalyticsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/admin/stats')
-      if (!res.ok) {
+      const [statsRes, rolesRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/roles')
+      ])
+      
+      if (!statsRes.ok) {
         throw new Error('Failed to load analytics data')
       }
-      const analyticsData = await res.json()
+      
+      const analyticsData = await statsRes.json()
       setData(analyticsData)
+      
+      if (rolesRes.ok) {
+        const rolesData = await rolesRes.json()
+        setAdminUsers(rolesData.adminUsers || [])
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -128,8 +148,28 @@ export default function AdminAnalyticsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-gray-600 mt-1">System performance and usage statistics</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+            <p className="text-gray-600 mt-1">System performance and usage statistics</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Language</label>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+              >
+                <option value="all">All Languages</option>
+                <option value="en">English</option>
+                <option value="tw">Traditional Chinese</option>
+                <option value="ch">Simplified Chinese</option>
+                <option value="jp">Japanese</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Overview Stats */}
@@ -179,6 +219,36 @@ export default function AdminAnalyticsPage() {
                 </dl>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Roles Section */}
+      <div className="bg-white shadow rounded-lg mb-8">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            <ChartBarIcon className="h-5 w-5 inline mr-2" />
+            Admin Roles & Languages
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {adminUsers.map((admin) => (
+              <div key={admin.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-gray-900">{admin.name || admin.email}</h4>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    admin.adminRole === 'SUPERUSER' ? 'bg-red-100 text-red-800' :
+                    admin.adminRole === 'USER_MANAGEMENT' ? 'bg-blue-100 text-blue-800' :
+                    admin.adminRole === 'ITEM_MANAGEMENT' ? 'bg-green-100 text-green-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {admin.adminRole.replace('_', ' ')}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mb-1">{admin.email}</p>
+                <p className="text-xs text-gray-500">Language: {admin.language?.toUpperCase() || 'EN'}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

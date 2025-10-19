@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error setting up admin users:', error)
     return NextResponse.json(
-      { error: 'Failed to setup admin users', details: error.message },
+      { error: 'Failed to setup admin users', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

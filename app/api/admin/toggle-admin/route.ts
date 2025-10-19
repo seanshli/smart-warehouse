@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error updating user to admin:', error)
     return NextResponse.json(
-      { error: 'Failed to update user to admin', details: error.message },
+      { error: 'Failed to update user to admin', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

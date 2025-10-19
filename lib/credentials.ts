@@ -40,15 +40,16 @@ export async function createUserWithCredentials(credentials: UserCredentials) {
 
 export async function verifyUserCredentials(email: string, password: string) {
   const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() }
+    where: { email: email.toLowerCase() },
+    include: { credentials: true }
   })
 
-  if (!user) {
+  if (!user || !user.credentials) {
     return null
   }
 
   // Verify password using the stored hash
-  const isValidPassword = verifyUserPassword(email, password)
+  const isValidPassword = await bcrypt.compare(password, user.credentials.password)
   
   if (!isValidPassword) {
     return null
@@ -57,30 +58,35 @@ export async function verifyUserCredentials(email: string, password: string) {
   return user
 }
 
-// Simple in-memory storage for demo purposes
-// In production, use a proper database table
-const userPasswords = new Map<string, string>()
+export async function storeUserPassword(email: string, hashedPassword: string) {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() }
+  })
 
-// Add demo user credentials
-userPasswords.set('demo@smartwarehouse.com', '$2a$12$Ypt9XaDn.rDgBOO58CM6aeFrfANKqDV956eUkNZj1Fwoj2/Mnvx76') // demo123
+  if (!user) {
+    throw new Error('User not found')
+  }
 
-// Add test user credentials (hashed with bcrypt)
-userPasswords.set('alice@smartwarehouse.com', '$2a$12$ku6P4rxZKDlIk7izcIg5Ju.n4UbjTHp0nQCV/2kwOu5tML4LXQjEe') // alice123
-userPasswords.set('bob@smartwarehouse.com', '$2a$12$kAcPGBchdjazScmI/pwwIeWTnH9Febvh2ysmU2rt7FwcCcWY2n2Y6') // bob123
-userPasswords.set('carol@smartwarehouse.com', '$2a$12$OQy9yYPnHDY8OhzM9OrYv.B4kQ1YyYMCmSBiZDWtCscmjpIvLALOi') // carol123
-userPasswords.set('test@example.com', '$2a$12$pELsndmn.5SPc2hMwH5EPOmajTz82iWMQVhpq/jM3INGdZifV2us2') // test123
-userPasswords.set('seanshlitw@gmail.com', '$2a$12$wkmI66puO7cXxmrqKcJLpO3IGHO3.2.l93bKVBD0jue5rttfpI.UK') // smtengo888 (ADMIN)
-
-// Admin user credentials
-userPasswords.set('admin@smartwarehouse.com', '$2a$12$S4kSMrpyxqLDXWtloRdNjOb1y2T2BOR7n7VVo.HI1Y7brxY.Ca64a') // admin123
-
-export function storeUserPassword(email: string, hashedPassword: string) {
-  userPasswords.set(email.toLowerCase(), hashedPassword)
+  // Create or update credentials
+  await prisma.userCredentials.upsert({
+    where: { userId: user.id },
+    update: { password: hashedPassword },
+    create: {
+      userId: user.id,
+      password: hashedPassword
+    }
+  })
 }
 
-export function verifyUserPassword(email: string, password: string): boolean {
-  const storedHash = userPasswords.get(email.toLowerCase())
-  if (!storedHash) return false
+export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+    include: { credentials: true }
+  })
+
+  if (!user || !user.credentials) {
+    return false
+  }
   
-  return bcrypt.compareSync(password, storedHash)
+  return await bcrypt.compare(password, user.credentials.password)
 }

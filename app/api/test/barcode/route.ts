@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+// Ensure this route is always treated as dynamic during build
+export const dynamic = 'force-dynamic'
 import { recognizeItemFromBarcode } from '@/lib/ai'
 
 export async function GET(request: NextRequest) {

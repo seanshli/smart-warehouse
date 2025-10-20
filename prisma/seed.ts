@@ -6,18 +6,23 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting database seeding...')
 
-  // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 12)
+  // Create admin user (production)
+  const adminPassword = await bcrypt.hash('Smtengo1324!', 12)
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@smartwarehouse.com' },
+    where: { email: 'sean.li@smtengo.com' },
     update: {},
     create: {
-      email: 'admin@smartwarehouse.com',
+      email: 'sean.li@smtengo.com',
       name: 'System Administrator',
-      password: adminPassword,
       isAdmin: true,
-      emailVerified: new Date(),
     },
+  })
+
+  // Store admin credentials in UserCredentials table
+  await prisma.userCredentials.upsert({
+    where: { userId: adminUser.id },
+    update: { password: adminPassword },
+    create: { userId: adminUser.id, password: adminPassword },
   })
 
   console.log('✅ Admin user created:', adminUser.email)
@@ -51,21 +56,7 @@ async function main() {
 
   console.log('✅ Admin household created and user added')
 
-  // Create regular user for testing
-  const userPassword = await bcrypt.hash('user123', 12)
-  const testUser = await prisma.user.upsert({
-    where: { email: 'user@smartwarehouse.com' },
-    update: {},
-    create: {
-      email: 'user@smartwarehouse.com',
-      name: 'Test User',
-      password: userPassword,
-      isAdmin: false,
-      emailVerified: new Date(),
-    },
-  })
-
-  console.log('✅ Test user created:', testUser.email)
+  // Also add admin user to test household as OWNER for demo data
 
   // Create test household
   const testHousehold = await prisma.household.upsert({
@@ -78,17 +69,17 @@ async function main() {
     },
   })
 
-  // Add test user to household as OWNER
+  // Add admin user to test household as OWNER
   await prisma.householdMember.upsert({
     where: { 
       userId_householdId: {
-        userId: testUser.id,
+        userId: adminUser.id,
         householdId: testHousehold.id
       }
     },
     update: {},
     create: {
-      userId: testUser.id,
+      userId: adminUser.id,
       householdId: testHousehold.id,
       role: 'OWNER'
     },
@@ -210,7 +201,7 @@ async function main() {
       roomId: kitchen.id,
       cabinetId: rightCabinet.id,
       householdId: testHousehold.id,
-      addedById: testUser.id
+      addedById: adminUser.id
     },
   })
 
@@ -228,7 +219,7 @@ async function main() {
       roomId: kitchen.id,
       cabinetId: middleCabinet.id,
       householdId: testHousehold.id,
-      addedById: testUser.id
+      addedById: adminUser.id
     },
   })
 
@@ -237,16 +228,14 @@ async function main() {
   console.log('🎉 Database seeding completed successfully!')
   console.log('📋 Test data summary:')
   console.log(`   - Admin User: ${adminUser.email}`)
-  console.log(`   - Test User: ${testUser.email}`)
   console.log(`   - Admin Household: ${adminHousehold.name}`)
   console.log(`   - Test Household: ${testHousehold.name}`)
   console.log(`   - Rooms: Kitchen, Living Room`)
   console.log(`   - Cabinets: Right Cabinet, Middle Cabinet`)
   console.log(`   - Categories: Personal Care > Wet Wipes, Food & Beverages > Cookies`)
   console.log(`   - Items: Taiwan Wet Wipes (4710901898748), Mini Oreo Cookies (7622300761349)`)
-  console.log('\n🔐 Login Credentials:')
-  console.log('   Admin: admin@smartwarehouse.com / admin123')
-  console.log('   User: user@smartwarehouse.com / user123')
+  console.log('\n🔐 Login Credentials (production):')
+  console.log('   Admin: sean.li@smtengo.com / Smtengo1324!')
 }
 
 main()

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
@@ -16,6 +17,7 @@ import {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
   const pathname = usePathname()
+  const [selectedLanguage, setSelectedLanguage] = useState('en')
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
@@ -48,6 +50,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Language Selection */}
+              <div className="flex items-center space-x-2">
+                <label htmlFor="language-select" className="text-sm text-gray-500">Language:</label>
+                <select
+                  id="language-select"
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                >
+                  <option value="en">English</option>
+                  <option value="tw">繁體中文</option>
+                  <option value="ch">简体中文</option>
+                  <option value="jp">日本語</option>
+                </select>
+              </div>
+              
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
                 <p className="text-xs text-gray-500">Administrator</p>

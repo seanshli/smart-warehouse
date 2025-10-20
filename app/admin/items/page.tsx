@@ -8,7 +8,9 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   EyeIcon,
-  PencilIcon
+  PencilIcon,
+  PhotoIcon,
+  CameraIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminItem { 
@@ -17,6 +19,7 @@ interface AdminItem {
   quantity: number; 
   minQuantity?: number | null;
   description?: string | null;
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   household: { id: string; name: string }; 
@@ -41,6 +44,44 @@ export default function AdminItemsPage() {
       setItems(data.items || [])
     }
     setLoading(false)
+  }
+
+  const handleQuickPhoto = (itemId: string) => {
+    // Create file input for photo upload
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.capture = 'environment' // Use camera on mobile
+    
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      
+      try {
+        // Convert to base64 for quick preview
+        const reader = new FileReader()
+        reader.onload = async (event) => {
+          const base64 = event.target?.result as string
+          
+          // Update item with new photo
+          const response = await fetch(`/api/items/${itemId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl: base64 })
+          })
+          
+          if (response.ok) {
+            // Refresh the items list
+            load()
+          }
+        }
+        reader.readAsDataURL(file)
+      } catch (error) {
+        console.error('Error uploading photo:', error)
+      }
+    }
+    
+    input.click()
   }
 
   useEffect(() => { load() }, [])
@@ -275,6 +316,9 @@ export default function AdminItemsPage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Photo
+                  </th>
                   <th 
                     scope="col" 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -336,6 +380,39 @@ export default function AdminItemsPage() {
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {item.imageUrl ? (
+                          <div className="relative">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name}
+                              className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            />
+                            <button
+                              onClick={() => handleQuickPhoto(item.id)}
+                              className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
+                              title="Update Photo"
+                            >
+                              <CameraIcon className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                            <button
+                              onClick={() => handleQuickPhoto(item.id)}
+                              className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <CameraIcon className="h-3 w-3 mr-1" />
+                              Add Photo
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(item.createdAt).toLocaleDateString()}

@@ -99,20 +99,54 @@ export default function AdminAnalyticsPage() {
     
     return (
       <div className="space-y-2">
-        {entries.map(([hour, value]) => (
-          <div key={hour} className="flex items-center space-x-3">
-            <span className="text-sm text-gray-600 w-24">{new Date(hour).toLocaleString()}</span>
-            <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-              <div 
-                className="bg-blue-600 h-4 rounded-full transition-all duration-300"
-                style={{ width: `${(value / maxValue) * 100}%` }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
-                {value}
-              </span>
+        {entries.map(([hour, value]) => {
+          // Parse hour string properly
+          let displayTime = 'Invalid Date'
+          try {
+            // Handle ISO format like "2025-10-19T09"
+            if (hour.includes('T')) {
+              const date = new Date(hour + ':00:00.000Z')
+              if (!isNaN(date.getTime())) {
+                displayTime = date.toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                })
+              }
+            } else {
+              // Handle other formats
+              const date = new Date(hour)
+              if (!isNaN(date.getTime())) {
+                displayTime = date.toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                })
+              }
+            }
+          } catch (error) {
+            // Fallback: extract hour from string
+            const hourMatch = hour.match(/(\d{2}):/)
+            if (hourMatch) {
+              displayTime = `${hourMatch[1]}:00`
+            }
+          }
+          
+          return (
+            <div key={hour} className="flex items-center space-x-3">
+              <span className="text-sm text-gray-600 w-24">{displayTime}</span>
+              <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                <div 
+                  className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+                  style={{ width: `${(value / maxValue) * 100}%` }}
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
+                  {value}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     )
   }

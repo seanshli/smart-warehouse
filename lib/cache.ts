@@ -88,6 +88,13 @@ export const CacheKeys = {
   categories: (householdId: string) => `categories:${householdId}`,
   rooms: (householdId: string) => `rooms:${householdId}`,
   cabinets: (householdId: string, roomId: string) => `cabinets:${householdId}:${roomId}`,
+  // Admin-specific cache keys
+  adminStats: () => `admin:stats`,
+  adminHouseholds: () => `admin:households`,
+  adminItems: (query?: string) => `admin:items${query ? `:${query}` : ''}`,
+  adminUsers: () => `admin:users`,
+  adminRoles: () => `admin:roles`,
+  duplicateDetection: (itemName: string, description?: string) => `duplicate:${itemName}:${description || ''}`,
 }
 
 // Cache invalidation helpers
@@ -111,6 +118,22 @@ export const CacheInvalidation = {
   clearCategoryCache: (householdId: string) => {
     cache.clearPattern(`categories:${householdId}`)
     cache.clearPattern(`grouped-items:${householdId}`)
+  },
+  
+  // Clear admin-related cache when admin data changes
+  clearAdminCache: () => {
+    cache.clearPattern(`admin:`)
+  },
+  
+  // Clear user-related cache when user data changes
+  clearUserCache: (userId: string) => {
+    cache.clearPattern(`user:${userId}`)
+    cache.clearPattern(`activities:.*:${userId}`)
+  },
+  
+  // Clear duplicate detection cache when items change
+  clearDuplicateCache: () => {
+    cache.clearPattern(`duplicate:`)
   }
 }
 

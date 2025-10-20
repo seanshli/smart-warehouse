@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { cache, CacheKeys } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -12,6 +13,13 @@ export async function GET() {
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    // Check cache first
+    const cacheKey = CacheKeys.adminStats()
+    const cachedData = cache.get(cacheKey)
+    if (cachedData) {
+      return NextResponse.json(cachedData)
     }
 
     // Check if user is admin
@@ -56,7 +64,12 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ users, households, items, perDay, perHour })
+    const result = { users, households, items, perDay, perHour }
+    
+    // Cache the result for 5 minutes
+    cache.set(cacheKey, result, 5 * 60 * 1000)
+    
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('Error fetching admin stats:', error)

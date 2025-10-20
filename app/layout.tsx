@@ -8,6 +8,30 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Smart Warehouse - AI-Powered Inventory Management',
   description: 'Manage your household inventory with AI-powered item recognition',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Smart Warehouse',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'Smart Warehouse',
+    title: 'Smart Warehouse - AI-Powered Inventory Management',
+    description: 'Manage your household inventory with AI-powered item recognition',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Smart Warehouse',
+    description: 'AI-Powered Inventory Management',
+  },
+  icons: {
+    icon: '/icon-192x192.png',
+    apple: '/icon-192x192.png',
+  },
 }
 
 export const viewport = {
@@ -16,6 +40,7 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  themeColor: '#dc2626',
 }
 
 export default function RootLayout({

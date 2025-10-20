@@ -11,20 +11,27 @@ const config: CapacitorConfig = {
     cleartext: false // HTTPS required for production
   } : {
     // Development: Point to local dev server with external access
-    url: process.env.CAP_SERVER_URL || 'http://172.20.10.4:3000',
+    url: process.env.CAP_SERVER_URL || 'http://192.168.68.112:3000',
     cleartext: true // Allow HTTP for development
   },
   ios: {
     contentInset: 'automatic',
     scrollEnabled: true,
-    // Allow external access for development
     allowsLinkPreview: true,
-    // Configure for external hosting
     preferredContentMode: 'mobile'
   },
   android: {
     // Configure for external hosting
     overrideUserAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15'
+  },
+  plugins: {
+    Camera: {
+      permissions: ['camera', 'photos']
+    },
+    Filesystem: {
+      iosIsDocumentPickerEnabled: true,
+      androidIsDocumentPickerEnabled: true
+    }
   }
 };
 

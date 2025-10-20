@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PhotoIcon, CubeIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
 import { translateCategoryName } from '@/lib/translations'
+import { useTranslation } from '@/lib/useTranslation'
 
 interface Item {
   id: string
@@ -56,7 +57,10 @@ export default function ItemCard({
     return null
   }
   const { t, currentLanguage } = useLanguage()
+  const { translateText } = useTranslation()
   const [imageError, setImageError] = useState(false)
+  const [translatedName, setTranslatedName] = useState(item.name)
+  const [translatedDescription, setTranslatedDescription] = useState(item.description || '')
 
   // Debug logging for language context
   console.log('ItemCard - Current language:', currentLanguage)
@@ -64,25 +68,30 @@ export default function ItemCard({
   console.log('ItemCard - Translation for category:', t('category'))
   console.log('ItemCard - Translation for whereIsThisItemStored:', t('whereIsThisItemStored'))
 
+  // Translate item content when language changes
+  useEffect(() => {
+    const translateContent = async () => {
+      if (item.name) {
+        const translated = await translateText(item.name, currentLanguage)
+        setTranslatedName(translated)
+      }
+      if (item.description) {
+        const translated = await translateText(item.description, currentLanguage)
+        setTranslatedDescription(translated)
+      }
+    }
+    
+    translateContent()
+  }, [item.name, item.description, currentLanguage, translateText])
+
   // Function to translate item names and descriptions dynamically
   const translateItemContent = (content: string) => {
     if (!content) return content
     
-    // If content is already in the selected language, return as is
-    const languageKey = currentLanguage === 'zh-TW' ? 'tw' : 
-                       currentLanguage === 'zh' ? 'ch' : 
-                       currentLanguage === 'ja' ? 'jp' : 'en'
+    // Return the already translated content
+    if (content === item.name) return translatedName
+    if (content === item.description) return translatedDescription
     
-    // For now, we'll use a simple approach - if the current language is English
-    // and the content is in Chinese/Japanese, we'll try to translate it
-    if (languageKey === 'en' && /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(content)) {
-      // Content is in Chinese/Japanese but we want English
-      // For now, return the original content - in a real implementation,
-      // this would call a translation API
-      return content
-    }
-    
-    // For other languages, return as is for now
     return content
   }
 

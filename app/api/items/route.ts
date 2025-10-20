@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CacheInvalidation } from '@/lib/cache'
+import { broadcastToHousehold } from '@/app/api/realtime/route'
+import { checkAndCreateNotifications } from '@/lib/notifications'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -383,17 +385,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Check if quantity is below threshold and create notification
-    if (item.quantity <= minQuantity) {
-      await prisma.notification.create({
-        data: {
-          type: 'LOW_INVENTORY',
-          title: 'Low Inventory Alert',
-          message: `${name} is running low (${item.quantity} remaining)`,
-          userId: userId,
-          itemId: item.id
-        }
-      })
+    // Create notifications for the new item
+    try {
+      await checkAndCreateNotifications(item, userId, 'created')
+    } catch (error) {
+      console.error('Failed to create notifications:', error)
     }
 
     console.log('✅ Item created successfully:', {
@@ -417,6 +413,24 @@ export async function POST(request: NextRequest) {
     // Clear cache after successful item creation/update
     CacheInvalidation.clearItemCache(household.id)
     console.log('Items API: Cleared cache for household:', household.id)
+    
+    // Broadcast real-time update to all devices in the household
+    try {
+      broadcastToHousehold(household.id, {
+        type: 'item_created',
+        item: {
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          category: categoryRecord?.name,
+          room: roomRecord?.name,
+          cabinet: cabinetRecord?.name
+        },
+        timestamp: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Failed to broadcast real-time update:', error)
+    }
     
     return NextResponse.json(response)
   } catch (error: any) {

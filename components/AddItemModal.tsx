@@ -421,7 +421,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
 
   return (
     <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 iphone-modal">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
             {t('addItem')}

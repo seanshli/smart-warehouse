@@ -18,8 +18,6 @@ import {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
   const pathname = usePathname()
-  const [selectedLanguage, setSelectedLanguage] = useState('en')
-  
   // Use the language context for actual language switching
   const { currentLanguage, setLanguage } = useLanguage()
 
@@ -70,10 +68,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </select>
             </div>
               
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
-                <p className="text-xs text-gray-500">Administrator</p>
-              </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
+                  <p className="text-xs text-gray-500">Administrator</p>
+                  <p className="text-xs text-gray-400">Current Language: {currentLanguage}</p>
+                </div>
               <button
                 onClick={handleSignOut}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

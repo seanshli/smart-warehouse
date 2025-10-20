@@ -129,7 +129,7 @@ export function LanguageSelector() {
     >
       {supportedLanguages.map((lang) => (
         <option key={lang.code} value={lang.code}>
-          {lang.nativeName} ({lang.name})
+          {lang.nativeName}
         </option>
       ))}
     </select>
@@ -158,7 +158,7 @@ export function CompactLanguageSelector() {
       >
         {supportedLanguages.map((lang) => (
           <option key={lang.code} value={lang.code}>
-            {lang.code.toUpperCase()}
+            {lang.nativeName}
           </option>
         ))}
       </select>

@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { addConnection, removeConnection } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
-
-// Store active connections
-const connections = new Map<string, ReadableStreamDefaultController>()
 
 export async function GET(request: Request) {
   try {
@@ -26,8 +24,8 @@ export async function GET(request: Request) {
     const stream = new ReadableStream({
       start(controller) {
         // Store the connection
-        const connectionId = `${session.user.email}-${householdId}`
-        connections.set(connectionId, controller)
+        const connectionId = `${session.user?.email}-${householdId}`
+        addConnection(connectionId, controller)
         
         // Send initial connection message
         const data = JSON.stringify({
@@ -48,20 +46,20 @@ export async function GET(request: Request) {
             controller.enqueue(`data: ${pingData}\n\n`)
           } catch (error) {
             clearInterval(pingInterval)
-            connections.delete(connectionId)
+            removeConnection(connectionId)
           }
         }, 30000)
         
         // Clean up on close
         request.signal.addEventListener('abort', () => {
           clearInterval(pingInterval)
-          connections.delete(connectionId)
+          removeConnection(connectionId)
         })
       },
       
       cancel() {
-        const connectionId = `${session.user.email}-${householdId}`
-        connections.delete(connectionId)
+        const connectionId = `${session.user?.email}-${householdId}`
+        removeConnection(connectionId)
       }
     })
 
@@ -84,44 +82,3 @@ export async function GET(request: Request) {
   }
 }
 
-// Function to broadcast updates to all connections in a household
-export function broadcastToHousehold(householdId: string, data: any) {
-  const message = JSON.stringify({
-    type: 'update',
-    data,
-    timestamp: new Date().toISOString()
-  })
-  
-  // Find all connections for this household
-  for (const [connectionId, controller] of connections.entries()) {
-    if (connectionId.endsWith(`-${householdId}`)) {
-      try {
-        controller.enqueue(`data: ${message}\n\n`)
-      } catch (error) {
-        console.error('Error sending update to connection:', error)
-        connections.delete(connectionId)
-      }
-    }
-  }
-}
-
-// Function to broadcast to specific user
-export function broadcastToUser(userEmail: string, householdId: string, data: any) {
-  const connectionId = `${userEmail}-${householdId}`
-  const controller = connections.get(connectionId)
-  
-  if (controller) {
-    const message = JSON.stringify({
-      type: 'update',
-      data,
-      timestamp: new Date().toISOString()
-    })
-    
-    try {
-      controller.enqueue(`data: ${message}\n\n`)
-    } catch (error) {
-      console.error('Error sending update to user:', error)
-      connections.delete(connectionId)
-    }
-  }
-}

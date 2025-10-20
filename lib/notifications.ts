@@ -20,8 +20,7 @@ export async function createNotification(data: NotificationData) {
         title: data.title,
         message: data.message,
         userId: data.userId,
-        itemId: data.itemId,
-        metadata: data.metadata || {}
+        itemId: data.itemId
       }
     })
     

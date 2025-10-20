@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CacheInvalidation } from '@/lib/cache'
-import { broadcastToHousehold } from '@/app/api/realtime/route'
+import { broadcastToHousehold } from '@/lib/realtime'
 import { checkAndCreateNotifications } from '@/lib/notifications'
 
 // Force dynamic rendering for this route

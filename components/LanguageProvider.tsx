@@ -33,11 +33,36 @@ export default function LanguageProvider({ children, initialLanguage }: Language
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Detect and set initial language
+    // Load user's language preference from database first, then fallback to detection
+    loadUserLanguagePreference()
+  }, [initialLanguage])
+
+  const loadUserLanguagePreference = async () => {
+    try {
+      // Try to get user's language preference from database
+      const response = await fetch('/api/user/language', {
+        method: 'GET',
+        credentials: 'include'
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.language && SUPPORTED_LANGUAGES.some(lang => lang.code === data.language)) {
+          setCurrentLanguageState(data.language)
+          saveUserLanguage(data.language)
+          setIsLoading(false)
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load user language preference:', error)
+    }
+    
+    // Fallback to detection
     const detectedLanguage = initialLanguage || detectUserLanguage()
     setCurrentLanguageState(detectedLanguage)
     setIsLoading(false)
-  }, [initialLanguage])
+  }
 
   const setLanguage = (languageCode: string) => {
     setCurrentLanguageState(languageCode)
@@ -45,6 +70,12 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     
     // Update user language preference in database
     updateUserLanguagePreference(languageCode)
+    
+    // Force a small delay to ensure state is updated before components re-render
+    setTimeout(() => {
+      // Trigger a re-render by updating a dummy state
+      setCurrentLanguageState(prev => prev === languageCode ? languageCode : languageCode)
+    }, 100)
   }
 
   const updateUserLanguagePreference = async (languageCode: string) => {

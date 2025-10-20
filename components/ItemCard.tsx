@@ -58,6 +58,44 @@ export default function ItemCard({
   const { t, currentLanguage } = useLanguage()
   const [imageError, setImageError] = useState(false)
 
+  // Debug logging for language context
+  console.log('ItemCard - Current language:', currentLanguage)
+  console.log('ItemCard - Translation for qty:', t('qty'))
+  console.log('ItemCard - Translation for category:', t('category'))
+  console.log('ItemCard - Translation for whereIsThisItemStored:', t('whereIsThisItemStored'))
+
+  // Fallback translations in case the translation system fails
+  const getFallbackTranslation = (key: string): string => {
+    const fallbacks: Record<string, Record<string, string>> = {
+      'en': {
+        'qty': 'Qty',
+        'category': 'Category',
+        'whereIsThisItemStored': 'Where is this item stored?'
+      },
+      'tw': {
+        'qty': '數量',
+        'category': '分類',
+        'whereIsThisItemStored': '此物品存放在哪裡？'
+      },
+      'ch': {
+        'qty': '数量',
+        'category': '分类',
+        'whereIsThisItemStored': '此物品存放在哪里？'
+      },
+      'jp': {
+        'qty': '数量',
+        'category': 'カテゴリ',
+        'whereIsThisItemStored': 'このアイテムはどこに保管されていますか？'
+      }
+    }
+    
+    const languageKey = currentLanguage === 'zh-TW' ? 'tw' : 
+                       currentLanguage === 'zh' ? 'ch' : 
+                       currentLanguage === 'ja' ? 'jp' : 'en'
+    
+    return fallbacks[languageKey]?.[key] || fallbacks['en'][key] || key
+  }
+
   // Debug logging for image URL
   console.log('ItemCard - Image URL:', item.imageUrl ? `${item.imageUrl.substring(0, 50)}...` : 'No image URL')
 
@@ -120,7 +158,7 @@ export default function ItemCard({
           {/* Quantity Badge */}
           <div className="flex items-center mt-2 space-x-2">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {t('qty')}: {item.quantity}
+              {getFallbackTranslation('qty')}: {item.quantity}
             </span>
             
             {/* Low Stock Warning */}
@@ -136,7 +174,7 @@ export default function ItemCard({
             <div className="mt-2 space-y-1">
               {showCategory && item.category && (
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  <span className="font-medium">{t('category')}:</span>{' '}
+                  <span className="font-medium">{getFallbackTranslation('category')}:</span>{' '}
                   {item.category.parent 
                     ? (item.category.parent as any).parent
                       ? `${translateCategoryName((item.category.parent as any).parent.name, currentLanguage)} > ${translateCategoryName(item.category.parent.name, currentLanguage)} > ${translateCategoryName(item.category.name, currentLanguage)}`
@@ -148,7 +186,7 @@ export default function ItemCard({
               
               {showLocation && (item.room || item.cabinet) && (
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  <span className="font-medium">{t('whereIsThisItemStored')}:</span>{' '}
+                  <span className="font-medium">{getFallbackTranslation('whereIsThisItemStored')}:</span>{' '}
                   {item.room?.name ? translateLocationName(item.room.name) : ''}
                   {item.cabinet && ` → ${translateLocationName(item.cabinet.name)}`}
                 </div>

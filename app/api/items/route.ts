@@ -13,19 +13,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    // Temporary: Use demo user if no session for testing
-    let userId = (session?.user as any)?.id
+    // Require proper authentication
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized - please sign in' }, { status: 401 })
+    }
+    
+    const userId = (session.user as any)?.id
     if (!userId) {
-      console.log('No session found, using demo user for testing')
-      // Get demo user ID
-      const demoUser = await prisma.user.findUnique({
-        where: { email: 'demo@smartwarehouse.com' }
-      })
-      if (demoUser) {
-        userId = demoUser.id
-      } else {
-        return NextResponse.json({ error: 'Unauthorized - no demo user found' }, { status: 401 })
-      }
+      return NextResponse.json({ error: 'Invalid user session' }, { status: 401 })
     }
     const body = await request.json()
     const {

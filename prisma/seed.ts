@@ -6,78 +6,127 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting database seeding...')
 
-  // Create demo user
-  const demoUser = await prisma.user.upsert({
-    where: { email: 'demo@smartwarehouse.com' },
+  // Create admin user
+  const adminPassword = await bcrypt.hash('admin123', 12)
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@smartwarehouse.com' },
     update: {},
     create: {
-      email: 'demo@smartwarehouse.com',
-      name: 'Demo User',
+      email: 'admin@smartwarehouse.com',
+      name: 'System Administrator',
+      password: adminPassword,
+      isAdmin: true,
+      emailVerified: new Date(),
     },
   })
 
-  console.log('✅ Demo user created:', demoUser.email)
+  console.log('✅ Admin user created:', adminUser.email)
 
-  // Create demo household
-  const demoHousehold = await prisma.household.upsert({
-    where: { id: 'demo-household' },
+  // Create admin household
+  const adminHousehold = await prisma.household.upsert({
+    where: { id: 'admin-household' },
     update: {},
     create: {
-      id: 'demo-household',
-      name: "Demo User's Household",
-      description: 'Demo household for testing'
+      id: 'admin-household',
+      name: 'Admin Household',
+      description: 'System administration household'
     },
   })
 
-  // Add demo user to household as OWNER
+  // Add admin user to household as OWNER
   await prisma.householdMember.upsert({
     where: { 
       userId_householdId: {
-        userId: demoUser.id,
-        householdId: demoHousehold.id
+        userId: adminUser.id,
+        householdId: adminHousehold.id
       }
     },
     update: {},
     create: {
-      userId: demoUser.id,
-      householdId: demoHousehold.id,
+      userId: adminUser.id,
+      householdId: adminHousehold.id,
       role: 'OWNER'
     },
   })
 
-  console.log('✅ Demo household created and user added')
+  console.log('✅ Admin household created and user added')
 
-  // Create demo rooms
-  const kitchen = await prisma.room.upsert({
-    where: { id: 'demo-kitchen' },
+  // Create regular user for testing
+  const userPassword = await bcrypt.hash('user123', 12)
+  const testUser = await prisma.user.upsert({
+    where: { email: 'user@smartwarehouse.com' },
     update: {},
     create: {
-      id: 'demo-kitchen',
+      email: 'user@smartwarehouse.com',
+      name: 'Test User',
+      password: userPassword,
+      isAdmin: false,
+      emailVerified: new Date(),
+    },
+  })
+
+  console.log('✅ Test user created:', testUser.email)
+
+  // Create test household
+  const testHousehold = await prisma.household.upsert({
+    where: { id: 'test-household' },
+    update: {},
+    create: {
+      id: 'test-household',
+      name: 'Test Household',
+      description: 'Test household for regular users'
+    },
+  })
+
+  // Add test user to household as OWNER
+  await prisma.householdMember.upsert({
+    where: { 
+      userId_householdId: {
+        userId: testUser.id,
+        householdId: testHousehold.id
+      }
+    },
+    update: {},
+    create: {
+      userId: testUser.id,
+      householdId: testHousehold.id,
+      role: 'OWNER'
+    },
+  })
+
+  console.log('✅ Test household created and user added')
+
+  // Create test rooms
+  const kitchen = await prisma.room.upsert({
+    where: { id: 'test-kitchen' },
+    update: {},
+    create: {
+      id: 'test-kitchen',
       name: '廚房',
       description: 'Kitchen',
-      householdId: demoHousehold.id
+      householdId: testHousehold.id
     },
   })
 
   const livingRoom = await prisma.room.upsert({
-    where: { id: 'demo-living' },
+    where: { id: 'test-living' },
     update: {},
     create: {
-      id: 'demo-living',
+      id: 'test-living',
       name: 'Living Room',
       description: 'Main living area',
-      householdId: demoHousehold.id
+      householdId: testHousehold.id
     },
   })
 
-  console.log('✅ Demo rooms created')
+  console.log('✅ Test rooms created')
 
-  // Create demo cabinets
+  // Create test cabinets
   const rightCabinet = await prisma.cabinet.upsert({
-    where: { id: 'demo-right-cabinet' },
+    where: { id: 'test-right-cabinet' },
     update: {},
     create: {
-      id: 'demo-right-cabinet',
+      id: 'test-right-cabinet',
       name: '右櫥櫃',
       description: 'Right Cabinet',
       roomId: kitchen.id
@@ -85,73 +134,73 @@ async function main() {
   })
 
   const middleCabinet = await prisma.cabinet.upsert({
-    where: { id: 'demo-middle-cabinet' },
+    where: { id: 'test-middle-cabinet' },
     update: {},
     create: {
-      id: 'demo-middle-cabinet',
+      id: 'test-middle-cabinet',
       name: '中櫥櫃',
       description: 'Middle Cabinet',
       roomId: kitchen.id
     },
   })
 
-  console.log('✅ Demo cabinets created')
+  console.log('✅ Test cabinets created')
 
-  // Create demo categories
+  // Create test categories
   const personalCare = await prisma.category.upsert({
-    where: { id: 'demo-personal-care' },
+    where: { id: 'test-personal-care' },
     update: {},
     create: {
-      id: 'demo-personal-care',
+      id: 'test-personal-care',
       name: 'Personal Care',
       level: 1,
-      householdId: demoHousehold.id
+      householdId: testHousehold.id
     },
   })
 
   const wetWipes = await prisma.category.upsert({
-    where: { id: 'demo-wet-wipes' },
+    where: { id: 'test-wet-wipes' },
     update: {},
     create: {
-      id: 'demo-wet-wipes',
+      id: 'test-wet-wipes',
       name: 'Wet Wipes',
       level: 2,
       parentId: personalCare.id,
-      householdId: demoHousehold.id
+      householdId: testHousehold.id
     },
   })
 
   const foodBeverages = await prisma.category.upsert({
-    where: { id: 'demo-food-beverages' },
+    where: { id: 'test-food-beverages' },
     update: {},
     create: {
-      id: 'demo-food-beverages',
+      id: 'test-food-beverages',
       name: 'Food & Beverages',
       level: 1,
-      householdId: demoHousehold.id
+      householdId: testHousehold.id
     },
   })
 
   const cookies = await prisma.category.upsert({
-    where: { id: 'demo-cookies' },
+    where: { id: 'test-cookies' },
     update: {},
     create: {
-      id: 'demo-cookies',
+      id: 'test-cookies',
       name: 'Cookies',
       level: 2,
       parentId: foodBeverages.id,
-      householdId: demoHousehold.id
+      householdId: testHousehold.id
     },
   })
 
-  console.log('✅ Demo categories created')
+  console.log('✅ Test categories created')
 
-  // Create demo items (now with same barcodes allowed!)
+  // Create test items (now with same barcodes allowed!)
   const wetWipesItem = await prisma.item.upsert({
-    where: { id: 'demo-wet-wipes-item' },
+    where: { id: 'test-wet-wipes-item' },
     update: {},
     create: {
-      id: 'demo-wet-wipes-item',
+      id: 'test-wet-wipes-item',
       name: 'Taiwan Pure Water Wet Wipes',
       description: 'Taiwan-made pure water wet wipes with ultra-high filtration',
       quantity: 2,
@@ -160,16 +209,16 @@ async function main() {
       categoryId: wetWipes.id,
       roomId: kitchen.id,
       cabinetId: rightCabinet.id,
-      householdId: demoHousehold.id,
-      addedById: demoUser.id
+      householdId: testHousehold.id,
+      addedById: testUser.id
     },
   })
 
   const oreoItem = await prisma.item.upsert({
-    where: { id: 'demo-oreo-item' },
+    where: { id: 'test-oreo-item' },
     update: {},
     create: {
-      id: 'demo-oreo-item',
+      id: 'test-oreo-item',
       name: 'Mini Oreo Original Cookies',
       description: 'Bite-sized chocolate cookies with vanilla cream filling',
       quantity: 3,
@@ -178,21 +227,26 @@ async function main() {
       categoryId: cookies.id,
       roomId: kitchen.id,
       cabinetId: middleCabinet.id,
-      householdId: demoHousehold.id,
-      addedById: demoUser.id
+      householdId: testHousehold.id,
+      addedById: testUser.id
     },
   })
 
-  console.log('✅ Demo items created')
+  console.log('✅ Test items created')
 
   console.log('🎉 Database seeding completed successfully!')
-  console.log('📋 Demo data summary:')
-  console.log(`   - User: ${demoUser.email}`)
-  console.log(`   - Household: ${demoHousehold.name}`)
+  console.log('📋 Test data summary:')
+  console.log(`   - Admin User: ${adminUser.email}`)
+  console.log(`   - Test User: ${testUser.email}`)
+  console.log(`   - Admin Household: ${adminHousehold.name}`)
+  console.log(`   - Test Household: ${testHousehold.name}`)
   console.log(`   - Rooms: Kitchen, Living Room`)
   console.log(`   - Cabinets: Right Cabinet, Middle Cabinet`)
   console.log(`   - Categories: Personal Care > Wet Wipes, Food & Beverages > Cookies`)
   console.log(`   - Items: Taiwan Wet Wipes (4710901898748), Mini Oreo Cookies (7622300761349)`)
+  console.log('\n🔐 Login Credentials:')
+  console.log('   Admin: admin@smartwarehouse.com / admin123')
+  console.log('   User: user@smartwarehouse.com / user123')
 }
 
 main()

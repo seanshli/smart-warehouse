@@ -59,7 +59,7 @@ const nextConfig = {
       },
     ];
   },
-  // Configure for external hosting
+  // Configure for Node server (not static export)
   trailingSlash: false,
   output: 'standalone',
   // PWA and mobile optimizations

@@ -20,12 +20,41 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/auth/signin',
+    '/auth/signup',
+    '/auth/signout',
+    '/admin-auth/signin',
+    '/api/auth/',
+    '/api/health'
+  ]
+  
+  const isPublicRoute = publicRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+  
+  // Allow public routes
+  if (isPublicRoute) {
+    return NextResponse.next()
+  }
+  
+  // Check authentication for all other routes
+  const token = await getToken({ req: request })
+  
+  if (!token) {
+    // Redirect to sign in for web routes
+    if (!request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+    // Return 401 for API routes
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   // Handle admin authentication
   if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-auth')) {
-    const token = await getToken({ req: request })
-    
-    if (!token || !(token as any).isAdmin) {
-      return NextResponse.redirect(new URL('/admin-auth/signin', request.url))
+    if (!(token as any).isAdmin) {
+      return NextResponse.redirect(new URL('/admin-auth/signin?error=unauthorized', request.url))
     }
   }
   

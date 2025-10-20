@@ -37,6 +37,7 @@ export default function AdminHouseholdsPage() {
   const [stats, setStats] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedHousehold, setSelectedHousehold] = useState<string | null>(null)
+  const [cleanupLoading, setCleanupLoading] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -182,6 +183,40 @@ export default function AdminHouseholdsPage() {
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
                 />
               </div>
+              <button
+                onClick={async () => {
+                  if (!confirm('This will remove duplicate households. Are you sure?')) return
+                  setCleanupLoading(true)
+                  try {
+                    const response = await fetch('/api/admin/cleanup-households', { method: 'POST' })
+                    if (response.ok) {
+                      const result = await response.json()
+                      alert(`Cleanup completed! Removed ${result.deletedCount} duplicate households.`)
+                      location.reload()
+                    } else {
+                      alert('Failed to cleanup duplicates')
+                    }
+                  } catch (error) {
+                    alert('Failed to cleanup duplicates')
+                  } finally {
+                    setCleanupLoading(false)
+                  }
+                }}
+                disabled={cleanupLoading}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                {cleanupLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                    Cleaning...
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="h-4 w-4 mr-2" />
+                    Cleanup Duplicates
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

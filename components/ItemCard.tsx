@@ -64,6 +64,28 @@ export default function ItemCard({
   console.log('ItemCard - Translation for category:', t('category'))
   console.log('ItemCard - Translation for whereIsThisItemStored:', t('whereIsThisItemStored'))
 
+  // Function to translate item names and descriptions dynamically
+  const translateItemContent = (content: string) => {
+    if (!content) return content
+    
+    // If content is already in the selected language, return as is
+    const languageKey = currentLanguage === 'zh-TW' ? 'tw' : 
+                       currentLanguage === 'zh' ? 'ch' : 
+                       currentLanguage === 'ja' ? 'jp' : 'en'
+    
+    // For now, we'll use a simple approach - if the current language is English
+    // and the content is in Chinese/Japanese, we'll try to translate it
+    if (languageKey === 'en' && /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(content)) {
+      // Content is in Chinese/Japanese but we want English
+      // For now, return the original content - in a real implementation,
+      // this would call a translation API
+      return content
+    }
+    
+    // For other languages, return as is for now
+    return content
+  }
+
   // Fallback translations in case the translation system fails
   const getFallbackTranslation = (key: string): string => {
     const fallbacks: Record<string, Record<string, string>> = {
@@ -99,23 +121,118 @@ export default function ItemCard({
   // Debug logging for image URL
   console.log('ItemCard - Image URL:', item.imageUrl ? `${item.imageUrl.substring(0, 50)}...` : 'No image URL')
 
-  // Function to translate room and cabinet names
+  // Function to translate room and cabinet names dynamically
   const translateLocationName = (name: string) => {
-    const translations: Record<string, string> = {
-      'Master Bedroom': t('masterBedroom'),
-      '主臥室': t('masterBedroom'),
-      'Default Cabinet': t('defaultCabinet'),
-      '主櫃': t('defaultCabinet'),
-      'Kitchen': t('kitchen'),
-      '廚房': t('kitchen'),
-      'Living Room': t('mainLivingArea'),
-      '客廳': t('mainLivingArea'),
-      'Garage': t('garage'),
-      '車庫': t('garage'),
-      '側櫥櫃': t('sideCabinet'),
-      'Side Cabinet': t('sideCabinet'),
+    const translations: Record<string, Record<string, string>> = {
+      'Master Bedroom': {
+        'en': 'Master Bedroom',
+        'tw': '主臥室',
+        'ch': '主卧室',
+        'jp': 'マスターベッドルーム'
+      },
+      '主臥室': {
+        'en': 'Master Bedroom',
+        'tw': '主臥室',
+        'ch': '主卧室',
+        'jp': 'マスターベッドルーム'
+      },
+      'Kitchen': {
+        'en': 'Kitchen',
+        'tw': '廚房',
+        'ch': '厨房',
+        'jp': 'キッチン'
+      },
+      '廚房': {
+        'en': 'Kitchen',
+        'tw': '廚房',
+        'ch': '厨房',
+        'jp': 'キッチン'
+      },
+      'Living Room': {
+        'en': 'Living Room',
+        'tw': '客廳',
+        'ch': '客厅',
+        'jp': 'リビングルーム'
+      },
+      '客廳': {
+        'en': 'Living Room',
+        'tw': '客廳',
+        'ch': '客厅',
+        'jp': 'リビングルーム'
+      },
+      'Garage': {
+        'en': 'Garage',
+        'tw': '車庫',
+        'ch': '车库',
+        'jp': 'ガレージ'
+      },
+      '車庫': {
+        'en': 'Garage',
+        'tw': '車庫',
+        'ch': '车库',
+        'jp': 'ガレージ'
+      },
+      'Kids Room': {
+        'en': 'Kids Room',
+        'tw': '兒童房',
+        'ch': '儿童房',
+        'jp': '子供部屋'
+      },
+      'Main Cabinet': {
+        'en': 'Main Cabinet',
+        'tw': '主櫥櫃',
+        'ch': '主橱柜',
+        'jp': 'メインキャビネット'
+      },
+      '主櫥櫃': {
+        'en': 'Main Cabinet',
+        'tw': '主櫥櫃',
+        'ch': '主橱柜',
+        'jp': 'メインキャビネット'
+      },
+      'Side Cabinet': {
+        'en': 'Side Cabinet',
+        'tw': '側櫥櫃',
+        'ch': '侧橱柜',
+        'jp': 'サイドキャビネット'
+      },
+      '側櫥櫃': {
+        'en': 'Side Cabinet',
+        'tw': '側櫥櫃',
+        'ch': '侧橱柜',
+        'jp': 'サイドキャビネット'
+      },
+      'Right Cabinet': {
+        'en': 'Right Cabinet',
+        'tw': '右櫥櫃',
+        'ch': '右橱柜',
+        'jp': '右キャビネット'
+      },
+      '右櫥櫃': {
+        'en': 'Right Cabinet',
+        'tw': '右櫥櫃',
+        'ch': '右橱柜',
+        'jp': '右キャビネット'
+      },
+      'Left Cabinet': {
+        'en': 'Left Cabinet',
+        'tw': '左櫥櫃',
+        'ch': '左橱柜',
+        'jp': '左キャビネット'
+      },
+      '左櫥櫃': {
+        'en': 'Left Cabinet',
+        'tw': '左櫥櫃',
+        'ch': '左橱柜',
+        'jp': '左キャビネット'
+      }
     }
-    return translations[name] || name
+    
+    const languageKey = currentLanguage === 'zh-TW' ? 'tw' : 
+                       currentLanguage === 'zh' ? 'ch' : 
+                       currentLanguage === 'ja' ? 'jp' : 'en'
+    
+    return translations[name]?.[languageKey] || name
   }
 
   const handleImageError = () => {
@@ -146,12 +263,12 @@ export default function ItemCard({
         {/* Item Details */}
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate">
-            {item.name}
+            {translateItemContent(item.name)}
           </h4>
           
           {item.description && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-              {item.description}
+              {translateItemContent(item.description)}
             </p>
           )}
 

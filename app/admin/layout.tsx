@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   HomeIcon,
   UserGroupIcon,
@@ -18,6 +19,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: session } = useSession()
   const pathname = usePathname()
   const [selectedLanguage, setSelectedLanguage] = useState('en')
+  
+  // Use the language context for actual language switching
+  const { currentLanguage, setLanguage } = useLanguage()
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
@@ -50,21 +54,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Language Selection */}
-              <div className="flex items-center space-x-2">
-                <label htmlFor="language-select" className="text-sm text-gray-500">Language:</label>
-                <select
-                  id="language-select"
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                >
-                  <option value="en">English</option>
-                  <option value="tw">繁體中文</option>
-                  <option value="ch">简体中文</option>
-                  <option value="jp">日本語</option>
-                </select>
-              </div>
+            {/* Language Selection */}
+            <div className="flex items-center space-x-2">
+              <label htmlFor="language-select" className="text-sm text-gray-500">Language:</label>
+              <select
+                id="language-select"
+                value={currentLanguage}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+              >
+                <option value="en">English</option>
+                <option value="zh-TW">繁體中文</option>
+                <option value="zh">简体中文</option>
+                <option value="ja">日文</option>
+              </select>
+            </div>
               
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>

@@ -389,7 +389,22 @@ export default function AdminItemsPage() {
                               src={item.imageUrl} 
                               alt={item.name}
                               className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                              onError={(e) => {
+                                // If image fails to load, show placeholder
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                const parent = target.parentElement
+                                if (parent) {
+                                  const placeholder = parent.querySelector('.placeholder')
+                                  if (placeholder) {
+                                    (placeholder as HTMLElement).style.display = 'flex'
+                                  }
+                                }
+                              }}
                             />
+                            <div className="placeholder hidden w-12 h-12 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-6 w-6 text-gray-400" />
+                            </div>
                             <button
                               onClick={() => handleQuickPhoto(item.id)}
                               className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
@@ -415,7 +430,17 @@ export default function AdminItemsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(item.createdAt).toLocaleDateString()}
+                      {(() => {
+                        try {
+                          const date = new Date(item.createdAt)
+                          if (isNaN(date.getTime())) {
+                            return 'Invalid Date'
+                          }
+                          return date.toLocaleDateString()
+                        } catch (error) {
+                          return 'Invalid Date'
+                        }
+                      })()}
                     </td>
                   </tr>
                 ))}

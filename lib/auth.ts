@@ -58,6 +58,14 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.isAdmin = (user as any).isAdmin
+      } else if (token.id) {
+        // Refresh admin status from database on each request
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string }
+        })
+        if (dbUser) {
+          token.isAdmin = (dbUser as any).isAdmin || false
+        }
       }
       return token
     },

@@ -10,6 +10,30 @@ export interface Translations {
   members: string
   items: string
   
+  // Admin
+  admin: {
+    panel: string
+    management: string
+    dashboard: string
+    households: string
+    items: string
+    users: string
+    roles: string
+    analytics: string
+    settings: string
+    administrator: string
+    copyright: string
+    access: string
+    secure: string
+  }
+  
+  // Common
+  common: {
+    language: string
+    currentLanguage: string
+    signOut: string
+  }
+  
   // Common actions
   addItem: string
   search: string
@@ -296,6 +320,30 @@ const en: Translations = {
   notifications: 'Notifications',
   members: 'Members',
   items: 'Items',
+  
+  // Admin
+  admin: {
+    panel: 'Admin Panel',
+    management: 'Smart Warehouse Management',
+    dashboard: 'Dashboard',
+    households: 'Households',
+    items: 'Items',
+    users: 'Admin Users',
+    roles: 'Roles',
+    analytics: 'Analytics',
+    settings: 'Settings',
+    administrator: 'Administrator',
+    copyright: 'Smart Warehouse Admin Panel. All rights reserved.',
+    access: 'Admin Access',
+    secure: 'Secure'
+  },
+  
+  // Common
+  common: {
+    language: 'Language',
+    currentLanguage: 'Current Language',
+    signOut: 'Sign Out'
+  },
   
   // Common actions
   addItem: 'Add Item',
@@ -587,6 +635,30 @@ const zhTW: Translations = {
   notifications: '通知',
   members: '成員',
   items: '物品',
+  
+  // Admin
+  admin: {
+    panel: '管理面板',
+    management: '智能倉庫管理',
+    dashboard: '儀表板',
+    households: '家庭',
+    items: '物品',
+    users: '管理員用戶',
+    roles: '角色',
+    analytics: '分析',
+    settings: '設定',
+    administrator: '管理員',
+    copyright: '智能倉庫管理面板。版權所有。',
+    access: '管理員存取',
+    secure: '安全'
+  },
+  
+  // Common
+  common: {
+    language: '語言',
+    currentLanguage: '目前語言',
+    signOut: '登出'
+  },
   
   // Common actions
   addItem: '新增物品',

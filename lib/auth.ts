@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('[auth] authorize: missing email or password')
           return null
         }
 
@@ -30,6 +31,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
+          console.log('[auth] authorize: user not found', credentials.email)
           return null
         }
 
@@ -37,9 +39,11 @@ export const authOptions: NextAuthOptions = {
         const isValidPassword = await verifyUserPassword(credentials.email, credentials.password)
         
         if (!isValidPassword) {
+          console.log('[auth] authorize: invalid password for', credentials.email)
           return null
         }
 
+        console.log('[auth] authorize: success for', user.email, 'isAdmin=', (user as any).isAdmin)
         return {
           id: user.id,
           email: user.email,

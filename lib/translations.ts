@@ -949,6 +949,26 @@ const zh: Translations = {
   members: '成员',
   items: '物品',
   
+  // Admin
+  adminPanel: '管理面板',
+  adminManagement: '智能仓库管理',
+  adminDashboard: '仪表板',
+  adminHouseholds: '家庭',
+  adminItems: '物品',
+  adminUsers: '管理员用户',
+  adminRoles: '角色',
+  adminAnalytics: '分析',
+  adminSettings: '设置',
+  adminAdministrator: '管理员',
+  adminCopyright: '智能仓库管理面板。版权所有。',
+  adminAccess: '管理员访问',
+  adminSecure: '安全',
+  
+  // Common
+  commonLanguage: '语言',
+  commonCurrentLanguage: '当前语言',
+  commonSignOut: '登出',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1247,6 +1267,26 @@ const ja: Translations = {
   notifications: '通知',
   members: 'メンバー',
   items: 'アイテム',
+  
+  // Admin
+  adminPanel: '管理パネル',
+  adminManagement: 'スマート倉庫管理',
+  adminDashboard: 'ダッシュボード',
+  adminHouseholds: '世帯',
+  adminItems: 'アイテム',
+  adminUsers: '管理者ユーザー',
+  adminRoles: 'ロール',
+  adminAnalytics: '分析',
+  adminSettings: '設定',
+  adminAdministrator: '管理者',
+  adminCopyright: 'スマート倉庫管理パネル。全著作権所有。',
+  adminAccess: '管理者アクセス',
+  adminSecure: 'セキュア',
+  
+  // Common
+  commonLanguage: '言語',
+  commonCurrentLanguage: '現在の言語',
+  commonSignOut: 'サインアウト',
   
   // Common actions
   addItem: 'アイテムを追加',

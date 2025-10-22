@@ -78,6 +78,13 @@ export interface Translations {
   adminFilterByLanguage: string
   adminRolesLanguages: string
   
+  // Admin Settings
+  adminSettingsDescription: string
+  
+  // Admin Roles
+  adminRoleManagement: string
+  adminRoleManagementDescription: string
+  
   // Common actions
   addItem: string
   search: string
@@ -432,6 +439,13 @@ const en: Translations = {
   adminAnalyticsDescription: 'System performance and usage statistics',
   adminFilterByLanguage: 'Filter by Language',
   adminRolesLanguages: 'Admin Roles & Languages',
+  
+  // Admin Settings
+  adminSettingsDescription: 'Manage system configuration and monitor health',
+  
+  // Admin Roles
+  adminRoleManagement: 'Admin Role Management',
+  adminRoleManagementDescription: 'Manage admin user roles and permissions',
   
   // Common actions
   addItem: 'Add Item',
@@ -791,6 +805,13 @@ const zhTW: Translations = {
   adminAnalyticsDescription: '系統性能和使用統計',
   adminFilterByLanguage: '按語言篩選',
   adminRolesLanguages: '管理員角色和語言',
+  
+  // Admin Settings
+  adminSettingsDescription: '管理系統配置和監控健康狀態',
+  
+  // Admin Roles
+  adminRoleManagement: '管理員角色管理',
+  adminRoleManagementDescription: '管理管理員用戶角色和權限',
   
   // Common actions
   addItem: '新增物品',
@@ -1161,6 +1182,13 @@ const zh: Translations = {
   adminFilterByLanguage: '按语言筛选',
   adminRolesLanguages: '管理员角色和语言',
   
+  // Admin Settings
+  adminSettingsDescription: '管理系统配置和监控健康状态',
+  
+  // Admin Roles
+  adminRoleManagement: '管理员角色管理',
+  adminRoleManagementDescription: '管理管理员用户角色和权限',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1527,6 +1555,13 @@ const ja: Translations = {
   adminAnalyticsDescription: 'システムパフォーマンスと使用統計',
   adminFilterByLanguage: '言語でフィルター',
   adminRolesLanguages: '管理者ロールと言語',
+  
+  // Admin Settings
+  adminSettingsDescription: 'システム設定の管理とヘルスモニタリング',
+  
+  // Admin Roles
+  adminRoleManagement: '管理者ロール管理',
+  adminRoleManagementDescription: '管理者ユーザーロールと権限の管理',
   
   // Common actions
   addItem: 'アイテムを追加',

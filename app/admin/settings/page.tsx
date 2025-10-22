@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   CogIcon,
   ServerIcon,
@@ -22,6 +23,7 @@ interface SystemStatus {
 
 export default function AdminSettingsPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [status, setStatus] = useState<SystemStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

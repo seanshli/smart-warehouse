@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   ShieldCheckIcon,
   UserGroupIcon,
@@ -28,6 +29,7 @@ interface RoleOption {
 
 export default function AdminRolesPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [availableRoles, setAvailableRoles] = useState<RoleOption[]>([])
   const [loading, setLoading] = useState(true)

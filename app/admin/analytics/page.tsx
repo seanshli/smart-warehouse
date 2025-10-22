@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   ChartBarIcon,
   ArrowTrendingUpIcon,
@@ -28,6 +29,7 @@ interface AdminUser {
 
 export default function AdminAnalyticsPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)

@@ -11,28 +11,24 @@ export interface Translations {
   items: string
   
   // Admin
-  admin: {
-    panel: string
-    management: string
-    dashboard: string
-    households: string
-    items: string
-    users: string
-    roles: string
-    analytics: string
-    settings: string
-    administrator: string
-    copyright: string
-    access: string
-    secure: string
-  }
+  adminPanel: string
+  adminManagement: string
+  adminDashboard: string
+  adminHouseholds: string
+  adminItems: string
+  adminUsers: string
+  adminRoles: string
+  adminAnalytics: string
+  adminSettings: string
+  adminAdministrator: string
+  adminCopyright: string
+  adminAccess: string
+  adminSecure: string
   
   // Common
-  common: {
-    language: string
-    currentLanguage: string
-    signOut: string
-  }
+  commonLanguage: string
+  commonCurrentLanguage: string
+  commonSignOut: string
   
   // Common actions
   addItem: string
@@ -322,28 +318,24 @@ const en: Translations = {
   items: 'Items',
   
   // Admin
-  admin: {
-    panel: 'Admin Panel',
-    management: 'Smart Warehouse Management',
-    dashboard: 'Dashboard',
-    households: 'Households',
-    items: 'Items',
-    users: 'Admin Users',
-    roles: 'Roles',
-    analytics: 'Analytics',
-    settings: 'Settings',
-    administrator: 'Administrator',
-    copyright: 'Smart Warehouse Admin Panel. All rights reserved.',
-    access: 'Admin Access',
-    secure: 'Secure'
-  },
+  adminPanel: 'Admin Panel',
+  adminManagement: 'Smart Warehouse Management',
+  adminDashboard: 'Dashboard',
+  adminHouseholds: 'Households',
+  adminItems: 'Items',
+  adminUsers: 'Admin Users',
+  adminRoles: 'Roles',
+  adminAnalytics: 'Analytics',
+  adminSettings: 'Settings',
+  adminAdministrator: 'Administrator',
+  adminCopyright: 'Smart Warehouse Admin Panel. All rights reserved.',
+  adminAccess: 'Admin Access',
+  adminSecure: 'Secure',
   
   // Common
-  common: {
-    language: 'Language',
-    currentLanguage: 'Current Language',
-    signOut: 'Sign Out'
-  },
+  commonLanguage: 'Language',
+  commonCurrentLanguage: 'Current Language',
+  commonSignOut: 'Sign Out',
   
   // Common actions
   addItem: 'Add Item',
@@ -637,28 +629,24 @@ const zhTW: Translations = {
   items: '物品',
   
   // Admin
-  admin: {
-    panel: '管理面板',
-    management: '智能倉庫管理',
-    dashboard: '儀表板',
-    households: '家庭',
-    items: '物品',
-    users: '管理員用戶',
-    roles: '角色',
-    analytics: '分析',
-    settings: '設定',
-    administrator: '管理員',
-    copyright: '智能倉庫管理面板。版權所有。',
-    access: '管理員存取',
-    secure: '安全'
-  },
+  adminPanel: '管理面板',
+  adminManagement: '智能倉庫管理',
+  adminDashboard: '儀表板',
+  adminHouseholds: '家庭',
+  adminItems: '物品',
+  adminUsers: '管理員用戶',
+  adminRoles: '角色',
+  adminAnalytics: '分析',
+  adminSettings: '設定',
+  adminAdministrator: '管理員',
+  adminCopyright: '智能倉庫管理面板。版權所有。',
+  adminAccess: '管理員存取',
+  adminSecure: '安全',
   
   // Common
-  common: {
-    language: '語言',
-    currentLanguage: '目前語言',
-    signOut: '登出'
-  },
+  commonLanguage: '語言',
+  commonCurrentLanguage: '目前語言',
+  commonSignOut: '登出',
   
   // Common actions
   addItem: '新增物品',

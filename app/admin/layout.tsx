@@ -22,13 +22,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { currentLanguage, setLanguage, t } = useLanguage()
 
   const navigation = [
-    { name: t('admin.dashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
-    { name: t('admin.households'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
-    { name: t('admin.items'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
-    { name: t('admin.users'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
-    { name: t('admin.roles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
-    { name: t('admin.analytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },
-    { name: t('admin.settings'), href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },
+    { name: t('adminDashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
+    { name: t('adminHouseholds'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
+    { name: t('adminItems'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
+    { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
+    { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
+    { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },
+    { name: t('adminSettings'), href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },
   ]
 
   const handleSignOut = () => {
@@ -45,8 +45,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="flex items-center space-x-2">
                 <ShieldCheckIcon className="h-8 w-8 text-red-600" />
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">{t('admin.panel')}</h1>
-                  <p className="text-sm text-gray-500">{t('admin.management')}</p>
+                  <h1 className="text-xl font-bold text-gray-900">{t('adminPanel')}</h1>
+                  <p className="text-sm text-gray-500">{t('adminManagement')}</p>
                 </div>
               </div>
             </div>
@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center space-x-4">
             {/* Language Selection */}
             <div className="flex items-center space-x-2">
-              <label htmlFor="language-select" className="text-sm text-gray-500">{t('common.language')}:</label>
+              <label htmlFor="language-select" className="text-sm text-gray-500">{t('commonLanguage')}:</label>
               <select
                 id="language-select"
                 value={currentLanguage}
@@ -70,15 +70,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
-                  <p className="text-xs text-gray-500">{t('admin.administrator')}</p>
-                  <p className="text-xs text-gray-400">{t('common.currentLanguage')}: {currentLanguage}</p>
+                  <p className="text-xs text-gray-500">{t('adminAdministrator')}</p>
+                  <p className="text-xs text-gray-400">{t('commonCurrentLanguage')}: {currentLanguage}</p>
                 </div>
               <button
                 onClick={handleSignOut}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 <ArrowRightOnRectangleIcon className="h-4 w-4 mr-1" />
-                {t('common.signOut')}
+                {t('commonSignOut')}
               </button>
             </div>
           </div>
@@ -120,13 +120,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-500">
-              © 2024 {t('admin.copyright')}
+              © 2024 {t('adminCopyright')}
             </div>
             <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <span>{t('admin.access')}</span>
+              <span>{t('adminAccess')}</span>
               <div className="flex items-center space-x-1">
                 <ShieldCheckIcon className="h-4 w-4 text-red-600" />
-                <span className="text-red-600 font-medium">{t('admin.secure')}</span>
+                <span className="text-red-600 font-medium">{t('adminSecure')}</span>
               </div>
             </div>
           </div>

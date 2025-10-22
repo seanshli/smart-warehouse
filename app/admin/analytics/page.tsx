@@ -186,12 +186,12 @@ export default function AdminAnalyticsPage() {
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-600 mt-1">System performance and usage statistics</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('adminAnalytics')}</h1>
+            <p className="text-gray-600 mt-1">{t('adminAnalyticsDescription')}</p>
           </div>
           <div className="flex items-center space-x-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Language</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('adminFilterByLanguage')}</label>
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -218,7 +218,7 @@ export default function AdminAnalyticsPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalUsers')}</dt>
                   <dd className="text-lg font-medium text-gray-900">{data?.users || 0}</dd>
                 </dl>
               </div>
@@ -264,7 +264,7 @@ export default function AdminAnalyticsPage() {
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
             <ChartBarIcon className="h-5 w-5 inline mr-2" />
-            Admin Roles & Languages
+            {t('adminRolesLanguages')}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

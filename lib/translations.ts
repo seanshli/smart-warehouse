@@ -73,6 +73,11 @@ export interface Translations {
   // Admin Users
   adminUserManagement: string
   
+  // Admin Analytics
+  adminAnalyticsDescription: string
+  adminFilterByLanguage: string
+  adminRolesLanguages: string
+  
   // Common actions
   addItem: string
   search: string
@@ -422,6 +427,11 @@ const en: Translations = {
   
   // Admin Users
   adminUserManagement: 'Admin User Management',
+  
+  // Admin Analytics
+  adminAnalyticsDescription: 'System performance and usage statistics',
+  adminFilterByLanguage: 'Filter by Language',
+  adminRolesLanguages: 'Admin Roles & Languages',
   
   // Common actions
   addItem: 'Add Item',
@@ -776,6 +786,11 @@ const zhTW: Translations = {
   
   // Admin Users
   adminUserManagement: '管理員用戶管理',
+  
+  // Admin Analytics
+  adminAnalyticsDescription: '系統性能和使用統計',
+  adminFilterByLanguage: '按語言篩選',
+  adminRolesLanguages: '管理員角色和語言',
   
   // Common actions
   addItem: '新增物品',
@@ -1141,6 +1156,11 @@ const zh: Translations = {
   // Admin Users
   adminUserManagement: '管理员用户管理',
   
+  // Admin Analytics
+  adminAnalyticsDescription: '系统性能和使用统计',
+  adminFilterByLanguage: '按语言筛选',
+  adminRolesLanguages: '管理员角色和语言',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1502,6 +1522,11 @@ const ja: Translations = {
   
   // Admin Users
   adminUserManagement: '管理者ユーザー管理',
+  
+  // Admin Analytics
+  adminAnalyticsDescription: 'システムパフォーマンスと使用統計',
+  adminFilterByLanguage: '言語でフィルター',
+  adminRolesLanguages: '管理者ロールと言語',
   
   // Common actions
   addItem: 'アイテムを追加',

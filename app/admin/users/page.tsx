@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   UserGroupIcon,
   PlusIcon,
@@ -20,6 +21,7 @@ interface AdminUser {
 
 export default function AdminUsersPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

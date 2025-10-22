@@ -65,6 +65,11 @@ export interface Translations {
   adminShowDetails: string
   adminHideDetails: string
   
+  // Admin Items
+  adminViewManageItems: string
+  adminBackToAdmin: string
+  adminSearchItems: string
+  
   // Common actions
   addItem: string
   search: string
@@ -406,6 +411,11 @@ const en: Translations = {
   adminCleanupDuplicates: 'Cleanup Duplicates',
   adminShowDetails: 'Show Details',
   adminHideDetails: 'Hide Details',
+  
+  // Admin Items
+  adminViewManageItems: 'View and manage all items across households',
+  adminBackToAdmin: 'Back to Admin',
+  adminSearchItems: 'Search items by name...',
   
   // Common actions
   addItem: 'Add Item',
@@ -752,6 +762,11 @@ const zhTW: Translations = {
   adminCleanupDuplicates: '清理重複項目',
   adminShowDetails: '顯示詳情',
   adminHideDetails: '隱藏詳情',
+  
+  // Admin Items
+  adminViewManageItems: '查看和管理所有家庭的物品',
+  adminBackToAdmin: '返回管理員',
+  adminSearchItems: '按名稱搜尋物品...',
   
   // Common actions
   addItem: '新增物品',
@@ -1109,6 +1124,11 @@ const zh: Translations = {
   adminShowDetails: '显示详情',
   adminHideDetails: '隐藏详情',
   
+  // Admin Items
+  adminViewManageItems: '查看和管理所有家庭的物品',
+  adminBackToAdmin: '返回管理员',
+  adminSearchItems: '按名称搜索物品...',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1462,6 +1482,11 @@ const ja: Translations = {
   adminCleanupDuplicates: '重複をクリーンアップ',
   adminShowDetails: '詳細を表示',
   adminHideDetails: '詳細を非表示',
+  
+  // Admin Items
+  adminViewManageItems: 'すべての世帯のアイテムを表示・管理',
+  adminBackToAdmin: '管理者に戻る',
+  adminSearchItems: '名前でアイテムを検索...',
   
   // Common actions
   addItem: 'アイテムを追加',

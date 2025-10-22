@@ -70,6 +70,9 @@ export interface Translations {
   adminBackToAdmin: string
   adminSearchItems: string
   
+  // Admin Users
+  adminUserManagement: string
+  
   // Common actions
   addItem: string
   search: string
@@ -416,6 +419,9 @@ const en: Translations = {
   adminViewManageItems: 'View and manage all items across households',
   adminBackToAdmin: 'Back to Admin',
   adminSearchItems: 'Search items by name...',
+  
+  // Admin Users
+  adminUserManagement: 'Admin User Management',
   
   // Common actions
   addItem: 'Add Item',
@@ -767,6 +773,9 @@ const zhTW: Translations = {
   adminViewManageItems: '查看和管理所有家庭的物品',
   adminBackToAdmin: '返回管理員',
   adminSearchItems: '按名稱搜尋物品...',
+  
+  // Admin Users
+  adminUserManagement: '管理員用戶管理',
   
   // Common actions
   addItem: '新增物品',
@@ -1129,6 +1138,9 @@ const zh: Translations = {
   adminBackToAdmin: '返回管理员',
   adminSearchItems: '按名称搜索物品...',
   
+  // Admin Users
+  adminUserManagement: '管理员用户管理',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1487,6 +1499,9 @@ const ja: Translations = {
   adminViewManageItems: 'すべての世帯のアイテムを表示・管理',
   adminBackToAdmin: '管理者に戻る',
   adminSearchItems: '名前でアイテムを検索...',
+  
+  // Admin Users
+  adminUserManagement: '管理者ユーザー管理',
   
   // Common actions
   addItem: 'アイテムを追加',

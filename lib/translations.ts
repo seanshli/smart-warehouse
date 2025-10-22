@@ -59,6 +59,12 @@ export interface Translations {
   admin2MinutesAgo: string
   adminLastUpdated: string
   
+  // Admin Households
+  adminSearchHouseholds: string
+  adminCleanupDuplicates: string
+  adminShowDetails: string
+  adminHideDetails: string
+  
   // Common actions
   addItem: string
   search: string
@@ -394,6 +400,12 @@ const en: Translations = {
   adminSecureAuth: 'Secure authentication successful',
   admin2MinutesAgo: '2 minutes ago',
   adminLastUpdated: 'Last updated',
+  
+  // Admin Households
+  adminSearchHouseholds: 'Search households, members, or descriptions...',
+  adminCleanupDuplicates: 'Cleanup Duplicates',
+  adminShowDetails: 'Show Details',
+  adminHideDetails: 'Hide Details',
   
   // Common actions
   addItem: 'Add Item',
@@ -734,6 +746,12 @@ const zhTW: Translations = {
   adminSecureAuth: '安全身份驗證成功',
   admin2MinutesAgo: '2 分鐘前',
   adminLastUpdated: '最後更新',
+  
+  // Admin Households
+  adminSearchHouseholds: '搜尋家庭、成員或描述...',
+  adminCleanupDuplicates: '清理重複項目',
+  adminShowDetails: '顯示詳情',
+  adminHideDetails: '隱藏詳情',
   
   // Common actions
   addItem: '新增物品',
@@ -1085,6 +1103,12 @@ const zh: Translations = {
   admin2MinutesAgo: '2 分钟前',
   adminLastUpdated: '最后更新',
   
+  // Admin Households
+  adminSearchHouseholds: '搜索家庭、成员或描述...',
+  adminCleanupDuplicates: '清理重复项目',
+  adminShowDetails: '显示详情',
+  adminHideDetails: '隐藏详情',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1432,6 +1456,12 @@ const ja: Translations = {
   adminSecureAuth: 'セキュア認証が成功',
   admin2MinutesAgo: '2分前',
   adminLastUpdated: '最終更新',
+  
+  // Admin Households
+  adminSearchHouseholds: '世帯、メンバー、または説明を検索...',
+  adminCleanupDuplicates: '重複をクリーンアップ',
+  adminShowDetails: '詳細を表示',
+  adminHideDetails: '詳細を非表示',
   
   // Common actions
   addItem: 'アイテムを追加',

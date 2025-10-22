@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   HomeIcon, 
   UserGroupIcon, 
@@ -31,6 +32,7 @@ interface AdminHousehold {
 
 export default function AdminHouseholdsPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [households, setHouseholds] = useState<AdminHousehold[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -172,12 +174,12 @@ export default function AdminHouseholdsPage() {
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Households ({filteredHouseholds.length})</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">{t('adminHouseholds')} ({filteredHouseholds.length})</h2>
             <div className="flex space-x-4">
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Search households, members, or descriptions..."
+                  placeholder={t('adminSearchHouseholds')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
@@ -213,7 +215,7 @@ export default function AdminHouseholdsPage() {
                 ) : (
                   <>
                     <TrashIcon className="h-4 w-4 mr-2" />
-                    Cleanup Duplicates
+                    {t('adminCleanupDuplicates')}
                   </>
                 )}
               </button>
@@ -253,7 +255,7 @@ export default function AdminHouseholdsPage() {
                       className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
                       <EyeIcon className="h-4 w-4 mr-1" />
-                      {selectedHousehold === h.id ? 'Hide Details' : 'Show Details'}
+                      {selectedHousehold === h.id ? t('adminHideDetails') : t('adminShowDetails')}
                     </button>
                   </div>
                 </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   HomeIcon, 
   UserGroupIcon, 
@@ -31,6 +32,7 @@ interface AdminStats {
 
 export default function AdminDashboard() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +62,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
+          <p className="mt-4 text-gray-600">{t('adminLoading')}</p>
         </div>
       </div>
     )
@@ -70,13 +72,13 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 text-lg font-semibold">Error Loading Dashboard</div>
+          <div className="text-red-600 text-lg font-semibold">{t('adminError')}</div>
           <p className="text-gray-600 mt-2">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -88,10 +90,10 @@ export default function AdminDashboard() {
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {session?.user?.name || 'Administrator'}
+          {t('adminWelcome')}, {session?.user?.name || t('adminAdministrator')}
         </h1>
         <p className="mt-2 text-gray-600">
-          Here's an overview of your Smart Warehouse system
+          {t('adminOverview')}
         </p>
       </div>
 
@@ -106,7 +108,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalUsers')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{stats.users}</dd>
                   </dl>
                 </div>
@@ -122,7 +124,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Households</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminHouseholds')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{stats.households}</dd>
                   </dl>
                 </div>
@@ -138,7 +140,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Items</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalItems')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{stats.items}</dd>
                   </dl>
                 </div>
@@ -154,7 +156,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Avg Items/Household</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminAvgItems')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">
                       {stats.households > 0 ? Math.round(stats.items / stats.households) : 0}
                     </dd>
@@ -169,7 +171,7 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{t('adminQuickActions')}</h3>
           <div className="space-y-3">
             <Link
               href="/admin/households"
@@ -177,7 +179,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <UserGroupIcon className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-900">Manage Households</span>
+                <span className="text-sm font-medium text-gray-900">{t('adminManageHouseholds')}</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
@@ -188,7 +190,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <CubeIcon className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium text-gray-900">View All Items</span>
+                <span className="text-sm font-medium text-gray-900">{t('adminViewAllItems')}</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
@@ -199,7 +201,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <ChartBarIcon className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-900">View Analytics</span>
+                <span className="text-sm font-medium text-gray-900">{t('adminViewAnalytics')}</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
@@ -210,7 +212,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <CogIcon className="h-5 w-5 text-gray-600" />
-                <span className="text-sm font-medium text-gray-900">System Settings</span>
+                <span className="text-sm font-medium text-gray-900">{t('adminSystemSettings')}</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
@@ -218,37 +220,37 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">System Status</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{t('adminSystemStatus')}</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Database</span>
+              <span className="text-sm text-gray-600">{t('adminDatabase')}</span>
               <div className="flex items-center space-x-2">
                 <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-green-600">Healthy</span>
+                <span className="text-sm font-medium text-green-600">{t('adminHealthy')}</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">API Services</span>
+              <span className="text-sm text-gray-600">{t('adminAPIServices')}</span>
               <div className="flex items-center space-x-2">
                 <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-green-600">Healthy</span>
+                <span className="text-sm font-medium text-green-600">{t('adminHealthy')}</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Storage</span>
+              <span className="text-sm text-gray-600">{t('adminStorage')}</span>
               <div className="flex items-center space-x-2">
                 <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-green-600">Healthy</span>
+                <span className="text-sm font-medium text-green-600">{t('adminHealthy')}</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Authentication</span>
+              <span className="text-sm text-gray-600">{t('adminAuthentication')}</span>
               <div className="flex items-center space-x-2">
                 <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium text-green-600">Healthy</span>
+                <span className="text-sm font-medium text-green-600">{t('adminHealthy')}</span>
               </div>
             </div>
           </div>
@@ -257,18 +259,18 @@ export default function AdminDashboard() {
 
       {/* Recent Activity */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('adminRecentActivity')}</h3>
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <BellIcon className="h-5 w-5 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-900">System monitoring active</p>
-              <p className="text-xs text-gray-500">All services running normally</p>
+              <p className="text-sm text-gray-900">{t('adminSystemMonitoring')}</p>
+              <p className="text-xs text-gray-500">{t('adminAllServicesRunning')}</p>
             </div>
             <div className="flex-shrink-0">
-              <span className="text-xs text-gray-500">Just now</span>
+              <span className="text-xs text-gray-500">{t('adminJustNow')}</span>
             </div>
           </div>
           
@@ -277,11 +279,11 @@ export default function AdminDashboard() {
               <ShieldCheckIcon className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-900">Admin dashboard accessed</p>
-              <p className="text-xs text-gray-500">Secure authentication successful</p>
+              <p className="text-sm text-gray-900">{t('adminDashboardAccessed')}</p>
+              <p className="text-xs text-gray-500">{t('adminSecureAuth')}</p>
             </div>
             <div className="flex-shrink-0">
-              <span className="text-xs text-gray-500">2 minutes ago</span>
+              <span className="text-xs text-gray-500">{t('admin2MinutesAgo')}</span>
             </div>
           </div>
         </div>
@@ -290,7 +292,7 @@ export default function AdminDashboard() {
       {/* Footer Info */}
       <div className="mt-8 text-center">
         <p className="text-sm text-gray-500">
-          Smart Warehouse Admin Panel • Last updated: {new Date().toLocaleString()}
+          {t('adminCopyright')} • {t('adminLastUpdated')}: {new Date().toLocaleString()}
         </p>
       </div>
     </div>

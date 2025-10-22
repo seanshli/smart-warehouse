@@ -30,6 +30,35 @@ export interface Translations {
   commonCurrentLanguage: string
   commonSignOut: string
   
+  // Admin Dashboard
+  adminLoading: string
+  adminError: string
+  retry: string
+  adminWelcome: string
+  adminOverview: string
+  adminTotalUsers: string
+  adminTotalItems: string
+  adminAvgItems: string
+  adminQuickActions: string
+  adminManageHouseholds: string
+  adminViewAllItems: string
+  adminViewAnalytics: string
+  adminSystemSettings: string
+  adminSystemStatus: string
+  adminDatabase: string
+  adminAPIServices: string
+  adminStorage: string
+  adminAuthentication: string
+  adminHealthy: string
+  adminRecentActivity: string
+  adminSystemMonitoring: string
+  adminAllServicesRunning: string
+  adminJustNow: string
+  adminDashboardAccessed: string
+  adminSecureAuth: string
+  admin2MinutesAgo: string
+  adminLastUpdated: string
+  
   // Common actions
   addItem: string
   search: string
@@ -336,6 +365,35 @@ const en: Translations = {
   commonLanguage: 'Language',
   commonCurrentLanguage: 'Current Language',
   commonSignOut: 'Sign Out',
+  
+  // Admin Dashboard
+  adminLoading: 'Loading admin dashboard...',
+  adminError: 'Error Loading Dashboard',
+  retry: 'Retry',
+  adminWelcome: 'Welcome back',
+  adminOverview: 'Here\'s an overview of your Smart Warehouse system',
+  adminTotalUsers: 'Total Users',
+  adminTotalItems: 'Total Items',
+  adminAvgItems: 'Avg Items/Household',
+  adminQuickActions: 'Quick Actions',
+  adminManageHouseholds: 'Manage Households',
+  adminViewAllItems: 'View All Items',
+  adminViewAnalytics: 'View Analytics',
+  adminSystemSettings: 'System Settings',
+  adminSystemStatus: 'System Status',
+  adminDatabase: 'Database',
+  adminAPIServices: 'API Services',
+  adminStorage: 'Storage',
+  adminAuthentication: 'Authentication',
+  adminHealthy: 'Healthy',
+  adminRecentActivity: 'Recent Activity',
+  adminSystemMonitoring: 'System monitoring active',
+  adminAllServicesRunning: 'All services running normally',
+  adminJustNow: 'Just now',
+  adminDashboardAccessed: 'Admin dashboard accessed',
+  adminSecureAuth: 'Secure authentication successful',
+  admin2MinutesAgo: '2 minutes ago',
+  adminLastUpdated: 'Last updated',
   
   // Common actions
   addItem: 'Add Item',
@@ -647,6 +705,35 @@ const zhTW: Translations = {
   commonLanguage: '語言',
   commonCurrentLanguage: '目前語言',
   commonSignOut: '登出',
+  
+  // Admin Dashboard
+  adminLoading: '載入管理面板中...',
+  adminError: '載入儀表板錯誤',
+  retry: '重試',
+  adminWelcome: '歡迎回來',
+  adminOverview: '這是您的智能倉庫系統概覽',
+  adminTotalUsers: '總用戶數',
+  adminTotalItems: '總物品數',
+  adminAvgItems: '平均物品/家庭',
+  adminQuickActions: '快速操作',
+  adminManageHouseholds: '管理家庭',
+  adminViewAllItems: '查看所有物品',
+  adminViewAnalytics: '查看分析',
+  adminSystemSettings: '系統設定',
+  adminSystemStatus: '系統狀態',
+  adminDatabase: '資料庫',
+  adminAPIServices: 'API 服務',
+  adminStorage: '儲存',
+  adminAuthentication: '身份驗證',
+  adminHealthy: '健康',
+  adminRecentActivity: '最近活動',
+  adminSystemMonitoring: '系統監控啟用',
+  adminAllServicesRunning: '所有服務正常運行',
+  adminJustNow: '剛剛',
+  adminDashboardAccessed: '管理面板已存取',
+  adminSecureAuth: '安全身份驗證成功',
+  admin2MinutesAgo: '2 分鐘前',
+  adminLastUpdated: '最後更新',
   
   // Common actions
   addItem: '新增物品',
@@ -969,6 +1056,35 @@ const zh: Translations = {
   commonCurrentLanguage: '当前语言',
   commonSignOut: '登出',
   
+  // Admin Dashboard
+  adminLoading: '加载管理面板中...',
+  adminError: '加载仪表板错误',
+  retry: '重试',
+  adminWelcome: '欢迎回来',
+  adminOverview: '这是您的智能仓库系统概览',
+  adminTotalUsers: '总用户数',
+  adminTotalItems: '总物品数',
+  adminAvgItems: '平均物品/家庭',
+  adminQuickActions: '快速操作',
+  adminManageHouseholds: '管理家庭',
+  adminViewAllItems: '查看所有物品',
+  adminViewAnalytics: '查看分析',
+  adminSystemSettings: '系统设置',
+  adminSystemStatus: '系统状态',
+  adminDatabase: '数据库',
+  adminAPIServices: 'API 服务',
+  adminStorage: '存储',
+  adminAuthentication: '身份验证',
+  adminHealthy: '健康',
+  adminRecentActivity: '最近活动',
+  adminSystemMonitoring: '系统监控启用',
+  adminAllServicesRunning: '所有服务正常运行',
+  adminJustNow: '刚刚',
+  adminDashboardAccessed: '管理面板已访问',
+  adminSecureAuth: '安全身份验证成功',
+  admin2MinutesAgo: '2 分钟前',
+  adminLastUpdated: '最后更新',
+  
   // Common actions
   addItem: '添加物品',
   search: '搜索',
@@ -1287,6 +1403,35 @@ const ja: Translations = {
   commonLanguage: '言語',
   commonCurrentLanguage: '現在の言語',
   commonSignOut: 'サインアウト',
+  
+  // Admin Dashboard
+  adminLoading: '管理パネルを読み込み中...',
+  adminError: 'ダッシュボード読み込みエラー',
+  retry: '再試行',
+  adminWelcome: 'おかえりなさい',
+  adminOverview: 'スマート倉庫システムの概要です',
+  adminTotalUsers: '総ユーザー数',
+  adminTotalItems: '総アイテム数',
+  adminAvgItems: '平均アイテム/世帯',
+  adminQuickActions: 'クイックアクション',
+  adminManageHouseholds: '世帯管理',
+  adminViewAllItems: 'すべてのアイテムを表示',
+  adminViewAnalytics: '分析を表示',
+  adminSystemSettings: 'システム設定',
+  adminSystemStatus: 'システムステータス',
+  adminDatabase: 'データベース',
+  adminAPIServices: 'API サービス',
+  adminStorage: 'ストレージ',
+  adminAuthentication: '認証',
+  adminHealthy: '健全',
+  adminRecentActivity: '最近のアクティビティ',
+  adminSystemMonitoring: 'システム監視がアクティブ',
+  adminAllServicesRunning: 'すべてのサービスが正常に実行中',
+  adminJustNow: '今すぐ',
+  adminDashboardAccessed: '管理ダッシュボードにアクセス',
+  adminSecureAuth: 'セキュア認証が成功',
+  admin2MinutesAgo: '2分前',
+  adminLastUpdated: '最終更新',
   
   // Common actions
   addItem: 'アイテムを追加',

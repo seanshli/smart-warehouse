@@ -60,11 +60,18 @@ export const authOptions: NextAuthOptions = {
         token.isAdmin = (user as any).isAdmin
       } else if (token.id) {
         // Refresh admin status from database on each request
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string }
-        })
-        if (dbUser) {
-          token.isAdmin = (dbUser as any).isAdmin || false
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string }
+          })
+          if (dbUser) {
+            token.isAdmin = (dbUser as any).isAdmin || false
+            console.log('JWT refresh - User:', dbUser.email, 'isAdmin:', (dbUser as any).isAdmin)
+          } else {
+            console.log('JWT refresh - User not found:', token.id)
+          }
+        } catch (error) {
+          console.error('JWT refresh error:', error)
         }
       }
       return token

@@ -63,6 +63,23 @@
 	<string>Select images to decode invoices</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save images if needed</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>smart-warehouse-five.vercel.app</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>UILaunchStoryboardName</key>

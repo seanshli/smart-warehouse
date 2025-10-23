@@ -112,6 +112,24 @@ export interface Translations {
   reason: string
   moveConfirmation: string
   
+  // Missing translations for hardcoded strings
+  noItemsFound: string
+  startAddingItems: string
+  forceRefreshPage: string
+  refresh: string
+  whereStored: string
+  room: string
+  cabinetShelf: string
+  leaveEmptyDefault: string
+  addItemButton: string
+  switchHousehold: string
+  cameraNotAvailable: string
+  uploadTaiwanInvoice: string
+  uploadTaiwanInvoicePhoto: string
+  unknownItem: string
+  unableToRecognize: string
+  miscellaneous: string
+  
   // Duplicate Detection
   potentialDuplicate: string
   newItem: string
@@ -473,6 +491,24 @@ const en: Translations = {
   checkoutQuantity: 'Checkout Quantity',
   reason: 'Reason',
   moveConfirmation: 'Moving to',
+  
+  // Missing translations for hardcoded strings
+  noItemsFound: 'No items found',
+  startAddingItems: 'Start by adding some items to your inventory.',
+  forceRefreshPage: 'Force Refresh Page',
+  refresh: 'Refresh',
+  whereStored: 'Where is this item stored?',
+  room: 'Room',
+  cabinetShelf: 'Cabinet/Shelf (Optional)',
+  leaveEmptyDefault: 'Leave empty to automatically create a default cabinet for this room',
+  addItemButton: 'Add Item',
+  switchHousehold: 'Switch household',
+  cameraNotAvailable: 'Camera not available, please upload Taiwan invoice photo for recognition',
+  uploadTaiwanInvoice: 'Upload Taiwan Invoice Photo',
+  uploadTaiwanInvoicePhoto: 'Upload Taiwan Invoice Photo',
+  unknownItem: 'Unknown Item',
+  unableToRecognize: 'Unable to recognize item',
+  miscellaneous: 'Miscellaneous',
   
   // Duplicate Detection
   potentialDuplicate: 'Potential Duplicate Item',
@@ -839,6 +875,24 @@ const zhTW: Translations = {
   checkoutQuantity: '結帳數量',
   reason: '原因',
   moveConfirmation: '移動到',
+  
+  // Missing translations for hardcoded strings
+  noItemsFound: '找不到物品',
+  startAddingItems: '開始添加一些物品到您的庫存中。',
+  forceRefreshPage: '強制刷新頁面',
+  refresh: '刷新',
+  whereStored: '這個物品存放在哪裡？',
+  room: '房間',
+  cabinetShelf: '櫥櫃/架子（可選）',
+  leaveEmptyDefault: '留空以自動為此房間創建默認櫥櫃',
+  addItemButton: '添加物品',
+  switchHousehold: '切換家庭',
+  cameraNotAvailable: '相機不可用，請上傳台灣發票照片進行識別',
+  uploadTaiwanInvoice: '上傳台灣發票照片',
+  uploadTaiwanInvoicePhoto: '上傳台灣發票照片',
+  unknownItem: '未知物品',
+  unableToRecognize: '無法識別物品',
+  miscellaneous: '雜項',
   
   // Duplicate Detection
   potentialDuplicate: '可能的重複物品',
@@ -1216,6 +1270,24 @@ const zh: Translations = {
   reason: '原因',
   moveConfirmation: '移动到',
   
+  // Missing translations for hardcoded strings
+  noItemsFound: '找不到物品',
+  startAddingItems: '开始添加一些物品到您的库存中。',
+  forceRefreshPage: '强制刷新页面',
+  refresh: '刷新',
+  whereStored: '这个物品存放在哪里？',
+  room: '房间',
+  cabinetShelf: '橱柜/架子（可选）',
+  leaveEmptyDefault: '留空以自动为此房间创建默认橱柜',
+  addItemButton: '添加物品',
+  switchHousehold: '切换家庭',
+  cameraNotAvailable: '相机不可用，请上传台湾发票照片进行识别',
+  uploadTaiwanInvoice: '上传台湾发票照片',
+  uploadTaiwanInvoicePhoto: '上传台湾发票照片',
+  unknownItem: '未知物品',
+  unableToRecognize: '无法识别物品',
+  miscellaneous: '杂项',
+  
   // Duplicate Detection
   potentialDuplicate: '可能的重复物品',
   newItem: '新物品',
@@ -1589,6 +1661,24 @@ const ja: Translations = {
   checkoutQuantity: 'チェックアウト数量',
   reason: '理由',
   moveConfirmation: '移動先',
+  
+  // Missing translations for hardcoded strings
+  noItemsFound: 'アイテムが見つかりません',
+  startAddingItems: 'インベントリにアイテムを追加してください。',
+  forceRefreshPage: 'ページを強制更新',
+  refresh: '更新',
+  whereStored: 'このアイテムはどこに保管されていますか？',
+  room: '部屋',
+  cabinetShelf: 'キャビネット/棚（オプション）',
+  leaveEmptyDefault: '空のままにすると、この部屋のデフォルトキャビネットが自動作成されます',
+  addItemButton: 'アイテムを追加',
+  switchHousehold: '世帯を切り替え',
+  cameraNotAvailable: 'カメラが利用できません。台湾の請求書写真をアップロードして認識してください',
+  uploadTaiwanInvoice: '台湾請求書写真をアップロード',
+  uploadTaiwanInvoicePhoto: '台湾請求書写真をアップロード',
+  unknownItem: '不明なアイテム',
+  unableToRecognize: 'アイテムを認識できません',
+  miscellaneous: 'その他',
   
   // Duplicate Detection
   potentialDuplicate: '重複の可能性があるアイテム',

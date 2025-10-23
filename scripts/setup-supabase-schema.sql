@@ -190,7 +190,13 @@ VALUES (
     NOW(),
     NOW(),
     NOW()
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    password = EXCLUDED.password,
+    "isAdmin" = EXCLUDED."isAdmin",
+    "emailVerified" = EXCLUDED."emailVerified",
+    "updatedAt" = NOW();
 
 -- Insert test user
 INSERT INTO "User" (id, email, name, password, "isAdmin", "emailVerified", "createdAt", "updatedAt")
@@ -203,7 +209,13 @@ VALUES (
     NOW(),
     NOW(),
     NOW()
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    password = EXCLUDED.password,
+    "isAdmin" = EXCLUDED."isAdmin",
+    "emailVerified" = EXCLUDED."emailVerified",
+    "updatedAt" = NOW();
 
 -- Insert admin household
 INSERT INTO "Household" (id, name, description, "createdAt", "updatedAt")

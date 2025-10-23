@@ -12,7 +12,8 @@ import {
   ChartBarIcon,
   CogIcon,
   ArrowRightOnRectangleIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: t('adminDashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
     { name: t('adminHouseholds'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
     { name: t('adminItems'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
+    { name: 'Duplicates', href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },
     { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
     { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
     { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },

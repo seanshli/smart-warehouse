@@ -157,6 +157,16 @@ export default function AdminItemsPage() {
               <p className="text-gray-600 mt-1">{t('adminViewManageItems')}</p>
             </div>
             <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  // TODO: Implement duplicate items check
+                  alert('Duplicate items check functionality will be implemented here')
+                }}
+                className="inline-flex items-center px-4 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100"
+              >
+                <FunnelIcon className="h-4 w-4 mr-2" />
+                Check Duplicates
+              </button>
               <Link 
                 href="/admin" 
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"

@@ -75,7 +75,7 @@ export default function ItemsList({
       if (selectedCategory) params.append('category', selectedCategory)
       if (selectedRoom) params.append('room', selectedRoom)
       
-      const url = `/api/items/grouped-direct-cached${params.toString() ? '?' + params.toString() : ''}`
+      const url = `/api/items${params.toString() ? '?' + params.toString() : ''}`
       console.log('ItemsList: Fetching from URL:', url)
       const response = await fetch(url)
       
@@ -193,12 +193,12 @@ export default function ItemsList({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
         <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-          {searchTerm || selectedCategory || selectedRoom ? t('noItemsFound') : 'No items found'}
+          {searchTerm || selectedCategory || selectedRoom ? t('noItemsFound') : t('noItemsFound')}
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {searchTerm || selectedCategory || selectedRoom 
-            ? 'Try adjusting your search or filters.' 
-            : 'Start by adding some items to your inventory.'
+            ? t('searchTips') 
+            : t('startAddingItems')
           }
         </p>
         <div className="mt-4">
@@ -209,7 +209,7 @@ export default function ItemsList({
             }}
             className="text-sm text-blue-600 hover:text-blue-800 underline"
           >
-            Force Refresh Page
+            {t('forceRefreshPage')}
           </button>
         </div>
       </div>

@@ -43,7 +43,7 @@ function HouseholdSwitcher() {
       value={activeHouseholdId || ''}
       onChange={(e) => setActiveHousehold(e.target.value)}
       className="ml-2 border-gray-300 text-sm rounded-md dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
-      title="Switch household"
+      title={t('switchHousehold')}
     >
       {memberships.map(m => (
         <option key={m.household.id} value={m.household.id} className="bg-white dark:bg-gray-700">

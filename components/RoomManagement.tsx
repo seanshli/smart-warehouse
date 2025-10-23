@@ -674,9 +674,9 @@ export default function RoomManagement() {
                   </div>
                 </div>
 
-                {/* Category Duplicate Check */}
+                {/* Room/Cabinet Duplicate Check */}
                 <div className="bg-white p-4 rounded border">
-                  <h4 className="font-semibold mb-2">Category Duplicate Check</h4>
+                  <h4 className="font-semibold mb-2">Room/Cabinet Duplicate Check</h4>
                   <div className="space-y-1">
                     <div><strong>Clothing:</strong> Found in your data</div>
                     <div><strong>服裝:</strong> Found in your data (duplicate of Clothing)</div>

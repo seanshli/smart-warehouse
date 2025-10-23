@@ -181,7 +181,7 @@ export default function TaiwanInvoiceUploader({ onClose, onInvoiceDecoded }: Tai
       <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900">
-            {currentLanguage === 'zh-TW' ? '上傳台灣發票照片' : 'Upload Taiwan Invoice Photo'}
+            {t('uploadTaiwanInvoicePhoto')}
           </h3>
           <button
             onClick={onClose}
@@ -198,10 +198,7 @@ export default function TaiwanInvoiceUploader({ onClose, onInvoiceDecoded }: Tai
               <PhotoIcon className="h-5 w-5 text-yellow-400" />
               <div className="ml-3">
                 <p className="text-sm text-yellow-800">
-                  {currentLanguage === 'zh-TW' 
-                    ? '相機不可用，請上傳台灣發票照片進行識別' 
-                    : 'Camera not available, please upload Taiwan invoice photo for recognition'
-                  }
+                  {t('cameraNotAvailable')}
                 </p>
               </div>
             </div>

@@ -49,9 +49,9 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
     } catch (error) {
       console.error('AI recognition error:', error)
       return {
-        name: 'Unknown Item',
-        description: 'Unable to recognize item',
-        category: 'Miscellaneous',
+        name: t('unknownItem'),
+        description: t('unableToRecognize'),
+        category: t('miscellaneous'),
         confidence: 0
       }
     }
@@ -1238,13 +1238,13 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
           <div className="space-y-6">
             <div>
               <h4 className="text-md font-medium text-gray-900 mb-4">
-                Where is this item stored?
+                {t('whereStored')}
               </h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Room
+                    {t('room')}
                   </label>
                   <select
                     value={formData.room}
@@ -1263,7 +1263,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Cabinet/Shelf (Optional)
+                    {t('cabinetShelf')}
                   </label>
                   <select
                     value={formData.cabinet}
@@ -1279,7 +1279,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                     ))}
                   </select>
                   <p className="mt-1 text-xs text-gray-500">
-                    Leave empty to automatically create a default cabinet for this room
+                    {t('leaveEmptyDefault')}
                   </p>
                 </div>
               </div>

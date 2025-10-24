@@ -52,6 +52,10 @@ export async function PUT(
       where: { id: body.cabinetId }
     }) : null
 
+    const newCategory = body.categoryId ? await prisma.category.findUnique({
+      where: { id: body.categoryId }
+    }) : null
+
     if (!newRoom) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
@@ -60,12 +64,17 @@ export async function PUT(
       return NextResponse.json({ error: 'Cabinet not found' }, { status: 404 })
     }
 
-    // Update the item location
+    if (body.categoryId && !newCategory) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    }
+
+    // Update the item location and category
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
       data: {
         roomId: body.roomId,
         cabinetId: body.cabinetId,
+        categoryId: body.categoryId || undefined,
         updatedAt: new Date()
       },
       include: {
@@ -83,11 +92,18 @@ export async function PUT(
     const oldLocation = item.room?.name + (item.cabinet?.name ? ` → ${item.cabinet.name}` : '')
     const newLocation = newRoom.name + (newCabinet?.name ? ` → ${newCabinet.name}` : '')
     
+    let description = `Item "${updatedItem.name}" moved from ${oldLocation} to ${newLocation}`
+    
+    // Add category change info if applicable
+    if (body.categoryId && newCategory) {
+      description += ` and category changed to ${newCategory.name}`
+    }
+    
     await prisma.itemHistory.create({
       data: {
         itemId: itemId,
         action: 'moved',
-        description: `Item "${updatedItem.name}" moved from ${oldLocation} to ${newLocation}`,
+        description: description,
         oldRoomId: item.roomId,
         newRoomId: body.roomId,
         oldCabinetId: item.cabinetId,

@@ -113,22 +113,16 @@ export interface Translations {
   moveConfirmation: string
   
   // Missing translations for hardcoded strings
-  noItemsFound: string
   startAddingItems: string
   forceRefreshPage: string
-  refresh: string
   whereStored: string
-  room: string
   cabinetShelf: string
   leaveEmptyDefault: string
   addItemButton: string
   switchHousehold: string
-  cameraNotAvailable: string
-  uploadTaiwanInvoice: string
   uploadTaiwanInvoicePhoto: string
   unknownItem: string
   unableToRecognize: string
-  miscellaneous: string
   
   // Duplicate Detection
   potentialDuplicate: string
@@ -535,7 +529,6 @@ const en: Translations = {
   clearFilters: 'Clear Filters',
   similar: 'Similar',
   noSuggestionsFound: 'No suggestions found',
-  noItemsFound: 'No items found matching your search.',
   lowStock: 'Low Stock',
   searchTips: 'Search Tips',
   searchByName: 'Search by item name',
@@ -570,7 +563,6 @@ const en: Translations = {
   // Item Management
   description: 'Description',
   minimumQuantity: 'Minimum Quantity Alert',
-  room: 'Room',
   cabinet: 'Cabinet/Shelf (Optional)',
   barcode: 'Barcode/UPC Code',
   qrCode: 'QR Code',
@@ -702,7 +694,6 @@ const en: Translations = {
   lowStockItems: 'Low Stock Items',
   householdMembers: 'Household Members',
   recentActivity: 'Recent Activity',
-  refresh: 'Refresh',
   noRecentActivity: 'No recent activity.',
   startByAddingFirstItem: 'Start by adding your first item!',
   noActivities: 'No activities',
@@ -711,7 +702,6 @@ const en: Translations = {
   // Taiwan E-Invoice
   taiwanInvoice: 'Taiwan Invoice',
   scanTaiwanInvoice: 'Scan Taiwan Invoice',
-  uploadTaiwanInvoice: 'Upload Taiwan Invoice Photo',
   taiwanInvoiceDetected: 'Taiwan invoice detected',
   taiwanInvoiceDecoded: 'Taiwan invoice decoded successfully',
   invoiceNumber: 'Invoice Number',
@@ -721,7 +711,6 @@ const en: Translations = {
   taxAmount: 'Tax Amount',
   invoiceItems: 'Invoice Items',
   processingTaiwanInvoice: 'Processing Taiwan invoice...',
-  cameraNotAvailable: 'Camera not available, please upload photo',
   
   // Invitation Codes
   invitationCode: 'Invitation Code',
@@ -751,7 +740,6 @@ const en: Translations = {
   tools: 'Tools',
   clothing: 'Clothing',
   books: 'Books',
-  miscellaneous: 'Miscellaneous',
   
   // Category Name Translations (for existing categories)
   categoryNameTranslations: {
@@ -919,7 +907,6 @@ const zhTW: Translations = {
   allRooms: '全部房間',
   clearFilters: '清除篩選',
   noSuggestionsFound: '未找到建議',
-  noItemsFound: '未找到符合搜尋條件的物品。',
   lowStock: '庫存不足',
   searchTips: '搜尋提示',
   searchByName: '依物品名稱搜尋',
@@ -954,7 +941,6 @@ const zhTW: Translations = {
   // Item Management
   description: '描述',
   minimumQuantity: '最低庫存警報',
-  room: '房間',
   cabinet: '櫥櫃/架子（可選）',
   barcode: '條碼/UPC 碼',
   qrCode: 'QR 碼',
@@ -1086,7 +1072,6 @@ const zhTW: Translations = {
   lowStockItems: '低庫存物品',
   householdMembers: '家庭成員',
   recentActivity: '最近活動',
-  refresh: '重新整理',
   noRecentActivity: '沒有最近的活動。',
   startByAddingFirstItem: '開始新增您的第一個物品！',
   noActivities: '沒有活動',
@@ -1095,7 +1080,6 @@ const zhTW: Translations = {
   // Taiwan E-Invoice
   taiwanInvoice: '台灣發票',
   scanTaiwanInvoice: '掃描台灣發票',
-  uploadTaiwanInvoice: '上傳台灣發票照片',
   taiwanInvoiceDetected: '已檢測到台灣發票',
   taiwanInvoiceDecoded: '台灣發票解析成功',
   invoiceNumber: '發票號碼',
@@ -1105,7 +1089,6 @@ const zhTW: Translations = {
   taxAmount: '稅額',
   invoiceItems: '發票項目',
   processingTaiwanInvoice: '正在處理台灣發票...',
-  cameraNotAvailable: '相機不可用，請上傳照片',
   
   // Invitation Codes
   invitationCode: '邀請碼',
@@ -1135,7 +1118,6 @@ const zhTW: Translations = {
   tools: '工具',
   clothing: '服裝',
   books: '書籍',
-  miscellaneous: '其他',
   
   // Category Name Translations (for existing categories)
   categoryNameTranslations: {
@@ -1313,7 +1295,6 @@ const zh: Translations = {
   allRooms: '所有房间',
   clearFilters: '清除筛选',
   noSuggestionsFound: '未找到建议',
-  noItemsFound: '未找到符合搜索条件的物品。',
   lowStock: '库存不足',
   searchTips: '搜索提示',
   searchByName: '按物品名称搜索',
@@ -1348,7 +1329,6 @@ const zh: Translations = {
   // Item Management
   description: '描述',
   minimumQuantity: '最低库存警报',
-  room: '房间',
   cabinet: '橱柜/架子（可选）',
   barcode: '条码/UPC 码',
   qrCode: 'QR 码',
@@ -1478,7 +1458,6 @@ const zh: Translations = {
   lowStockItems: '低库存物品',
   householdMembers: '家庭成员',
   recentActivity: '最近活动',
-  refresh: '刷新',
   noRecentActivity: '没有最近的活动。',
   startByAddingFirstItem: '开始添加您的第一个物品！',
   noActivities: '没有活动',
@@ -1487,7 +1466,6 @@ const zh: Translations = {
   // Taiwan E-Invoice
   taiwanInvoice: '台湾发票',
   scanTaiwanInvoice: '扫描台湾发票',
-  uploadTaiwanInvoice: '上传台湾发票照片',
   taiwanInvoiceDetected: '已检测到台湾发票',
   taiwanInvoiceDecoded: '台湾发票解析成功',
   invoiceNumber: '发票号码',
@@ -1497,7 +1475,6 @@ const zh: Translations = {
   taxAmount: '税额',
   invoiceItems: '发票项目',
   processingTaiwanInvoice: '正在处理台湾发票...',
-  cameraNotAvailable: '相机不可用，请上传照片',
   
   // Invitation Codes
   invitationCode: '邀请码',
@@ -1527,7 +1504,6 @@ const zh: Translations = {
   tools: '工具',
   clothing: '服装',
   books: '书籍',
-  miscellaneous: '其他',
   
   // Category Name Translations (for existing categories)
   categoryNameTranslations: {
@@ -1705,7 +1681,6 @@ const ja: Translations = {
   allRooms: 'すべての部屋',
   clearFilters: 'フィルターをクリア',
   noSuggestionsFound: '提案が見つかりません',
-  noItemsFound: '検索条件に一致するアイテムが見つかりません。',
   lowStock: '在庫不足',
   searchTips: '検索のヒント',
   searchByName: 'アイテム名で検索',
@@ -1740,7 +1715,6 @@ const ja: Translations = {
   // Item Management
   description: '説明',
   minimumQuantity: '最小在庫アラート',
-  room: '部屋',
   cabinet: 'キャビネット/棚（オプション）',
   barcode: 'バーコード/UPCコード',
   qrCode: 'QRコード',
@@ -1870,7 +1844,6 @@ const ja: Translations = {
   lowStockItems: '在庫不足アイテム',
   householdMembers: '世帯メンバー',
   recentActivity: '最近のアクティビティ',
-  refresh: '更新',
   noRecentActivity: '最近のアクティビティはありません。',
   startByAddingFirstItem: '最初のアイテムを追加してください！',
   noActivities: 'アクティビティなし',
@@ -1879,7 +1852,6 @@ const ja: Translations = {
   // Taiwan E-Invoice
   taiwanInvoice: '台湾インボイス',
   scanTaiwanInvoice: '台湾インボイスをスキャン',
-  uploadTaiwanInvoice: '台湾インボイス写真をアップロード',
   taiwanInvoiceDetected: '台湾インボイスが検出されました',
   taiwanInvoiceDecoded: '台湾インボイスが正常にデコードされました',
   invoiceNumber: 'インボイス番号',
@@ -1889,7 +1861,6 @@ const ja: Translations = {
   taxAmount: '税金額',
   invoiceItems: 'インボイス項目',
   processingTaiwanInvoice: '台湾インボイスを処理中...',
-  cameraNotAvailable: 'カメラが利用できません。写真をアップロードしてください',
   
   // Invitation Codes
   invitationCode: '招待コード',
@@ -1919,7 +1890,6 @@ const ja: Translations = {
   tools: '工具',
   clothing: '衣類',
   books: '本',
-  miscellaneous: 'その他',
   
   // Category Name Translations (for existing categories)
   categoryNameTranslations: {

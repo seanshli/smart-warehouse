@@ -30,6 +30,17 @@ interface Item {
   }
 }
 
+interface Category {
+  id: string
+  name: string
+  level: number
+  parent?: {
+    id: string
+    name: string
+  }
+  children?: Category[]
+}
+
 interface MoveItemModalProps {
   item: Item
   onClose: () => void
@@ -41,12 +52,15 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
   const { activeHouseholdId } = useHousehold()
   const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
   const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
+  const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
   const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
   const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     fetchRooms()
+    fetchCategories()
   }, [activeHouseholdId])
 
   useEffect(() => {
@@ -100,6 +114,28 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
     }
   }
 
+  const fetchCategories = async () => {
+    if (!activeHouseholdId) return
+
+    try {
+      const response = await fetch(`/api/categories?householdId=${activeHouseholdId}`, { credentials: 'include' })
+      if (response.ok) {
+        const categoriesData = await response.json()
+        console.log('MoveItemModal - Categories API response:', categoriesData)
+        
+        // Handle different response formats
+        const categoriesArray = Array.isArray(categoriesData) ? categoriesData : 
+                               categoriesData.categories || 
+                               (categoriesData.data ? categoriesData.data : [])
+        
+        setCategories(categoriesArray)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      toast.error('Failed to load categories.')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -119,7 +155,8 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
         credentials: 'include',
         body: JSON.stringify({
           roomId: selectedRoom,
-          cabinetId: selectedCabinet || null
+          cabinetId: selectedCabinet || null,
+          categoryId: selectedCategory || null
         })
       })
 
@@ -208,6 +245,25 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
               </select>
             </div>
 
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                Category
+              </label>
+              <select
+                id="category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">Keep Current Category</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {'  '.repeat(category.level - 1)}{category.name} (Level {category.level})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {selectedRoom && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                 <div className="flex items-center">
@@ -215,6 +271,7 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                   <span className="text-sm text-blue-800">
                     {t('moveConfirmation')}: {rooms.find(r => r.id === selectedRoom)?.name}
                     {selectedCabinet && ` → ${cabinets.find(c => c.id === selectedCabinet)?.name}`}
+                    {selectedCategory && ` → ${categories.find(c => c.id === selectedCategory)?.name}`}
                   </span>
                 </div>
               </div>

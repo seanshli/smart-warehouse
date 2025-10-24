@@ -257,6 +257,30 @@ export default function RoomManagement() {
     }
   }
 
+  const handleCleanupDuplicates = async () => {
+    try {
+      const response = await fetch('/api/admin/cleanup-duplicates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(`Cleaned up ${result.removedCount} duplicate categories`)
+        // Refresh the data
+        fetchRooms()
+      } else {
+        const errorData = await response.json()
+        toast.error(`Failed to cleanup duplicates: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error cleaning up duplicates:', error)
+      toast.error('An error occurred while cleaning up duplicates')
+    }
+  }
+
   const handleBackToList = () => {
     setViewMode('list')
     setSelectedRoomForDetail(null)
@@ -684,6 +708,12 @@ export default function RoomManagement() {
                     <div className="text-sm text-gray-600 mt-2">
                       <p>Click "Clean Up Duplicate Categories" button below to remove duplicates</p>
                     </div>
+                    <button 
+                      onClick={handleCleanupDuplicates}
+                      className="mt-3 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                    >
+                      Clean Duplicate Categories
+                    </button>
                   </div>
                 </div>
               </div>

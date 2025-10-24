@@ -333,7 +333,7 @@ export default function CategoryManagement() {
 
   const renderCategoryTree = (categories: Category[], level = 0) => {
     return categories.map((category) => (
-      <div key={category.id} className={`${level > 0 ? 'ml-4' : ''}`}>
+      <div key={category.id} className={`${level > 0 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}`}>
         <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg mb-2">
           <div className="flex items-center">
             {(category.children.length > 0 || category.level < 3) && (

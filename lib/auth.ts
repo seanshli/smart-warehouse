@@ -13,6 +13,10 @@ export const authOptions: NextAuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours
     updateAge: 0, // Don't update session age automatically
   },
+  // Disable session persistence across browser sessions
+  jwt: {
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
   // Disable automatic session refresh
   pages: {
     signIn: '/auth/signin',
@@ -38,10 +42,16 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.isAdmin = (user as any).isAdmin
         token.loginTime = Date.now()
+        token.sessionId = Date.now().toString() // Unique session ID
       }
       
       // Check if session is expired (24 hours)
       if (token.loginTime && Date.now() - (token.loginTime as number) > 24 * 60 * 60 * 1000) {
+        return {} // Force re-authentication
+      }
+      
+      // Force re-authentication if no session ID (prevents preloading)
+      if (!token.sessionId) {
         return {} // Force re-authentication
       }
       

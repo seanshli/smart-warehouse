@@ -53,11 +53,13 @@ export async function middleware(request: NextRequest) {
 
   // Multi-user security: Check session age and force re-authentication
   const loginTime = (token as any).loginTime
+  const sessionId = (token as any).sessionId
   const sessionAge = Date.now() - (loginTime || 0)
   const maxSessionAge = 24 * 60 * 60 * 1000 // 24 hours
 
-  if (sessionAge > maxSessionAge) {
-    // Session expired, force re-authentication
+  // Force re-authentication if no session ID or expired
+  if (!sessionId || sessionAge > maxSessionAge) {
+    // Session expired or invalid, force re-authentication
     if (!request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.redirect(new URL('/auth/signin?error=session_expired', request.url))
     }

@@ -10,27 +10,40 @@ export default function SignOut() {
   useEffect(() => {
     const handleSignOut = async () => {
       try {
-        // Clear any local storage
+        // Clear all browser storage
         localStorage.clear()
         sessionStorage.clear()
         
-        // Sign out with NextAuth
+        // Clear any cached data
+        if ('caches' in window) {
+          const cacheNames = await caches.keys()
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          )
+        }
+        
+        // Clear cookies
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Sign out with NextAuth - force complete logout
         await signOut({ 
           callbackUrl: '/auth/signin',
           redirect: false 
         })
         
-        // Force redirect to sign in page
-        router.push('/auth/signin')
+        // Force a hard refresh to clear all caches
+        window.location.href = '/auth/signin'
       } catch (error) {
         console.error('Sign out error:', error)
         // Force redirect even if there's an error
-        router.push('/auth/signin')
+        window.location.href = '/auth/signin'
       }
     }
 
     handleSignOut()
-  }, [router])
+  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

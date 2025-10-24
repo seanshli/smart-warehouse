@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { ThemeProvider } from 'next-themes'
 import LanguageProvider from '@/components/LanguageProvider'
 import { HouseholdProvider } from '@/components/HouseholdProvider'
+import SettingsLoader from '@/components/SettingsLoader'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <LanguageProvider>
           <HouseholdProvider>
+            <SettingsLoader />
             {children}
             <Toaster position="top-right" />
           </HouseholdProvider>

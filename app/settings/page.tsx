@@ -84,7 +84,7 @@ export default function SettingsPage() {
     }
     
     loadSettings()
-  }, [session])
+  }, [session, setTheme, setLanguage])
 
   const applyThemeSettings = (newSettings: ThemeSettings) => {
     // Apply theme mode using next-themes
@@ -109,20 +109,19 @@ export default function SettingsPage() {
     const newSettings = { ...settings, [key]: value }
     setSettings(newSettings)
     setHasChanges(true)
-    applyThemeSettings(newSettings)
+    // Don't apply immediately - wait for save
   }
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     try {
-      // Save to localStorage
-      localStorage.setItem('smart-warehouse-settings', JSON.stringify(settings))
+      setIsLoading(true)
       
-      // Apply settings immediately
-      applyThemeSettings(settings)
+      // Save to localStorage first
+      localStorage.setItem('smart-warehouse-settings', JSON.stringify(settings))
       
       // Save to user preferences in database if logged in
       if (session?.user?.email) {
-        fetch('/api/user/preferences', {
+        const response = await fetch('/api/user/preferences', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -132,20 +131,27 @@ export default function SettingsPage() {
             fontSize: settings.fontSize,
             language: settings.language
           })
-        }).catch(error => {
-          console.error('Error saving preferences to database:', error)
         })
+        
+        if (!response.ok) {
+          throw new Error('Failed to save to database')
+        }
       }
+      
+      // Apply settings after successful save
+      applyThemeSettings(settings)
       
       setHasChanges(false)
       toast.success('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
       toast.error('Failed to save settings')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const resetSettings = () => {
+  const resetSettings = async () => {
     const defaultSettings = {
       mode: 'system' as const,
       fontSize: 'medium' as const,
@@ -153,7 +159,32 @@ export default function SettingsPage() {
     }
     setSettings(defaultSettings)
     setHasChanges(true)
-    applyThemeSettings(defaultSettings)
+    
+    // Save the reset settings
+    try {
+      localStorage.setItem('smart-warehouse-settings', JSON.stringify(defaultSettings))
+      
+      if (session?.user?.email) {
+        await fetch('/api/user/preferences', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            theme: defaultSettings.mode,
+            fontSize: defaultSettings.fontSize,
+            language: defaultSettings.language
+          })
+        })
+      }
+      
+      applyThemeSettings(defaultSettings)
+      setHasChanges(false)
+      toast.success('Settings reset to default!')
+    } catch (error) {
+      console.error('Error resetting settings:', error)
+      toast.error('Failed to reset settings')
+    }
   }
 
   const handleCleanupDuplicates = async () => {

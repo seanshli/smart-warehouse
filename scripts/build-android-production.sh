@@ -43,3 +43,4 @@ else
     echo "💡 Make sure you have Java JDK installed and configured"
     exit 1
 fi
+

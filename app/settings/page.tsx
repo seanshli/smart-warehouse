@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { useLanguage } from '@/components/LanguageProvider'
 import { 
   CogIcon, 
@@ -12,7 +14,10 @@ import {
   EyeIcon,
   LanguageIcon,
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowLeftIcon,
+  CheckIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
 
@@ -24,13 +29,16 @@ interface ThemeSettings {
 
 export default function SettingsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const { currentLanguage, setLanguage, t } = useLanguage()
   const [settings, setSettings] = useState<ThemeSettings>({
-    mode: 'system',
+    mode: (theme as 'light' | 'dark' | 'system') || 'system',
     fontSize: 'medium',
     language: currentLanguage
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
     // Load saved settings from localStorage
@@ -49,67 +57,45 @@ export default function SettingsPage() {
   const applyThemeSettings = (newSettings: ThemeSettings) => {
     const root = document.documentElement
     
-    // Apply theme mode
-    if (newSettings.mode === 'dark') {
-      root.classList.add('dark')
-    } else if (newSettings.mode === 'light') {
-      root.classList.remove('dark')
-    } else {
-      // System mode - let CSS handle it
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      if (prefersDark) {
-        root.classList.add('dark')
-      } else {
-        root.classList.remove('dark')
-      }
-    }
-
+    // Apply theme mode using next-themes
+    setTheme(newSettings.mode)
+    
     // Apply font size
-    const fontSizeMap = {
-      small: '14px',
-      medium: '16px',
-      large: '18px'
-    }
-    root.style.fontSize = fontSizeMap[newSettings.fontSize]
+    const fontSize = newSettings.fontSize === 'small' ? '14px' : 
+                    newSettings.fontSize === 'large' ? '18px' : '16px'
+    root.style.fontSize = fontSize
+    
+    // Apply language
+    setLanguage(newSettings.language)
   }
 
-  const saveSettings = async (newSettings: ThemeSettings) => {
-    setIsLoading(true)
+  const handleSettingChange = (key: keyof ThemeSettings, value: string) => {
+    const newSettings = { ...settings, [key]: value }
+    setSettings(newSettings)
+    setHasChanges(true)
+    applyThemeSettings(newSettings)
+  }
+
+  const saveSettings = () => {
     try {
-      // Save to localStorage
-      localStorage.setItem('smart-warehouse-settings', JSON.stringify(newSettings))
-      
-      // Apply settings immediately
-      applyThemeSettings(newSettings)
-      
-      // Update language if changed
-      if (newSettings.language !== currentLanguage) {
-        setLanguage(newSettings.language)
-      }
-      
-      setSettings(newSettings)
-      toast.success('Settings saved successfully')
+      localStorage.setItem('smart-warehouse-settings', JSON.stringify(settings))
+      setHasChanges(false)
+      toast.success('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
       toast.error('Failed to save settings')
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
-    const newSettings = { ...settings, mode }
-    saveSettings(newSettings)
-  }
-
-  const handleFontSizeChange = (fontSize: 'small' | 'medium' | 'large') => {
-    const newSettings = { ...settings, fontSize }
-    saveSettings(newSettings)
-  }
-
-  const handleLanguageChange = (language: string) => {
-    const newSettings = { ...settings, language }
-    saveSettings(newSettings)
+  const resetSettings = () => {
+    const defaultSettings = {
+      mode: 'system' as const,
+      fontSize: 'medium' as const,
+      language: 'en'
+    }
+    setSettings(defaultSettings)
+    setHasChanges(true)
+    applyThemeSettings(defaultSettings)
   }
 
   const handleCleanupDuplicates = async () => {
@@ -137,197 +123,218 @@ export default function SettingsPage() {
     }
   }
 
-  const resetSettings = () => {
-    const defaultSettings: ThemeSettings = {
-      mode: 'system',
-      fontSize: 'medium',
-      language: 'en'
+  const goBack = () => {
+    if (hasChanges) {
+      if (confirm('You have unsaved changes. Are you sure you want to go back?')) {
+        router.back()
+      }
+    } else {
+      router.back()
     }
-    saveSettings(defaultSettings)
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">Please sign in to access settings.</p>
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <CogIcon className="h-8 w-8 text-primary-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          </div>
-          <p className="text-gray-600">Customize your Smart Warehouse experience</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Theme Settings */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <EyeIcon className="h-6 w-6 text-primary-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Appearance</h2>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      {/* Header with Navigation */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={goBack}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back
+              </button>
+              <div className="flex items-center space-x-2">
+                <CogIcon className="h-7 w-7 text-primary-600" />
+                <div>
+                  <h1 className="text-2xl font-bold">Settings</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Customize your Smart Warehouse experience
+                  </p>
+                </div>
+              </div>
             </div>
+            
+            <div className="flex items-center space-x-3">
+              {hasChanges && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={resetSettings}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    <XMarkIcon className="h-4 w-4 mr-2" />
+                    Reset
+                  </button>
+                  <button
+                    onClick={saveSettings}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    <CheckIcon className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
 
-            {/* Theme Mode */}
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="space-y-8">
+          {/* Appearance Settings */}
+          <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <EyeIcon className="h-5 w-5 text-primary-600" />
+              <h2 className="text-xl font-semibold">Appearance</h2>
+            </div>
+            
+            {/* Theme Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Theme Mode
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Theme
               </label>
-              <div className="space-y-3">
-                {[
-                  { value: 'light', label: 'Light', icon: SunIcon },
-                  { value: 'dark', label: 'Dark', icon: MoonIcon },
-                  { value: 'system', label: 'System', icon: ComputerDesktopIcon }
-                ].map(({ value, label, icon: Icon }) => (
-                  <label key={value} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="theme"
-                      value={value}
-                      checked={settings.mode === value}
-                      onChange={() => handleThemeChange(value as any)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                    />
-                    <Icon className="h-5 w-5 text-gray-400" />
-                    <span className="text-sm text-gray-700">{label}</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => handleSettingChange('mode', 'light')}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all ${
+                    settings.mode === 'light' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <SunIcon className="h-5 w-5 mr-2" />
+                  Light
+                </button>
+                <button
+                  onClick={() => handleSettingChange('mode', 'dark')}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all ${
+                    settings.mode === 'dark' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <MoonIcon className="h-5 w-5 mr-2" />
+                  Dark
+                </button>
+                <button
+                  onClick={() => handleSettingChange('mode', 'system')}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all ${
+                    settings.mode === 'system' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <ComputerDesktopIcon className="h-5 w-5 mr-2" />
+                  System
+                </button>
               </div>
             </div>
 
-            {/* Font Size */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+            {/* Font Size Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 Font Size
               </label>
-              <div className="space-y-3">
-                {[
-                  { value: 'small', label: 'Small', description: '14px' },
-                  { value: 'medium', label: 'Medium', description: '16px' },
-                  { value: 'large', label: 'Large', description: '18px' }
-                ].map(({ value, label, description }) => (
-                  <label key={value} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="fontSize"
-                      value={value}
-                      checked={settings.fontSize === value}
-                      onChange={() => handleFontSizeChange(value as any)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700">{label}</span>
-                    <span className="text-xs text-gray-500">({description})</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => handleSettingChange('fontSize', 'small')}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all ${
+                    settings.fontSize === 'small' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+                  Small
+                </button>
+                <button
+                  onClick={() => handleSettingChange('fontSize', 'medium')}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all ${
+                    settings.fontSize === 'medium' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+                  Medium
+                </button>
+                <button
+                  onClick={() => handleSettingChange('fontSize', 'large')}
+                  className={`flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all ${
+                    settings.fontSize === 'large' 
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' 
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <AdjustmentsHorizontalIcon className="h-5 w-5 mr-2" />
+                  Large
+                </button>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Language Settings */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <LanguageIcon className="h-6 w-6 text-primary-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Language</h2>
+          <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <LanguageIcon className="h-5 w-5 text-primary-600" />
+              <h2 className="text-xl font-semibold">Language</h2>
             </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Interface Language
+            <div className="flex items-center space-x-4">
+              <label htmlFor="language-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Interface Language:
               </label>
               <select
+                id="language-select"
                 value={settings.language}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                onChange={(e) => handleSettingChange('language', e.target.value)}
+                className="block w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="en">English</option>
                 <option value="zh-TW">繁體中文</option>
                 <option value="zh">简体中文</option>
-                <option value="ja">日本語</option>
+                <option value="ja">日文</option>
               </select>
             </div>
-          </div>
+          </section>
 
           {/* Data Management */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <TrashIcon className="h-6 w-6 text-primary-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Data Management</h2>
+          <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <TrashIcon className="h-5 w-5 text-primary-600" />
+              <h2 className="text-xl font-semibold">Data Management</h2>
             </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                Clean up duplicate categories and items to optimize your inventory.
+              </p>
+              <button
+                onClick={handleCleanupDuplicates}
+                disabled={isLoading}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                {isLoading ? 'Cleaning up...' : 'Clean Duplicates'}
+              </button>
+            </div>
+          </section>
 
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Duplicate Cleanup
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Remove duplicate categories and items from your inventory.
-                </p>
-                <button
-                  onClick={handleCleanupDuplicates}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
-                >
-                  <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                  {isLoading ? 'Cleaning...' : 'Clean Duplicates'}
-                </button>
-              </div>
+          {/* User Info */}
+          <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <CogIcon className="h-5 w-5 text-primary-600" />
+              <h2 className="text-xl font-semibold">Account Information</h2>
             </div>
-          </div>
-
-          {/* System Settings */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <AdjustmentsHorizontalIcon className="h-6 w-6 text-primary-600" />
-              <h2 className="text-xl font-semibold text-gray-900">System</h2>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <p><strong>Email:</strong> {session?.user?.email}</p>
+              <p><strong>Name:</strong> {session?.user?.name}</p>
+              <p><strong>Role:</strong> {(session?.user as any)?.isAdmin ? 'Administrator' : 'User'}</p>
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Reset Settings
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Reset all settings to their default values.
-                </p>
-                <button
-                  onClick={resetSettings}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Reset to Defaults
-                </button>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
-
-        {/* Current Settings Display */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Settings</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="font-medium text-gray-700">Theme:</span>
-              <span className="ml-2 text-gray-600 capitalize">{settings.mode}</span>
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Font Size:</span>
-              <span className="ml-2 text-gray-600 capitalize">{settings.fontSize}</span>
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Language:</span>
-              <span className="ml-2 text-gray-600">{settings.language}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   )
 }

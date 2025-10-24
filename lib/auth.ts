@@ -52,15 +52,9 @@ export const authOptions: NextAuthOptions = {
         return {} // Force re-authentication
       }
       
-      // Force re-authentication if no session ID (prevents preloading)
-      if (!token.sessionId) {
-        console.log('[auth] JWT: No session ID, forcing re-authentication')
-        return {} // Force re-authentication
-      }
-      
-      // Validate that we have required fields
-      if (!token.id || !token.sessionId) {
-        console.log('[auth] JWT: Missing required fields, forcing re-authentication')
+      // Only check session ID for existing tokens, not new ones
+      if (token.id && !token.sessionId) {
+        console.log('[auth] JWT: No session ID for existing token, forcing re-authentication')
         return {} // Force re-authentication
       }
       

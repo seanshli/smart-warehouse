@@ -43,15 +43,24 @@ export const authOptions: NextAuthOptions = {
         token.isAdmin = (user as any).isAdmin
         token.loginTime = Date.now()
         token.sessionId = Date.now().toString() // Unique session ID
+        console.log('[auth] JWT: New session created for', user.email, 'sessionId:', token.sessionId)
       }
       
       // Check if session is expired (24 hours)
       if (token.loginTime && Date.now() - (token.loginTime as number) > 24 * 60 * 60 * 1000) {
+        console.log('[auth] JWT: Session expired for', token.id)
         return {} // Force re-authentication
       }
       
       // Force re-authentication if no session ID (prevents preloading)
       if (!token.sessionId) {
+        console.log('[auth] JWT: No session ID, forcing re-authentication')
+        return {} // Force re-authentication
+      }
+      
+      // Validate that we have required fields
+      if (!token.id || !token.sessionId) {
+        console.log('[auth] JWT: Missing required fields, forcing re-authentication')
         return {} // Force re-authentication
       }
       

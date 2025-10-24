@@ -56,9 +56,24 @@ function HouseholdSwitcher() {
 }
 
 export default function Dashboard() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { t } = useLanguage()
   const { household, role, permissions } = useHousehold()
+
+  // Handle authentication errors
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      console.log('[Dashboard] User not authenticated, redirecting to login')
+      window.location.href = '/auth/signin'
+      return
+    }
+
+    if (status === 'authenticated' && (!session || !session.user || !(session.user as any).id)) {
+      console.log('[Dashboard] Invalid session, redirecting to login')
+      window.location.href = '/auth/signin'
+      return
+    }
+  }, [session, status])
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showSearch, setShowSearch] = useState(false)

@@ -51,6 +51,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Check if token is valid (not empty object)
+  if (Object.keys(token).length === 0) {
+    // Invalid token, redirect to sign in
+    if (!request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+    return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+  }
+
   // Multi-user security: Check session age and force re-authentication
   const loginTime = (token as any).loginTime
   const sessionId = (token as any).sessionId

@@ -15,6 +15,7 @@ model User {
   language             String?           @default("en")
   isAdmin              Boolean           @default(false)
   adminRole            String?           @default("SUPERUSER") @map("admin_role") // SUPERUSER, USER_MANAGEMENT, ITEM_MANAGEMENT, HOUSEHOLD_MODIFICATION
+  preferences          Json?             // User preferences: theme, fontSize, language
   createdAt            DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   accounts             Account[]

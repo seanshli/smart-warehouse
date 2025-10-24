@@ -41,32 +41,68 @@ export default function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
-    // Load saved settings from localStorage
-    const savedSettings = localStorage.getItem('smart-warehouse-settings')
-    if (savedSettings) {
+    // Load settings from database first, then localStorage as fallback
+    const loadSettings = async () => {
       try {
-        const parsed = JSON.parse(savedSettings)
-        setSettings(parsed)
-        applyThemeSettings(parsed)
+        if (session?.user?.email) {
+          // Try to load from database
+          const response = await fetch('/api/user/preferences')
+          if (response.ok) {
+            const data = await response.json()
+            const dbSettings = {
+              mode: data.preferences?.theme || 'system',
+              fontSize: data.preferences?.fontSize || 'medium',
+              language: data.preferences?.language || 'en'
+            }
+            setSettings(dbSettings)
+            applyThemeSettings(dbSettings)
+            return
+          }
+        }
+        
+        // Fallback to localStorage
+        const savedSettings = localStorage.getItem('smart-warehouse-settings')
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings)
+          setSettings(parsed)
+          applyThemeSettings(parsed)
+        }
       } catch (error) {
         console.error('Error loading settings:', error)
+        // Fallback to localStorage
+        const savedSettings = localStorage.getItem('smart-warehouse-settings')
+        if (savedSettings) {
+          try {
+            const parsed = JSON.parse(savedSettings)
+            setSettings(parsed)
+            applyThemeSettings(parsed)
+          } catch (e) {
+            console.error('Error parsing localStorage settings:', e)
+          }
+        }
       }
     }
-  }, [])
+    
+    loadSettings()
+  }, [session])
 
   const applyThemeSettings = (newSettings: ThemeSettings) => {
-    const root = document.documentElement
-    
     // Apply theme mode using next-themes
     setTheme(newSettings.mode)
     
-    // Apply font size
+    // Apply font size to document root
+    const root = document.documentElement
     const fontSize = newSettings.fontSize === 'small' ? '14px' : 
                     newSettings.fontSize === 'large' ? '18px' : '16px'
     root.style.fontSize = fontSize
     
     // Apply language
     setLanguage(newSettings.language)
+    
+    // Force a re-render to ensure changes take effect
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'))
+    }, 100)
   }
 
   const handleSettingChange = (key: keyof ThemeSettings, value: string) => {
@@ -78,7 +114,29 @@ export default function SettingsPage() {
 
   const saveSettings = () => {
     try {
+      // Save to localStorage
       localStorage.setItem('smart-warehouse-settings', JSON.stringify(settings))
+      
+      // Apply settings immediately
+      applyThemeSettings(settings)
+      
+      // Save to user preferences in database if logged in
+      if (session?.user?.email) {
+        fetch('/api/user/preferences', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            theme: settings.mode,
+            fontSize: settings.fontSize,
+            language: settings.language
+          })
+        }).catch(error => {
+          console.error('Error saving preferences to database:', error)
+        })
+      }
+      
       setHasChanges(false)
       toast.success('Settings saved successfully!')
     } catch (error) {

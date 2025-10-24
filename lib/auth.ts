@@ -7,6 +7,54 @@ import { verifyUserPassword } from './credentials'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  // Force fresh login for multi-user security
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+    updateAge: 0, // Don't update session age automatically
+  },
+  // Disable automatic session refresh
+  pages: {
+    signIn: '/auth/signin',
+    signOut: '/auth/signin',
+    error: '/auth/signin',
+  },
+  // Force re-authentication on each device
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      // Log each sign-in attempt for security
+      console.log(`[auth] signIn: ${user.email} via ${account?.provider}`)
+      return true
+    },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to dashboard after login
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
+    async jwt({ token, user, account }) {
+      // Force fresh token on each login
+      if (user) {
+        token.id = user.id
+        token.isAdmin = (user as any).isAdmin
+        token.loginTime = Date.now()
+      }
+      
+      // Check if session is expired (24 hours)
+      if (token.loginTime && Date.now() - (token.loginTime as number) > 24 * 60 * 60 * 1000) {
+        return {} // Force re-authentication
+      }
+      
+      return token
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        (session.user as any).id = token.id as string
+        (session.user as any).isAdmin = token.isAdmin as boolean
+      }
+      return session
+    },
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -54,43 +102,5 @@ export const authOptions: NextAuthOptions = {
       }
     })
   ],
-  session: {
-    strategy: 'jwt',
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.isAdmin = (user as any).isAdmin
-      } else if (token.id) {
-        // Refresh admin status from database on each request
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string }
-          })
-          if (dbUser) {
-            token.isAdmin = (dbUser as any).isAdmin || false
-            console.log('JWT refresh - User:', dbUser.email, 'isAdmin:', (dbUser as any).isAdmin)
-          } else {
-            console.log('JWT refresh - User not found:', token.id)
-          }
-        } catch (error) {
-          console.error('JWT refresh error:', error)
-        }
-      }
-      return token
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        (session.user as any).id = token.id as string
-        (session.user as any).isAdmin = token.isAdmin as boolean
-      }
-      return session
-    },
-  },
-  pages: {
-    signIn: '/auth/signin',
-    signOut: '/auth/signin',
-  },
 }
 

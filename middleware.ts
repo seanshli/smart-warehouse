@@ -51,6 +51,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Multi-user security: Check session age and force re-authentication
+  const loginTime = (token as any).loginTime
+  const sessionAge = Date.now() - (loginTime || 0)
+  const maxSessionAge = 24 * 60 * 60 * 1000 // 24 hours
+
+  if (sessionAge > maxSessionAge) {
+    // Session expired, force re-authentication
+    if (!request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.redirect(new URL('/auth/signin?error=session_expired', request.url))
+    }
+    return NextResponse.json({ error: 'Session expired' }, { status: 401 })
+  }
+
   // Handle admin authentication
   if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-auth')) {
     if (!(token as any).isAdmin) {

@@ -87,6 +87,8 @@ export default function SettingsPage() {
   }, [session, setTheme, setLanguage])
 
   const applyThemeSettings = (newSettings: ThemeSettings) => {
+    console.log('Applying theme settings:', newSettings)
+    
     // Apply theme mode using next-themes
     setTheme(newSettings.mode)
     
@@ -102,6 +104,10 @@ export default function SettingsPage() {
     // Force a re-render to ensure changes take effect
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'))
+      // Also trigger a theme change event
+      window.dispatchEvent(new CustomEvent('theme-change', { 
+        detail: { theme: newSettings.mode, fontSize: newSettings.fontSize, language: newSettings.language }
+      }))
     }, 100)
   }
 

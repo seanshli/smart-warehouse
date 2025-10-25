@@ -122,11 +122,58 @@ export default function AdminDuplicatesPage() {
   const handleMerge = async (type: 'items' | 'rooms' | 'categories', id: string) => {
     setMerging(id)
     try {
-      // TODO: Implement actual merge API call
-      console.log(`Merging ${type} with id: ${id}`)
+      // Find the duplicate group to get primary and duplicate IDs
+      let primaryId = ''
+      let duplicateId = id
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      if (type === 'items') {
+        const duplicateGroup = duplicateItems.find(item => item.id === id)
+        if (duplicateGroup) {
+          // For now, use the first item in the group as primary
+          const group = duplicateItems.filter(item => item.name === duplicateGroup.name)
+          primaryId = group[0].id
+          duplicateId = id
+        }
+      } else if (type === 'rooms') {
+        const duplicateGroup = duplicateRooms.find(room => room.id === id)
+        if (duplicateGroup) {
+          const group = duplicateRooms.filter(room => room.name === duplicateGroup.name)
+          primaryId = group[0].id
+          duplicateId = id
+        }
+      } else if (type === 'categories') {
+        const duplicateGroup = duplicateCategories.find(category => category.id === id)
+        if (duplicateGroup) {
+          const group = duplicateCategories.filter(category => category.name === duplicateGroup.name)
+          primaryId = group[0].id
+          duplicateId = id
+        }
+      }
+
+      if (!primaryId || primaryId === duplicateId) {
+        toast.error('Cannot merge item with itself')
+        return
+      }
+
+      // Call the merge API
+      const response = await fetch('/api/admin/merge-duplicates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          primaryId,
+          duplicateId
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to merge')
+      }
+
+      const result = await response.json()
       
       // Remove the merged item from the list
       if (type === 'items') {

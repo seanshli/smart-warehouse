@@ -35,20 +35,21 @@ export default function Activities() {
   const { t, currentLanguage } = useLanguage()
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('all')
 
   useEffect(() => {
     fetchActivities()
   }, [])
 
-  // Re-fetch activities when language changes
+  // Re-fetch activities when language or time filter changes
   useEffect(() => {
     fetchActivities()
-  }, [currentLanguage])
+  }, [currentLanguage, timeFilter])
 
   const fetchActivities = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/activities')
+      const response = await fetch(`/api/activities?timeFilter=${timeFilter}`)
       if (response.ok) {
         const data = await response.json()
         setActivities(data)
@@ -184,13 +185,24 @@ export default function Activities() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">{t('recentActivity')}</h2>
-        <button
-          onClick={fetchActivities}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-          <ClockIcon className="h-4 w-4 mr-2" />
-          {t('refresh')}
-        </button>
+        <div className="flex items-center space-x-3">
+          <select
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value as 'today' | 'week' | 'all')}
+            className="text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+            <option value="today">{t('today')}</option>
+            <option value="week">{t('pastWeek')}</option>
+            <option value="all">{t('all')}</option>
+          </select>
+          <button
+            onClick={fetchActivities}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <ClockIcon className="h-4 w-4 mr-2" />
+            {t('refresh')}
+          </button>
+        </div>
       </div>
 
       <div className="bg-white shadow rounded-lg">

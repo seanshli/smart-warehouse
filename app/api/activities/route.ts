@@ -19,6 +19,30 @@ export async function GET(request: NextRequest) {
 
     const userId = (session?.user as any)?.id
     
+    // Get time filter from query params
+    const { searchParams } = new URL(request.url)
+    const timeFilter = searchParams.get('timeFilter') || 'all'
+    
+    // Calculate date range based on filter
+    let dateFilter = {}
+    const now = new Date()
+    
+    if (timeFilter === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      dateFilter = {
+        createdAt: {
+          gte: startOfDay
+        }
+      }
+    } else if (timeFilter === 'week') {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      dateFilter = {
+        createdAt: {
+          gte: oneWeekAgo
+        }
+      }
+    }
+    
     // Get user's language preference
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -46,12 +70,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No household found' }, { status: 404 })
     }
 
-    // Check cache first
-    const cacheKey = CacheKeys.activities(household.id, userId)
+    // Check cache first (include time filter in cache key)
+    const cacheKey = `${CacheKeys.activities(household.id, userId)}_${timeFilter}`
     const cachedData = cache.get(cacheKey)
     
     if (cachedData) {
-      console.log('Activities API: Returning cached data for household:', household.id)
+      console.log('Activities API: Returning cached data for household:', household.id, 'filter:', timeFilter)
       return NextResponse.json(cachedData)
     }
 
@@ -60,12 +84,13 @@ export async function GET(request: NextRequest) {
       return translateItemContent(itemName, targetLanguage)
     }
 
-    // Fetch all item history for items in the user's household
+    // Fetch all item history for items in the user's household with time filter
     const activities = await prisma.itemHistory.findMany({
       where: {
         item: {
           householdId: household.id
-        }
+        },
+        ...dateFilter
       },
       include: {
         item: true,
@@ -145,7 +170,7 @@ export async function GET(request: NextRequest) {
 
     // Cache the result for 2 minutes (activities change more frequently)
     cache.set(cacheKey, translatedActivities, 2 * 60 * 1000)
-    console.log('Activities API: Cached data for household:', household.id)
+    console.log('Activities API: Cached data for household:', household.id, 'filter:', timeFilter)
 
     return NextResponse.json(translatedActivities)
   } catch (error) {

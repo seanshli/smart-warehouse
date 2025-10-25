@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { translateRoomName, translateCabinetName, translateCategoryName, translateItemContentEnhanced } from '@/lib/location-translations'
+import { cache, CacheKeys } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -30,6 +31,15 @@ export async function GET(request: NextRequest) {
 
     if (!household) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+    }
+
+    // Check cache first
+    const cacheKey = CacheKeys.dashboardStats(household.id)
+    const cachedData = cache.get(cacheKey)
+    
+    if (cachedData) {
+      console.log('Dashboard Stats API: Returning cached data for household:', household.id)
+      return NextResponse.json(cachedData)
     }
 
     // Get user's language preference for translation
@@ -136,7 +146,7 @@ export async function GET(request: NextRequest) {
       } : null
     })))
 
-    return NextResponse.json({
+    const result = {
       totalItems,
       totalRooms,
       lowStockItems,
@@ -148,7 +158,13 @@ export async function GET(request: NextRequest) {
         userId: userId,
         userLanguage: userLanguage
       }
-    })
+    }
+
+    // Cache the result for 5 minutes (dashboard stats change less frequently)
+    cache.set(cacheKey, result, 5 * 60 * 1000)
+    console.log('Dashboard Stats API: Cached data for household:', household.id)
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

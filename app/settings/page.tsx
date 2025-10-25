@@ -115,7 +115,9 @@ export default function SettingsPage() {
     const newSettings = { ...settings, [key]: value }
     setSettings(newSettings)
     setHasChanges(true)
-    // Don't apply immediately - wait for save
+    
+    // Apply changes immediately for preview
+    applyThemeSettings(newSettings)
   }
 
   const saveSettings = async () => {

@@ -74,6 +74,30 @@ export default function Dashboard() {
       return
     }
   }, [session, status])
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state if not authenticated
+  if (status === 'unauthenticated' || !session || !session.user || !(session.user as any).id) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Redirecting to login...</p>
+        </div>
+      </div>
+    )
+  }
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showSearch, setShowSearch] = useState(false)

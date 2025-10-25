@@ -149,8 +149,13 @@ export default function SettingsPage() {
       // Apply settings after successful save
       applyThemeSettings(settings)
       
+      // Force a page refresh to ensure all components pick up the new settings
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+      
       setHasChanges(false)
-      toast.success('Settings saved successfully!')
+      toast.success('Settings saved successfully! Page will refresh...')
     } catch (error) {
       console.error('Error saving settings:', error)
       toast.error('Failed to save settings')

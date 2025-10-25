@@ -425,10 +425,38 @@ function DashboardContent({
     recentActivities: []
   })
   const [loading, setLoading] = useState(true)
+  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
+  const [householdChangeDetected, setHouseholdChangeDetected] = useState(false)
 
   useEffect(() => {
     fetchDashboardStats()
+    
+    // Check for household changes every 30 seconds
+    const interval = setInterval(() => {
+      checkForHouseholdChanges()
+    }, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
+
+  const checkForHouseholdChanges = async () => {
+    try {
+      const response = await fetch('/api/realtime')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.hasChanges) {
+          setHouseholdChangeDetected(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for household changes:', error)
+    }
+  }
+
+  const handleRefresh = () => {
+    setHouseholdChangeDetected(false)
+    fetchDashboardStats()
+  }
 
   const fetchDashboardStats = async () => {
     try {
@@ -589,6 +617,56 @@ function DashboardContent({
         </div>
       </div>
 
+      {/* Items List with Photos and Quantity Aggregation - MOVED TO TOP */}
+      <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">
+              {t('items')}
+            </h3>
+            <div className="flex items-center space-x-2">
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value as 'today' | 'week' | 'all')}
+                className="text-sm border border-gray-300 rounded-md px-2 py-1"
+              >
+                <option value="today">{t('today')}</option>
+                <option value="week">{t('pastWeek')}</option>
+                <option value="all">{t('all')}</option>
+              </select>
+            </div>
+          </div>
+          <ItemsList 
+            showCategory={true}
+            showLocation={true}
+            onItemEdit={onItemEdit}
+            onItemMove={onItemMove}
+            onItemCheckout={onItemCheckout}
+            onItemHistory={onItemHistory}
+          />
+        </div>
+      </div>
+
+      {/* Household Change Notification */}
+      {householdChangeDetected && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <BellIcon className="h-5 w-5 text-blue-600 mr-2" />
+              <p className="text-sm text-blue-800">
+                {t('householdChangesDetected')} {t('refreshToSeeChanges')}
+              </p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            >
+              {t('refresh')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -655,20 +733,6 @@ function DashboardContent({
                     {t('noRecentActivity')} {t('startByAddingFirstItem')}
                   </div>
                 )}
-        </div>
-      </div>
-
-      {/* Items List with Photos and Quantity Aggregation */}
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <ItemsList 
-            showCategory={true}
-            showLocation={true}
-            onItemEdit={onItemEdit}
-            onItemMove={onItemMove}
-            onItemCheckout={onItemCheckout}
-            onItemHistory={onItemHistory}
-          />
         </div>
       </div>
 

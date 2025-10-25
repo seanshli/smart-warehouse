@@ -17,13 +17,13 @@ export default function SettingsLoader() {
     
     const loadGlobalSettings = async () => {
       try {
-        // Clear any cached session data on app restart to force fresh login
+        // Only clear session data if it's been more than 24 hours
         const lastSessionTime = localStorage.getItem('last-session-time')
         const now = Date.now()
         const sessionAge = lastSessionTime ? now - parseInt(lastSessionTime) : Infinity
         
-        // Force fresh login if session is older than 1 hour or if this is a fresh start
-        if (!lastSessionTime || sessionAge > 60 * 60 * 1000) {
+        // Force fresh login if session is older than 24 hours
+        if (!lastSessionTime || sessionAge > 24 * 60 * 60 * 1000) {
           console.log('Clearing session data to force fresh login')
           localStorage.removeItem('next-auth.session-token')
           localStorage.removeItem('next-auth.csrf-token')

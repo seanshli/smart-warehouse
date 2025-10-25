@@ -49,6 +49,15 @@ export interface Translations {
   commonCurrentLanguage: string
   commonSignOut: string
   
+  // Dashboard Time Filters
+  today: string
+  pastWeek: string
+  all: string
+  
+  // Household Change Detection
+  householdChangesDetected: string
+  refreshToSeeChanges: string
+  
   // Admin Dashboard
   adminLoading: string
   adminError: string
@@ -440,6 +449,15 @@ const en: Translations = {
   commonLanguage: 'Language',
   commonCurrentLanguage: 'Current Language',
   commonSignOut: 'Sign Out',
+  
+  // Dashboard Time Filters
+  today: 'Today',
+  pastWeek: 'Past Week',
+  all: 'All',
+  
+  // Household Change Detection
+  householdChangesDetected: 'Changes detected in your household.',
+  refreshToSeeChanges: 'Refresh to see the latest changes.',
   
   // Admin Dashboard
   adminLoading: 'Loading admin dashboard...',
@@ -836,6 +854,15 @@ const zhTW: Translations = {
   commonLanguage: '語言',
   commonCurrentLanguage: '目前語言',
   commonSignOut: '登出',
+  
+  // Dashboard Time Filters
+  today: '今天',
+  pastWeek: '過去一週',
+  all: '全部',
+  
+  // Household Change Detection
+  householdChangesDetected: '檢測到您的家庭有變更。',
+  refreshToSeeChanges: '刷新以查看最新變更。',
   
   // Admin Dashboard
   adminLoading: '載入管理面板中...',
@@ -1243,6 +1270,15 @@ const zh: Translations = {
   commonCurrentLanguage: '当前语言',
   commonSignOut: '登出',
   
+  // Dashboard Time Filters
+  today: '今天',
+  pastWeek: '过去一周',
+  all: '全部',
+  
+  // Household Change Detection
+  householdChangesDetected: '检测到您的家庭有变更。',
+  refreshToSeeChanges: '刷新以查看最新变更。',
+  
   // Admin Dashboard
   adminLoading: '加载管理面板中...',
   adminError: '加载仪表板错误',
@@ -1646,6 +1682,15 @@ const ja: Translations = {
   commonLanguage: '言語',
   commonCurrentLanguage: '現在の言語',
   commonSignOut: 'サインアウト',
+  
+  // Dashboard Time Filters
+  today: '今日',
+  pastWeek: '過去一週間',
+  all: 'すべて',
+  
+  // Household Change Detection
+  householdChangesDetected: '世帯に変更が検出されました。',
+  refreshToSeeChanges: '最新の変更を確認するために更新してください。',
   
   // Admin Dashboard
   adminLoading: '管理パネルを読み込み中...',

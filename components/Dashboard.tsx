@@ -287,7 +287,7 @@ export default function Dashboard() {
                )}
                {activeTab === 'rooms' && <RoomManagement />}
                {activeTab === 'categories' && <CategoryManagement />}
-               {activeTab === 'activities' && <Activities />}
+               {activeTab === 'activities' && <Activities timeFilter={timeFilter} />}
                {activeTab === 'notifications' && <NotificationCenter />}
                {activeTab === 'members' && household && (
                  <HouseholdMemberManagement householdId={household.id} />

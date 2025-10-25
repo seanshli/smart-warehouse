@@ -1708,12 +1708,11 @@ const ja: Translations = {
   pastWeek: '過去一週間',
   all: 'すべて',
   
+  // Dashboard Time Filters
+  
   // Household Change Detection
   householdChangesDetected: '世帯に変更が検出されました。',
   refreshToSeeChanges: '最新の変更を確認するために更新してください。',
-  today: '今日',
-  pastWeek: '過去一週間',
-  all: 'すべて',
   
   // Admin Dashboard
   adminLoading: '管理パネルを読み込み中...',

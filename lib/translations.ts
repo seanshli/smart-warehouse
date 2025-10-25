@@ -43,6 +43,10 @@ export interface Translations {
   adminMerging: string
   adminKeepSeparate: string
   adminLevel: string
+  adminMergeSuccess: string
+  adminMergeFailed: string
+  adminKeepSeparateSuccess: string
+  adminKeepSeparateFailed: string
   
   // Common
   commonLanguage: string
@@ -444,6 +448,10 @@ const en: Translations = {
   adminMerging: 'Merging...',
   adminKeepSeparate: 'Keep Separate',
   adminLevel: 'Level',
+  adminMergeSuccess: 'Successfully merged {type}',
+  adminMergeFailed: 'Failed to merge {type}',
+  adminKeepSeparateSuccess: 'Marked {type} as separate',
+  adminKeepSeparateFailed: 'Failed to mark {type} as separate',
   
   // Common
   commonLanguage: 'Language',
@@ -849,6 +857,10 @@ const zhTW: Translations = {
   adminMerging: '合併中...',
   adminKeepSeparate: '保持分離',
   adminLevel: '層級',
+  adminMergeSuccess: '成功合併{type}',
+  adminMergeFailed: '合併{type}失敗',
+  adminKeepSeparateSuccess: '已標記{type}為分離',
+  adminKeepSeparateFailed: '標記{type}為分離失敗',
   
   // Common
   commonLanguage: '語言',
@@ -1264,6 +1276,10 @@ const zh: Translations = {
   adminMerging: '合并中...',
   adminKeepSeparate: '保持分离',
   adminLevel: '层级',
+  adminMergeSuccess: '成功合并{type}',
+  adminMergeFailed: '合并{type}失败',
+  adminKeepSeparateSuccess: '已标记{type}为分离',
+  adminKeepSeparateFailed: '标记{type}为分离失败',
   
   // Common
   commonLanguage: '语言',
@@ -1677,6 +1693,10 @@ const ja: Translations = {
   adminMerging: 'マージ中...',
   adminKeepSeparate: '分離を維持',
   adminLevel: 'レベル',
+  adminMergeSuccess: '{type}のマージに成功しました',
+  adminMergeFailed: '{type}のマージに失敗しました',
+  adminKeepSeparateSuccess: '{type}を分離としてマークしました',
+  adminKeepSeparateFailed: '{type}を分離としてマークできませんでした',
   
   // Common
   commonLanguage: '言語',

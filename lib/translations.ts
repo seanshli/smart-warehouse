@@ -25,6 +25,25 @@ export interface Translations {
   adminAccess: string
   adminSecure: string
   
+  // Admin Duplicates
+  adminDuplicateManagement: string
+  adminDuplicateDescription: string
+  adminBackToAdmin: string
+  adminDuplicateItems: string
+  adminDuplicateRooms: string
+  adminDuplicateCategories: string
+  adminNoDuplicateItems: string
+  adminNoDuplicateRooms: string
+  adminNoDuplicateCategories: string
+  adminAllItemsUnique: string
+  adminAllRoomsUnique: string
+  adminAllCategoriesUnique: string
+  adminSimilar: string
+  adminMerge: string
+  adminMerging: string
+  adminKeepSeparate: string
+  adminLevel: string
+  
   // Common
   commonLanguage: string
   commonCurrentLanguage: string
@@ -398,6 +417,25 @@ const en: Translations = {
   adminCopyright: 'Smart Warehouse Admin Panel. All rights reserved.',
   adminAccess: 'Admin Access',
   adminSecure: 'Secure',
+  
+  // Admin Duplicates
+  adminDuplicateManagement: 'Duplicate Management',
+  adminDuplicateDescription: 'Find and resolve duplicate items, rooms, and categories',
+  adminBackToAdmin: 'Back to Admin',
+  adminDuplicateItems: 'Duplicate Items',
+  adminDuplicateRooms: 'Duplicate Rooms',
+  adminDuplicateCategories: 'Duplicate Categories',
+  adminNoDuplicateItems: 'No duplicate items found',
+  adminNoDuplicateRooms: 'No duplicate rooms found',
+  adminNoDuplicateCategories: 'No duplicate categories found',
+  adminAllItemsUnique: 'All items appear to be unique.',
+  adminAllRoomsUnique: 'All rooms appear to be unique.',
+  adminAllCategoriesUnique: 'All categories appear to be unique.',
+  adminSimilar: 'similar',
+  adminMerge: 'Merge',
+  adminMerging: 'Merging...',
+  adminKeepSeparate: 'Keep Separate',
+  adminLevel: 'Level',
   
   // Common
   commonLanguage: 'Language',
@@ -776,6 +814,25 @@ const zhTW: Translations = {
   adminCopyright: '智能倉庫管理面板。版權所有。',
   adminAccess: '管理員存取',
   adminSecure: '安全',
+  
+  // Admin Duplicates
+  adminDuplicateManagement: '重複項目管理',
+  adminDuplicateDescription: '尋找並解決重複的物品、房間和分類',
+  adminBackToAdmin: '返回管理員',
+  adminDuplicateItems: '重複物品',
+  adminDuplicateRooms: '重複房間',
+  adminDuplicateCategories: '重複分類',
+  adminNoDuplicateItems: '未找到重複物品',
+  adminNoDuplicateRooms: '未找到重複房間',
+  adminNoDuplicateCategories: '未找到重複分類',
+  adminAllItemsUnique: '所有物品看起來都是唯一的。',
+  adminAllRoomsUnique: '所有房間看起來都是唯一的。',
+  adminAllCategoriesUnique: '所有分類看起來都是唯一的。',
+  adminSimilar: '相似',
+  adminMerge: '合併',
+  adminMerging: '合併中...',
+  adminKeepSeparate: '保持分離',
+  adminLevel: '層級',
   
   // Common
   commonLanguage: '語言',

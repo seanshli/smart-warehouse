@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useLanguage } from '@/components/LanguageProvider'
+import { toast } from 'react-hot-toast'
 import { 
   HomeIcon, 
   CubeIcon, 
@@ -46,6 +47,7 @@ export default function AdminDuplicatesPage() {
   const [duplicateCategories, setDuplicateCategories] = useState<DuplicateCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'items' | 'rooms' | 'categories'>('items')
+  const [merging, setMerging] = useState<string | null>(null)
 
   const loadDuplicates = async () => {
     setLoading(true)
@@ -117,10 +119,58 @@ export default function AdminDuplicatesPage() {
     loadDuplicates()
   }, [])
 
+  const handleMerge = async (type: 'items' | 'rooms' | 'categories', id: string) => {
+    setMerging(id)
+    try {
+      // TODO: Implement actual merge API call
+      console.log(`Merging ${type} with id: ${id}`)
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Remove the merged item from the list
+      if (type === 'items') {
+        setDuplicateItems(prev => prev.filter(item => item.id !== id))
+      } else if (type === 'rooms') {
+        setDuplicateRooms(prev => prev.filter(room => room.id !== id))
+      } else if (type === 'categories') {
+        setDuplicateCategories(prev => prev.filter(category => category.id !== id))
+      }
+      
+      toast.success(`Successfully merged ${type}`)
+    } catch (error) {
+      console.error('Error merging:', error)
+      toast.error(`Failed to merge ${type}`)
+    } finally {
+      setMerging(null)
+    }
+  }
+
+  const handleKeepSeparate = async (type: 'items' | 'rooms' | 'categories', id: string) => {
+    try {
+      // TODO: Implement API call to mark as "keep separate"
+      console.log(`Keeping separate ${type} with id: ${id}`)
+      
+      // Remove from duplicates list
+      if (type === 'items') {
+        setDuplicateItems(prev => prev.filter(item => item.id !== id))
+      } else if (type === 'rooms') {
+        setDuplicateRooms(prev => prev.filter(room => room.id !== id))
+      } else if (type === 'categories') {
+        setDuplicateCategories(prev => prev.filter(category => category.id !== id))
+      }
+      
+      toast.success(`Marked ${type} as separate`)
+    } catch (error) {
+      console.error('Error keeping separate:', error)
+      toast.error(`Failed to mark ${type} as separate`)
+    }
+  }
+
   const tabs = [
-    { id: 'items', name: 'Duplicate Items', count: duplicateItems.length },
-    { id: 'rooms', name: 'Duplicate Rooms', count: duplicateRooms.length },
-    { id: 'categories', name: 'Duplicate Categories', count: duplicateCategories.length }
+    { id: 'items', name: t('adminDuplicateItems'), count: duplicateItems.length },
+    { id: 'rooms', name: t('adminDuplicateRooms'), count: duplicateRooms.length },
+    { id: 'categories', name: t('adminDuplicateCategories'), count: duplicateCategories.length }
   ]
 
   if (loading) {
@@ -141,8 +191,8 @@ export default function AdminDuplicatesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Duplicate Management</h1>
-              <p className="text-gray-600 mt-1">Find and resolve duplicate items, rooms, and categories</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('adminDuplicateManagement')}</h1>
+              <p className="text-gray-600 mt-1">{t('adminDuplicateDescription')}</p>
             </div>
             <div className="flex space-x-3">
               <Link 
@@ -150,7 +200,7 @@ export default function AdminDuplicatesPage() {
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
                 <HomeIcon className="h-4 w-4 mr-2" />
-                Back to Admin
+                {t('adminBackToAdmin')}
               </Link>
             </div>
           </div>
@@ -168,7 +218,7 @@ export default function AdminDuplicatesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Duplicate Items</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminDuplicateItems')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{duplicateItems.length}</dd>
                   </dl>
                 </div>
@@ -184,7 +234,7 @@ export default function AdminDuplicatesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Duplicate Rooms</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminDuplicateRooms')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{duplicateRooms.length}</dd>
                   </dl>
                 </div>
@@ -200,7 +250,7 @@ export default function AdminDuplicatesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Duplicate Categories</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminDuplicateCategories')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{duplicateCategories.length}</dd>
                   </dl>
                 </div>
@@ -239,12 +289,12 @@ export default function AdminDuplicatesPage() {
           <div className="p-6">
             {activeTab === 'items' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Duplicate Items</h3>
+                <h3 className="text-lg font-medium text-gray-900">{t('adminDuplicateItems')}</h3>
                 {duplicateItems.length === 0 ? (
                   <div className="text-center py-8">
                     <CheckCircleIcon className="mx-auto h-12 w-12 text-green-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No duplicate items found</h3>
-                    <p className="mt-1 text-sm text-gray-500">All items appear to be unique.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">{t('adminNoDuplicateItems')}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{t('adminAllItemsUnique')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -261,12 +311,19 @@ export default function AdminDuplicatesPage() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-500">{item.similarity}% similar</span>
-                            <button className="text-sm text-blue-600 hover:text-blue-800">
-                              Merge
+                            <span className="text-sm text-gray-500">{item.similarity}% {t('adminSimilar')}</span>
+                            <button 
+                              onClick={() => handleMerge('items', item.id)}
+                              disabled={merging === item.id}
+                              className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {merging === item.id ? t('adminMerging') : t('adminMerge')}
                             </button>
-                            <button className="text-sm text-gray-600 hover:text-gray-800">
-                              Keep Separate
+                            <button 
+                              onClick={() => handleKeepSeparate('items', item.id)}
+                              className="text-sm text-gray-600 hover:text-gray-800"
+                            >
+                              {t('adminKeepSeparate')}
                             </button>
                           </div>
                         </div>
@@ -279,12 +336,12 @@ export default function AdminDuplicatesPage() {
 
             {activeTab === 'rooms' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Duplicate Rooms</h3>
+                <h3 className="text-lg font-medium text-gray-900">{t('adminDuplicateRooms')}</h3>
                 {duplicateRooms.length === 0 ? (
                   <div className="text-center py-8">
                     <CheckCircleIcon className="mx-auto h-12 w-12 text-green-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No duplicate rooms found</h3>
-                    <p className="mt-1 text-sm text-gray-500">All rooms appear to be unique.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">{t('adminNoDuplicateRooms')}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{t('adminAllRoomsUnique')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -299,12 +356,19 @@ export default function AdminDuplicatesPage() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-500">{room.similarity}% similar</span>
-                            <button className="text-sm text-blue-600 hover:text-blue-800">
-                              Merge
+                            <span className="text-sm text-gray-500">{room.similarity}% {t('adminSimilar')}</span>
+                            <button 
+                              onClick={() => handleMerge('rooms', room.id)}
+                              disabled={merging === room.id}
+                              className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {merging === room.id ? t('adminMerging') : t('adminMerge')}
                             </button>
-                            <button className="text-sm text-gray-600 hover:text-gray-800">
-                              Keep Separate
+                            <button 
+                              onClick={() => handleKeepSeparate('rooms', room.id)}
+                              className="text-sm text-gray-600 hover:text-gray-800"
+                            >
+                              {t('adminKeepSeparate')}
                             </button>
                           </div>
                         </div>
@@ -317,12 +381,12 @@ export default function AdminDuplicatesPage() {
 
             {activeTab === 'categories' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Duplicate Categories</h3>
+                <h3 className="text-lg font-medium text-gray-900">{t('adminDuplicateCategories')}</h3>
                 {duplicateCategories.length === 0 ? (
                   <div className="text-center py-8">
                     <CheckCircleIcon className="mx-auto h-12 w-12 text-green-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No duplicate categories found</h3>
-                    <p className="mt-1 text-sm text-gray-500">All categories appear to be unique.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">{t('adminNoDuplicateCategories')}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{t('adminAllCategoriesUnique')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -334,17 +398,24 @@ export default function AdminDuplicatesPage() {
                             <div>
                               <h4 className="text-sm font-medium text-gray-900">{category.name}</h4>
                               <p className="text-sm text-gray-500">
-                                {category.household} • Level {category.level}
+                                {category.household} • {t('adminLevel')} {category.level}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-500">{category.similarity}% similar</span>
-                            <button className="text-sm text-blue-600 hover:text-blue-800">
-                              Merge
+                            <span className="text-sm text-gray-500">{category.similarity}% {t('adminSimilar')}</span>
+                            <button 
+                              onClick={() => handleMerge('categories', category.id)}
+                              disabled={merging === category.id}
+                              className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {merging === category.id ? t('adminMerging') : t('adminMerge')}
                             </button>
-                            <button className="text-sm text-gray-600 hover:text-gray-800">
-                              Keep Separate
+                            <button 
+                              onClick={() => handleKeepSeparate('categories', category.id)}
+                              className="text-sm text-gray-600 hover:text-gray-800"
+                            >
+                              {t('adminKeepSeparate')}
                             </button>
                           </div>
                         </div>

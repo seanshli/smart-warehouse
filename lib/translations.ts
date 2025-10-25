@@ -86,7 +86,6 @@ export interface Translations {
   
   // Admin Items
   adminViewManageItems: string
-  adminBackToAdmin: string
   adminSearchItems: string
   
   // Admin Users
@@ -479,7 +478,6 @@ const en: Translations = {
   
   // Admin Items
   adminViewManageItems: 'View and manage all items across households',
-  adminBackToAdmin: 'Back to Admin',
   adminSearchItems: 'Search items by name...',
   
   // Admin Users
@@ -876,7 +874,6 @@ const zhTW: Translations = {
   
   // Admin Items
   adminViewManageItems: '查看和管理所有家庭的物品',
-  adminBackToAdmin: '返回管理員',
   adminSearchItems: '按名稱搜尋物品...',
   
   // Admin Users
@@ -1222,6 +1219,25 @@ const zh: Translations = {
   adminAccess: '管理员访问',
   adminSecure: '安全',
   
+  // Admin Duplicates
+  adminDuplicateManagement: '重复项目管理',
+  adminDuplicateDescription: '查找并解决重复的物品、房间和分类',
+  adminBackToAdmin: '返回管理员',
+  adminDuplicateItems: '重复物品',
+  adminDuplicateRooms: '重复房间',
+  adminDuplicateCategories: '重复分类',
+  adminNoDuplicateItems: '未找到重复物品',
+  adminNoDuplicateRooms: '未找到重复房间',
+  adminNoDuplicateCategories: '未找到重复分类',
+  adminAllItemsUnique: '所有物品看起来都是唯一的。',
+  adminAllRoomsUnique: '所有房间看起来都是唯一的。',
+  adminAllCategoriesUnique: '所有分类看起来都是唯一的。',
+  adminSimilar: '相似',
+  adminMerge: '合并',
+  adminMerging: '合并中...',
+  adminKeepSeparate: '保持分离',
+  adminLevel: '层级',
+  
   // Common
   commonLanguage: '语言',
   commonCurrentLanguage: '当前语言',
@@ -1264,7 +1280,6 @@ const zh: Translations = {
   
   // Admin Items
   adminViewManageItems: '查看和管理所有家庭的物品',
-  adminBackToAdmin: '返回管理员',
   adminSearchItems: '按名称搜索物品...',
   
   // Admin Users
@@ -1608,6 +1623,25 @@ const ja: Translations = {
   adminAccess: '管理者アクセス',
   adminSecure: 'セキュア',
   
+  // Admin Duplicates
+  adminDuplicateManagement: '重複項目管理',
+  adminDuplicateDescription: '重複するアイテム、部屋、カテゴリを見つけて解決',
+  adminBackToAdmin: '管理者に戻る',
+  adminDuplicateItems: '重複アイテム',
+  adminDuplicateRooms: '重複部屋',
+  adminDuplicateCategories: '重複カテゴリ',
+  adminNoDuplicateItems: '重複アイテムが見つかりません',
+  adminNoDuplicateRooms: '重複部屋が見つかりません',
+  adminNoDuplicateCategories: '重複カテゴリが見つかりません',
+  adminAllItemsUnique: 'すべてのアイテムが一意のようです。',
+  adminAllRoomsUnique: 'すべての部屋が一意のようです。',
+  adminAllCategoriesUnique: 'すべてのカテゴリが一意のようです。',
+  adminSimilar: '類似',
+  adminMerge: 'マージ',
+  adminMerging: 'マージ中...',
+  adminKeepSeparate: '分離を維持',
+  adminLevel: 'レベル',
+  
   // Common
   commonLanguage: '言語',
   commonCurrentLanguage: '現在の言語',
@@ -1650,7 +1684,6 @@ const ja: Translations = {
   
   // Admin Items
   adminViewManageItems: 'すべての世帯のアイテムを表示・管理',
-  adminBackToAdmin: '管理者に戻る',
   adminSearchItems: '名前でアイテムを検索...',
   
   // Admin Users

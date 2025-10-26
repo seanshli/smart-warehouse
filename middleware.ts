@@ -20,9 +20,21 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // Handle root path specially - always check authentication
+  if (request.nextUrl.pathname === '/') {
+    const token = await getToken({ req: request })
+    
+    // If no token, redirect to sign in
+    if (!token || Object.keys(token).length === 0) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+    
+    // If authenticated, allow through to page.tsx
+    return NextResponse.next()
+  }
+  
   // Public routes that don't require authentication
   const publicRoutes = [
-    '/',
     '/auth/signin',
     '/auth/signup',
     '/auth/signout',
@@ -35,7 +47,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
   )
   
-  // Allow public routes (including root - it will handle its own redirect)
+  // Allow public routes
   if (isPublicRoute) {
     return NextResponse.next()
   }
@@ -88,6 +100,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/api/:path*',
     '/admin/:path*',
     '/admin-auth/:path*',

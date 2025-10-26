@@ -22,6 +22,7 @@ export async function middleware(request: NextRequest) {
 
   // Public routes that don't require authentication
   const publicRoutes = [
+    '/',
     '/auth/signin',
     '/auth/signup',
     '/auth/signout',
@@ -31,10 +32,10 @@ export async function middleware(request: NextRequest) {
   ]
   
   const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
   )
   
-  // Allow public routes
+  // Allow public routes (including root - it will handle its own redirect)
   if (isPublicRoute) {
     return NextResponse.next()
   }
@@ -87,7 +88,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/',
     '/api/:path*',
     '/admin/:path*',
     '/admin-auth/:path*',

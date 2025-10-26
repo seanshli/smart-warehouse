@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useLanguage } from '@/components/LanguageProvider'
+import { useDeviceDetection } from '@/components/MobileLayout'
 import { 
   ChartBarIcon,
   ArrowTrendingUpIcon,
@@ -77,6 +78,7 @@ interface FilterOptions {
 export default function AdminAnalyticsPage() {
   const { data: session } = useSession()
   const { t } = useLanguage()
+  const deviceInfo = useDeviceDetection()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [households, setHouseholds] = useState<Household[]>([])
@@ -262,24 +264,48 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={`max-w-7xl mx-auto ${
+      deviceInfo.isMobile ? 'px-2 py-4' : 'px-4 sm:px-6 lg:px-8 py-8'
+    }`}>
       {/* Header */}
-      <div className="mb-8">
+      <div className={`${deviceInfo.isMobile ? 'mb-4' : 'mb-8'}`}>
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('adminAnalytics')}</h1>
-            <p className="text-gray-600 mt-1">{t('adminAnalyticsDescription')}</p>
+            <h1 className={`font-bold text-gray-900 ${
+              deviceInfo.isMobile ? 'text-xl' : 'text-3xl'
+            }`}>
+              {t('adminAnalytics')}
+            </h1>
+            <p className={`text-gray-600 mt-1 ${
+              deviceInfo.isMobile ? 'text-sm' : 'text-base'
+            }`}>
+              {t('adminAnalyticsDescription')}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-6 mb-8">
+      <div className={`bg-white shadow rounded-lg ${
+        deviceInfo.isMobile ? 'p-4 mb-4' : 'p-6 mb-8'
+      }`}>
         <div className="flex items-center space-x-2 mb-4">
-          <FunnelIcon className="h-5 w-5 text-gray-500" />
-          <h3 className="text-lg font-medium text-gray-900">Filters</h3>
+          <FunnelIcon className={`text-gray-500 ${
+            deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+          }`} />
+          <h3 className={`font-medium text-gray-900 ${
+            deviceInfo.isMobile ? 'text-base' : 'text-lg'
+          }`}>
+            Filters
+          </h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className={`grid gap-4 ${
+          deviceInfo.isMobile 
+            ? 'grid-cols-1' 
+            : deviceInfo.isTablet 
+              ? 'grid-cols-2 md:grid-cols-3' 
+              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5'
+        }`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
             <select
@@ -434,16 +460,28 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className={`grid gap-8 ${
+        deviceInfo.isMobile 
+          ? 'grid-cols-1 mb-4' 
+          : deviceInfo.isTablet 
+            ? 'grid-cols-1 mb-6' 
+            : 'grid-cols-1 lg:grid-cols-2 mb-8'
+      }`}>
         {/* Daily Activity Line Chart */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <CalendarIcon className="h-5 w-5 inline mr-2" />
+          <div className={`${deviceInfo.isMobile ? 'px-3 py-4' : 'px-4 py-5 sm:p-6'}`}>
+            <h3 className={`leading-6 font-medium text-gray-900 mb-4 ${
+              deviceInfo.isMobile ? 'text-base' : 'text-lg'
+            }`}>
+              <CalendarIcon className={`inline mr-2 ${
+                deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+              }`} />
               Activity Trends (Line Chart)
             </h3>
             {getLineChartData() ? (
-              <Line data={getLineChartData()!} options={chartOptions} />
+              <div className="chart-container">
+                <Line data={getLineChartData()!} options={chartOptions} />
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-8">No activity data available</p>
             )}
@@ -452,13 +490,19 @@ export default function AdminAnalyticsPage() {
 
         {/* Hourly Activity Bar Chart */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <ClockIcon className="h-5 w-5 inline mr-2" />
+          <div className={`${deviceInfo.isMobile ? 'px-3 py-4' : 'px-4 py-5 sm:p-6'}`}>
+            <h3 className={`leading-6 font-medium text-gray-900 mb-4 ${
+              deviceInfo.isMobile ? 'text-base' : 'text-lg'
+            }`}>
+              <ClockIcon className={`inline mr-2 ${
+                deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+              }`} />
               Hourly Activity (Bar Chart)
             </h3>
             {getBarChartData() ? (
-              <Bar data={getBarChartData()!} options={chartOptions} />
+              <div className="chart-container">
+                <Bar data={getBarChartData()!} options={chartOptions} />
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-8">No activity data available</p>
             )}
@@ -467,16 +511,28 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Pie Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      <div className={`grid gap-8 ${
+        deviceInfo.isMobile 
+          ? 'grid-cols-1 mb-4' 
+          : deviceInfo.isTablet 
+            ? 'grid-cols-1 md:grid-cols-2 mb-6' 
+            : 'grid-cols-1 lg:grid-cols-3 mb-8'
+      }`}>
         {/* Items by Category */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <CubeIcon className="h-5 w-5 inline mr-2" />
+          <div className={`${deviceInfo.isMobile ? 'px-3 py-4' : 'px-4 py-5 sm:p-6'}`}>
+            <h3 className={`leading-6 font-medium text-gray-900 mb-4 ${
+              deviceInfo.isMobile ? 'text-base' : 'text-lg'
+            }`}>
+              <CubeIcon className={`inline mr-2 ${
+                deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+              }`} />
               Items by Category
             </h3>
             {data?.itemsByCategory && getPieChartData(data.itemsByCategory, 'Items by Category') ? (
-              <Pie data={getPieChartData(data.itemsByCategory, 'Items by Category')!} options={pieChartOptions} />
+              <div className="chart-container">
+                <Pie data={getPieChartData(data.itemsByCategory, 'Items by Category')!} options={pieChartOptions} />
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-8">No category data available</p>
             )}
@@ -485,13 +541,19 @@ export default function AdminAnalyticsPage() {
 
         {/* Items by Room */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <HomeIcon className="h-5 w-5 inline mr-2" />
+          <div className={`${deviceInfo.isMobile ? 'px-3 py-4' : 'px-4 py-5 sm:p-6'}`}>
+            <h3 className={`leading-6 font-medium text-gray-900 mb-4 ${
+              deviceInfo.isMobile ? 'text-base' : 'text-lg'
+            }`}>
+              <HomeIcon className={`inline mr-2 ${
+                deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+              }`} />
               Items by Room
             </h3>
             {data?.itemsByRoom && getPieChartData(data.itemsByRoom, 'Items by Room') ? (
-              <Pie data={getPieChartData(data.itemsByRoom, 'Items by Room')!} options={pieChartOptions} />
+              <div className="chart-container">
+                <Pie data={getPieChartData(data.itemsByRoom, 'Items by Room')!} options={pieChartOptions} />
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-8">No room data available</p>
             )}
@@ -500,13 +562,19 @@ export default function AdminAnalyticsPage() {
 
         {/* Users by Household */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              <UserGroupIcon className="h-5 w-5 inline mr-2" />
+          <div className={`${deviceInfo.isMobile ? 'px-3 py-4' : 'px-4 py-5 sm:p-6'}`}>
+            <h3 className={`leading-6 font-medium text-gray-900 mb-4 ${
+              deviceInfo.isMobile ? 'text-base' : 'text-lg'
+            }`}>
+              <UserGroupIcon className={`inline mr-2 ${
+                deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+              }`} />
               Users by Household
             </h3>
             {data?.usersByHousehold && getPieChartData(data.usersByHousehold, 'Users by Household') ? (
-              <Pie data={getPieChartData(data.usersByHousehold, 'Users by Household')!} options={pieChartOptions} />
+              <div className="chart-container">
+                <Pie data={getPieChartData(data.usersByHousehold, 'Users by Household')!} options={pieChartOptions} />
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-8">No household data available</p>
             )}

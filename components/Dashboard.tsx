@@ -32,6 +32,7 @@ import Activities from './Activities'
 import { useHousehold, PermissionGate } from './HouseholdProvider'
 import { HouseholdMemberManagement } from './HouseholdMemberManagement'
 import ItemsList from './ItemsList'
+import { useDeviceDetection } from './MobileLayout'
 
 
 function HouseholdSwitcher() {
@@ -60,6 +61,7 @@ export default function Dashboard() {
   const { data: session, status } = useSession()
   const { t } = useLanguage()
   const { household, role, permissions } = useHousehold()
+  const deviceInfo = useDeviceDetection()
 
   // Handle authentication errors
   useEffect(() => {
@@ -131,14 +133,20 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 pt-safe-area-inset-top">
+      <header className={`bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 ${
+        deviceInfo.isMobile ? 'pt-safe-top' : 'pt-0'
+      }`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16 flex-wrap gap-1 sm:gap-2">
-            <div className="flex items-center min-w-0">
-              <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
+          <div className={`flex justify-between items-center ${
+            deviceInfo.isMobile ? 'h-12' : 'h-14 sm:h-16'
+          } flex-wrap gap-1 sm:gap-2`}>
+            <div className="flex items-center min-w-0 flex-1">
+              <h1 className={`font-semibold text-gray-900 dark:text-gray-100 truncate ${
+                deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-xl'
+              }`}>
                 {t('smartWarehouse')}
               </h1>
-              {household && (
+              {household && !deviceInfo.isMobile && (
                 <div className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-1 sm:space-x-2 truncate">
                   <span className="truncate">{household.name}<span className="hidden sm:inline"> • {role || 'Member'}</span></span>
                   {/* Household switcher */}
@@ -147,47 +155,74 @@ export default function Dashboard() {
               )}
             </div>
             
-            <div className="flex items-center space-x-1 sm:space-x-4">
+            <div className={`flex items-center ${
+              deviceInfo.isMobile ? 'space-x-1' : 'space-x-1 sm:space-x-4'
+            }`}>
+              {/* Primary action - always visible */}
               <button
                 onClick={() => setShowAddItem(true)}
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                className={`inline-flex items-center border border-transparent font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 ${
+                  deviceInfo.isMobile 
+                    ? 'px-2 py-1.5 text-xs' 
+                    : 'px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm'
+                }`}
               >
-                <PlusIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">{t('addItem')}</span>
+                <PlusIcon className={deviceInfo.isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                <span className={deviceInfo.isMobile ? "hidden" : "hidden sm:inline ml-2"}>{t('addItem')}</span>
               </button>
-              <a
-                href="/duplicates"
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <ExclamationTriangleIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">{t('duplicates')}</span>
-              </a>
               
-              <button
-                onClick={() => setShowSearch(true)}
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <MagnifyingGlassIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">{t('search')}</span>
-              </button>
+              {/* Secondary actions - hide on mobile if needed */}
+              {!deviceInfo.isMobile && (
+                <>
+                  <a
+                    href="/duplicates"
+                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  >
+                    <ExclamationTriangleIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">{t('duplicates')}</span>
+                  </a>
+                  
+                  <button
+                    onClick={() => setShowSearch(true)}
+                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  >
+                    <MagnifyingGlassIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">{t('search')}</span>
+                  </button>
 
-              <a
-                href="/settings"
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <CogIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">Settings</span>
-              </a>
+                  <a
+                    href="/settings"
+                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  >
+                    <CogIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Settings</span>
+                  </a>
+                </>
+              )}
+
+              {/* Mobile menu button for secondary actions */}
+              {deviceInfo.isMobile && (
+                <button
+                  onClick={() => {
+                    // Toggle mobile menu or show actions
+                    setShowSearch(true)
+                  }}
+                  className="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  <MagnifyingGlassIcon className="h-3 w-3" />
+                </button>
+              )}
 
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <CompactLanguageSelector />
-                <div className="hidden lg:block text-sm text-gray-700 dark:text-gray-300">
-                  {t('welcome')}, {session?.user?.name || session?.user?.email}
-                </div>
+                {!deviceInfo.isMobile && (
+                  <div className="hidden lg:block text-sm text-gray-700 dark:text-gray-300">
+                    {t('welcome')}, {session?.user?.name || session?.user?.email}
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     console.log('Signing out...')
-                    // Navigate to dedicated sign out page
                     window.location.href = '/auth/signout'
                   }}
                   className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-1"
@@ -231,7 +266,13 @@ export default function Dashboard() {
       </nav>
 
              {/* Main Content */}
-             <main className="max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-6 lg:px-8">
+             <main className={`max-w-7xl mx-auto ${
+               deviceInfo.isMobile 
+                 ? 'py-2 px-2' 
+                 : deviceInfo.isTablet 
+                   ? 'py-4 px-4 sm:px-6' 
+                   : 'py-4 sm:py-6 px-2 sm:px-6 lg:px-8'
+             }`}>
                {activeTab === 'dashboard' && (
                  <DashboardContent 
                    onTabChange={setActiveTab}
@@ -384,34 +425,44 @@ export default function Dashboard() {
 
 
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1 sm:hidden z-50">
-        <div className="flex justify-around">
-          {tabs.slice(0, 4).map((tab) => {
-            // Check if user has permission for this tab
-            if (tab.permission && (!permissions || !permissions[tab.permission as keyof typeof permissions])) {
-              return null
-            }
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center py-2 px-1 text-xs ${
-                  activeTab === tab.id
-                    ? 'text-primary-600'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                <tab.icon className="h-5 w-5 mb-1" />
-                <span className="truncate max-w-16">{tab.name}</span>
-              </button>
-            )
-          })}
+      {deviceInfo.isMobile && (
+        <div className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1 z-50 ${
+          deviceInfo.orientation === 'landscape' ? 'pb-safe-bottom' : 'pb-1'
+        }`}>
+          <div className="flex justify-around">
+            {tabs.slice(0, 4).map((tab) => {
+              // Check if user has permission for this tab
+              if (tab.permission && (!permissions || !permissions[tab.permission as keyof typeof permissions])) {
+                return null
+              }
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-col items-center py-2 px-1 text-xs ${
+                    activeTab === tab.id
+                      ? 'text-primary-600'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  <tab.icon className={`mb-1 ${
+                    deviceInfo.orientation === 'landscape' ? 'h-4 w-4' : 'h-5 w-5'
+                  }`} />
+                  <span className={`truncate ${
+                    deviceInfo.orientation === 'landscape' ? 'max-w-12 text-xs' : 'max-w-16'
+                  }`}>
+                    {deviceInfo.orientation === 'landscape' ? tab.name.slice(0, 3) : tab.name}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Add bottom padding for mobile navigation */}
-      <div className="h-16 sm:hidden"></div>
+      <div className={`${deviceInfo.isMobile ? 'h-16' : 'h-0'} sm:hidden`}></div>
     </div>
   )
 }
@@ -430,6 +481,7 @@ function DashboardContent({
   onItemHistory: (item: any) => void
 }) {
   const { t } = useLanguage()
+  const deviceInfo = useDeviceDetection()
   const [stats, setStats] = useState<{
     totalItems: number
     totalRooms: number
@@ -570,20 +622,34 @@ function DashboardContent({
   }
 
   return (
-    <div className="px-2 sm:px-4 py-4 sm:py-6 sm:px-0">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+    <div className={`${
+      deviceInfo.isMobile ? 'px-1 py-2' : 'px-2 sm:px-4 py-4 sm:py-6 sm:px-0'
+    }`}>
+      <div className={`grid gap-3 sm:gap-6 mb-6 sm:mb-8 ${
+        deviceInfo.isMobile 
+          ? 'grid-cols-2' 
+          : deviceInfo.isTablet 
+            ? 'grid-cols-2 md:grid-cols-4' 
+            : 'grid-cols-2 lg:grid-cols-4'
+      }`}>
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-3 sm:p-5">
+          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <CubeIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                <CubeIcon className={`text-gray-400 ${
+                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
+                }`} />
               </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1">
+              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
+                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
+                  }`}>
                     {t('totalItems')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <dd className={`font-medium text-gray-900 dark:text-gray-100 ${
+                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
+                  }`}>
                     {loading ? '...' : stats.totalItems}
                   </dd>
                 </dl>
@@ -596,17 +662,23 @@ function DashboardContent({
           onClick={() => onTabChange('rooms')}
           className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer w-full text-left"
         >
-          <div className="p-3 sm:p-5">
+          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <MapPinIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                <MapPinIcon className={`text-gray-400 ${
+                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
+                }`} />
               </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1">
+              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
+                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
+                  }`}>
                     {t('rooms')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <dd className={`font-medium text-gray-900 dark:text-gray-100 ${
+                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
+                  }`}>
                     {loading ? '...' : stats.totalRooms}
                   </dd>
                 </dl>
@@ -616,17 +688,23 @@ function DashboardContent({
         </button>
 
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-3 sm:p-5">
+          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <BellIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                <BellIcon className={`text-gray-400 ${
+                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
+                }`} />
               </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1">
+              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
+                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
+                  }`}>
                     {t('lowStockItems')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-red-600">
+                  <dd className={`font-medium text-red-600 ${
+                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
+                  }`}>
                     {loading ? '...' : stats.lowStockItems}
                   </dd>
                 </dl>
@@ -636,17 +714,23 @@ function DashboardContent({
         </div>
 
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-3 sm:p-5">
+          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <UserGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                <UserGroupIcon className={`text-gray-400 ${
+                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
+                }`} />
               </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1">
+              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
+                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
+                  }`}>
                     {t('householdMembers')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <dd className={`font-medium text-gray-900 dark:text-gray-100 ${
+                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
+                  }`}>
                     {loading ? '...' : stats.householdMembers}
                   </dd>
                 </dl>

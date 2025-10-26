@@ -72,6 +72,115 @@
   .pr-safe-area-inset-right {
     padding-right: env(safe-area-inset-right);
   }
+
+  /* Enhanced mobile optimizations */
+  .mobile-layout {
+    overflow-x: hidden;
+  }
+
+  .mobile-portrait {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+
+  .mobile-landscape {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Touch-friendly button sizing */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Better text rendering on mobile */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Mobile-specific grid adjustments */
+  @media (max-width: 767px) {
+    .mobile-grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .mobile-grid-1 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Tablet-specific adjustments */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .tablet-grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* Prevent pull-to-refresh on mobile */
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* Better modal handling on mobile */
+  .modal-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+
+  /* Mobile navigation optimizations */
+  .mobile-nav {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Chart responsiveness for mobile */
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  @media (max-width: 767px) {
+    .chart-container {
+      height: 250px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .chart-container {
+      height: 200px;
+    }
+  }
+
+  /* Android specific fixes */
+  .android-device {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* iOS specific fixes */
+  @supports (-webkit-touch-callout: none) {
+    .ios-device {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
 }
 
 

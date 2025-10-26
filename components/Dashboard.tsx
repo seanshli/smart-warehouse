@@ -433,7 +433,13 @@ function DashboardContent({
   onItemHistory: (item: any) => void
 }) {
   const { t } = useLanguage()
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    totalItems: number
+    totalRooms: number
+    lowStockItems: number
+    householdMembers: number
+    recentActivities: any[]
+  }>({
     totalItems: 0,
     totalRooms: 0,
     lowStockItems: 0,
@@ -454,6 +460,11 @@ function DashboardContent({
     
     return () => clearInterval(interval)
   }, [])
+  
+  // Re-fetch when time filter changes
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [timeFilter])
 
   const checkForHouseholdChanges = async () => {
     try {
@@ -477,17 +488,29 @@ function DashboardContent({
   const fetchDashboardStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/dashboard/stats')
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Dashboard API Response:', data)
-        // Map the test-dashboard response to the expected stats format
+      
+      // Fetch both dashboard stats and filtered activities
+      const [statsResponse, activitiesResponse] = await Promise.all([
+        fetch('/api/dashboard/stats'),
+        fetch(`/api/activities?timeFilter=${timeFilter}`)
+      ])
+      
+      if (statsResponse.ok && activitiesResponse.ok) {
+        const [statsData, activitiesData] = await Promise.all([
+          statsResponse.json(),
+          activitiesResponse.json()
+        ])
+        
+        console.log('Dashboard API Response:', statsData)
+        console.log('Activities API Response:', activitiesData)
+        
+        // Map the dashboard stats and use filtered activities
         setStats({
-          totalItems: data.totalItems || 0,
-          totalRooms: data.totalRooms || 0,
-          lowStockItems: data.lowStockItems || 0,
-          householdMembers: data.householdMembers || 0,
-          recentActivities: data.recentActivities || []
+          totalItems: statsData.totalItems || 0,
+          totalRooms: statsData.totalRooms || 0,
+          lowStockItems: statsData.lowStockItems || 0,
+          householdMembers: statsData.householdMembers || 0,
+          recentActivities: Array.isArray(activitiesData) ? activitiesData.slice(0, 10) : []
         })
       } else {
         console.error('Failed to fetch dashboard stats')

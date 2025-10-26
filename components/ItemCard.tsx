@@ -250,8 +250,8 @@ export default function ItemCard({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 hover:shadow-md transition-shadow ${className}`}>
-      <div className="flex items-start space-x-2 sm:space-x-3">
+    <div className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 hover:shadow-md transition-shadow flex flex-col ${className}`}>
+      <div className="flex items-start space-x-2 sm:space-x-3 flex-1">
         {/* Item Photo */}
         <div className="flex-shrink-0">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
@@ -320,10 +320,11 @@ export default function ItemCard({
             </div>
           )}
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        {(onEdit || onMove || onCheckout || onHistory) && (
-          <div className="flex flex-col space-y-2 bg-gray-50 p-2 rounded-lg">
+      {/* Action Buttons - Horizontal Layout at Bottom */}
+      {(onEdit || onMove || onCheckout || onHistory) && (
+        <div className="flex space-x-1 bg-gray-50 p-1 rounded-lg mt-2">
             {onEdit && (
               <button
                 onClick={(e) => {
@@ -401,9 +402,8 @@ export default function ItemCard({
                 </svg>
               </button>
             )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

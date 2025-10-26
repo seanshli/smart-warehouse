@@ -67,6 +67,22 @@ interface Household {
   memberCount: number
 }
 
+interface Category {
+  id: string
+  name: string
+  _count: {
+    items: number
+  }
+}
+
+interface Room {
+  id: string
+  name: string
+  _count: {
+    items: number
+  }
+}
+
 interface FilterOptions {
   householdId: string
   userId: string
@@ -82,6 +98,8 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [households, setHouseholds] = useState<Household[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState<string>('all')
@@ -109,10 +127,12 @@ export default function AdminAnalyticsPage() {
       if (filters.roomId !== 'all') params.append('roomId', filters.roomId)
       params.append('timeRange', filters.timeRange)
       
-      const [statsRes, rolesRes, householdsRes] = await Promise.all([
+      const [statsRes, rolesRes, householdsRes, categoriesRes, roomsRes] = await Promise.all([
         fetch(`/api/admin/stats?${params.toString()}`),
         fetch('/api/admin/roles'),
-        fetch('/api/admin/households')
+        fetch('/api/admin/households'),
+        fetch('/api/admin/categories'),
+        fetch('/api/admin/rooms')
       ])
       
       if (!statsRes.ok) {
@@ -130,6 +150,16 @@ export default function AdminAnalyticsPage() {
       if (householdsRes.ok) {
         const householdsData = await householdsRes.json()
         setHouseholds(householdsData.households || [])
+      }
+      
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json()
+        setCategories(categoriesData.categories || [])
+      }
+      
+      if (roomsRes.ok) {
+        const roomsData = await roomsRes.json()
+        setRooms(roomsData.rooms || [])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -219,10 +249,24 @@ export default function AdminAnalyticsPage() {
       legend: {
         position: 'top' as const,
       },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || ''
+            const value = context.parsed.y || context.parsed
+            return `${label}: ${value} items`
+          }
+        }
+      }
     },
     scales: {
       y: {
         beginAtZero: true,
+        ticks: {
+          callback: function(value: any) {
+            return value + ' items'
+          }
+        }
       },
     },
   }
@@ -233,6 +277,17 @@ export default function AdminAnalyticsPage() {
       legend: {
         position: 'bottom' as const,
       },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || ''
+            const value = context.parsed
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
+            const percentage = ((value / total) * 100).toFixed(1)
+            return `${label}: ${value} items (${percentage}%)`
+          }
+        }
+      }
     },
   }
 
@@ -360,7 +415,11 @@ export default function AdminAnalyticsPage() {
               className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
             >
               <option value="all">All Categories</option>
-              {/* Categories will be populated from API */}
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name} ({category._count.items} items)
+                </option>
+              ))}
             </select>
           </div>
           
@@ -372,7 +431,11 @@ export default function AdminAnalyticsPage() {
               className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
             >
               <option value="all">All Rooms</option>
-              {/* Rooms will be populated from API */}
+              {rooms.map(room => (
+                <option key={room.id} value={room.id}>
+                  {room.name} ({room._count.items} items)
+                </option>
+              ))}
             </select>
           </div>
         </div>

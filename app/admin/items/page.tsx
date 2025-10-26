@@ -165,7 +165,7 @@ export default function AdminItemsPage() {
                 className="inline-flex items-center px-4 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100"
               >
                 <FunnelIcon className="h-4 w-4 mr-2" />
-                Check Duplicates
+                {t('checkDuplicates')}
               </button>
               <Link 
                 href="/admin" 
@@ -179,7 +179,7 @@ export default function AdminItemsPage() {
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
               >
                 <HomeIcon className="h-4 w-4 mr-2" />
-                Back to App
+                {t('backToApp')}
               </Link>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function AdminItemsPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Items</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('totalItems')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{items.length}</dd>
                   </dl>
                 </div>
@@ -210,7 +210,7 @@ export default function AdminItemsPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Households</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('allHouseholds')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">{households.length}</dd>
                   </dl>
                 </div>
@@ -223,7 +223,7 @@ export default function AdminItemsPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Avg Items/Household</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('avgItemsPerHousehold')}</dt>
                     <dd className="text-2xl font-bold text-gray-900">
                       {households.length > 0 ? Math.round(items.length / households.length) : 0}
                     </dd>
@@ -258,7 +258,7 @@ export default function AdminItemsPage() {
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <MagnifyingGlassIcon className="h-4 w-4 mr-2" />
-                  Search
+                  {t('search')}
                 </button>
               </div>
             </div>
@@ -270,7 +270,7 @@ export default function AdminItemsPage() {
                   onChange={e => setFilterHousehold(e.target.value)}
                   className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 >
-                  <option value="">All Households</option>
+                  <option value="">{t('allHouseholds')}</option>
                   {households.map(household => (
                     <option key={household} value={household}>{household}</option>
                   ))}
@@ -292,7 +292,7 @@ export default function AdminItemsPage() {
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Item Name</span>
+                      <span>{t('itemName')}</span>
                       {sortBy === 'name' && (
                         <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -304,7 +304,7 @@ export default function AdminItemsPage() {
                     onClick={() => handleSort('quantity')}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Quantity</span>
+                      <span>{t('quantity')}</span>
                       {sortBy === 'quantity' && (
                         <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -316,20 +316,20 @@ export default function AdminItemsPage() {
                     onClick={() => handleSort('household')}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Household</span>
+                      <span>{t('allHouseholds')}</span>
                       {sortBy === 'household' && (
                         <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
+                    {t('location')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
+                    {t('category')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Photo
+                    {t('photo')}
                   </th>
                   <th 
                     scope="col" 
@@ -337,7 +337,7 @@ export default function AdminItemsPage() {
                     onClick={() => handleSort('createdAt')}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Created</span>
+                      <span>{t('created')}</span>
                       {sortBy === 'createdAt' && (
                         <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -366,7 +366,7 @@ export default function AdminItemsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{item.quantity}</div>
                       {item.minQuantity && (
-                        <div className="text-xs text-gray-500">Min: {item.minQuantity}</div>
+                        <div className="text-xs text-gray-500">{t('min')}: {item.minQuantity}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -420,7 +420,7 @@ export default function AdminItemsPage() {
                             <button
                               onClick={() => handleQuickPhoto(item.id)}
                               className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
-                              title="Update Photo"
+                              title={t('updatePhoto')}
                             >
                               <CameraIcon className="h-3 w-3" />
                             </button>
@@ -435,7 +435,7 @@ export default function AdminItemsPage() {
                               className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                               <CameraIcon className="h-3 w-3 mr-1" />
-                              Add Photo
+                              {t('addPhoto')}
                             </button>
                           </div>
                         )}
@@ -465,9 +465,9 @@ export default function AdminItemsPage() {
         {filteredAndSortedItems.length === 0 && (
           <div className="text-center py-12">
             <CubeIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No items found</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noItemsFound')}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {q || filterHousehold ? 'Try adjusting your search or filters.' : 'No items have been created yet.'}
+              {q || filterHousehold ? t('tryAdjustingSearch') : t('noItemsCreatedYet')}
             </p>
           </div>
         )}

@@ -404,6 +404,17 @@ export interface Translations {
   categoryNameTranslations: {
     [key: string]: string
   }
+  
+  // Admin Items Page
+  checkDuplicates: string
+  backToApp: string
+  avgItemsPerHousehold: string
+  allHouseholds: string
+  updatePhoto: string
+  tryAdjustingSearch: string
+  noItemsCreatedYet: string
+  min: string
+  photo: string
 }
 
 // English translations (default)
@@ -815,6 +826,17 @@ const en: Translations = {
     'Books': 'Books',
     'Miscellaneous': 'Miscellaneous'
   },
+  
+  // Admin Items Page
+  checkDuplicates: 'Check Duplicates',
+  backToApp: 'Back to App',
+  avgItemsPerHousehold: 'Avg Items/Household',
+  allHouseholds: 'All Households',
+  updatePhoto: 'Update Photo',
+  tryAdjustingSearch: 'Try adjusting your search or filters.',
+  noItemsCreatedYet: 'No items have been created yet.',
+  min: 'Min',
+  photo: 'Photo',
 }
 
 // Traditional Chinese translations (zh-TW)
@@ -1236,6 +1258,17 @@ const zhTW: Translations = {
     'Toys': '玩具',
     'Garden': '園藝用品'
   },
+  
+  // Admin Items Page
+  checkDuplicates: '檢查重複項目',
+  backToApp: '返回應用程式',
+  avgItemsPerHousehold: '平均每戶物品數',
+  allHouseholds: '所有家庭',
+  updatePhoto: '更新照片',
+  tryAdjustingSearch: '請嘗試調整搜尋或篩選條件。',
+  noItemsCreatedYet: '尚未建立任何物品。',
+  min: '最小',
+  photo: '照片',
 }
 
 // Simplified Chinese translations (zh)
@@ -1655,6 +1688,17 @@ const zh: Translations = {
     'Toys': '玩具',
     'Garden': '园艺用品'
   },
+  
+  // Admin Items Page
+  checkDuplicates: '检查重复项目',
+  backToApp: '返回应用',
+  avgItemsPerHousehold: '平均每户物品数',
+  allHouseholds: '所有家庭',
+  updatePhoto: '更新照片',
+  tryAdjustingSearch: '请尝试调整搜索或筛选条件。',
+  noItemsCreatedYet: '尚未创建任何物品。',
+  min: '最小',
+  photo: '照片',
 }
 
 // Japanese translations (ja)
@@ -2074,6 +2118,17 @@ const ja: Translations = {
     'Toys': 'おもちゃ',
     'Garden': '園芸用品'
   },
+  
+  // Admin Items Page
+  checkDuplicates: '重複項目をチェック',
+  backToApp: 'アプリに戻る',
+  avgItemsPerHousehold: '世帯あたりの平均アイテム数',
+  allHouseholds: 'すべての世帯',
+  updatePhoto: '写真を更新',
+  tryAdjustingSearch: '検索またはフィルターを調整してみてください。',
+  noItemsCreatedYet: 'まだアイテムが作成されていません。',
+  min: '最小',
+  photo: '写真',
 }
 
 // Translation registry

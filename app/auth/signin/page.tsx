@@ -208,12 +208,15 @@ export default function SignIn() {
             </div>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
               <a href="/auth/signup" className="font-medium text-primary-600 hover:text-primary-500">
                 Create one
               </a>
+            </p>
+            <p className="text-xs text-gray-500">
+              To join an existing household, ask the household admin for the Household ID
             </p>
           </div>
         </form>

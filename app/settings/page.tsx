@@ -39,6 +39,7 @@ export default function SettingsPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const [householdId, setHouseholdId] = useState<string>('')
 
   useEffect(() => {
     // Load settings from database first, then localStorage as fallback
@@ -81,7 +82,27 @@ export default function SettingsPage() {
     }
     
     loadSettings()
+    
+    // Load household ID
+    if (session?.user?.email) {
+      fetchHouseholdId()
+    }
   }, [session, setTheme, setLanguage])
+
+  const fetchHouseholdId = async () => {
+    try {
+      const response = await fetch('/api/user/household')
+      if (response.ok) {
+        const data = await response.json()
+        setHouseholdId(data.householdId || 'Not found')
+      } else {
+        setHouseholdId('Error loading')
+      }
+    } catch (error) {
+      console.error('Error fetching household ID:', error)
+      setHouseholdId('Error loading')
+    }
+  }
 
   const applyThemeSettings = (newSettings: ThemeSettings) => {
     console.log('Applying theme settings:', newSettings)
@@ -395,6 +416,20 @@ export default function SettingsPage() {
                 <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
                 Find and Merge Duplicates
               </button>
+            </div>
+          </section>
+
+          {/* Household Information */}
+          <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <CogIcon className="h-5 w-5 text-primary-600" />
+              <h2 className="text-xl font-semibold">Household Information</h2>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+              <p><strong>Current Household ID:</strong> <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">{householdId || 'Loading...'}</code></p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Share this ID with others so they can join your household during sign-in
+              </p>
             </div>
           </section>
 

@@ -66,10 +66,10 @@ export default function SettingsLoader() {
                   setTheme(preferences.theme)
                 }
                 
-                // Apply language
-                if (preferences.language) {
-                  setLanguage(preferences.language)
-                }
+                // Apply language - let LanguageProvider handle this
+                // if (preferences.language) {
+                //   setLanguage(preferences.language)
+                // }
                 
                 // Apply font size
                 if (preferences.fontSize) {
@@ -101,10 +101,10 @@ export default function SettingsLoader() {
                 setTheme(parsed.mode)
               }
               
-              // Apply language
-              if (parsed.language) {
-                setLanguage(parsed.language)
-              }
+              // Apply language - let LanguageProvider handle this
+              // if (parsed.language) {
+              //   setLanguage(parsed.language)
+              // }
               
               // Apply font size
               if (parsed.fontSize) {
@@ -140,9 +140,10 @@ export default function SettingsLoader() {
         setTheme(theme)
       }
       
-      if (language) {
-        setLanguage(language)
-      }
+      // Let LanguageProvider handle language changes
+      // if (language) {
+      //   setLanguage(language)
+      // }
       
       if (fontSize) {
         const root = document.documentElement

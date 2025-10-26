@@ -33,11 +33,11 @@ export default function LanguageProvider({ children, initialLanguage }: Language
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Only load language preference if not already set
-    if (typeof window !== 'undefined' && currentLanguage === 'en' && !localStorage.getItem('smart-warehouse-language-set')) {
+    // Always load language preference on mount
+    if (typeof window !== 'undefined') {
       loadUserLanguagePreference()
     }
-  }, [initialLanguage, currentLanguage])
+  }, []) // Only run once on mount
 
   const loadUserLanguagePreference = async () => {
     try {

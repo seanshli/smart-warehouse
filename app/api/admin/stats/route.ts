@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { cache, CacheKeys } from '@/lib/cache'
+import { getNormalizedCategoryKey, getCategoryDisplayName } from '@/lib/category-translations'
+import { getNormalizedRoomKey, getRoomDisplayName } from '@/lib/room-translations'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -32,6 +34,10 @@ export async function GET(request: NextRequest) {
     const categoryId = url.searchParams.get('categoryId')
     const roomId = url.searchParams.get('roomId')
     const timeRange = url.searchParams.get('timeRange') || '7d'
+
+    // Get language from Accept-Language header
+    const acceptLanguage = request.headers.get('Accept-Language') || 'en'
+    const language = acceptLanguage.split(',')[0].split('-')[0] === 'zh' ? acceptLanguage : acceptLanguage.split(',')[0]
 
     // Calculate date range
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365
@@ -121,13 +127,14 @@ export async function GET(request: NextRequest) {
           select: { name: true }
         })
         const categoryName = category?.name || 'Unknown'
-        const normalizedName = categoryName.toLowerCase().trim()
+        const normalizedKey = getNormalizedCategoryKey(categoryName)
+        const displayName = getCategoryDisplayName(normalizedKey, language)
         
-        // Aggregate by normalized name (case-insensitive)
-        if (categoryData[normalizedName]) {
-          categoryData[normalizedName] += item._count.id
+        // Aggregate by normalized key (cross-language)
+        if (categoryData[displayName]) {
+          categoryData[displayName] += item._count.id
         } else {
-          categoryData[normalizedName] = item._count.id
+          categoryData[displayName] = item._count.id
         }
       }
     }
@@ -149,13 +156,14 @@ export async function GET(request: NextRequest) {
           select: { name: true }
         })
         const roomName = room?.name || 'Unknown'
-        const normalizedName = roomName.toLowerCase().trim()
+        const normalizedKey = getNormalizedRoomKey(roomName)
+        const displayName = getRoomDisplayName(normalizedKey, language)
         
-        // Aggregate by normalized name (case-insensitive)
-        if (roomData[normalizedName]) {
-          roomData[normalizedName] += item._count.id
+        // Aggregate by normalized key (cross-language)
+        if (roomData[displayName]) {
+          roomData[displayName] += item._count.id
         } else {
-          roomData[normalizedName] = item._count.id
+          roomData[displayName] = item._count.id
         }
       }
     }

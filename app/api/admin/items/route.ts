@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getCategoryDisplayName, getNormalizedCategoryKey } from '@/lib/category-translations'
+import { getRoomDisplayName, getNormalizedRoomKey } from '@/lib/room-translations'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -27,6 +29,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q') || undefined
 
+    // Get language from Accept-Language header
+    const acceptLanguage = request.headers.get('Accept-Language') || 'en'
+    const language = acceptLanguage.split(',')[0].split('-')[0] === 'zh' ? acceptLanguage : acceptLanguage.split(',')[0]
+
     const items = await prisma.item.findMany({
       where: q ? { OR: [ { name: { contains: q } }, { name: { contains: q.toLowerCase() } }, { name: { contains: q.toUpperCase() } } ] } : undefined,
       select: {
@@ -46,7 +52,20 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json({ items })
+    // Translate room and category names
+    const translatedItems = items.map(item => ({
+      ...item,
+      room: item.room ? {
+        ...item.room,
+        name: getRoomDisplayName(getNormalizedRoomKey(item.room.name), language)
+      } : null,
+      category: item.category ? {
+        ...item.category,
+        name: getCategoryDisplayName(getNormalizedCategoryKey(item.category.name), language)
+      } : null
+    }))
+
+    return NextResponse.json({ items: translatedItems })
 
   } catch (error) {
     console.error('Error fetching admin items:', error)

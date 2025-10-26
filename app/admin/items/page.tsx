@@ -411,7 +411,7 @@ export default function AdminItemsPage() {
                             <img 
                               src={item.imageUrl} 
                               alt={item.name}
-                              className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                              className="w-16 h-16 rounded-lg object-cover border border-gray-200"
                               onError={(e) => {
                                 // If image fails to load, show placeholder
                                 const target = e.target as HTMLImageElement
@@ -425,8 +425,8 @@ export default function AdminItemsPage() {
                                 }
                               }}
                             />
-                            <div className="placeholder hidden w-12 h-12 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-6 w-6 text-gray-400" />
+                            <div className="placeholder hidden w-16 h-16 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-8 w-8 text-gray-400" />
                             </div>
                             <button
                               onClick={() => handleQuickPhoto(item.id)}
@@ -438,8 +438,8 @@ export default function AdminItemsPage() {
                           </div>
                         ) : (
                           <div className="flex items-center space-x-2">
-                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-6 w-6 text-gray-400" />
+                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-8 w-8 text-gray-400" />
                             </div>
                             <button
                               onClick={() => handleQuickPhoto(item.id)}

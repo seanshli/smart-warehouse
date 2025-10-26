@@ -129,9 +129,9 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b pt-safe-area-inset-top">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 pt-safe-area-inset-top">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16 flex-wrap gap-1 sm:gap-2">
             <div className="flex items-center min-w-0">
@@ -157,7 +157,7 @@ export default function Dashboard() {
               </button>
               <a
                 href="/duplicates"
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 <ExclamationTriangleIcon className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">{t('duplicates')}</span>
@@ -165,7 +165,7 @@ export default function Dashboard() {
               
               <button
                 onClick={() => setShowSearch(true)}
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 <MagnifyingGlassIcon className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">{t('search')}</span>
@@ -173,7 +173,7 @@ export default function Dashboard() {
 
               <a
                 href="/settings"
-                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 <CogIcon className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Settings</span>
@@ -181,7 +181,7 @@ export default function Dashboard() {
 
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <CompactLanguageSelector />
-                <div className="hidden lg:block text-sm text-gray-700">
+                <div className="hidden lg:block text-sm text-gray-700 dark:text-gray-300">
                   {t('welcome')}, {session?.user?.name || session?.user?.email}
                 </div>
                 <button
@@ -202,7 +202,7 @@ export default function Dashboard() {
       </header>
 
       {/* Navigation Tabs */}
-      <nav className="bg-white border-b">
+      <nav className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap pb-1 sm:pb-2">
             {tabs.map((tab) => {
@@ -384,7 +384,7 @@ export default function Dashboard() {
 
 
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 sm:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1 sm:hidden z-50">
         <div className="flex justify-around">
           {tabs.slice(0, 4).map((tab) => {
             // Check if user has permission for this tab
@@ -399,7 +399,7 @@ export default function Dashboard() {
                 className={`flex flex-col items-center py-2 px-1 text-xs ${
                   activeTab === tab.id
                     ? 'text-primary-600'
-                    : 'text-gray-500'
+                    : 'text-gray-500 dark:text-gray-400'
                 }`}
               >
                 <tab.icon className="h-5 w-5 mb-1" />
@@ -572,7 +572,7 @@ function DashboardContent({
   return (
     <div className="px-2 sm:px-4 py-4 sm:py-6 sm:px-0">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
           <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -580,10 +580,10 @@ function DashboardContent({
               </div>
               <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     {t('totalItems')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
                     {loading ? '...' : stats.totalItems}
                   </dd>
                 </dl>
@@ -594,7 +594,7 @@ function DashboardContent({
 
         <button
           onClick={() => onTabChange('rooms')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer w-full text-left"
+          className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer w-full text-left"
         >
           <div className="p-3 sm:p-5">
             <div className="flex items-center">
@@ -603,10 +603,10 @@ function DashboardContent({
               </div>
               <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     {t('rooms')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
                     {loading ? '...' : stats.totalRooms}
                   </dd>
                 </dl>
@@ -615,7 +615,7 @@ function DashboardContent({
           </div>
         </button>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
           <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -623,7 +623,7 @@ function DashboardContent({
               </div>
               <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     {t('lowStockItems')}
                   </dt>
                   <dd className="text-base sm:text-lg font-medium text-red-600">
@@ -635,7 +635,7 @@ function DashboardContent({
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
           <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -643,10 +643,10 @@ function DashboardContent({
               </div>
               <div className="ml-3 sm:ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     {t('householdMembers')}
                   </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
                     {loading ? '...' : stats.householdMembers}
                   </dd>
                 </dl>
@@ -657,17 +657,17 @@ function DashboardContent({
       </div>
 
       {/* Items List with Photos and Quantity Aggregation - MOVED TO TOP */}
-      <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
+      <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg mb-6">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
               {t('items')}
             </h3>
             <div className="flex items-center space-x-2">
               <select
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value as 'today' | 'week' | 'all')}
-                className="text-sm border border-gray-300 rounded-md px-2 py-1"
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="today">{t('today')}</option>
                 <option value="week">{t('pastWeek')}</option>
@@ -706,10 +706,10 @@ function DashboardContent({
         </div>
       )}
 
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
                     {t('recentActivity')}
                   </h3>
                   <button
@@ -757,10 +757,10 @@ function DashboardContent({
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                             {translateActivityDescription(activity)}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {activity.item?.room?.name} • {formatDate(activity.createdAt)} • {t('by')} {activity.performer?.name || activity.performer?.email}
                           </p>
                         </div>
@@ -768,7 +768,7 @@ function DashboardContent({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {t('noRecentActivity')} {t('startByAddingFirstItem')}
                   </div>
                 )}

@@ -200,29 +200,8 @@ export default function SettingsPage() {
     }
   }
 
-  const handleCleanupDuplicates = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/admin/cleanup-duplicates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        toast.success(`Cleaned up ${result.removedCount} duplicate categories`)
-      } else {
-        const errorData = await response.json()
-        toast.error(`Failed to cleanup duplicates: ${errorData.error}`)
-      }
-    } catch (error) {
-      console.error('Error cleaning up duplicates:', error)
-      toast.error('An error occurred while cleaning up duplicates')
-    } finally {
-      setIsLoading(false)
-    }
+  const handleGoToDuplicates = () => {
+    window.location.href = '/duplicates'
   }
 
   const goBack = () => {
@@ -413,12 +392,11 @@ export default function SettingsPage() {
                 Clean up duplicate categories and items to optimize your inventory.
               </p>
               <button
-                onClick={handleCleanupDuplicates}
-                disabled={isLoading}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleGoToDuplicates}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                {isLoading ? 'Cleaning up...' : 'Clean Duplicates'}
+                Find and Merge Duplicates
               </button>
             </div>
           </section>

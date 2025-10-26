@@ -31,7 +31,7 @@ import Activities from './Activities'
 import { useHousehold, PermissionGate } from './HouseholdProvider'
 import { HouseholdMemberManagement } from './HouseholdMemberManagement'
 import ItemsList from './ItemsList'
-import DuplicateItemsModal from './DuplicateItemsModal'
+
 
 function HouseholdSwitcher() {
   const { memberships, activeHouseholdId, setActiveHousehold } = useHousehold()
@@ -106,7 +106,7 @@ export default function Dashboard() {
   const [showMoveItem, setShowMoveItem] = useState(false)
   const [showCheckoutItem, setShowCheckoutItem] = useState(false)
   const [showItemHistory, setShowItemHistory] = useState(false)
-  const [showDuplicateItems, setShowDuplicateItems] = useState(false)
+
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
 
@@ -154,13 +154,13 @@ export default function Dashboard() {
                 <PlusIcon className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">{t('addItem')}</span>
               </button>
-              <button
-                onClick={() => setShowDuplicateItems(true)}
+              <a
+                href="/duplicates"
                 className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 <ArchiveBoxIcon className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">Duplicates</span>
-              </button>
+              </a>
               
               <button
                 onClick={() => setShowSearch(true)}
@@ -379,14 +379,7 @@ export default function Dashboard() {
           }} 
         />
       )}
-      {showDuplicateItems && (
-        <DuplicateItemsModal 
-          onClose={() => setShowDuplicateItems(false)}
-          onSuccess={() => {
-            // Refresh items list if needed
-          }}
-        />
-      )}
+
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 sm:hidden z-50">

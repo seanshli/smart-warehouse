@@ -9,6 +9,7 @@ export interface Translations {
   notifications: string
   members: string
   items: string
+  allItems: string
   
   // Admin
   adminPanel: string
@@ -414,6 +415,7 @@ const en: Translations = {
   notifications: 'Notifications',
   members: 'Members',
   items: 'Items',
+  allItems: 'All Items',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -823,6 +825,7 @@ const zhTW: Translations = {
   notifications: '通知',
   members: '成員',
   items: '物品',
+  allItems: '所有物品',
   
   // Admin
   adminPanel: '管理面板',
@@ -1242,6 +1245,7 @@ const zh: Translations = {
   notifications: '通知',
   members: '成员',
   items: '物品',
+  allItems: '所有物品',
   
   // Admin
   adminPanel: '管理面板',
@@ -1659,6 +1663,7 @@ const ja: Translations = {
   notifications: '通知',
   members: 'メンバー',
   items: 'アイテム',
+  allItems: 'すべてのアイテム',
   
   // Admin
   adminPanel: '管理パネル',

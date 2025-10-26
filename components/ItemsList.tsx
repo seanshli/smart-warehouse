@@ -220,7 +220,7 @@ export default function ItemsList({
     <div className={`space-y-4 ${className}`}>
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-          All Items ({filteredItems.length})
+          {t('allItems')} ({filteredItems.length})
         </h3>
         <button
           onClick={fetchGroupedItems}

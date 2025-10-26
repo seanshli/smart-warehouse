@@ -38,10 +38,35 @@ export default function DuplicatesPage() {
   const loadDuplicates = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/items/duplicates')
+      // First get the user's household ID
+      const householdResponse = await fetch('/api/user/household')
+      if (!householdResponse.ok) {
+        throw new Error('Failed to get household ID')
+      }
+      const householdData = await householdResponse.json()
+      const householdId = householdData.householdId
+      
+      if (!householdId) {
+        throw new Error('No household found')
+      }
+      
+      const response = await fetch(`/api/items/duplicates?householdId=${householdId}`)
       if (response.ok) {
         const data = await response.json()
-        setDuplicateItems(data.duplicates || [])
+        // The API returns an array of duplicate groups, we need to flatten it
+        const flattenedDuplicates = data.flatMap((group: any[]) => 
+          group.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            room: item.room?.name,
+            cabinet: item.cabinet?.name,
+            category: item.category?.name,
+            similarity: 95, // Since they're grouped by name, assume high similarity
+            imageUrl: item.imageUrl
+          }))
+        )
+        setDuplicateItems(flattenedDuplicates)
       } else {
         toast.error('Failed to load duplicates')
       }

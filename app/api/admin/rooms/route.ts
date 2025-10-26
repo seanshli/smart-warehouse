@@ -23,7 +23,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 
-    // Get all rooms with item counts
+    // Get all rooms with item counts, aggregated by name
     const rooms = await prisma.room.findMany({
       include: {
         _count: {
@@ -37,7 +37,27 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ rooms })
+    // Aggregate rooms by name (case-insensitive)
+    const aggregatedRooms = rooms.reduce((acc, room) => {
+      const normalizedName = room.name.toLowerCase().trim()
+      const existingRoom = acc.find(r => r.name.toLowerCase().trim() === normalizedName)
+      
+      if (existingRoom) {
+        existingRoom._count.items += room._count.items
+      } else {
+        acc.push({
+          id: room.id,
+          name: room.name, // Keep original casing for display
+          _count: {
+            items: room._count.items
+          }
+        })
+      }
+      
+      return acc
+    }, [] as any[])
+
+    return NextResponse.json({ rooms: aggregatedRooms })
   } catch (error) {
     console.error('Error fetching rooms:', error)
     return NextResponse.json(

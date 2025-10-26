@@ -23,7 +23,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 
-    // Get all categories with item counts
+    // Get all categories with item counts, aggregated by name
     const categories = await prisma.category.findMany({
       include: {
         _count: {
@@ -37,7 +37,27 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ categories })
+    // Aggregate categories by name (case-insensitive)
+    const aggregatedCategories = categories.reduce((acc, category) => {
+      const normalizedName = category.name.toLowerCase().trim()
+      const existingCategory = acc.find(cat => cat.name.toLowerCase().trim() === normalizedName)
+      
+      if (existingCategory) {
+        existingCategory._count.items += category._count.items
+      } else {
+        acc.push({
+          id: category.id,
+          name: category.name, // Keep original casing for display
+          _count: {
+            items: category._count.items
+          }
+        })
+      }
+      
+      return acc
+    }, [] as any[])
+
+    return NextResponse.json({ categories: aggregatedCategories })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(

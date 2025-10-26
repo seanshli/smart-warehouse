@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get items by category
+    // Get items by category with aggregation
     const itemsByCategory = await prisma.item.groupBy({
       by: ['categoryId'],
       _count: {
@@ -120,11 +120,19 @@ export async function GET(request: NextRequest) {
           where: { id: item.categoryId },
           select: { name: true }
         })
-        categoryData[category?.name || 'Unknown'] = item._count.id
+        const categoryName = category?.name || 'Unknown'
+        const normalizedName = categoryName.toLowerCase().trim()
+        
+        // Aggregate by normalized name (case-insensitive)
+        if (categoryData[normalizedName]) {
+          categoryData[normalizedName] += item._count.id
+        } else {
+          categoryData[normalizedName] = item._count.id
+        }
       }
     }
 
-    // Get items by room
+    // Get items by room with aggregation
     const itemsByRoom = await prisma.item.groupBy({
       by: ['roomId'],
       _count: {
@@ -140,7 +148,15 @@ export async function GET(request: NextRequest) {
           where: { id: item.roomId },
           select: { name: true }
         })
-        roomData[room?.name || 'Unknown'] = item._count.id
+        const roomName = room?.name || 'Unknown'
+        const normalizedName = roomName.toLowerCase().trim()
+        
+        // Aggregate by normalized name (case-insensitive)
+        if (roomData[normalizedName]) {
+          roomData[normalizedName] += item._count.id
+        } else {
+          roomData[normalizedName] = item._count.id
+        }
       }
     }
 

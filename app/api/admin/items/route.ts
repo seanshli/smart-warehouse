@@ -33,9 +33,15 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         quantity: true,
+        minQuantity: true,
+        description: true,
+        imageUrl: true,
+        createdAt: true,
+        updatedAt: true,
         household: { select: { id: true, name: true } },
         room: { select: { id: true, name: true } },
         cabinet: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true, level: true } },
       },
       orderBy: { createdAt: 'desc' }
     })

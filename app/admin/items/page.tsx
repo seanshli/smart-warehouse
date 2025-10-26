@@ -30,7 +30,7 @@ interface AdminItem {
 }
 
 export default function AdminItemsPage() {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [items, setItems] = useState<AdminItem[]>([])
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
@@ -40,12 +40,23 @@ export default function AdminItemsPage() {
 
   const load = async () => {
     setLoading(true)
-    const res = await fetch(`/api/admin/items${q ? `?q=${encodeURIComponent(q)}` : ''}`)
-    if (res.ok) {
-      const data = await res.json()
-      setItems(data.items || [])
+    try {
+      const res = await fetch(`/api/admin/items${q ? `?q=${encodeURIComponent(q)}` : ''}`, {
+        headers: {
+          'Accept-Language': currentLanguage,
+        },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setItems(data.items || [])
+      } else {
+        console.error('Failed to load items:', res.statusText)
+      }
+    } catch (error) {
+      console.error('Error loading items:', error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handleQuickPhoto = (itemId: string) => {
@@ -86,7 +97,7 @@ export default function AdminItemsPage() {
     input.click()
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [currentLanguage])
 
   // Get unique households for filtering
   const households = Array.from(new Set(items.map(item => item.household.name)))

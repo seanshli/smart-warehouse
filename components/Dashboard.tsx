@@ -14,7 +14,8 @@ import {
   ClockIcon,
   ArrowDownIcon,
   UsersIcon,
-  ArchiveBoxIcon
+  ArchiveBoxIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import AddItemModal from './AddItemModal'
 import SearchModal from './SearchModal'
@@ -158,8 +159,8 @@ export default function Dashboard() {
                 href="/duplicates"
                 className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
-                <ArchiveBoxIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-2">Duplicates</span>
+                <ExclamationTriangleIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">{t('duplicates')}</span>
               </a>
               
               <button

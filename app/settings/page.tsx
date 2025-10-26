@@ -55,7 +55,6 @@ export default function SettingsPage() {
               language: data.preferences?.language || 'en'
             }
             setSettings(dbSettings)
-            applyThemeSettings(dbSettings)
             return
           }
         }
@@ -65,7 +64,6 @@ export default function SettingsPage() {
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings)
           setSettings(parsed)
-          applyThemeSettings(parsed)
         }
       } catch (error) {
         console.error('Error loading settings:', error)
@@ -75,7 +73,6 @@ export default function SettingsPage() {
           try {
             const parsed = JSON.parse(savedSettings)
             setSettings(parsed)
-            applyThemeSettings(parsed)
           } catch (e) {
             console.error('Error parsing localStorage settings:', e)
           }

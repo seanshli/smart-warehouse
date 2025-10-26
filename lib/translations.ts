@@ -10,6 +10,7 @@ export interface Translations {
   members: string
   items: string
   allItems: string
+  duplicates: string
   
   // Admin
   adminPanel: string
@@ -416,6 +417,7 @@ const en: Translations = {
   members: 'Members',
   items: 'Items',
   allItems: 'All Items',
+  duplicates: 'Duplicates',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -826,6 +828,7 @@ const zhTW: Translations = {
   members: '成員',
   items: '物品',
   allItems: '所有物品',
+  duplicates: '重複項目',
   
   // Admin
   adminPanel: '管理面板',
@@ -1246,6 +1249,7 @@ const zh: Translations = {
   members: '成员',
   items: '物品',
   allItems: '所有物品',
+  duplicates: '重复项目',
   
   // Admin
   adminPanel: '管理面板',
@@ -1664,6 +1668,7 @@ const ja: Translations = {
   members: 'メンバー',
   items: 'アイテム',
   allItems: 'すべてのアイテム',
+  duplicates: '重複アイテム',
   
   // Admin
   adminPanel: '管理パネル',

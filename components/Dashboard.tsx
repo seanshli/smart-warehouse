@@ -233,6 +233,7 @@ export default function Dashboard() {
              <main className="max-w-7xl mx-auto py-4 sm:py-6 px-2 sm:px-6 lg:px-8">
                {activeTab === 'dashboard' && (
                  <DashboardContent 
+                   onTabChange={setActiveTab}
                    onItemEdit={(item) => {
                      console.log('Dashboard: Edit handler called for item:', item.name)
                      console.log('Dashboard: Full item object:', item)
@@ -415,11 +416,13 @@ export default function Dashboard() {
 }
 
 function DashboardContent({ 
+  onTabChange,
   onItemEdit, 
   onItemMove, 
   onItemCheckout, 
   onItemHistory 
 }: {
+  onTabChange: (tab: string) => void
   onItemEdit: (item: any) => void
   onItemMove: (item: any) => void
   onItemCheckout: (item: any) => void
@@ -588,7 +591,10 @@ function DashboardContent({
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <button
+          onClick={() => onTabChange('rooms')}
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer w-full text-left"
+        >
           <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -606,7 +612,7 @@ function DashboardContent({
               </div>
             </div>
           </div>
-        </div>
+        </button>
 
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-3 sm:p-5">

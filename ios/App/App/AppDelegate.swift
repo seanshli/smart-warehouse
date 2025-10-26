@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import Foundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,6 +8,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Configure HTTP cookie storage for authentication
+        HTTPCookieStorage.shared.cookieAcceptPolicy = .always
+        
         // Override point for customization after application launch.
         return true
     }

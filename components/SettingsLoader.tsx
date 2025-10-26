@@ -45,8 +45,8 @@ export default function SettingsLoader() {
               if (preferences) {
                 console.log('Loading settings from database:', preferences)
                 
-                // Apply theme
-                if (preferences.theme && preferences.theme !== 'system') {
+                // Apply theme (always apply, even if 'system')
+                if (preferences.theme) {
                   setTheme(preferences.theme)
                 }
                 
@@ -79,8 +79,8 @@ export default function SettingsLoader() {
             const parsed = JSON.parse(savedSettings)
             console.log('Loading settings from localStorage:', parsed)
             
-            // Apply theme
-            if (parsed.mode && parsed.mode !== 'system') {
+            // Apply theme (always apply, even if 'system')
+            if (parsed.mode) {
               setTheme(parsed.mode)
             }
             
@@ -117,7 +117,8 @@ export default function SettingsLoader() {
       const { theme, fontSize, language } = event.detail
       console.log('Theme change event received:', { theme, fontSize, language })
       
-      if (theme && theme !== 'system') {
+      // Always apply theme, even if 'system'
+      if (theme) {
         setTheme(theme)
       }
       

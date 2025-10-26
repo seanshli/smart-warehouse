@@ -34,7 +34,7 @@ export default function LanguageProvider({ children, initialLanguage }: Language
 
   useEffect(() => {
     // Only load language preference if not already set
-    if (currentLanguage === 'en' && !localStorage.getItem('smart-warehouse-language-set')) {
+    if (typeof window !== 'undefined' && currentLanguage === 'en' && !localStorage.getItem('smart-warehouse-language-set')) {
       loadUserLanguagePreference()
     }
   }, [initialLanguage, currentLanguage])
@@ -71,7 +71,9 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     saveUserLanguage(languageCode)
     
     // Mark that language has been set by user
-    localStorage.setItem('smart-warehouse-language-set', 'true')
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('smart-warehouse-language-set', 'true')
+    }
     
     // Update user language preference in database
     updateUserLanguagePreference(languageCode)

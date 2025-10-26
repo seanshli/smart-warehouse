@@ -18,31 +18,35 @@ export default function SettingsLoader() {
     const loadGlobalSettings = async () => {
       try {
         // Only clear session data if it's been more than 24 hours
-        const lastSessionTime = localStorage.getItem('last-session-time')
-        const now = Date.now()
-        const sessionAge = lastSessionTime ? now - parseInt(lastSessionTime) : Infinity
-        
-        // Force fresh login if session is older than 24 hours
-        if (!lastSessionTime || sessionAge > 24 * 60 * 60 * 1000) {
-          console.log('Clearing session data to force fresh login')
-          localStorage.removeItem('next-auth.session-token')
-          localStorage.removeItem('next-auth.csrf-token')
-          localStorage.removeItem('next-auth.callback-url')
-          localStorage.setItem('last-session-time', now.toString())
+        if (typeof window !== 'undefined') {
+          const lastSessionTime = localStorage.getItem('last-session-time')
+          const now = Date.now()
+          const sessionAge = lastSessionTime ? now - parseInt(lastSessionTime) : Infinity
+          
+          // Force fresh login if session is older than 24 hours
+          if (!lastSessionTime || sessionAge > 24 * 60 * 60 * 1000) {
+            console.log('Clearing session data to force fresh login')
+            localStorage.removeItem('next-auth.session-token')
+            localStorage.removeItem('next-auth.csrf-token')
+            localStorage.removeItem('next-auth.callback-url')
+            localStorage.setItem('last-session-time', now.toString())
+          }
         }
         
         // Wait a bit for the session to be fully loaded
         await new Promise(resolve => setTimeout(resolve, 100))
         
         // Check if settings have already been applied (to avoid overriding user changes)
-        const hasRecentSettings = localStorage.getItem('smart-warehouse-settings-applied')
-        if (hasRecentSettings) {
-          const appliedTime = parseInt(hasRecentSettings)
-          // If settings were applied within the last 5 minutes, don't override them
-          if (Date.now() - appliedTime < 5 * 60 * 1000) {
-            console.log('Recent settings detected, skipping auto-load')
-            setSettingsLoaded(true)
-            return
+        if (typeof window !== 'undefined') {
+          const hasRecentSettings = localStorage.getItem('smart-warehouse-settings-applied')
+          if (hasRecentSettings) {
+            const appliedTime = parseInt(hasRecentSettings)
+            // If settings were applied within the last 5 minutes, don't override them
+            if (Date.now() - appliedTime < 5 * 60 * 1000) {
+              console.log('Recent settings detected, skipping auto-load')
+              setSettingsLoaded(true)
+              return
+            }
           }
         }
         
@@ -85,31 +89,33 @@ export default function SettingsLoader() {
         }
         
         // Fallback to localStorage
-        const savedSettings = localStorage.getItem('smart-warehouse-settings')
-        if (savedSettings) {
-          try {
-            const parsed = JSON.parse(savedSettings)
-            console.log('Loading settings from localStorage:', parsed)
-            
-            // Apply theme (always apply, even if 'system')
-            if (parsed.mode) {
-              setTheme(parsed.mode)
+        if (typeof window !== 'undefined') {
+          const savedSettings = localStorage.getItem('smart-warehouse-settings')
+          if (savedSettings) {
+            try {
+              const parsed = JSON.parse(savedSettings)
+              console.log('Loading settings from localStorage:', parsed)
+              
+              // Apply theme (always apply, even if 'system')
+              if (parsed.mode) {
+                setTheme(parsed.mode)
+              }
+              
+              // Apply language
+              if (parsed.language) {
+                setLanguage(parsed.language)
+              }
+              
+              // Apply font size
+              if (parsed.fontSize) {
+                const root = document.documentElement
+                const fontSize = parsed.fontSize === 'small' ? '14px' : 
+                                parsed.fontSize === 'large' ? '18px' : '16px'
+                root.style.fontSize = fontSize
+              }
+            } catch (parseError) {
+              console.error('Error parsing localStorage settings:', parseError)
             }
-            
-            // Apply language
-            if (parsed.language) {
-              setLanguage(parsed.language)
-            }
-            
-            // Apply font size
-            if (parsed.fontSize) {
-              const root = document.documentElement
-              const fontSize = parsed.fontSize === 'small' ? '14px' : 
-                              parsed.fontSize === 'large' ? '18px' : '16px'
-              root.style.fontSize = fontSize
-            }
-          } catch (parseError) {
-            console.error('Error parsing localStorage settings:', parseError)
           }
         }
         

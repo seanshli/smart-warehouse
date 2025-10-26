@@ -61,21 +61,25 @@ export default function SettingsPage() {
         }
         
         // Fallback to localStorage
-        const savedSettings = localStorage.getItem('smart-warehouse-settings')
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings)
-          setSettings(parsed)
+        if (typeof window !== 'undefined') {
+          const savedSettings = localStorage.getItem('smart-warehouse-settings')
+          if (savedSettings) {
+            const parsed = JSON.parse(savedSettings)
+            setSettings(parsed)
+          }
         }
       } catch (error) {
         console.error('Error loading settings:', error)
         // Fallback to localStorage
-        const savedSettings = localStorage.getItem('smart-warehouse-settings')
-        if (savedSettings) {
-          try {
-            const parsed = JSON.parse(savedSettings)
-            setSettings(parsed)
-          } catch (e) {
-            console.error('Error parsing localStorage settings:', e)
+        if (typeof window !== 'undefined') {
+          const savedSettings = localStorage.getItem('smart-warehouse-settings')
+          if (savedSettings) {
+            try {
+              const parsed = JSON.parse(savedSettings)
+              setSettings(parsed)
+            } catch (e) {
+              console.error('Error parsing localStorage settings:', e)
+            }
           }
         }
       }
@@ -143,7 +147,9 @@ export default function SettingsPage() {
       setIsLoading(true)
       
       // Save to localStorage first
-      localStorage.setItem('smart-warehouse-settings', JSON.stringify(settings))
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('smart-warehouse-settings', JSON.stringify(settings))
+      }
       
       // Save to user preferences in database if logged in
       if (session?.user?.email) {
@@ -168,7 +174,9 @@ export default function SettingsPage() {
       applyThemeSettings(settings)
       
       // Mark that settings were just applied to prevent SettingsLoader from overriding them
-      localStorage.setItem('smart-warehouse-settings-applied', Date.now().toString())
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('smart-warehouse-settings-applied', Date.now().toString())
+      }
       
       setHasChanges(false)
       toast.success('Settings saved successfully!')
@@ -191,7 +199,9 @@ export default function SettingsPage() {
     
     // Save the reset settings
     try {
-      localStorage.setItem('smart-warehouse-settings', JSON.stringify(defaultSettings))
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('smart-warehouse-settings', JSON.stringify(defaultSettings))
+      }
       
       if (session?.user?.email) {
         await fetch('/api/user/preferences', {
@@ -210,7 +220,9 @@ export default function SettingsPage() {
       applyThemeSettings(defaultSettings)
       
       // Mark that settings were just applied to prevent SettingsLoader from overriding them
-      localStorage.setItem('smart-warehouse-settings-applied', Date.now().toString())
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('smart-warehouse-settings-applied', Date.now().toString())
+      }
       
       setHasChanges(false)
       toast.success('Settings reset to default!')

@@ -17,6 +17,21 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     maxAge: 24 * 60 * 60, // 24 hours
   },
+  // Use secure cookies for production, but allow SameSite=None for mobile apps
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' 
+        ? `__Secure-next-auth.session-token` 
+        : `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'none', // Changed from 'lax' to 'none' for cross-origin support (iOS/Android)
+        path: '/',
+        secure: true, // Required when sameSite is 'none'
+      },
+    },
+  },
   // Disable automatic session refresh
   pages: {
     signIn: '/auth/signin',

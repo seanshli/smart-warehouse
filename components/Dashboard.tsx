@@ -139,7 +139,7 @@ export default function Dashboard() {
               </h1>
               {household && (
                 <div className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-1 sm:space-x-2 truncate">
-                  <span className="truncate">{household.name}<span className="hidden sm:inline"> • {role}</span></span>
+                  <span className="truncate">{household.name}<span className="hidden sm:inline"> • {role || 'Member'}</span></span>
                   {/* Household switcher */}
                   <HouseholdSwitcher />
                 </div>

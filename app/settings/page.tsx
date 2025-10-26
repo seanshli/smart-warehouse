@@ -87,7 +87,7 @@ export default function SettingsPage() {
     if (session?.user?.email) {
       fetchHouseholdId()
     }
-  }, [session, setTheme, setLanguage])
+  }, [session]) // Removed setTheme and setLanguage from dependencies
 
   const fetchHouseholdId = async () => {
     try {
@@ -167,13 +167,11 @@ export default function SettingsPage() {
       // Apply settings after successful save
       applyThemeSettings(settings)
       
-      // Force a page refresh to ensure all components pick up the new settings
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
+      // Mark that settings were just applied to prevent SettingsLoader from overriding them
+      localStorage.setItem('smart-warehouse-settings-applied', Date.now().toString())
       
       setHasChanges(false)
-      toast.success('Settings saved successfully! Page will refresh...')
+      toast.success('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
       toast.error('Failed to save settings')
@@ -210,6 +208,10 @@ export default function SettingsPage() {
       }
       
       applyThemeSettings(defaultSettings)
+      
+      // Mark that settings were just applied to prevent SettingsLoader from overriding them
+      localStorage.setItem('smart-warehouse-settings-applied', Date.now().toString())
+      
       setHasChanges(false)
       toast.success('Settings reset to default!')
     } catch (error) {

@@ -34,6 +34,18 @@ export default function SettingsLoader() {
         // Wait a bit for the session to be fully loaded
         await new Promise(resolve => setTimeout(resolve, 100))
         
+        // Check if settings have already been applied (to avoid overriding user changes)
+        const hasRecentSettings = localStorage.getItem('smart-warehouse-settings-applied')
+        if (hasRecentSettings) {
+          const appliedTime = parseInt(hasRecentSettings)
+          // If settings were applied within the last 5 minutes, don't override them
+          if (Date.now() - appliedTime < 5 * 60 * 1000) {
+            console.log('Recent settings detected, skipping auto-load')
+            setSettingsLoaded(true)
+            return
+          }
+        }
+        
         // Try to load from database first if user is authenticated
         if (status === 'authenticated' && session?.user?.email) {
           try {

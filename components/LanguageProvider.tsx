@@ -33,9 +33,11 @@ export default function LanguageProvider({ children, initialLanguage }: Language
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Load user's language preference from database first, then fallback to detection
-    loadUserLanguagePreference()
-  }, [initialLanguage])
+    // Only load language preference if not already set
+    if (currentLanguage === 'en' && !localStorage.getItem('smart-warehouse-language-set')) {
+      loadUserLanguagePreference()
+    }
+  }, [initialLanguage, currentLanguage])
 
   const loadUserLanguagePreference = async () => {
     try {
@@ -67,6 +69,9 @@ export default function LanguageProvider({ children, initialLanguage }: Language
   const setLanguage = (languageCode: string) => {
     setCurrentLanguageState(languageCode)
     saveUserLanguage(languageCode)
+    
+    // Mark that language has been set by user
+    localStorage.setItem('smart-warehouse-language-set', 'true')
     
     // Update user language preference in database
     updateUserLanguagePreference(languageCode)

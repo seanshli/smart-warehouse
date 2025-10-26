@@ -8,8 +8,37 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   ClockIcon,
-  CalendarIcon
+  CalendarIcon,
+  FunnelIcon,
+  UserGroupIcon,
+  CubeIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js'
+import { Line, Bar, Pie } from 'react-chartjs-2'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+)
 
 interface AnalyticsData {
   users: number
@@ -17,6 +46,10 @@ interface AnalyticsData {
   items: number
   perDay: Record<string, number>
   perHour: Record<string, number>
+  itemsByCategory?: Record<string, number>
+  itemsByRoom?: Record<string, number>
+  usersByHousehold?: Record<string, number>
+  activityByUser?: Record<string, number>
 }
 
 interface AdminUser {
@@ -27,26 +60,57 @@ interface AdminUser {
   language: string
 }
 
+interface Household {
+  id: string
+  name: string
+  memberCount: number
+}
+
+interface FilterOptions {
+  householdId: string
+  userId: string
+  categoryId: string
+  roomId: string
+  timeRange: '7d' | '30d' | '90d' | '1y'
+}
+
 export default function AdminAnalyticsPage() {
   const { data: session } = useSession()
   const { t } = useLanguage()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [households, setHouseholds] = useState<Household[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState<string>('all')
+  const [filters, setFilters] = useState<FilterOptions>({
+    householdId: 'all',
+    userId: 'all',
+    categoryId: 'all',
+    roomId: 'all',
+    timeRange: '7d'
+  })
 
   useEffect(() => {
     loadAnalytics()
-  }, [])
+  }, [filters])
 
   const loadAnalytics = async () => {
     setLoading(true)
     setError(null)
     try {
-      const [statsRes, rolesRes] = await Promise.all([
-        fetch('/api/admin/stats'),
-        fetch('/api/admin/roles')
+      // Build query parameters for filtering
+      const params = new URLSearchParams()
+      if (filters.householdId !== 'all') params.append('householdId', filters.householdId)
+      if (filters.userId !== 'all') params.append('userId', filters.userId)
+      if (filters.categoryId !== 'all') params.append('categoryId', filters.categoryId)
+      if (filters.roomId !== 'all') params.append('roomId', filters.roomId)
+      params.append('timeRange', filters.timeRange)
+      
+      const [statsRes, rolesRes, householdsRes] = await Promise.all([
+        fetch(`/api/admin/stats?${params.toString()}`),
+        fetch('/api/admin/roles'),
+        fetch('/api/admin/households')
       ])
       
       if (!statsRes.ok) {
@@ -60,6 +124,11 @@ export default function AdminAnalyticsPage() {
         const rolesData = await rolesRes.json()
         setAdminUsers(rolesData.adminUsers || [])
       }
+      
+      if (householdsRes.ok) {
+        const householdsData = await householdsRes.json()
+        setHouseholds(householdsData.households || [])
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -67,90 +136,102 @@ export default function AdminAnalyticsPage() {
     }
   }
 
-  const getPerDayChart = () => {
+  const getLineChartData = () => {
     if (!data?.perDay) return null
     
     const entries = Object.entries(data.perDay).sort(([a], [b]) => a.localeCompare(b))
-    const maxValue = Math.max(...entries.map(([, value]) => value))
     
-    return (
-      <div className="space-y-2">
-        {entries.map(([date, value]) => (
-          <div key={date} className="flex items-center space-x-3">
-            <span className="text-sm text-gray-600 w-20">{new Date(date).toLocaleDateString()}</span>
-            <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-              <div 
-                className="bg-red-600 h-4 rounded-full transition-all duration-300"
-                style={{ width: `${(value / maxValue) * 100}%` }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
-                {value}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    )
+    return {
+      labels: entries.map(([date]) => new Date(date).toLocaleDateString()),
+      datasets: [
+        {
+          label: 'Daily Activity',
+          data: entries.map(([, value]) => value),
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          tension: 0.4,
+        },
+      ],
+    }
   }
 
-  const getPerHourChart = () => {
+  const getBarChartData = () => {
     if (!data?.perHour) return null
     
     const entries = Object.entries(data.perHour).sort(([a], [b]) => a.localeCompare(b))
-    const maxValue = Math.max(...entries.map(([, value]) => value))
     
-    return (
-      <div className="space-y-2">
-        {entries.map(([hour, value]) => {
-          // Parse hour string properly
-          let displayTime = 'Invalid Date'
-          try {
-            // Handle ISO format like "2025-10-19T09"
-            if (hour.includes('T')) {
-              const date = new Date(hour + ':00:00.000Z')
-              if (!isNaN(date.getTime())) {
-                displayTime = date.toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  hour12: false 
-                })
-              }
-            } else {
-              // Handle other formats
-              const date = new Date(hour)
-              if (!isNaN(date.getTime())) {
-                displayTime = date.toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  hour12: false 
-                })
-              }
-            }
-          } catch (error) {
-            // Fallback: extract hour from string
-            const hourMatch = hour.match(/(\d{2}):/)
-            if (hourMatch) {
-              displayTime = `${hourMatch[1]}:00`
-            }
+    return {
+      labels: entries.map(([hour]) => {
+        try {
+          if (hour.includes('T')) {
+            const date = new Date(hour + ':00:00.000Z')
+            return date.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false 
+            })
           }
-          
-          return (
-            <div key={hour} className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600 w-24">{displayTime}</span>
-              <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
-                <div 
-                  className="bg-blue-600 h-4 rounded-full transition-all duration-300"
-                  style={{ width: `${(value / maxValue) * 100}%` }}
-                />
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
-                  {value}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    )
+          return hour
+        } catch {
+          return hour
+        }
+      }),
+      datasets: [
+        {
+          label: 'Hourly Activity',
+          data: entries.map(([, value]) => value),
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 1,
+        },
+      ],
+    }
+  }
+
+  const getPieChartData = (data: Record<string, number>, title: string) => {
+    if (!data || Object.keys(data).length === 0) return null
+    
+    const entries = Object.entries(data)
+    const colors = [
+      '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6',
+      '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ]
+    
+    return {
+      labels: entries.map(([key]) => key),
+      datasets: [
+        {
+          label: title,
+          data: entries.map(([, value]) => value),
+          backgroundColor: colors.slice(0, entries.length),
+          borderColor: colors.slice(0, entries.length).map(color => color.replace('0.8', '1')),
+          borderWidth: 2,
+        },
+      ],
+    }
+  }
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  }
+
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+      },
+    },
   }
 
   if (loading) {
@@ -189,21 +270,84 @@ export default function AdminAnalyticsPage() {
             <h1 className="text-3xl font-bold text-gray-900">{t('adminAnalytics')}</h1>
             <p className="text-gray-600 mt-1">{t('adminAnalyticsDescription')}</p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('adminFilterByLanguage')}</label>
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-              >
-                <option value="all">All Languages</option>
-                <option value="en">English</option>
-                <option value="tw">Traditional Chinese</option>
-                <option value="ch">Simplified Chinese</option>
-                <option value="jp">Japanese</option>
-              </select>
-            </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white shadow rounded-lg p-6 mb-8">
+        <div className="flex items-center space-x-2 mb-4">
+          <FunnelIcon className="h-5 w-5 text-gray-500" />
+          <h3 className="text-lg font-medium text-gray-900">Filters</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+            <select
+              value={filters.timeRange}
+              onChange={(e) => setFilters(prev => ({ ...prev, timeRange: e.target.value as any }))}
+              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+              <option value="1y">Last Year</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Household</label>
+            <select
+              value={filters.householdId}
+              onChange={(e) => setFilters(prev => ({ ...prev, householdId: e.target.value }))}
+              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            >
+              <option value="all">All Households</option>
+              {households.map(household => (
+                <option key={household.id} value={household.id}>
+                  {household.name} ({household.memberCount} members)
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
+            <select
+              value={filters.userId}
+              onChange={(e) => setFilters(prev => ({ ...prev, userId: e.target.value }))}
+              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            >
+              <option value="all">All Users</option>
+              {adminUsers.map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.name || user.email}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              value={filters.categoryId}
+              onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            >
+              <option value="all">All Categories</option>
+              {/* Categories will be populated from API */}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
+            <select
+              value={filters.roomId}
+              onChange={(e) => setFilters(prev => ({ ...prev, roomId: e.target.value }))}
+              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            >
+              <option value="all">All Rooms</option>
+              {/* Rooms will be populated from API */}
+            </select>
           </div>
         </div>
       </div>
@@ -290,29 +434,81 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Daily Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Daily Activity Line Chart */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
               <CalendarIcon className="h-5 w-5 inline mr-2" />
-              Activity by Day (Last 7 Days)
+              Activity Trends (Line Chart)
             </h3>
-            {getPerDayChart() || (
+            {getLineChartData() ? (
+              <Line data={getLineChartData()!} options={chartOptions} />
+            ) : (
               <p className="text-gray-500 text-center py-8">No activity data available</p>
             )}
           </div>
         </div>
 
-        {/* Hourly Activity */}
+        {/* Hourly Activity Bar Chart */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
               <ClockIcon className="h-5 w-5 inline mr-2" />
-              Activity by Hour (Last 7 Days)
+              Hourly Activity (Bar Chart)
             </h3>
-            {getPerHourChart() || (
+            {getBarChartData() ? (
+              <Bar data={getBarChartData()!} options={chartOptions} />
+            ) : (
               <p className="text-gray-500 text-center py-8">No activity data available</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Pie Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Items by Category */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <CubeIcon className="h-5 w-5 inline mr-2" />
+              Items by Category
+            </h3>
+            {data?.itemsByCategory && getPieChartData(data.itemsByCategory, 'Items by Category') ? (
+              <Pie data={getPieChartData(data.itemsByCategory, 'Items by Category')!} options={pieChartOptions} />
+            ) : (
+              <p className="text-gray-500 text-center py-8">No category data available</p>
+            )}
+          </div>
+        </div>
+
+        {/* Items by Room */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <HomeIcon className="h-5 w-5 inline mr-2" />
+              Items by Room
+            </h3>
+            {data?.itemsByRoom && getPieChartData(data.itemsByRoom, 'Items by Room') ? (
+              <Pie data={getPieChartData(data.itemsByRoom, 'Items by Room')!} options={pieChartOptions} />
+            ) : (
+              <p className="text-gray-500 text-center py-8">No room data available</p>
+            )}
+          </div>
+        </div>
+
+        {/* Users by Household */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <UserGroupIcon className="h-5 w-5 inline mr-2" />
+              Users by Household
+            </h3>
+            {data?.usersByHousehold && getPieChartData(data.usersByHousehold, 'Users by Household') ? (
+              <Pie data={getPieChartData(data.usersByHousehold, 'Users by Household')!} options={pieChartOptions} />
+            ) : (
+              <p className="text-gray-500 text-center py-8">No household data available</p>
             )}
           </div>
         </div>

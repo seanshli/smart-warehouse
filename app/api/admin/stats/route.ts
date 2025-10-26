@@ -7,19 +7,12 @@ import { cache, CacheKeys } from '@/lib/cache'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Check cache first
-    const cacheKey = CacheKeys.adminStats()
-    const cachedData = cache.get(cacheKey)
-    if (cachedData) {
-      return NextResponse.json(cachedData)
     }
 
     // Check if user is admin
@@ -32,26 +25,73 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 
+    // Parse query parameters for filtering
+    const url = new URL(request.url)
+    const householdId = url.searchParams.get('householdId')
+    const userId = url.searchParams.get('userId')
+    const categoryId = url.searchParams.get('categoryId')
+    const roomId = url.searchParams.get('roomId')
+    const timeRange = url.searchParams.get('timeRange') || '7d'
+
+    // Calculate date range
+    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+
+    // Build where clause for filtering
+    const whereClause: any = {
+      createdAt: {
+        gte: since
+      }
+    }
+
+    if (householdId && householdId !== 'all') {
+      whereClause.item = {
+        householdId: householdId
+      }
+    }
+
+    if (userId && userId !== 'all') {
+      whereClause.performedBy = userId
+    }
+
+    if (categoryId && categoryId !== 'all') {
+      whereClause.item = {
+        ...whereClause.item,
+        categoryId: categoryId
+      }
+    }
+
+    if (roomId && roomId !== 'all') {
+      whereClause.item = {
+        ...whereClause.item,
+        roomId: roomId
+      }
+    }
+
+    // Get basic counts
     const [users, households, items] = await Promise.all([
       prisma.user.count(),
       prisma.household.count(),
       prisma.item.count(),
     ])
 
-    // Simple per-day/hour counts for last 7 days using createdAt
-    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-
+    // Get activity events with filtering
     const events = await prisma.itemHistory.findMany({
-      where: {
-        createdAt: {
-          gte: since
-        }
-      },
+      where: whereClause,
       orderBy: {
         createdAt: 'desc'
+      },
+      include: {
+        item: {
+          include: {
+            category: true,
+            room: true
+          }
+        }
       }
     })
 
+    // Process activity data
     const perDay: Record<string, number> = {}
     const perHour: Record<string, number> = {}
     for (const e of events) {
@@ -64,10 +104,97 @@ export async function GET() {
       }
     }
 
-    const result = { users, households, items, perDay, perHour }
-    
-    // Cache the result for 5 minutes
-    cache.set(cacheKey, result, 5 * 60 * 1000)
+    // Get items by category
+    const itemsByCategory = await prisma.item.groupBy({
+      by: ['categoryId'],
+      _count: {
+        id: true
+      },
+      where: householdId && householdId !== 'all' ? { householdId } : undefined
+    })
+
+    const categoryData: Record<string, number> = {}
+    for (const item of itemsByCategory) {
+      if (item.categoryId) {
+        const category = await prisma.category.findUnique({
+          where: { id: item.categoryId },
+          select: { name: true }
+        })
+        categoryData[category?.name || 'Unknown'] = item._count.id
+      }
+    }
+
+    // Get items by room
+    const itemsByRoom = await prisma.item.groupBy({
+      by: ['roomId'],
+      _count: {
+        id: true
+      },
+      where: householdId && householdId !== 'all' ? { householdId } : undefined
+    })
+
+    const roomData: Record<string, number> = {}
+    for (const item of itemsByRoom) {
+      if (item.roomId) {
+        const room = await prisma.room.findUnique({
+          where: { id: item.roomId },
+          select: { name: true }
+        })
+        roomData[room?.name || 'Unknown'] = item._count.id
+      }
+    }
+
+    // Get users by household
+    const usersByHousehold = await prisma.householdMember.groupBy({
+      by: ['householdId'],
+      _count: {
+        userId: true
+      }
+    })
+
+    const householdData: Record<string, number> = {}
+    for (const member of usersByHousehold) {
+      const household = await prisma.household.findUnique({
+        where: { id: member.householdId },
+        select: { name: true }
+      })
+      householdData[household?.name || 'Unknown'] = member._count.userId
+    }
+
+    // Get activity by user
+    const activityByUser = await prisma.itemHistory.groupBy({
+      by: ['performedBy'],
+      _count: {
+        id: true
+      },
+      where: {
+        createdAt: {
+          gte: since
+        }
+      }
+    })
+
+    const userActivityData: Record<string, number> = {}
+    for (const activity of activityByUser) {
+      const user = await prisma.user.findUnique({
+        where: { id: activity.performedBy },
+        select: { name: true, email: true }
+      })
+      const userName = user?.name || user?.email || 'Unknown'
+      userActivityData[userName] = activity._count.id
+    }
+
+    const result = { 
+      users, 
+      households, 
+      items, 
+      perDay, 
+      perHour,
+      itemsByCategory: categoryData,
+      itemsByRoom: roomData,
+      usersByHousehold: householdData,
+      activityByUser: userActivityData
+    }
     
     return NextResponse.json(result)
 

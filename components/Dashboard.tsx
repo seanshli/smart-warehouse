@@ -451,20 +451,20 @@ function DashboardContent({
   const [householdChangeDetected, setHouseholdChangeDetected] = useState(false)
 
   useEffect(() => {
-    fetchDashboardStats()
-    
-    // Check for household changes every 30 seconds
-    const interval = setInterval(() => {
-      checkForHouseholdChanges()
-    }, 30000)
-    
-    return () => clearInterval(interval)
-  }, [])
-  
-  // Re-fetch when time filter changes
-  useEffect(() => {
-    fetchDashboardStats()
-  }, [timeFilter])
+    try {
+      fetchDashboardStats()
+      
+      // Check for household changes every 30 seconds
+      const interval = setInterval(() => {
+        checkForHouseholdChanges()
+      }, 30000)
+      
+      return () => clearInterval(interval)
+    } catch (error) {
+      console.error('Error in useEffect:', error)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeFilter]) // Only re-fetch when timeFilter changes
 
   const checkForHouseholdChanges = async () => {
     try {

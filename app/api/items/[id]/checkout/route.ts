@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CacheInvalidation } from '@/lib/cache'
+import { checkAndCreateNotifications } from '@/lib/notifications'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -79,6 +80,13 @@ export async function POST(
         performedBy: userId
       }
     })
+
+    // Create notifications for checkout (especially for low inventory)
+    try {
+      await checkAndCreateNotifications(updatedItem, userId, 'updated', item)
+    } catch (error) {
+      console.error('Failed to create notifications for checkout:', error)
+    }
 
     // Clear cache after checkout to ensure UI reflects updated quantity
     if (item.householdId) {

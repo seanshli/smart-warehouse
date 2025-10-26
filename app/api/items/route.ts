@@ -340,6 +340,13 @@ export async function POST(request: NextRequest) {
           performedBy: userId
         }
       })
+
+      // Create notifications for quantity update
+      try {
+        await checkAndCreateNotifications(item, userId, 'updated', existingItem)
+      } catch (error) {
+        console.error('Failed to create notifications for quantity update:', error)
+      }
     } else {
       // Create new item
       console.log('Creating new item')

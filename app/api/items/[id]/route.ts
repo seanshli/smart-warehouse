@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkAndCreateNotifications } from '@/lib/notifications'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -120,6 +121,13 @@ export async function PUT(
         performedBy: userId
       }
     })
+
+    // Create notifications for item update
+    try {
+      await checkAndCreateNotifications(updatedItem, userId, 'updated', item)
+    } catch (error) {
+      console.error('Failed to create notifications for item update:', error)
+    }
 
     return NextResponse.json(updatedItem)
   } catch (error) {

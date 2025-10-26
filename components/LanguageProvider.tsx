@@ -50,8 +50,13 @@ export default function LanguageProvider({ children, initialLanguage }: Language
       if (response.ok) {
         const data = await response.json()
         if (data.language && SUPPORTED_LANGUAGES.some(lang => lang.code === data.language)) {
+          console.log('LanguageProvider: Loading language from database:', data.language)
           setCurrentLanguageState(data.language)
           saveUserLanguage(data.language)
+          // Set HTML lang attribute
+          if (typeof window !== 'undefined') {
+            document.documentElement.lang = data.language
+          }
           setIsLoading(false)
           return
         }
@@ -62,17 +67,25 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     
     // Fallback to detection
     const detectedLanguage = initialLanguage || detectUserLanguage()
+    console.log('LanguageProvider: Using detected language:', detectedLanguage)
     setCurrentLanguageState(detectedLanguage)
+    // Set HTML lang attribute
+    if (typeof window !== 'undefined') {
+      document.documentElement.lang = detectedLanguage
+    }
     setIsLoading(false)
   }
 
   const setLanguage = (languageCode: string) => {
+    console.log('LanguageProvider: Setting language to:', languageCode)
     setCurrentLanguageState(languageCode)
     saveUserLanguage(languageCode)
     
     // Mark that language has been set by user
     if (typeof window !== 'undefined') {
       localStorage.setItem('smart-warehouse-language-set', 'true')
+      // Also set the HTML lang attribute
+      document.documentElement.lang = languageCode
     }
     
     // Update user language preference in database

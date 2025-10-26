@@ -92,7 +92,8 @@ export const authOptions: NextAuthOptions = {
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        password: { label: 'Password', type: 'password' },
+        householdId: { label: 'Household ID', type: 'text' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -117,6 +118,43 @@ export const authOptions: NextAuthOptions = {
         if (!isValidPassword) {
           console.log('[auth] authorize: invalid password for', credentials.email)
           return null
+        }
+
+        // Handle household joining if householdId is provided
+        if (credentials.householdId) {
+          try {
+            const household = await prisma.household.findUnique({
+              where: { id: credentials.householdId }
+            })
+
+            if (household) {
+              // Check if user is already a member
+              const existingMembership = await prisma.householdMember.findFirst({
+                where: {
+                  userId: user.id,
+                  householdId: household.id
+                }
+              })
+
+              if (!existingMembership) {
+                // Add user to household as a member
+                await prisma.householdMember.create({
+                  data: {
+                    userId: user.id,
+                    householdId: household.id,
+                    role: 'MEMBER'
+                  }
+                })
+                console.log('[auth] authorize: added user to household', user.email, household.id)
+              } else {
+                console.log('[auth] authorize: user already member of household', user.email, household.id)
+              }
+            } else {
+              console.log('[auth] authorize: household not found', credentials.householdId)
+            }
+          } catch (error) {
+            console.error('[auth] authorize: error joining household', error)
+          }
         }
 
         console.log('[auth] authorize: success for', user.email, 'isAdmin=', (user as any).isAdmin)

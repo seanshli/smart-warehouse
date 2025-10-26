@@ -10,7 +10,7 @@ import SettingsLoader from '@/components/SettingsLoader'
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" enableSystem>
         <LanguageProvider>
           <HouseholdProvider>
             <SettingsLoader />

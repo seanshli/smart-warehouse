@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [householdId, setHouseholdId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [csrfToken, setCsrfToken] = useState('')
   const router = useRouter()
@@ -61,11 +62,12 @@ export default function SignIn() {
     setIsLoading(true)
 
     try {
-      console.log('Attempting sign in with:', { email, password: '***' })
+      console.log('Attempting sign in with:', { email, password: '***', householdId })
       
       const result = await signIn('credentials', {
         email,
         password,
+        householdId: householdId.trim() || undefined,
         redirect: false,
       })
 
@@ -129,17 +131,31 @@ export default function SignIn() {
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="householdId" className="sr-only">
+                Household ID (optional)
+              </label>
+              <input
+                id="householdId"
+                name="householdId"
+                type="text"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                placeholder="Household ID (optional - to join existing household)"
+                value={householdId}
+                onChange={(e) => setHouseholdId(e.target.value)}
+              />
             </div>
           </div>
 

@@ -16,29 +16,53 @@ const Dashboard = dynamic(() => import('@/components/Dashboard'), {
   ),
 })
 
-export default async function Home() {
-  const session = await getServerSession(authOptions)
-
-  console.log('[Home] Session check:', {
-    hasSession: !!session,
-    hasUser: !!session?.user,
-    hasId: !!(session?.user as any)?.id,
-    email: session?.user?.email
-  })
-
-  // Always redirect to sign-in if not authenticated
-  if (!session || !session.user || !(session.user as any).id) {
-    console.log('[Home] No valid session, redirecting to login')
-    redirect('/auth/signin')
+// Client-side cache clearing component
+function CacheClearer() {
+  if (typeof window !== 'undefined') {
+    // Clear all caches on page load
+    if ('caches' in window) {
+      caches.keys().then(cacheNames => {
+        cacheNames.forEach(cacheName => {
+          caches.delete(cacheName)
+        })
+      })
+    }
+    
+    // Clear localStorage and sessionStorage
+    localStorage.clear()
+    sessionStorage.clear()
   }
+  return null
+}
 
-  console.log('[Home] Valid session for user:', session.user.email)
-  
-  // Wrap Dashboard in error boundary to prevent client-side errors
+export default async function Home() {
   try {
-    return <Dashboard />
+    const session = await getServerSession(authOptions)
+
+    console.log('[Home] Session check:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      hasId: !!(session?.user as any)?.id,
+      email: session?.user?.email
+    })
+
+    // Always redirect to sign-in if not authenticated
+    if (!session || !session.user || !(session.user as any).id) {
+      console.log('[Home] No valid session, redirecting to login')
+      redirect('/auth/signin')
+    }
+
+    console.log('[Home] Valid session for user:', session.user.email)
+    
+    return (
+      <>
+        <CacheClearer />
+        <Dashboard />
+      </>
+    )
   } catch (error) {
-    console.error('[Home] Dashboard error:', error)
+    console.error('[Home] Error in Home component:', error)
+    // If there's any error, redirect to signin to clear any corrupted state
     redirect('/auth/signin')
   }
 }

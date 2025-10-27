@@ -295,15 +295,16 @@ export default function AdminItemsPage() {
         {/* Items Table */}
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '120px' }}>
                     {t('photo')}
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-2/5"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    style={{ width: '300px' }}
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center space-x-1">
@@ -315,7 +316,8 @@ export default function AdminItemsPage() {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    style={{ width: '100px' }}
                     onClick={() => handleSort('quantity')}
                   >
                     <div className="flex items-center space-x-1">
@@ -327,7 +329,8 @@ export default function AdminItemsPage() {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-48"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    style={{ width: '150px' }}
                     onClick={() => handleSort('household')}
                   >
                     <div className="flex items-center space-x-1">
@@ -337,15 +340,16 @@ export default function AdminItemsPage() {
                       )}
                     </div>
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '150px' }}>
                     {t('location')}
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '150px' }}>
                     {t('category')}
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    style={{ width: '120px' }}
                     onClick={() => handleSort('createdAt')}
                   >
                     <div className="flex items-center space-x-1">
@@ -361,14 +365,14 @@ export default function AdminItemsPage() {
                 {filteredAndSortedItems.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     {/* Photo Column - First */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-center">
                         {item.imageUrl ? (
                           <div className="relative">
                             <img 
                               src={item.imageUrl} 
                               alt={item.name}
-                              className="w-24 h-24 rounded-lg object-cover border border-gray-200"
+                              className="w-20 h-20 rounded-lg object-cover border border-gray-200"
                               onError={(e) => {
                                 // If image fails to load, show placeholder
                                 const target = e.target as HTMLImageElement
@@ -382,8 +386,8 @@ export default function AdminItemsPage() {
                                 }
                               }}
                             />
-                            <div className="placeholder hidden w-24 h-24 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-12 w-12 text-gray-400" />
+                            <div className="placeholder hidden w-20 h-20 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-8 w-8 text-gray-400" />
                             </div>
                             <button
                               onClick={() => handleQuickPhoto(item.id)}
@@ -394,68 +398,55 @@ export default function AdminItemsPage() {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-12 w-12 text-gray-400" />
-                            </div>
-                            <button
-                              onClick={() => handleQuickPhoto(item.id)}
-                              className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                              <CameraIcon className="h-3 w-3 mr-1" />
-                              {t('addPhoto')}
-                            </button>
+                          <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                            <PhotoIcon className="h-8 w-8 text-gray-400" />
                           </div>
                         )}
                       </div>
                     </td>
                     {/* Item Name Column - Second */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <CubeIcon className="h-5 w-5 text-gray-600" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                          {item.description && (
-                            <div className="text-sm text-gray-500 break-words">{item.description}</div>
-                          )}
-                        </div>
-                      </div>
+                    <td className="px-4 py-4">
+                      <div className="text-sm font-medium text-gray-900 break-words">{item.name}</div>
+                      {item.description && (
+                        <div className="text-sm text-gray-500 break-words mt-1">{item.description}</div>
+                      )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Quantity Column - Third */}
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{item.quantity}</div>
                       {item.minQuantity && (
                         <div className="text-xs text-gray-500">{t('min')}: {item.minQuantity}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{item.household.name}</div>
+                    {/* Household Column - Fourth */}
+                    <td className="px-4 py-4">
+                      <div className="text-sm font-medium text-gray-900 break-words">{item.household.name}</div>
                       <div className="text-xs text-gray-500">ID: {item.household.id.slice(0, 8)}...</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    {/* Location Column - Fifth */}
+                    <td className="px-4 py-4">
+                      <div className="text-sm text-gray-900 break-words">
                         {item.room?.name || '—'}
                         {item.cabinet?.name && (
                           <span className="text-gray-500"> → {item.cabinet.name}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Category Column - Sixth */}
+                    <td className="px-4 py-4">
                       {item.category ? (
-                        <div className="flex items-center">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">
+                        <div className="flex flex-col">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 w-fit mb-1">
                             L{item.category.level}
                           </span>
-                          <span className="text-sm text-gray-900">{item.category.name}</span>
+                          <span className="text-sm text-gray-900 break-words">{item.category.name}</span>
                         </div>
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {/* Created Column - Last */}
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {(() => {
                         try {
                           const date = new Date(item.createdAt)

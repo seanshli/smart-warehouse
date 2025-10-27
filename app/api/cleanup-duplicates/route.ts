@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Cleanup completed successfully!')
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Duplicate rooms cleaned up successfully',
       cleanupResults,
@@ -169,6 +169,14 @@ export async function POST(request: NextRequest) {
       finalRoomCounts,
       householdId: household.id
     })
+    
+    // Add cache-busting headers
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
+    return response
     
   } catch (error) {
     console.error('❌ Error during cleanup:', error)
@@ -256,7 +264,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       householdId: household.id,
       totalRooms: household.rooms.length,
       duplicates,
@@ -265,6 +273,14 @@ export async function GET(request: NextRequest) {
         return acc
       }, {} as Record<string, number>)
     })
+    
+    // Add cache-busting headers
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
+    return response
     
   } catch (error) {
     console.error('❌ Error checking duplicates:', error)

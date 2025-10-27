@@ -12,6 +12,11 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
     response.headers.set('Access-Control-Max-Age', '86400')
     
+    // Add cache-busting headers for API routes
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 200, headers: response.headers })

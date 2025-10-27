@@ -643,9 +643,9 @@ function DashboardContent({
       console.log('🔄 Dashboard: Stats URL:', `/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`)
       console.log('🔄 Dashboard: Activities URL:', `/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`)
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging (increased for slow database)
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
       
       const [statsResponse, activitiesResponse] = await Promise.all([
         fetch(`/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`, {
@@ -693,7 +693,7 @@ function DashboardContent({
       console.error('❌ Dashboard: Error fetching dashboard stats:', error)
       
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('❌ Dashboard: API call timed out after 10 seconds')
+        console.error('❌ Dashboard: API call timed out after 30 seconds')
         // Set default stats to prevent crashes
         setStats({
           totalItems: 0,

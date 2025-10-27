@@ -102,7 +102,10 @@ export async function GET(request: NextRequest) {
       return translateItemContent(itemName, targetLanguage)
     }
 
-    // Fetch all item history for items in the user's household with time filter
+    // Fetch item history with simplified query for better performance
+    console.log('📊 Activities: Starting database query for household:', household.id)
+    const startTime = Date.now()
+    
     const activities = await prisma.itemHistory.findMany({
       where: {
         item: {
@@ -110,18 +113,25 @@ export async function GET(request: NextRequest) {
         },
         ...dateFilter
       },
-      include: {
-        item: true,
-        performer: true,
-        oldRoom: true,
-        newRoom: true,
-        oldCabinet: true,
-        newCabinet: true
+      select: {
+        id: true,
+        action: true,
+        description: true,
+        createdAt: true,
+        performer: {
+          select: {
+            name: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      take: 20 // Limit results for better performance
     })
+    
+    const queryTime = Date.now() - startTime
+    console.log('📊 Activities: Database query completed in', queryTime, 'ms')
 
     // Translate activity descriptions based on user's language
     const translatedActivities = activities.map(activity => {

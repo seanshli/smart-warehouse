@@ -24,6 +24,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 
+    console.log('[Admin] Fetching households...')
+    
     const households = await prisma.household.findMany({
       include: {
         members: {
@@ -41,6 +43,8 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' }
     })
+
+    console.log(`[Admin] Found ${households.length} households:`, households.map(h => ({ id: h.id, name: h.name })))
 
     const response = NextResponse.json({ households })
     

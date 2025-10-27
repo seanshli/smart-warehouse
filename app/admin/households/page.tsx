@@ -44,15 +44,19 @@ export default function AdminHouseholdsPage() {
   const load = async () => {
     setLoading(true)
     setError(null)
+    
+    // Add timestamp to force fresh data
+    const timestamp = Date.now()
+    
     const [res, sres] = await Promise.all([
-      fetch('/api/admin/households', { 
+      fetch(`/api/admin/households?t=${timestamp}`, { 
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       }),
-      fetch('/api/admin/stats', { 
+      fetch(`/api/admin/stats?t=${timestamp}`, { 
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -66,6 +70,7 @@ export default function AdminHouseholdsPage() {
       return
     }
     const data = await res.json()
+    console.log(`[Admin] Loaded ${data.households?.length || 0} households`)
     setHouseholds(data.households || [])
     setStats(sres.ok ? await sres.json() : null)
     setLoading(false)
@@ -480,9 +485,23 @@ export default function AdminHouseholdsPage() {
                       onClick={async () => {
                         if (!confirm(`Delete household "${h.name}" and ALL its data? This action cannot be undone.`)) return
                         try {
-                          await fetch(`/api/admin/households/${h.id}`, { method: 'DELETE' })
-                          load() // Refresh data instead of page reload
+                          console.log(`[Admin] Deleting household: ${h.id} (${h.name})`)
+                          const response = await fetch(`/api/admin/households/${h.id}`, { method: 'DELETE' })
+                          const result = await response.json()
+                          
+                          if (response.ok) {
+                            console.log(`[Admin] Delete successful:`, result)
+                            alert(`Household "${h.name}" deleted successfully!`)
+                            // Add a small delay to ensure database changes are committed
+                            setTimeout(() => {
+                              load() // Refresh data instead of page reload
+                            }, 500)
+                          } else {
+                            console.error(`[Admin] Delete failed:`, result)
+                            alert(`Failed to delete household: ${result.error || 'Unknown error'}`)
+                          }
                         } catch (error) {
+                          console.error(`[Admin] Delete exception:`, error)
                           alert('Failed to delete household')
                         }
                       }}

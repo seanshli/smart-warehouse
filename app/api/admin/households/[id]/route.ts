@@ -36,8 +36,68 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await ensureAdmin()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  await prisma.household.delete({ where: { id: params.id } })
-  return NextResponse.json({ ok: true })
+  
+  try {
+    console.log(`[Admin] Attempting to delete household: ${params.id}`)
+    
+    // First check if household exists
+    const household = await prisma.household.findUnique({
+      where: { id: params.id },
+      include: {
+        _count: {
+          select: { items: true, members: true, rooms: true, categories: true }
+        }
+      }
+    })
+    
+    if (!household) {
+      console.log(`[Admin] Household not found: ${params.id}`)
+      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+    }
+    
+    console.log(`[Admin] Household found: ${household.name}, items: ${household._count.items}, members: ${household._count.members}`)
+    
+    // Delete the household using a transaction to ensure atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // First, manually delete related records to ensure they're gone
+      await tx.householdMember.deleteMany({
+        where: { householdId: params.id }
+      })
+      
+      await tx.item.deleteMany({
+        where: { householdId: params.id }
+      })
+      
+      await tx.room.deleteMany({
+        where: { householdId: params.id }
+      })
+      
+      await tx.category.deleteMany({
+        where: { householdId: params.id }
+      })
+      
+      // Finally, delete the household
+      return await tx.household.delete({ 
+        where: { id: params.id } 
+      })
+    })
+    
+    console.log(`[Admin] Household deleted successfully: ${result.id}`)
+    
+    return NextResponse.json({ 
+      ok: true, 
+      deletedHousehold: {
+        id: result.id,
+        name: result.name
+      }
+    })
+  } catch (error) {
+    console.error(`[Admin] Error deleting household ${params.id}:`, error)
+    return NextResponse.json(
+      { error: 'Failed to delete household', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {

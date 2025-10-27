@@ -17,21 +17,8 @@ export default function SettingsLoader() {
     
     const loadGlobalSettings = async () => {
       try {
-        // Only clear session data if it's been more than 24 hours
-        if (typeof window !== 'undefined') {
-          const lastSessionTime = localStorage.getItem('last-session-time')
-          const now = Date.now()
-          const sessionAge = lastSessionTime ? now - parseInt(lastSessionTime) : Infinity
-          
-          // Force fresh login if session is older than 24 hours
-          if (!lastSessionTime || sessionAge > 24 * 60 * 60 * 1000) {
-            console.log('Clearing session data to force fresh login')
-            localStorage.removeItem('next-auth.session-token')
-            localStorage.removeItem('next-auth.csrf-token')
-            localStorage.removeItem('next-auth.callback-url')
-            localStorage.setItem('last-session-time', now.toString())
-          }
-        }
+        // Disabled aggressive session clearing that was causing UI flickering
+        // Session management is now handled by NextAuth.js automatically
         
         // Wait a bit for the session to be fully loaded
         await new Promise(resolve => setTimeout(resolve, 100))

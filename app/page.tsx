@@ -20,37 +20,7 @@ const Dashboard = dynamic(() => import('@/components/Dashboard'), {
   ),
 })
 
-// Client-side cache clearing component
-function CacheClearer() {
-  if (typeof window !== 'undefined') {
-    try {
-      // Clear all caches on page load
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => {
-            caches.delete(cacheName)
-          })
-        }).catch(error => {
-          console.warn('Cache clearing failed:', error)
-        })
-      }
-      
-      // Clear localStorage and sessionStorage
-      localStorage.clear()
-      sessionStorage.clear()
-      
-      // Clear NextAuth cookies
-      document.cookie.split(";").forEach(function(c) { 
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-      });
-      
-      console.log('🧹 Cleared all caches and storage')
-    } catch (error) {
-      console.warn('Storage clearing failed:', error)
-    }
-  }
-  return null
-}
+// Removed aggressive cache clearing that was causing session loops
 
 // Client-side only component to prevent hydration issues
 function ClientHome() {
@@ -111,7 +81,6 @@ function ClientHome() {
 
   return (
     <div className="min-h-screen">
-      <CacheClearer />
       <ErrorBoundary>
         <Dashboard />
       </ErrorBoundary>

@@ -27,6 +27,7 @@ interface HouseholdContextType {
   memberships: Membership[]
   activeHouseholdId: string | null
   switching: boolean
+  refreshTrigger: number
   setActiveHousehold: (householdId: string) => void
   refetch: () => Promise<void>
 }
@@ -55,6 +56,7 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [activeHouseholdId, setActiveHouseholdId] = useState<string | null>(null)
   const [switching, setSwitching] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Helper function to select active household from memberships
   const selectActiveFrom = (memberships: Membership[], preferredId?: string | null): Membership | null => {
@@ -190,11 +192,15 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       })
     }
 
-    // Force a page refresh to ensure all data is reloaded with the new household
+    // Refresh data without page reload
     setTimeout(() => {
-      console.log('🔄 Refreshing page to load new household data...')
-      window.location.reload()
-    }, 100)
+      console.log('🔄 Refreshing household data without page reload...')
+      fetchHousehold().finally(() => {
+        setSwitching(false)
+        setRefreshTrigger(prev => prev + 1) // Trigger refresh for all components
+        console.log('✅ Household switch completed')
+      })
+    }, 200)
   }
 
   // Refetch function for external use
@@ -228,6 +234,7 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     memberships,
     activeHouseholdId,
     switching,
+    refreshTrigger,
     setActiveHousehold,
     refetch
   }

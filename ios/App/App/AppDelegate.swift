@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import Foundation
+@preconcurrency import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {

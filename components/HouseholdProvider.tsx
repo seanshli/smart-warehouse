@@ -26,6 +26,7 @@ interface HouseholdContextType {
   error: string | null
   memberships: Membership[]
   activeHouseholdId: string | null
+  switching: boolean
   setActiveHousehold: (householdId: string) => void
   refetch: () => Promise<void>
 }
@@ -53,33 +54,38 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   const [error, setError] = useState<string | null>(null)
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [activeHouseholdId, setActiveHouseholdId] = useState<string | null>(null)
+  const [switching, setSwitching] = useState(false)
 
-  const selectActiveFrom = (all: Membership[], preferredId?: string | null) => {
-    if (!all || all.length === 0) return null
-    const fromStorage = preferredId || (typeof window !== 'undefined' ? localStorage.getItem('activeHouseholdId') : null)
-    const found = all.find(m => m.household.id === fromStorage)
-    if (found) return found
-    // default to first membership
-    return all[0]
+  // Helper function to select active household from memberships
+  const selectActiveFrom = (memberships: Membership[], preferredId?: string | null): Membership | null => {
+    if (!memberships || memberships.length === 0) return null
+    
+    // If preferredId is provided and exists in memberships, use it
+    if (preferredId) {
+      const preferred = memberships.find(m => m.household.id === preferredId)
+      if (preferred) return preferred
+    }
+    
+    // Otherwise, use the first membership
+    return memberships[0]
   }
 
+  // Helper function to apply active household
   const applyActive = (active: Membership | null) => {
-    if (!active) {
+    if (active) {
+      setHousehold(active.household)
+      setRole(active.role)
+      setPermissions(getPermissions(active.role))
+      setActiveHouseholdId(active.household.id)
+    } else {
       setHousehold(null)
       setRole(null)
       setPermissions(null)
       setActiveHouseholdId(null)
-      return
-    }
-    setHousehold(active.household)
-    setRole(active.role)
-    setPermissions(getPermissions(active.role))
-    setActiveHouseholdId(active.household.id)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('activeHouseholdId', active.household.id)
     }
   }
 
+  // Fetch household data
   const fetchHousehold = async () => {
     if (!session?.user) {
       setHousehold(null)
@@ -88,14 +94,22 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       setMemberships([])
       setActiveHouseholdId(null)
       setLoading(false)
+      setError(null)
       return
     }
 
-    try {
-      setLoading(true)
-      setError(null)
+    setLoading(true)
+    setError(null)
 
-      const response = await fetch('/api/user/household')
+    try {
+      const response = await fetch('/api/user/household', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      })
+
       if (!response.ok) {
         throw new Error('Failed to fetch household information')
       }
@@ -110,7 +124,13 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       }))
       setMemberships(apiMemberships)
 
-      const active = selectActiveFrom(apiMemberships, activeHouseholdId)
+      // Get preferred household ID from localStorage
+      let preferredId = null
+      if (typeof window !== 'undefined') {
+        preferredId = localStorage.getItem('activeHouseholdId')
+      }
+
+      const active = selectActiveFrom(apiMemberships, preferredId)
       applyActive(active)
     } catch (err) {
       console.error('Error fetching household:', err)
@@ -123,6 +143,62 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Simplified household switching
+  const setActiveHousehold = (householdId: string) => {
+    console.log('🔄 Switching to household:', householdId)
+    console.log('📋 Available memberships:', memberships.map(m => ({ id: m.household.id, name: m.household.name, role: m.role })))
+    
+    setSwitching(true)
+    setError(null)
+    
+    // Find the membership for this household
+    const targetMembership = memberships.find(m => m.household.id === householdId)
+    
+    if (!targetMembership) {
+      console.error('❌ Household not found in memberships:', householdId)
+      setError(`Household ${householdId} not found in your memberships`)
+      setSwitching(false)
+      return
+    }
+
+    console.log('✅ Found target membership:', { id: targetMembership.household.id, name: targetMembership.household.name, role: targetMembership.role })
+
+    // Store the selection in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeHouseholdId', householdId)
+      console.log('💾 Stored household ID in localStorage:', householdId)
+    }
+
+    // Apply the new active household immediately
+    applyActive(targetMembership)
+    console.log('🎯 Applied active household:', targetMembership.household.name)
+    
+    // Clear caches to ensure fresh data
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      caches.keys().then(cacheNames => {
+        console.log('🗑️ Clearing caches:', cacheNames)
+        cacheNames.forEach(cacheName => {
+          caches.delete(cacheName)
+        })
+      }).catch(error => {
+        console.warn('Cache clearing failed:', error)
+      })
+    }
+
+    // Refresh data after a short delay to ensure the switch is complete
+    setTimeout(() => {
+      console.log('🔄 Refreshing household data...')
+      fetchHousehold().finally(() => {
+        setSwitching(false)
+      })
+    }, 300)
+  }
+
+  // Refetch function for external use
+  const refetch = async () => {
+    await fetchHousehold()
   }
 
   useEffect(() => {
@@ -142,48 +218,6 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     fetchHousehold()
   }, [session, status])
 
-  const setActiveHousehold = (householdId: string) => {
-    const active = memberships.find(m => m.household.id === householdId) || null
-    applyActive(active)
-    
-    // Store the selection in localStorage BEFORE clearing other data
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('activeHouseholdId', householdId)
-      
-      // Clear only specific caches, not all localStorage
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => {
-            // Only clear data caches, not the household selection
-            if (!cacheName.includes('household')) {
-              caches.delete(cacheName)
-            }
-          })
-        }).catch(error => {
-          console.warn('Cache clearing failed:', error)
-        })
-      }
-      
-      // Clear only sessionStorage, keep localStorage for household selection
-      try {
-        sessionStorage.clear()
-      } catch (error) {
-        console.warn('Session storage clearing failed:', error)
-      }
-      
-      // Trigger a data refresh without reloading
-      setTimeout(() => {
-        try {
-          fetchHousehold()
-        } catch (error) {
-          console.error('Household switch error:', error)
-          // Only reload as last resort
-          window.location.reload()
-        }
-      }, 100)
-    }
-  }
-
   const value: HouseholdContextType = {
     household,
     role,
@@ -192,8 +226,9 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     error,
     memberships,
     activeHouseholdId,
+    switching,
     setActiveHousehold,
-    refetch: fetchHousehold
+    refetch
   }
 
   return (
@@ -201,42 +236,4 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       {children}
     </HouseholdContext.Provider>
   )
-}
-
-export function usePermissions() {
-  const { permissions } = useHousehold()
-  return permissions
-}
-
-export function useRole() {
-  const { role } = useHousehold()
-  return role
-}
-
-interface PermissionGateProps {
-  permission: keyof Permissions
-  children: React.ReactNode
-  fallback?: React.ReactNode
-}
-
-export function PermissionGate({ permission, children, fallback = null }: PermissionGateProps) {
-  const permissions = usePermissions()
-  if (!permissions || !permissions[permission]) {
-    return <>{fallback}</>
-  }
-  return <>{children}</>
-}
-
-interface RoleGateProps {
-  roles: UserRole[]
-  children: React.ReactNode
-  fallback?: React.ReactNode
-}
-
-export function RoleGate({ roles, children, fallback = null }: RoleGateProps) {
-  const role = useRole()
-  if (!role || !roles.includes(role)) {
-    return <>{fallback}</>
-  }
-  return <>{children}</>
 }

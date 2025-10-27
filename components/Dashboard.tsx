@@ -29,7 +29,7 @@ import SearchPage from './SearchPage'
 import { CompactLanguageSelector, useLanguage } from './LanguageProvider'
 import NotificationCenter from './NotificationCenter'
 import Activities from './Activities'
-import { useHousehold, PermissionGate } from './HouseholdProvider'
+import { useHousehold } from './HouseholdProvider'
 import { HouseholdMemberManagement } from './HouseholdMemberManagement'
 import ItemsList from './ItemsList'
 import { useDeviceDetection } from './MobileLayout'
@@ -37,7 +37,7 @@ import HouseholdSettings from './HouseholdSettings'
 
 
 function HouseholdSwitcher() {
-  const { memberships, activeHouseholdId, setActiveHousehold } = useHousehold()
+  const { memberships, activeHouseholdId, setActiveHousehold, switching, error } = useHousehold()
   const { t } = useLanguage()
 
   if (!memberships || memberships.length <= 1) return null
@@ -45,18 +45,31 @@ function HouseholdSwitcher() {
   return (
     <div className="flex items-center space-x-2">
       <span className="text-sm text-gray-500 dark:text-gray-400">{t('switchHousehold')}:</span>
-      <select
-        value={activeHouseholdId || ''}
-        onChange={(e) => setActiveHousehold(e.target.value)}
-        className="border-gray-300 text-sm rounded-md px-2 py-1 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-        title={t('switchHousehold')}
-      >
-        {memberships.map(m => (
-          <option key={m.household.id} value={m.household.id} className="bg-white dark:bg-gray-700">
-            {m.household.name} ({m.role})
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={activeHouseholdId || ''}
+          onChange={(e) => setActiveHousehold(e.target.value)}
+          disabled={switching}
+          className="border-gray-300 text-sm rounded-md px-2 py-1 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={t('switchHousehold')}
+        >
+          {memberships.map(m => (
+            <option key={m.household.id} value={m.household.id} className="bg-white dark:bg-gray-700">
+              {m.household.name} ({m.role})
+            </option>
+          ))}
+        </select>
+        {switching && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-700 rounded-md">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className="text-xs text-red-500 dark:text-red-400 max-w-xs truncate" title={error}>
+          {error}
+        </div>
+      )}
     </div>
   )
 }

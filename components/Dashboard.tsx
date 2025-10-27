@@ -386,9 +386,11 @@ export default function Dashboard() {
                    : 'py-4 sm:py-6 px-2 sm:px-6 lg:px-8'
              }`}>
                {activeTab === 'dashboard' && (
-                 <DashboardContent 
-                   onTabChange={setActiveTab}
-                   onItemEdit={(item) => {
+                <DashboardContent
+                  household={household}
+                  refreshTrigger={refreshTrigger}
+                  onTabChange={setActiveTab}
+                  onItemEdit={(item) => {
                      console.log('Dashboard: Edit handler called for item:', item.name)
                      console.log('Dashboard: Full item object:', item)
                      setSelectedItem(item)
@@ -591,12 +593,16 @@ export default function Dashboard() {
 }
 
 function DashboardContent({ 
+  household,
+  refreshTrigger,
   onTabChange,
   onItemEdit, 
   onItemMove, 
   onItemCheckout, 
   onItemHistory 
 }: {
+  household: any
+  refreshTrigger: number
   onTabChange: (tab: string) => void
   onItemEdit: (item: any) => void
   onItemMove: (item: any) => void
@@ -692,8 +698,12 @@ function DashboardContent({
   }
 
   const handleRefresh = () => {
+    const currentHousehold = household
+    const currentRefreshTrigger = refreshTrigger
     setHouseholdChangeDetected(false)
-    fetchDashboardStats(household, refreshTrigger)
+    if (currentHousehold && currentRefreshTrigger !== undefined) {
+      fetchDashboardStats(currentHousehold, currentRefreshTrigger)
+    }
   }
 
   useEffect(() => {
@@ -710,7 +720,7 @@ function DashboardContent({
       console.error('Error in useEffect:', error)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeFilter]) // Only re-fetch when timeFilter changes
+  }, [timeFilter, household, refreshTrigger, checkForHouseholdChanges]) // Only re-fetch when timeFilter changes
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

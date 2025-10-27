@@ -21,6 +21,11 @@ export default function AdminSignIn() {
     // Clear any existing sessions on page load
     const clearExistingSession = async () => {
       try {
+        console.log('[Admin] Clearing existing sessions...')
+        
+        // Force sign out any existing session first
+        await signOut({ redirect: false })
+        
         // Clear all browser storage
         if (typeof window !== 'undefined') {
           localStorage.clear()
@@ -34,16 +39,32 @@ export default function AdminSignIn() {
             )
           }
           
-          // Clear cookies
+          // Clear cookies more aggressively
           document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            const cookie = c.replace(/^ +/, "").split("=")[0]
+            document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/`
+            document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/;domain=${window.location.hostname}`
+            document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/;domain=.${window.location.hostname}`
           });
+          
+          // Clear NextAuth specific cookies
+          const nextAuthCookies = [
+            'next-auth.session-token',
+            '__Secure-next-auth.session-token',
+            'next-auth.csrf-token',
+            '__Host-next-auth.csrf-token'
+          ]
+          
+          nextAuthCookies.forEach(cookieName => {
+            document.cookie = `${cookieName}=;expires=${new Date(0).toUTCString()};path=/`
+            document.cookie = `${cookieName}=;expires=${new Date(0).toUTCString()};path=/;domain=${window.location.hostname}`
+            document.cookie = `${cookieName}=;expires=${new Date(0).toUTCString()};path=/;domain=.${window.location.hostname}`
+          })
         }
         
-        // Force sign out any existing session
-        await signOut({ redirect: false })
+        console.log('[Admin] Session clearing completed')
       } catch (error) {
-        console.log('Session clearing completed')
+        console.log('[Admin] Session clearing completed with errors:', error)
       }
     }
     

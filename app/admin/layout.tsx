@@ -33,8 +33,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: t('adminSettings'), href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },
   ]
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/' })
+  const handleSignOut = async () => {
+    try {
+      console.log('[Admin] Signing out...')
+      
+      // Clear all browser storage first
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+        
+        // Clear any cached data
+        if ('caches' in window) {
+          const cacheNames = await caches.keys()
+          await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+          )
+        }
+        
+        // Clear cookies
+        document.cookie.split(";").forEach(function(c) { 
+          const cookie = c.replace(/^ +/, "").split("=")[0]
+          document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/`
+        });
+      }
+      
+      // Sign out with NextAuth
+      await signOut({ 
+        callbackUrl: '/admin-auth/signin',
+        redirect: true 
+      })
+    } catch (error) {
+      console.error('[Admin] Sign out error:', error)
+      // Force redirect even if there's an error
+      if (typeof window !== 'undefined') {
+        window.location.href = '/admin-auth/signin'
+      }
+    }
   }
 
   return (

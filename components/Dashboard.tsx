@@ -629,9 +629,18 @@ function DashboardContent({
   const [loading, setLoading] = useState(true)
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [householdChangeDetected, setHouseholdChangeDetected] = useState(false)
+  const [lastFetchTime, setLastFetchTime] = useState(0)
 
   const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {
+      // Debounce: prevent multiple rapid calls
+      const now = Date.now()
+      if (now - lastFetchTime < 2000) { // 2 second debounce
+        console.log('🔄 Dashboard: Skipping API call - too soon after last call')
+        return
+      }
+      setLastFetchTime(now)
+
       setLoading(true)
       console.log('🔄 Dashboard: Starting fetchDashboardStats')
       console.log('🔄 Dashboard: Household ID:', currentHousehold?.id)
@@ -660,7 +669,7 @@ function DashboardContent({
       
       // Add timeout to prevent hanging (reduced since we're only calling simple API)
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
       
       // Use only simple API for maximum performance - no activities for now
       console.log('🔄 Dashboard: Using SIMPLE API only for better performance')
@@ -711,9 +720,9 @@ function DashboardContent({
     } catch (error) {
       console.error('❌ Dashboard: Error fetching dashboard stats:', error)
       
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error('❌ Dashboard: API call timed out after 15 seconds')
-        console.log('🔄 Dashboard: Setting fallback stats instead of redirecting to login')
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error('❌ Dashboard: API call timed out after 5 seconds')
+          console.log('🔄 Dashboard: Setting fallback stats instead of redirecting to login')
         // Set fallback stats to prevent crashes and login redirects
         setStats({
           totalItems: 0,
@@ -768,6 +777,7 @@ function DashboardContent({
     fetchDashboardStats(currentHousehold, currentRefreshTrigger)
   }
 
+  // Separate useEffect for data fetching
   useEffect(() => {
     // Only fetch stats if we have a valid household
     if (!household || !household.id) {
@@ -775,21 +785,19 @@ function DashboardContent({
       return
     }
 
-    try {
-      console.log('🔄 Dashboard: useEffect triggered with household:', household.id)
-      fetchDashboardStats(household, refreshTrigger)
-      
-      // Check for household changes every 30 seconds
-      const interval = setInterval(() => {
-        checkForHouseholdChanges()
-      }, 30000)
-      
-      return () => clearInterval(interval)
-    } catch (error) {
-      console.error('Error in useEffect:', error)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeFilter, household, refreshTrigger, checkForHouseholdChanges]) // Only re-fetch when timeFilter changes
+    console.log('🔄 Dashboard: useEffect triggered with household:', household.id)
+    fetchDashboardStats(household, refreshTrigger)
+  }, [timeFilter, household?.id, refreshTrigger]) // Only re-fetch when these specific values change
+
+  // Separate useEffect for interval (runs only once)
+  useEffect(() => {
+    // Check for household changes every 30 seconds
+    const interval = setInterval(() => {
+      checkForHouseholdChanges()
+    }, 30000)
+    
+    return () => clearInterval(interval)
+  }, []) // Empty dependency array - runs only once
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

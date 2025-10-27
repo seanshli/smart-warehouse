@@ -19,18 +19,24 @@ const Dashboard = dynamic(() => import('@/components/Dashboard'), {
 // Client-side cache clearing component
 function CacheClearer() {
   if (typeof window !== 'undefined') {
-    // Clear all caches on page load
-    if ('caches' in window) {
-      caches.keys().then(cacheNames => {
-        cacheNames.forEach(cacheName => {
-          caches.delete(cacheName)
+    try {
+      // Clear all caches on page load
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName)
+          })
+        }).catch(error => {
+          console.warn('Cache clearing failed:', error)
         })
-      })
+      }
+      
+      // Clear localStorage and sessionStorage
+      localStorage.clear()
+      sessionStorage.clear()
+    } catch (error) {
+      console.warn('Storage clearing failed:', error)
     }
-    
-    // Clear localStorage and sessionStorage
-    localStorage.clear()
-    sessionStorage.clear()
   }
   return null
 }
@@ -55,10 +61,10 @@ export default async function Home() {
     console.log('[Home] Valid session for user:', session.user.email)
     
     return (
-      <>
+      <div className="min-h-screen">
         <CacheClearer />
         <Dashboard />
-      </>
+      </div>
     )
   } catch (error) {
     console.error('[Home] Error in Home component:', error)

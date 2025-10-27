@@ -20,6 +20,16 @@ function ErrorFallback({ error, resetError }: { error?: Error; resetError: () =>
   
   const handleRefresh = () => {
     try {
+      // Clear all storage before refresh
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => caches.delete(cacheName))
+          })
+        }
+      }
       window.location.reload()
     } catch (error) {
       console.error('Refresh failed:', error)
@@ -30,6 +40,16 @@ function ErrorFallback({ error, resetError }: { error?: Error; resetError: () =>
   
   const handleGoHome = () => {
     try {
+      // Clear all storage before navigation
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => caches.delete(cacheName))
+          })
+        }
+      }
       router.push('/')
     } catch (error) {
       console.error('Navigation failed:', error)
@@ -92,6 +112,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
+    
+    // Log additional context for debugging
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack
+    })
   }
 
   resetError = () => {

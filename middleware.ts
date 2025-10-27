@@ -59,7 +59,20 @@ export async function middleware(request: NextRequest) {
   }
   
   // Check authentication for all other routes
-  const token = await getToken({ req: request })
+  let token
+  try {
+    token = await getToken({ req: request })
+  } catch (error) {
+    console.error('[Middleware] Token retrieval error:', error)
+    // If token retrieval fails, redirect to signin
+    if (!request.nextUrl.pathname.startsWith('/api/')) {
+      if (request.nextUrl.pathname.startsWith('/admin')) {
+        return NextResponse.redirect(new URL('/admin-auth/signin', request.url))
+      }
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   
   if (!token || Object.keys(token).length === 0) {
     // Redirect to appropriate sign in page based on route
@@ -74,21 +87,26 @@ export async function middleware(request: NextRequest) {
   }
 
   // Multi-user security: Check session age and force re-authentication
-  const loginTime = (token as any).loginTime
-  const sessionId = (token as any).sessionId
-  const sessionAge = Date.now() - (loginTime || 0)
-  const maxSessionAge = 24 * 60 * 60 * 1000 // 24 hours
+  // Only check session age if the token has the required fields
+  const loginTime = (token as any)?.loginTime
+  const sessionId = (token as any)?.sessionId
+  
+  // If we have session tracking fields, validate them
+  if (loginTime !== undefined || sessionId !== undefined) {
+    const sessionAge = Date.now() - (loginTime || 0)
+    const maxSessionAge = 24 * 60 * 60 * 1000 // 24 hours
 
-  // Force re-authentication if no session ID or expired
-  if (!sessionId || sessionAge > maxSessionAge) {
-    // Session expired or invalid, force re-authentication
-    if (!request.nextUrl.pathname.startsWith('/api/')) {
-      if (request.nextUrl.pathname.startsWith('/admin')) {
-        return NextResponse.redirect(new URL('/admin-auth/signin?error=session_expired', request.url))
+    // Force re-authentication if no session ID or expired
+    if (!sessionId || sessionAge > maxSessionAge) {
+      // Session expired or invalid, force re-authentication
+      if (!request.nextUrl.pathname.startsWith('/api/')) {
+        if (request.nextUrl.pathname.startsWith('/admin')) {
+          return NextResponse.redirect(new URL('/admin-auth/signin?error=session_expired', request.url))
+        }
+        return NextResponse.redirect(new URL('/auth/signin?error=session_expired', request.url))
       }
-      return NextResponse.redirect(new URL('/auth/signin?error=session_expired', request.url))
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 })
     }
-    return NextResponse.json({ error: 'Session expired' }, { status: 401 })
   }
 
   // Handle admin authentication

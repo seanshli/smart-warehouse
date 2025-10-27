@@ -20,7 +20,14 @@ export async function GET() {
       select: { isAdmin: true }
     })
 
+    console.log('[Admin] User check:', {
+      email: session.user.email,
+      isAdmin: user?.isAdmin,
+      adminEmails: process.env.ADMIN_EMAILS
+    })
+
     if (!user?.isAdmin) {
+      console.log('[Admin] Access denied - not admin user')
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 

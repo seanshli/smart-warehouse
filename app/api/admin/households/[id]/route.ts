@@ -9,10 +9,30 @@ export const dynamic = 'force-dynamic'
 
 async function ensureAdmin() {
   const session = await getServerSession(authOptions)
-  const email = session?.user?.email || null
-  if (!isAdminEmail(email)) {
+  
+  if (!session?.user?.email) {
+    console.log('[Admin] No session or email')
     return null
   }
+
+  // Check if user is admin in database (consistent with other admin APIs)
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { isAdmin: true }
+  })
+
+  console.log('[Admin] ensureAdmin check:', {
+    email: session.user.email,
+    isAdmin: user?.isAdmin,
+    adminEmails: process.env.ADMIN_EMAILS
+  })
+
+  if (!user?.isAdmin) {
+    console.log('[Admin] Access denied - not admin user')
+    return null
+  }
+
+  console.log('[Admin] Access granted for email:', session.user.email)
   return session
 }
 

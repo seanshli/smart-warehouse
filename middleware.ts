@@ -20,19 +20,6 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Handle root path specially - always check authentication
-  if (request.nextUrl.pathname === '/') {
-    const token = await getToken({ req: request })
-    
-    // If no token, redirect to sign in
-    if (!token || Object.keys(token).length === 0) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
-    }
-    
-    // If authenticated, allow through to page.tsx
-    return NextResponse.next()
-  }
-  
   // Public routes that don't require authentication
   const publicRoutes = [
     '/auth/signin',
@@ -50,6 +37,19 @@ export async function middleware(request: NextRequest) {
   
   // Allow public routes
   if (isPublicRoute) {
+    return NextResponse.next()
+  }
+
+  // Handle root path specially - always check authentication
+  if (request.nextUrl.pathname === '/') {
+    const token = await getToken({ req: request })
+    
+    // If no token, redirect to sign in
+    if (!token || Object.keys(token).length === 0) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+    
+    // If authenticated, allow through to page.tsx
     return NextResponse.next()
   }
   
@@ -88,7 +88,15 @@ export async function middleware(request: NextRequest) {
 
   // Handle admin authentication
   if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-auth')) {
+    console.log('[Middleware] Admin route check:', {
+      path: request.nextUrl.pathname,
+      hasToken: !!token,
+      isAdmin: (token as any).isAdmin,
+      userEmail: (token as any).email
+    })
+    
     if (!(token as any).isAdmin) {
+      console.log('[Middleware] Redirecting to admin signin - not admin')
       return NextResponse.redirect(new URL('/admin-auth/signin?error=unauthorized', request.url))
     }
   }

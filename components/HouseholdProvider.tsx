@@ -237,3 +237,41 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     </HouseholdContext.Provider>
   )
 }
+
+// Permission-based component wrapper
+export function PermissionGate({ 
+  permission, 
+  children, 
+  fallback = null 
+}: { 
+  permission: keyof Permissions
+  children: React.ReactNode
+  fallback?: React.ReactNode
+}) {
+  const { permissions } = useHousehold()
+  
+  if (!permissions || !permissions[permission]) {
+    return <>{fallback}</>
+  }
+  
+  return <>{children}</>
+}
+
+// Role-based component wrapper
+export function RoleGate({ 
+  roles, 
+  children, 
+  fallback = null 
+}: { 
+  roles: UserRole[]
+  children: React.ReactNode
+  fallback?: React.ReactNode
+}) {
+  const { role } = useHousehold()
+  
+  if (!role || !roles.includes(role)) {
+    return <>{fallback}</>
+  }
+  
+  return <>{children}</>
+}

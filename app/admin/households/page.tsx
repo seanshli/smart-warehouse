@@ -483,7 +483,25 @@ export default function AdminHouseholdsPage() {
 
                     <button
                       onClick={async () => {
-                        if (!confirm(`Delete household "${h.name}" and ALL its data? This action cannot be undone.`)) return
+                        // Show detailed confirmation with household info
+                        const confirmMessage = `⚠️ DELETE HOUSEHOLD CONFIRMATION ⚠️\n\n` +
+                          `Household: "${h.name}"\n` +
+                          `Members: ${h._count?.members || 0}\n` +
+                          `Items: ${h._count?.items || 0}\n\n` +
+                          `This will PERMANENTLY DELETE:\n` +
+                          `• All household members\n` +
+                          `• All items in this household\n` +
+                          `• All rooms and categories\n` +
+                          `• All associated data\n\n` +
+                          `This action CANNOT be undone!\n\n` +
+                          `Type "DELETE" to confirm:`
+                        
+                        const userInput = prompt(confirmMessage)
+                        if (userInput !== "DELETE") {
+                          alert("Deletion cancelled. You must type 'DELETE' to confirm.")
+                          return
+                        }
+                        
                         try {
                           console.log(`[Admin] Deleting household: ${h.id} (${h.name})`)
                           const response = await fetch(`/api/admin/households/${h.id}`, { method: 'DELETE' })
@@ -491,18 +509,18 @@ export default function AdminHouseholdsPage() {
                           
                           if (response.ok) {
                             console.log(`[Admin] Delete successful:`, result)
-                            alert(`Household "${h.name}" deleted successfully!`)
+                            alert(`✅ Household "${h.name}" deleted successfully!`)
                             // Add a small delay to ensure database changes are committed
                             setTimeout(() => {
                               load() // Refresh data instead of page reload
                             }, 500)
                           } else {
                             console.error(`[Admin] Delete failed:`, result)
-                            alert(`Failed to delete household: ${result.error || 'Unknown error'}`)
+                            alert(`❌ Failed to delete household: ${result.error || 'Unknown error'}`)
                           }
                         } catch (error) {
                           console.error(`[Admin] Delete exception:`, error)
-                          alert('Failed to delete household')
+                          alert('❌ Failed to delete household')
                         }
                       }}
                       className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

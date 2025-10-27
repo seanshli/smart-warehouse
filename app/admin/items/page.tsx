@@ -297,9 +297,12 @@ export default function AdminItemsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                    {t('photo')}
+                  </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-1/3"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-1/4"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center space-x-1">
@@ -311,7 +314,7 @@ export default function AdminItemsPage() {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-20"
                     onClick={() => handleSort('quantity')}
                   >
                     <div className="flex items-center space-x-1">
@@ -323,7 +326,7 @@ export default function AdminItemsPage() {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
                     onClick={() => handleSort('household')}
                   >
                     <div className="flex items-center space-x-1">
@@ -333,18 +336,15 @@ export default function AdminItemsPage() {
                       )}
                     </div>
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                     {t('location')}
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                     {t('category')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                    {t('photo')}
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
                     onClick={() => handleSort('createdAt')}
                   >
                     <div className="flex items-center space-x-1">
@@ -359,6 +359,56 @@ export default function AdminItemsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredAndSortedItems.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
+                    {/* Photo Column - First */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {item.imageUrl ? (
+                          <div className="relative">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name}
+                              className="w-24 h-24 rounded-lg object-cover border border-gray-200"
+                              onError={(e) => {
+                                // If image fails to load, show placeholder
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                const parent = target.parentElement
+                                if (parent) {
+                                  const placeholder = parent.querySelector('.placeholder')
+                                  if (placeholder) {
+                                    (placeholder as HTMLElement).style.display = 'flex'
+                                  }
+                                }
+                              }}
+                            />
+                            <div className="placeholder hidden w-24 h-24 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-12 w-12 text-gray-400" />
+                            </div>
+                            <button
+                              onClick={() => handleQuickPhoto(item.id)}
+                              className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
+                              title={t('updatePhoto')}
+                            >
+                              <CameraIcon className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-12 w-12 text-gray-400" />
+                            </div>
+                            <button
+                              onClick={() => handleQuickPhoto(item.id)}
+                              className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <CameraIcon className="h-3 w-3 mr-1" />
+                              {t('addPhoto')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    {/* Item Name Column - Second */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
@@ -403,54 +453,6 @@ export default function AdminItemsPage() {
                       ) : (
                         <span className="text-gray-400">—</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        {item.imageUrl ? (
-                          <div className="relative">
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name}
-                              className="w-20 h-20 rounded-lg object-cover border border-gray-200"
-                              onError={(e) => {
-                                // If image fails to load, show placeholder
-                                const target = e.target as HTMLImageElement
-                                target.style.display = 'none'
-                                const parent = target.parentElement
-                                if (parent) {
-                                  const placeholder = parent.querySelector('.placeholder')
-                                  if (placeholder) {
-                                    (placeholder as HTMLElement).style.display = 'flex'
-                                  }
-                                }
-                              }}
-                            />
-                            <div className="placeholder hidden w-20 h-20 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-10 w-10 text-gray-400" />
-                            </div>
-                            <button
-                              onClick={() => handleQuickPhoto(item.id)}
-                              className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
-                              title={t('updatePhoto')}
-                            >
-                              <CameraIcon className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-10 w-10 text-gray-400" />
-                            </div>
-                            <button
-                              onClick={() => handleQuickPhoto(item.id)}
-                              className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                              <CameraIcon className="h-3 w-3 mr-1" />
-                              {t('addPhoto')}
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {(() => {

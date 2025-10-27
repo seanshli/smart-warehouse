@@ -63,8 +63,17 @@ export default function AdminSignIn() {
         }
         
         console.log('[Admin] Session clearing completed')
+        
+        // Force reload to ensure clean state
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
       } catch (error) {
         console.log('[Admin] Session clearing completed with errors:', error)
+        // Force reload even if there's an error
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
       }
     }
     

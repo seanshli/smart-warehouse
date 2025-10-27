@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ClockIcon, UserIcon, ArrowRightIcon, PlusIcon, PencilIcon, ArrowsRightLeftIcon, ShoppingCartIcon, HomeIcon, XMarkIcon, FolderIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
+import { useHousehold } from './HouseholdProvider'
 
 interface Activity {
   id: string
@@ -37,6 +38,7 @@ interface ActivitiesProps {
 
 export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
   const { t, currentLanguage } = useLanguage()
+  const { household } = useHousehold()
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -44,15 +46,23 @@ export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
     fetchActivities()
   }, [])
 
-  // Re-fetch activities when language or time filter changes
+  // Re-fetch activities when language, time filter, or household changes
   useEffect(() => {
     fetchActivities()
-  }, [currentLanguage, timeFilter])
+  }, [currentLanguage, timeFilter, household?.id])
 
   const fetchActivities = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/activities?timeFilter=${timeFilter}`)
+      const params = new URLSearchParams()
+      params.append('timeFilter', timeFilter)
+      if (household?.id) params.append('householdId', household.id)
+      
+      const url = `/api/activities?${params.toString()}`
+      console.log('Activities: Fetching from URL:', url)
+      console.log('Activities: Active household:', household?.id)
+      
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         setActivities(data)

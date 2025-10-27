@@ -6,7 +6,7 @@ import { createPrismaClient } from '@/lib/prisma-factory'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   let prisma = createPrismaClient()
   
   try {
@@ -17,17 +17,35 @@ export async function GET() {
     }
     
     const userId = (session.user as any).id
+    const { searchParams } = new URL(request.url)
+    const householdId = searchParams.get('householdId')
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
+    let household
+
+    if (householdId) {
+      // Use provided household ID if user has access
+      household = await prisma.household.findFirst({
+        where: {
+          id: householdId,
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
-      }
-    })
+      })
+    } else {
+      // Get user's first household
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      })
+    }
 
     if (!household) {
       return NextResponse.json([])

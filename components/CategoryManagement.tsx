@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, CubeIcon, ChevronRightIcon, TrashIcon, PencilIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+import { useHousehold } from './HouseholdProvider'
 import { translateCategoryName } from '@/lib/location-translations'
 
 interface Category {
@@ -20,6 +21,7 @@ interface Category {
 
 export default function CategoryManagement() {
   const { t, currentLanguage } = useLanguage()
+  const { household } = useHousehold()
   const [categories, setCategories] = useState<Category[]>([])
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -43,11 +45,18 @@ export default function CategoryManagement() {
 
   useEffect(() => {
     fetchCategories()
-  }, [])
+  }, [household?.id])
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories')
+      const params = new URLSearchParams()
+      if (household?.id) params.append('householdId', household.id)
+      
+      const url = `/api/categories${params.toString() ? '?' + params.toString() : ''}`
+      console.log('CategoryManagement: Fetching from URL:', url)
+      console.log('CategoryManagement: Active household:', household?.id)
+      
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         console.log('Raw categories data from API:', data)

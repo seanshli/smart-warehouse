@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { BellIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { useHousehold } from './HouseholdProvider'
 
 interface Notification {
   id: string
@@ -17,16 +18,24 @@ interface Notification {
 }
 
 export default function NotificationCenter() {
+  const { household } = useHousehold()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchNotifications()
-  }, [])
+  }, [household?.id])
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('/api/notifications')
+      const params = new URLSearchParams()
+      if (household?.id) params.append('householdId', household.id)
+      
+      const url = `/api/notifications${params.toString() ? '?' + params.toString() : ''}`
+      console.log('NotificationCenter: Fetching from URL:', url)
+      console.log('NotificationCenter: Active household:', household?.id)
+      
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         setNotifications(data)

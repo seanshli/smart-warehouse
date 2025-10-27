@@ -480,7 +480,7 @@ export async function GET(request: NextRequest) {
     const level3 = searchParams.get('level3')
 
     // Get user's household
-    const household = await prisma.household.findFirst({
+    let household = await prisma.household.findFirst({
       where: {
         members: {
           some: {
@@ -490,8 +490,35 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // If user has no household, create one automatically
     if (!household) {
-      return NextResponse.json([])
+      console.log('User has no household, creating default household...')
+      
+      // Get user info
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true, language: true }
+      })
+      
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+      
+      // Create default household
+      household = await prisma.household.create({
+        data: {
+          name: `${user.name || 'User'}'s Household`,
+          description: 'Your personal household inventory',
+          members: {
+            create: {
+              userId: userId,
+              role: 'OWNER'
+            }
+          }
+        }
+      })
+      
+      console.log('Created default household:', household.id)
     }
 
     // Build where clause

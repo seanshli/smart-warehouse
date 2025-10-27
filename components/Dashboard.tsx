@@ -631,14 +631,35 @@ function DashboardContent({
   const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {
       setLoading(true)
+      console.log('🔄 Dashboard: Starting fetchDashboardStats')
+      console.log('🔄 Dashboard: Household ID:', currentHousehold?.id)
+      console.log('🔄 Dashboard: Refresh trigger:', currentRefreshTrigger)
       
       // Fetch both dashboard stats and filtered activities
       const householdId = currentHousehold?.id || ''
       const bypassCache = (currentRefreshTrigger || 0) > 0 ? 'true' : 'false'
+      
+      console.log('🔄 Dashboard: Making API calls...')
+      console.log('🔄 Dashboard: Stats URL:', `/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`)
+      console.log('🔄 Dashboard: Activities URL:', `/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`)
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
       const [statsResponse, activitiesResponse] = await Promise.all([
-        fetch(`/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`),
-        fetch(`/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`)
+        fetch(`/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`, {
+          signal: controller.signal
+        }),
+        fetch(`/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`, {
+          signal: controller.signal
+        })
       ])
+      
+      clearTimeout(timeoutId)
+      console.log('🔄 Dashboard: API responses received')
+      console.log('🔄 Dashboard: Stats response status:', statsResponse.status)
+      console.log('🔄 Dashboard: Activities response status:', activitiesResponse.status)
       
       if (statsResponse.ok && activitiesResponse.ok) {
         const [statsData, activitiesData] = await Promise.all([
@@ -669,17 +690,32 @@ function DashboardContent({
         })
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error)
-      // Set default stats to prevent crashes
-      setStats({
-        totalItems: 0,
-        totalRooms: 0,
-        lowStockItems: 0,
-        householdMembers: 0,
-        recentActivities: []
-      })
+      console.error('❌ Dashboard: Error fetching dashboard stats:', error)
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('❌ Dashboard: API call timed out after 10 seconds')
+        // Set default stats to prevent crashes
+        setStats({
+          totalItems: 0,
+          totalRooms: 0,
+          lowStockItems: 0,
+          householdMembers: 0,
+          recentActivities: []
+        })
+      } else {
+        console.error('❌ Dashboard: API call failed:', error)
+        // Set default stats to prevent crashes
+        setStats({
+          totalItems: 0,
+          totalRooms: 0,
+          lowStockItems: 0,
+          householdMembers: 0,
+          recentActivities: []
+        })
+      }
     } finally {
       setLoading(false)
+      console.log('🔄 Dashboard: fetchDashboardStats completed, loading set to false')
     }
   }
 

@@ -657,6 +657,7 @@ function DashboardContent({
       // Guard against undefined household
       if (!currentHousehold || !currentHousehold.id) {
         console.log('🔄 Dashboard: Skipping API call - no valid household provided')
+        console.log('🔄 Dashboard: currentHousehold:', currentHousehold)
         setStats({
           totalItems: 0,
           totalRooms: 0,
@@ -790,10 +791,11 @@ function DashboardContent({
     // Only fetch stats if we have a valid household
     if (!household || !household.id) {
       console.log('🔄 Dashboard: Skipping fetchDashboardStats - no household available')
+      console.log('🔄 Dashboard: household:', household)
       return
     }
 
-    console.log('🔄 Dashboard: useEffect triggered with household:', household.id)
+    console.log('🔄 Dashboard: useEffect triggered with household:', household.id, household.name)
     fetchDashboardStats(household, refreshTrigger)
   }, [timeFilter, household?.id, refreshTrigger]) // Only re-fetch when these specific values change
 

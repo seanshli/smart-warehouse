@@ -59,9 +59,10 @@ export const authOptions: NextAuthOptions = {
         token.loginTime = Date.now()
         token.sessionId = Date.now().toString() // Unique session ID
         console.log('[auth] JWT: New session created for', user.email, 'sessionId:', token.sessionId)
+        return token
       }
       
-      // Check if session is expired (24 hours)
+      // For existing tokens, check if session is expired (24 hours)
       if (token.loginTime && Date.now() - (token.loginTime as number) > 24 * 60 * 60 * 1000) {
         console.log('[auth] JWT: Session expired for', token.id)
         return {} // Force re-authentication

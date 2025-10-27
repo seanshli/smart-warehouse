@@ -50,6 +50,12 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === '/') {
     try {
       const token = await getToken({ req: request })
+      console.log('[Middleware] Token check for root path:', {
+        hasToken: !!token,
+        tokenKeys: token ? Object.keys(token) : [],
+        tokenId: token?.id,
+        tokenEmail: token?.email
+      })
       
       // If no token, redirect to sign in
       if (!token || Object.keys(token).length === 0) {

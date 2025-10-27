@@ -192,6 +192,11 @@ export interface Translations {
   enterLocationManually: string
   coordinates: string
   enterFullAddressToAutoParse: string
+  createNewHousehold: string
+  enterHouseholdName: string
+  enterDescription: string
+  creating: string
+  create: string
   editCabinet: string
   updateCabinet: string
   deleteCabinet: string
@@ -641,6 +646,11 @@ const en: Translations = {
   enterLocationManually: 'Please enter location manually using the form above',
   coordinates: 'Coordinates',
   enterFullAddressToAutoParse: 'Enter full address to automatically parse into components',
+  createNewHousehold: 'Create New Household',
+  enterHouseholdName: 'Enter household name',
+  enterDescription: 'Enter description (optional)',
+  creating: 'Creating...',
+  create: 'Create',
   editCabinet: 'Edit Cabinet',
   updateCabinet: 'Update Cabinet',
   deleteCabinet: 'Delete Cabinet',
@@ -1090,6 +1100,11 @@ const zhTW: Translations = {
   enterLocationManually: '請使用上方表單手動輸入位置',
   coordinates: '座標',
   enterFullAddressToAutoParse: '輸入完整地址以自動解析為各個組件',
+  createNewHousehold: '創建新家庭',
+  enterHouseholdName: '輸入家庭名稱',
+  enterDescription: '輸入描述（可選）',
+  creating: '創建中...',
+  create: '創建',
   editCabinet: '編輯櫥櫃',
   updateCabinet: '更新櫥櫃',
   deleteCabinet: '刪除櫥櫃',
@@ -1548,6 +1563,11 @@ const zh: Translations = {
   enterLocationManually: '请使用上方表单手动输入位置',
   coordinates: '坐标',
   enterFullAddressToAutoParse: '输入完整地址以自动解析为各个组件',
+  createNewHousehold: '创建新家庭',
+  enterHouseholdName: '输入家庭名称',
+  enterDescription: '输入描述（可选）',
+  creating: '创建中...',
+  create: '创建',
   editCabinet: '编辑橱柜',
   updateCabinet: '更新橱柜',
   deleteCabinet: '删除橱柜',
@@ -2004,6 +2024,11 @@ const ja: Translations = {
   enterLocationManually: '上記のフォームを使用して手動で位置を入力してください',
   coordinates: '座標',
   enterFullAddressToAutoParse: '完全な住所を入力して自動的にコンポーネントに解析',
+  createNewHousehold: '新しい家庭を作成',
+  enterHouseholdName: '家庭名を入力',
+  enterDescription: '説明を入力（任意）',
+  creating: '作成中...',
+  create: '作成',
   editCabinet: 'キャビネットを編集',
   updateCabinet: 'キャビネットを更新',
   deleteCabinet: 'キャビネットを削除',

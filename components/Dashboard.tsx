@@ -34,13 +34,15 @@ import { HouseholdMemberManagement } from './HouseholdMemberManagement'
 import ItemsList from './ItemsList'
 import { useDeviceDetection } from './MobileLayout'
 import HouseholdSettings from './HouseholdSettings'
+import CreateHouseholdModal from './CreateHouseholdModal'
 
 
 function HouseholdSwitcher() {
   const { memberships, activeHouseholdId, setActiveHousehold, switching, error } = useHousehold()
   const { t } = useLanguage()
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
-  if (!memberships || memberships.length <= 1) return null
+  if (!memberships || memberships.length === 0) return null
 
   return (
     <div className="flex items-center space-x-2">
@@ -65,10 +67,26 @@ function HouseholdSwitcher() {
           </div>
         )}
       </div>
+      
+      {/* Create New Household Button */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/20 dark:text-primary-400 rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        title={t('createNewHousehold') || 'Create New Household'}
+      >
+        <PlusIcon className="h-3 w-3 mr-1" />
+        {t('createNewHousehold') || 'New'}
+      </button>
+      
       {error && (
         <div className="text-xs text-red-500 dark:text-red-400 max-w-xs truncate" title={error}>
           {error}
         </div>
+      )}
+
+      {/* Create Household Modal */}
+      {showCreateModal && (
+        <CreateHouseholdModal onClose={() => setShowCreateModal(false)} />
       )}
     </div>
   )

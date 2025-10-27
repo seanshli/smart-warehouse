@@ -124,10 +124,13 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       }))
       setMemberships(apiMemberships)
 
-      // Get preferred household ID from localStorage
-      let preferredId = null
+      // Get preferred household ID from localStorage or current state
+      let preferredId = activeHouseholdId
       if (typeof window !== 'undefined') {
-        preferredId = localStorage.getItem('activeHouseholdId')
+        const storedId = localStorage.getItem('activeHouseholdId')
+        if (storedId) {
+          preferredId = storedId
+        }
       }
 
       const active = selectActiveFrom(apiMemberships, preferredId)

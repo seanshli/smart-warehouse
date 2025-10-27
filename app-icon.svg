@@ -1,0 +1,48 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Orange background -->
+  <rect width="512" height="512" rx="80" fill="#FF6B35"/>
+  
+  <!-- House icon (white) -->
+  <g fill="white">
+    <!-- House base -->
+    <rect x="120" y="200" width="200" height="150" rx="8"/>
+    <!-- House roof -->
+    <path d="M100 200 L220 120 L340 200 Z"/>
+  </g>
+  
+  <!-- Checklist/Document (white with orange checkmarks) -->
+  <g>
+    <!-- Document background -->
+    <rect x="280" y="180" width="180" height="220" rx="12" fill="white"/>
+    
+    <!-- Checklist lines -->
+    <g stroke="#FF6B35" stroke-width="3" fill="none">
+      <line x1="300" y1="220" x2="420" y2="220"/>
+      <line x1="300" y1="250" x2="420" y2="250"/>
+      <line x1="300" y1="280" x2="420" y2="280"/>
+    </g>
+    
+    <!-- Orange checkmarks -->
+    <g fill="#FF6B35">
+      <!-- Checkmark 1 -->
+      <path d="M300 210 L310 220 L320 210 L315 205 L310 210 Z"/>
+      <!-- Checkmark 2 -->
+      <path d="M300 240 L310 250 L320 240 L315 235 L310 240 Z"/>
+      <!-- Checkmark 3 -->
+      <path d="M300 270 L310 280 L320 270 L315 265 L310 270 Z"/>
+    </g>
+  </g>
+  
+  <!-- Cloud with upload arrow (white with orange arrow) -->
+  <g>
+    <!-- Cloud background -->
+    <ellipse cx="220" cy="120" rx="60" ry="35" fill="white"/>
+    <ellipse cx="200" cy="120" rx="40" ry="25" fill="white"/>
+    <ellipse cx="240" cy="120" rx="40" ry="25" fill="white"/>
+    
+    <!-- Upload arrow (orange) -->
+    <g fill="#FF6B35">
+      <path d="M220 100 L230 110 L225 110 L225 115 L215 115 L215 110 L210 110 Z"/>
+    </g>
+  </g>
+</svg>

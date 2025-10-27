@@ -41,10 +41,11 @@ export default function AdminItemsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/items${q ? `?q=${encodeURIComponent(q)}` : ''}`, {
+      const res = await fetch(`/api/admin/items${q ? `?q=${encodeURIComponent(q)}` : ''}?t=${Date.now()}`, {
         headers: {
           'Accept-Language': currentLanguage,
         },
+        cache: 'no-store'
       })
       if (res.ok) {
         const data = await res.json()
@@ -297,12 +298,12 @@ export default function AdminItemsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                     {t('photo')}
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-1/3"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-2/5"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center space-x-1">
@@ -314,7 +315,7 @@ export default function AdminItemsPage() {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-24"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28"
                     onClick={() => handleSort('quantity')}
                   >
                     <div className="flex items-center space-x-1">
@@ -326,7 +327,7 @@ export default function AdminItemsPage() {
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-40"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-48"
                     onClick={() => handleSort('household')}
                   >
                     <div className="flex items-center space-x-1">
@@ -336,15 +337,15 @@ export default function AdminItemsPage() {
                       )}
                     </div>
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                     {t('location')}
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                     {t('category')}
                   </th>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-28"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-32"
                     onClick={() => handleSort('createdAt')}
                   >
                     <div className="flex items-center space-x-1">

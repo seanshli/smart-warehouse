@@ -65,7 +65,15 @@ export async function GET(request: NextRequest) {
       } : null
     }))
 
-    return NextResponse.json({ items: translatedItems })
+    const response = NextResponse.json({ items: translatedItems })
+    
+    // Add cache-busting headers
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
+    return response
 
   } catch (error) {
     console.error('Error fetching admin items:', error)

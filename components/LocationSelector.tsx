@@ -85,7 +85,6 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
   const [marker, setMarker] = useState<any>(null)
   const [isMapInitialized, setIsMapInitialized] = useState(false)
   const mapRef = useRef<HTMLDivElement>(null)
-  const [cityLocked, setCityLocked] = useState(false)
 
   // Initialize Google Maps
   useEffect(() => {
@@ -120,7 +119,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
           // Use Google Geocoding to get address
           const geocoder = new window.google.maps.Geocoder()
           geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-            if (status === 'OK' && results[0]) {
+            if (status === 'OK' && results && results[0]) {
               const result = results[0]
               const addressComponents = result.address_components
               
@@ -188,11 +187,9 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
       updatedLocation.city = ''
       updatedLocation.district = ''
       updatedLocation.community = ''
-      setCityLocked(false)
     } else if (field === 'city') {
       updatedLocation.district = ''
       updatedLocation.community = ''
-      setCityLocked(true) // Lock city after selection
     } else if (field === 'district') {
       updatedLocation.community = ''
     }
@@ -273,7 +270,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
             <select
               value={value.city || ''}
               onChange={(e) => handleLocationChange('city', e.target.value)}
-              disabled={disabled || cityLocked}
+              disabled={disabled}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">{t('selectCity')}</option>
@@ -281,15 +278,6 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
                 <option key={city} value={city}>{city}</option>
               ))}
             </select>
-            {cityLocked && (
-              <button
-                type="button"
-                onClick={() => setCityLocked(false)}
-                className="mt-1 text-xs text-primary-600 hover:text-primary-800"
-              >
-                {t('unlockCity')}
-              </button>
-            )}
           </div>
         )}
 

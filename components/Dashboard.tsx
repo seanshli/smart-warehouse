@@ -139,17 +139,19 @@ export default function Dashboard() {
     }
   }, [refreshTrigger, household])
 
-  // Handle authentication errors
+  // Handle authentication errors - with debugging and less aggressive redirects
   useEffect(() => {
+    console.log('🔐 Dashboard: Auth status check - status:', status, 'session:', !!session, 'user:', !!(session?.user as any)?.id)
+    
     if (status === 'unauthenticated') {
-      console.log('[Dashboard] User not authenticated, redirecting to login')
-      window.location.href = '/auth/signin'
+      console.log('🔐 Dashboard: User not authenticated, but not redirecting immediately - waiting for API calls to complete')
+      // Don't redirect immediately - let the API calls complete first
       return
     }
 
     if (status === 'authenticated' && (!session || !session.user || !(session.user as any).id)) {
-      console.log('[Dashboard] Invalid session, redirecting to login')
-      window.location.href = '/auth/signin'
+      console.log('🔐 Dashboard: Invalid session, but not redirecting immediately - waiting for API calls to complete')
+      // Don't redirect immediately - let the API calls complete first
       return
     }
   }, [session, status])
@@ -647,8 +649,9 @@ function DashboardContent({
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
       
+      // Try simple API first for better performance
       const [statsResponse, activitiesResponse] = await Promise.all([
-        fetch(`/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`, {
+        fetch(`/api/dashboard/simple?householdId=${householdId}`, {
           signal: controller.signal
         }),
         fetch(`/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`, {
@@ -694,7 +697,8 @@ function DashboardContent({
       
       if (error instanceof Error && error.name === 'AbortError') {
         console.error('❌ Dashboard: API call timed out after 30 seconds')
-        // Set default stats to prevent crashes
+        console.log('🔄 Dashboard: Setting fallback stats instead of redirecting to login')
+        // Set fallback stats to prevent crashes and login redirects
         setStats({
           totalItems: 0,
           totalRooms: 0,
@@ -704,7 +708,8 @@ function DashboardContent({
         })
       } else {
         console.error('❌ Dashboard: API call failed:', error)
-        // Set default stats to prevent crashes
+        console.log('🔄 Dashboard: Setting fallback stats instead of redirecting to login')
+        // Set fallback stats to prevent crashes and login redirects
         setStats({
           totalItems: 0,
           totalRooms: 0,

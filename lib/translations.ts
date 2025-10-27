@@ -11,6 +11,7 @@ export interface Translations {
   items: string
   allItems: string
   duplicates: string
+  householdSettings: string
   
   // Admin
   adminPanel: string
@@ -426,6 +427,7 @@ const en: Translations = {
   activities: 'Activities',
   notifications: 'Notifications',
   members: 'Members',
+  householdSettings: 'Household Settings',
   items: 'Items',
   allItems: 'All Items',
   duplicates: 'Duplicates',
@@ -848,6 +850,7 @@ const zhTW: Translations = {
   activities: '活動',
   notifications: '通知',
   members: '成員',
+  householdSettings: '家庭設定',
   items: '物品',
   allItems: '所有物品',
   duplicates: '重複項目',
@@ -1280,6 +1283,7 @@ const zh: Translations = {
   activities: '活动',
   notifications: '通知',
   members: '成员',
+  householdSettings: '家庭设置',
   items: '物品',
   allItems: '所有物品',
   duplicates: '重复项目',
@@ -1710,6 +1714,7 @@ const ja: Translations = {
   activities: 'アクティビティ',
   notifications: '通知',
   members: 'メンバー',
+  householdSettings: '家庭設定',
   items: 'アイテム',
   allItems: 'すべてのアイテム',
   duplicates: '重複アイテム',

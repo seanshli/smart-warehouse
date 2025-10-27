@@ -33,6 +33,7 @@ import { useHousehold, PermissionGate } from './HouseholdProvider'
 import { HouseholdMemberManagement } from './HouseholdMemberManagement'
 import ItemsList from './ItemsList'
 import { useDeviceDetection } from './MobileLayout'
+import HouseholdSettings from './HouseholdSettings'
 
 
 function HouseholdSwitcher() {
@@ -185,6 +186,7 @@ export default function Dashboard() {
     { id: 'activities', name: t('activities'), icon: ClockIcon },
     { id: 'notifications', name: t('notifications'), icon: BellIcon },
     { id: 'members', name: t('members'), icon: UsersIcon, permission: 'canManageMembers' },
+    { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
   ]
 
   return (
@@ -407,6 +409,10 @@ export default function Dashboard() {
                {activeTab === 'notifications' && <NotificationCenter />}
                {activeTab === 'members' && household && (
                  <HouseholdMemberManagement householdId={household.id} />
+               )}
+               
+               {activeTab === 'household' && (
+                 <HouseholdSettings />
                )}
              </main>
 

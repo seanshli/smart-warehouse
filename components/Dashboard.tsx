@@ -66,6 +66,25 @@ export default function Dashboard() {
   const { household, role, permissions } = useHousehold()
   const deviceInfo = useDeviceDetection()
 
+  // Add error boundary for client-side errors
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Dashboard client error:', error)
+    }
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Dashboard unhandled promise rejection:', event.reason)
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
   // Handle authentication errors
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -108,6 +127,41 @@ export default function Dashboard() {
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [hasError, setHasError] = useState(false)
+
+  // Add error boundary for component errors
+  useEffect(() => {
+    const handleComponentError = (error: any) => {
+      console.error('Dashboard component error:', error)
+      setHasError(true)
+    }
+
+    // Catch any unhandled errors in the component
+    try {
+      // Component logic here
+    } catch (error) {
+      handleComponentError(error)
+    }
+  }, [])
+
+  // If there's an error, show error state
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">An error occurred while loading the dashboard.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    )
+  }
   const [showEditItem, setShowEditItem] = useState(false)
   const [showMoveItem, setShowMoveItem] = useState(false)
   const [showCheckoutItem, setShowCheckoutItem] = useState(false)

@@ -1,7 +1,11 @@
+'use client'
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { useState, useEffect } from 'react'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/Dashboard'), {
@@ -41,36 +45,75 @@ function CacheClearer() {
   return null
 }
 
-export default async function Home() {
-  try {
-    const session = await getServerSession(authOptions)
+// Client-side only component to prevent hydration issues
+function ClientHome() {
+  const [mounted, setMounted] = useState(false)
+  const [session, setSession] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-    console.log('[Home] Session check:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      hasId: !!(session?.user as any)?.id,
-      email: session?.user?.email
-    })
-
-    // Always redirect to sign-in if not authenticated
-    if (!session || !session.user || !(session.user as any).id) {
-      console.log('[Home] No valid session, redirecting to login')
-      redirect('/auth/signin')
-    }
-
-    console.log('[Home] Valid session for user:', session.user.email)
+  useEffect(() => {
+    setMounted(true)
     
+    // Check session on client side
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session')
+        if (response.ok) {
+          const sessionData = await response.json()
+          setSession(sessionData)
+        }
+      } catch (error) {
+        console.error('Session check error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    checkSession()
+  }, [])
+
+  if (!mounted || loading) {
     return (
-      <div className="min-h-screen">
-        <CacheClearer />
-        <Dashboard />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     )
-  } catch (error) {
-    console.error('[Home] Error in Home component:', error)
-    // If there's any error, redirect to signin to clear any corrupted state
-    redirect('/auth/signin')
   }
+
+  // Check authentication on client side
+  if (!session || !session.user || !session.user.id) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">🔒</div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Authentication Required</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the dashboard.</p>
+          <button
+            onClick={() => window.location.href = '/auth/signin'}
+            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen">
+      <CacheClearer />
+      <ErrorBoundary>
+        <Dashboard />
+      </ErrorBoundary>
+    </div>
+  )
+}
+
+export default function Home() {
+  return <ClientHome />
 }
 
 

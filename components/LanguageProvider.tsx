@@ -31,8 +31,10 @@ interface LanguageProviderProps {
 export default function LanguageProvider({ children, initialLanguage }: LanguageProviderProps) {
   const [currentLanguage, setCurrentLanguageState] = useState<string>('en')
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     // Always load language preference on mount
     if (typeof window !== 'undefined') {
       loadUserLanguagePreference()
@@ -119,9 +121,25 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     currentLanguage,
     setLanguage,
     supportedLanguages: SUPPORTED_LANGUAGES,
-    isLoading,
+    isLoading: !mounted || isLoading,
     t,
     translations
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <LanguageContext.Provider value={{
+        currentLanguage: 'en',
+        setLanguage: () => {},
+        supportedLanguages: SUPPORTED_LANGUAGES,
+        isLoading: true,
+        t: (key: string) => key,
+        translations: {} as any
+      }}>
+        {children}
+      </LanguageContext.Provider>
+    )
   }
 
   return (

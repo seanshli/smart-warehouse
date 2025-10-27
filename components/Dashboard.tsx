@@ -642,22 +642,25 @@ function DashboardContent({
       const bypassCache = (currentRefreshTrigger || 0) > 0 ? 'true' : 'false'
       
       console.log('🔄 Dashboard: Making API calls...')
-      console.log('🔄 Dashboard: Stats URL:', `/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`)
-      console.log('🔄 Dashboard: Activities URL:', `/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`)
+      console.log('🔄 Dashboard: Stats URL:', `/api/dashboard/simple?householdId=${householdId}`)
+      console.log('🔄 Dashboard: Activities URL:', 'SKIPPED (using simple API only)')
       
-      // Add timeout to prevent hanging (increased for slow database)
+      // Add timeout to prevent hanging (reduced since we're only calling simple API)
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
       
-      // Try simple API first for better performance
-      const [statsResponse, activitiesResponse] = await Promise.all([
-        fetch(`/api/dashboard/simple?householdId=${householdId}`, {
-          signal: controller.signal
-        }),
-        fetch(`/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`, {
-          signal: controller.signal
-        })
-      ])
+      // Use only simple API for maximum performance - no activities for now
+      console.log('🔄 Dashboard: Using SIMPLE API only for better performance')
+      const statsResponse = await fetch(`/api/dashboard/simple?householdId=${householdId}`, {
+        signal: controller.signal
+      })
+      
+      // Skip activities API for now to prevent timeouts
+      const activitiesResponse = { 
+        ok: true, 
+        status: 200,
+        json: () => Promise.resolve([]) 
+      } as Response
       
       clearTimeout(timeoutId)
       console.log('🔄 Dashboard: API responses received')
@@ -696,7 +699,7 @@ function DashboardContent({
       console.error('❌ Dashboard: Error fetching dashboard stats:', error)
       
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('❌ Dashboard: API call timed out after 30 seconds')
+        console.error('❌ Dashboard: API call timed out after 15 seconds')
         console.log('🔄 Dashboard: Setting fallback stats instead of redirecting to login')
         // Set fallback stats to prevent crashes and login redirects
         setStats({

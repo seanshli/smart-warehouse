@@ -12,10 +12,15 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
   const [isTablet, setIsTablet] = useState(false)
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait')
   const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'unknown'>('unknown')
+  const [mounted, setMounted] = useState(false)
   const { t } = useLanguage()
 
   useEffect(() => {
+    setMounted(true)
+    
     const checkDevice = () => {
+      if (typeof window === 'undefined') return
+      
       const userAgent = navigator.userAgent.toLowerCase()
       const isIOS = /iphone|ipad|ipod/.test(userAgent)
       const isAndroid = /android/.test(userAgent)
@@ -81,6 +86,15 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
     return classes
   }
 
+  // Prevent hydration mismatch by not rendering device-specific content until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen-safe">
+        {children}
+      </div>
+    )
+  }
+
   return (
     <div className={getLayoutClasses()}>
       {/* Device info for debugging - remove in production */}
@@ -89,7 +103,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
           <div>Device: {deviceType}</div>
           <div>Size: {isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'}</div>
           <div>Orientation: {orientation}</div>
-          <div>Screen: {window.innerWidth}x{window.innerHeight}</div>
+          <div>Screen: {typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : '0x0'}</div>
         </div>
       )}
       
@@ -109,9 +123,14 @@ export function useDeviceDetection() {
     screenWidth: 0,
     screenHeight: 0,
   })
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+    
     const updateDeviceInfo = () => {
+      if (typeof window === 'undefined') return
+      
       const userAgent = navigator.userAgent.toLowerCase()
       const isIOS = /iphone|ipad|ipod/.test(userAgent)
       const isAndroid = /android/.test(userAgent)
@@ -139,6 +158,19 @@ export function useDeviceDetection() {
       window.removeEventListener('orientationchange', updateDeviceInfo)
     }
   }, [])
+
+  // Return default values during SSR to prevent hydration mismatch
+  if (!mounted) {
+    return {
+      isMobile: false,
+      isTablet: false,
+      isDesktop: true,
+      orientation: 'portrait' as 'portrait' | 'landscape',
+      deviceType: 'unknown' as 'ios' | 'android' | 'unknown',
+      screenWidth: 1024,
+      screenHeight: 768,
+    }
+  }
 
   return deviceInfo
 }

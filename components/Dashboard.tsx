@@ -637,8 +637,21 @@ function DashboardContent({
       console.log('🔄 Dashboard: Household ID:', currentHousehold?.id)
       console.log('🔄 Dashboard: Refresh trigger:', currentRefreshTrigger)
       
+      // Guard against undefined household
+      if (!currentHousehold || !currentHousehold.id) {
+        console.log('🔄 Dashboard: Skipping API call - no valid household provided')
+        setStats({
+          totalItems: 0,
+          totalRooms: 0,
+          lowStockItems: 0,
+          householdMembers: 0,
+          recentActivities: []
+        })
+        return
+      }
+      
       // Fetch both dashboard stats and filtered activities
-      const householdId = currentHousehold?.id || ''
+      const householdId = currentHousehold.id
       const bypassCache = (currentRefreshTrigger || 0) > 0 ? 'true' : 'false'
       
       console.log('🔄 Dashboard: Making API calls...')
@@ -745,13 +758,25 @@ function DashboardContent({
     const currentHousehold = household
     const currentRefreshTrigger = refreshTrigger
     setHouseholdChangeDetected(false)
-    if (currentHousehold && currentRefreshTrigger !== undefined) {
-      fetchDashboardStats(currentHousehold, currentRefreshTrigger)
+    
+    if (!currentHousehold || !currentHousehold.id) {
+      console.log('🔄 Dashboard: Cannot refresh - no valid household available')
+      return
     }
+    
+    console.log('🔄 Dashboard: Manual refresh triggered for household:', currentHousehold.id)
+    fetchDashboardStats(currentHousehold, currentRefreshTrigger)
   }
 
   useEffect(() => {
+    // Only fetch stats if we have a valid household
+    if (!household || !household.id) {
+      console.log('🔄 Dashboard: Skipping fetchDashboardStats - no household available')
+      return
+    }
+
     try {
+      console.log('🔄 Dashboard: useEffect triggered with household:', household.id)
       fetchDashboardStats(household, refreshTrigger)
       
       // Check for household changes every 30 seconds
@@ -976,7 +1001,14 @@ function DashboardContent({
                     {t('recentActivity')}
                   </h3>
                   <button
-                    onClick={() => fetchDashboardStats(household, refreshTrigger)}
+                    onClick={() => {
+                      if (household && household.id) {
+                        console.log('🔄 Dashboard: Refresh button clicked for household:', household.id)
+                        fetchDashboardStats(household, refreshTrigger)
+                      } else {
+                        console.log('🔄 Dashboard: Cannot refresh - no valid household available')
+                      }
+                    }}
                     className="text-sm text-primary-600 hover:text-primary-700"
                   >
                     {t('refresh')}

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { signIn, getSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { 
   ShieldCheckIcon,
@@ -16,6 +16,39 @@ export default function AdminSignIn() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    // Clear any existing sessions on page load
+    const clearExistingSession = async () => {
+      try {
+        // Clear all browser storage
+        if (typeof window !== 'undefined') {
+          localStorage.clear()
+          sessionStorage.clear()
+          
+          // Clear any cached data
+          if ('caches' in window) {
+            const cacheNames = await caches.keys()
+            await Promise.all(
+              cacheNames.map(cacheName => caches.delete(cacheName))
+            )
+          }
+          
+          // Clear cookies
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
+        }
+        
+        // Force sign out any existing session
+        await signOut({ redirect: false })
+      } catch (error) {
+        console.log('Session clearing completed')
+      }
+    }
+    
+    clearExistingSession()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

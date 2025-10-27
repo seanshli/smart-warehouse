@@ -18,30 +18,23 @@ export default function SignIn() {
     const clearExistingSession = async () => {
       try {
         // Clear all browser storage
-        localStorage.clear()
-        sessionStorage.clear()
-        
-        // Clear any cached data
-        if ('caches' in window) {
-          const cacheNames = await caches.keys()
-          await Promise.all(
-            cacheNames.map(cacheName => caches.delete(cacheName))
-          )
+        if (typeof window !== 'undefined') {
+          localStorage.clear()
+          sessionStorage.clear()
+          
+          // Clear any cached data
+          if ('caches' in window) {
+            const cacheNames = await caches.keys()
+            await Promise.all(
+              cacheNames.map(cacheName => caches.delete(cacheName))
+            )
+          }
+          
+          // Clear cookies
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
         }
-        
-        // Clear cookies
-        document.cookie.split(";").forEach(function(c) { 
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-        });
-        
-        // Force sign out any existing session
-        await signIn('credentials', { 
-          email: '', 
-          password: '', 
-          redirect: false 
-        }).catch(() => {
-          // Ignore errors - we're just clearing the session
-        })
       } catch (error) {
         console.log('Session clearing completed')
       }

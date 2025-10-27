@@ -30,11 +30,8 @@ export default function SignOut() {
         // Sign out with NextAuth - force complete logout
         await signOut({ 
           callbackUrl: '/auth/signin',
-          redirect: false 
+          redirect: true 
         })
-        
-        // Force a hard refresh to clear all caches
-        window.location.href = '/auth/signin'
       } catch (error) {
         console.error('Sign out error:', error)
         // Force redirect even if there's an error

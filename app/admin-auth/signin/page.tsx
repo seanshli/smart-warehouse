@@ -15,9 +15,24 @@ export default function AdminSignIn() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [sessionCleared, setSessionCleared] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    // Check if already logged in as admin
+    const checkExistingSession = async () => {
+      try {
+        const session = await getSession()
+        if (session?.user && (session.user as any).isAdmin) {
+          console.log('[Admin] Already logged in as admin, redirecting to admin dashboard')
+          router.push('/admin')
+          return
+        }
+      } catch (error) {
+        console.log('[Admin] Session check error:', error)
+      }
+    }
+
     // Clear any existing sessions on page load
     const clearExistingSession = async () => {
       try {
@@ -63,22 +78,21 @@ export default function AdminSignIn() {
         }
         
         console.log('[Admin] Session clearing completed')
-        
-        // Force reload to ensure clean state
-        setTimeout(() => {
-          window.location.reload()
-        }, 100)
+        setSessionCleared(true)
       } catch (error) {
         console.log('[Admin] Session clearing completed with errors:', error)
-        // Force reload even if there's an error
-        setTimeout(() => {
-          window.location.reload()
-        }, 100)
+        setSessionCleared(true)
       }
     }
     
-    clearExistingSession()
-  }, [])
+    // Clear sessions first, then check if already logged in
+    clearExistingSession().then(() => {
+      // Wait a bit for session clearing to complete
+      setTimeout(() => {
+        checkExistingSession()
+      }, 500)
+    })
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,6 +127,20 @@ export default function AdminSignIn() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while session is being cleared
+  if (!sessionCleared) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Clearing existing sessions...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

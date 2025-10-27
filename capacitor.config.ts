@@ -35,7 +35,7 @@ const config: CapacitorConfig = {
       permissions: ['location']
     },
     GoogleMaps: {
-      apiKey: process.env.GOOGLE_MAPS_API_KEY || ''
+      apiKey: process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyAHSc802preQitVIaas3o0k8RbLxteSlQQ'
     }
   }
 };

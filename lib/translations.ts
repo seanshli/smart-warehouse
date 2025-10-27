@@ -172,7 +172,6 @@ export interface Translations {
   district: string
   community: string
   streetAddress: string
-  buildingAddress: string
   apartmentNo: string
   telephone: string
   fullAddress: string
@@ -181,7 +180,6 @@ export interface Translations {
   selectDistrict: string
   enterCommunity: string
   enterStreetAddress: string
-  enterBuildingAddress: string
   enterApartmentNo: string
   enterTelephone: string
   completeAddress: string
@@ -622,7 +620,6 @@ const en: Translations = {
   district: 'District',
   community: 'Community/Neighborhood',
   streetAddress: 'Street Address',
-  buildingAddress: 'Building Address',
   apartmentNo: 'Apartment/Building No.',
   telephone: 'Telephone',
   fullAddress: 'Full Address',
@@ -631,7 +628,6 @@ const en: Translations = {
   selectDistrict: 'Select District',
   enterCommunity: 'Enter community or neighborhood',
   enterStreetAddress: 'Enter street address',
-  enterBuildingAddress: 'Enter building address',
   enterApartmentNo: 'e.g., 123, Building A',
   enterTelephone: 'Enter telephone number',
   completeAddress: 'Complete address',
@@ -1072,7 +1068,6 @@ const zhTW: Translations = {
   district: '區域',
   community: '社區/鄰里',
   streetAddress: '街道地址',
-  buildingAddress: '建築物地址',
   apartmentNo: '公寓/建築物號碼',
   telephone: '電話',
   fullAddress: '完整地址',
@@ -1081,7 +1076,6 @@ const zhTW: Translations = {
   selectDistrict: '選擇區域',
   enterCommunity: '輸入社區或鄰里',
   enterStreetAddress: '輸入街道地址',
-  enterBuildingAddress: '輸入建築物地址',
   enterApartmentNo: '例如：123號，A棟',
   enterTelephone: '輸入電話號碼',
   completeAddress: '完整地址',
@@ -1531,7 +1525,6 @@ const zh: Translations = {
   district: '区域',
   community: '社区/邻里',
   streetAddress: '街道地址',
-  buildingAddress: '建筑物地址',
   apartmentNo: '公寓/建筑物号码',
   telephone: '电话',
   fullAddress: '完整地址',
@@ -1540,7 +1533,6 @@ const zh: Translations = {
   selectDistrict: '选择区域',
   enterCommunity: '输入社区或邻里',
   enterStreetAddress: '输入街道地址',
-  enterBuildingAddress: '输入建筑物地址',
   enterApartmentNo: '例如：123号，A栋',
   enterTelephone: '输入电话号码',
   completeAddress: '完整地址',
@@ -1988,7 +1980,6 @@ const ja: Translations = {
   district: '地区',
   community: 'コミュニティ/近隣',
   streetAddress: '住所',
-  buildingAddress: '建物住所',
   apartmentNo: 'アパート/建物番号',
   telephone: '電話',
   fullAddress: '完全な住所',
@@ -1997,7 +1988,6 @@ const ja: Translations = {
   selectDistrict: '地区を選択',
   enterCommunity: 'コミュニティまたは近隣を入力',
   enterStreetAddress: '住所を入力',
-  enterBuildingAddress: '建物住所を入力',
   enterApartmentNo: '例：123号、A棟',
   enterTelephone: '電話番号を入力',
   completeAddress: '完全な住所',

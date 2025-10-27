@@ -59,7 +59,6 @@ export default function HouseholdSettings() {
     apartmentNo: '',
     address: '',
     streetAddress: '',
-    buildingAddress: '',
     telephone: '',
     latitude: null as number | null,
     longitude: null as number | null
@@ -91,7 +90,6 @@ export default function HouseholdSettings() {
         apartmentNo: data.apartmentNo || '',
         address: data.address || '',
         streetAddress: data.streetAddress || '',
-        buildingAddress: data.buildingAddress || '',
         telephone: data.telephone || '',
         latitude: data.latitude,
         longitude: data.longitude
@@ -316,7 +314,9 @@ export default function HouseholdSettings() {
                     apartmentNo: formData.apartmentNo,
                     latitude: formData.latitude || undefined,
                     longitude: formData.longitude || undefined,
-                    address: formData.address
+                    address: formData.address,
+                    streetAddress: formData.streetAddress,
+                    telephone: formData.telephone
                   }}
                   onChange={handleLocationSelect}
                 />

@@ -84,24 +84,25 @@ export async function PATCH(
       apartmentNo,
       address,
       streetAddress,
-      buildingAddress,
       telephone,
       latitude,
       longitude
     } = body
 
-    // Verify user has admin access to this household
+    // Verify user has admin or owner access to this household
     const membership = await prisma.householdMember.findFirst({
       where: {
         householdId: householdId,
         userId: userId,
-        role: 'ADMIN'
+        role: {
+          in: ['ADMIN', 'OWNER']
+        }
       }
     })
 
     if (!membership) {
       return NextResponse.json({ 
-        error: 'Access denied. Only household administrators can modify household information.' 
+        error: 'Access denied. Only household administrators and owners can modify household information.' 
       }, { status: 403 })
     }
 
@@ -118,7 +119,6 @@ export async function PATCH(
         apartmentNo: apartmentNo?.trim() || null,
         address: address?.trim() || null,
         streetAddress: streetAddress?.trim() || null,
-        buildingAddress: buildingAddress?.trim() || null,
         telephone: telephone?.trim() || null,
         latitude: latitude || null,
         longitude: longitude || null

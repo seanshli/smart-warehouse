@@ -13,7 +13,6 @@ interface LocationData {
   longitude?: number
   address?: string
   streetAddress?: string
-  buildingAddress?: string
   telephone?: string
 }
 
@@ -316,7 +315,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
           />
         </div>
 
-        {/* Street Address */}
+        {/* Street/Building Address */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t('streetAddress')}
@@ -327,21 +326,6 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
             onChange={(e) => handleLocationChange('streetAddress', e.target.value)}
             disabled={disabled}
             placeholder={t('enterStreetAddress')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-          />
-        </div>
-
-        {/* Building Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('buildingAddress')}
-          </label>
-          <input
-            type="text"
-            value={value.buildingAddress || ''}
-            onChange={(e) => handleLocationChange('buildingAddress', e.target.value)}
-            disabled={disabled}
-            placeholder={t('enterBuildingAddress')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>

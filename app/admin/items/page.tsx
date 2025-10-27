@@ -299,7 +299,7 @@ export default function AdminItemsPage() {
                 <tr>
                   <th 
                     scope="col" 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 w-1/3"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center space-x-1">
@@ -339,7 +339,7 @@ export default function AdminItemsPage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t('category')}
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                     {t('photo')}
                   </th>
                   <th 
@@ -411,7 +411,7 @@ export default function AdminItemsPage() {
                             <img 
                               src={item.imageUrl} 
                               alt={item.name}
-                              className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                              className="w-20 h-20 rounded-lg object-cover border border-gray-200"
                               onError={(e) => {
                                 // If image fails to load, show placeholder
                                 const target = e.target as HTMLImageElement
@@ -425,8 +425,8 @@ export default function AdminItemsPage() {
                                 }
                               }}
                             />
-                            <div className="placeholder hidden w-16 h-16 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-8 w-8 text-gray-400" />
+                            <div className="placeholder hidden w-20 h-20 bg-gray-100 rounded-lg items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-10 w-10 text-gray-400" />
                             </div>
                             <button
                               onClick={() => handleQuickPhoto(item.id)}
@@ -438,8 +438,8 @@ export default function AdminItemsPage() {
                           </div>
                         ) : (
                           <div className="flex items-center space-x-2">
-                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                              <PhotoIcon className="h-8 w-8 text-gray-400" />
+                            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                              <PhotoIcon className="h-10 w-10 text-gray-400" />
                             </div>
                             <button
                               onClick={() => handleQuickPhoto(item.id)}

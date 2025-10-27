@@ -6,6 +6,14 @@ import dynamic from 'next/dynamic'
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/Dashboard'), {
   ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>
+  ),
 })
 
 export default async function Home() {
@@ -25,7 +33,14 @@ export default async function Home() {
   }
 
   console.log('[Home] Valid session for user:', session.user.email)
-  return <Dashboard />
+  
+  // Wrap Dashboard in error boundary to prevent client-side errors
+  try {
+    return <Dashboard />
+  } catch (error) {
+    console.error('[Home] Dashboard error:', error)
+    redirect('/auth/signin')
+  }
 }
 
 

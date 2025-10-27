@@ -47,15 +47,21 @@ export async function middleware(request: NextRequest) {
 
   // Handle root path specially - always check authentication
   if (request.nextUrl.pathname === '/') {
-    const token = await getToken({ req: request })
-    
-    // If no token, redirect to sign in
-    if (!token || Object.keys(token).length === 0) {
+    try {
+      const token = await getToken({ req: request })
+      
+      // If no token, redirect to sign in
+      if (!token || Object.keys(token).length === 0) {
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      }
+      
+      // If authenticated, allow through to page.tsx
+      return NextResponse.next()
+    } catch (error) {
+      console.error('[Middleware] Root path token error:', error)
+      // If token retrieval fails, redirect to signin
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
-    
-    // If authenticated, allow through to page.tsx
-    return NextResponse.next()
   }
   
   // Check authentication for all other routes

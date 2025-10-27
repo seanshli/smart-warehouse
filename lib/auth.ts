@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 hours
-    updateAge: 0, // Don't update session age automatically
+    updateAge: 24 * 60 * 60, // Update session age every 24 hours
   },
   // Disable session persistence across browser sessions
   jwt: {

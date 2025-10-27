@@ -22,7 +22,12 @@ export default function AdminSignIn() {
     // Check if already logged in as admin
     const checkExistingSession = async () => {
       try {
+        // Wait a bit for session clearing to complete
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
         const session = await getSession()
+        console.log('[Admin] Session check result:', { hasSession: !!session, user: session?.user, isAdmin: (session?.user as any)?.isAdmin })
+        
         if (session?.user && (session.user as any).isAdmin) {
           console.log('[Admin] Already logged in as admin, redirecting to admin dashboard')
           router.push('/admin')

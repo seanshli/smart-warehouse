@@ -23,26 +23,40 @@ export async function POST() {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 
-    // Find duplicate households by name
+    // Find duplicate households by name AND owner (first admin member)
     const households = await prisma.household.findMany({
-      select: { id: true, name: true, createdAt: true }
+      select: { 
+        id: true, 
+        name: true, 
+        createdAt: true,
+        members: {
+          where: { role: 'ADMIN' },
+          select: { userId: true, user: { select: { email: true } } },
+          take: 1
+        }
+      }
     })
 
-    const nameGroups = households.reduce((acc, household) => {
+    // Group by name + owner email combination
+    const nameOwnerGroups = households.reduce((acc, household) => {
       const name = household.name.toLowerCase().trim()
-      if (!acc[name]) {
-        acc[name] = []
+      const ownerEmail = household.members[0]?.user?.email || 'unknown'
+      const key = `${name}|${ownerEmail}`
+      
+      if (!acc[key]) {
+        acc[key] = []
       }
-      acc[name].push(household)
+      acc[key].push(household)
       return acc
     }, {} as Record<string, any[]>)
 
-    const duplicates = Object.entries(nameGroups)
-      .filter(([name, households]) => households.length > 1)
-      .map(([name, households]) => households)
+    const duplicates = Object.entries(nameOwnerGroups)
+      .filter(([key, households]) => households.length > 1)
+      .map(([key, households]) => households)
 
     let deletedCount = 0
     const deletedHouseholds = []
+    const duplicateGroups = []
 
     for (const duplicateGroup of duplicates) {
       // Keep the oldest household, delete the rest
@@ -50,7 +64,15 @@ export async function POST() {
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       )
       
-      const toDelete = sorted.slice(1) // Keep the first (oldest), delete the rest
+      const toKeep = sorted[0] // Oldest
+      const toDelete = sorted.slice(1) // Delete the rest
+      
+      const groupInfo = {
+        name: toKeep.name,
+        owner: toKeep.members[0]?.user?.email || 'unknown',
+        kept: { id: toKeep.id, createdAt: toKeep.createdAt },
+        deleted: [] as Array<{ id: string; name: string; createdAt: Date | null }>
+      }
       
       for (const household of toDelete) {
         try {
@@ -59,9 +81,18 @@ export async function POST() {
           })
           deletedCount++
           deletedHouseholds.push(household.name)
+          groupInfo.deleted.push({ 
+            id: household.id, 
+            name: household.name, 
+            createdAt: household.createdAt 
+          })
         } catch (error) {
           console.error(`Failed to delete household ${household.name}:`, error)
         }
+      }
+      
+      if (groupInfo.deleted.length > 0) {
+        duplicateGroups.push(groupInfo)
       }
     }
 
@@ -69,7 +100,8 @@ export async function POST() {
       success: true,
       deletedCount,
       deletedHouseholds,
-      message: `Cleaned up ${deletedCount} duplicate households`
+      duplicateGroups,
+      message: `Cleaned up ${deletedCount} duplicate households (grouped by name + owner)`
     })
 
   } catch (error) {

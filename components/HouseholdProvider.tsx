@@ -145,6 +145,23 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   const setActiveHousehold = (householdId: string) => {
     const active = memberships.find(m => m.household.id === householdId) || null
     applyActive(active)
+    
+    // Force a page refresh to reload all data for the new household
+    if (typeof window !== 'undefined') {
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => caches.delete(cacheName))
+        })
+      }
+      
+      // Clear localStorage and sessionStorage
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Reload the page to ensure fresh data
+      window.location.reload()
+    }
   }
 
   const value: HouseholdContextType = {

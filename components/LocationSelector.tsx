@@ -152,98 +152,114 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
 
   // Initialize Google Maps
   useEffect(() => {
-    if (showMap && mapRef.current && !map && typeof window !== 'undefined' && window.google) {
-      const mapInstance = new window.google.maps.Map(mapRef.current, {
-        center: { 
-          lat: value.latitude || 25.0330, 
-          lng: value.longitude || 121.5654 
-        },
-        zoom: 15,
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true,
-      })
+    const initializeMap = () => {
+      if (showMap && mapRef.current && !map && typeof window !== 'undefined' && window.google) {
+        console.log('🗺️ Initializing Google Maps...')
+        const mapInstance = new window.google.maps.Map(mapRef.current, {
+          center: { 
+            lat: value.latitude || 25.0330, 
+            lng: value.longitude || 121.5654 
+          },
+          zoom: 15,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true,
+        })
 
-      const markerInstance = new window.google.maps.Marker({
-        position: { 
-          lat: value.latitude || 25.0330, 
-          lng: value.longitude || 121.5654 
-        },
-        map: mapInstance,
-        draggable: true,
-      })
+        const markerInstance = new window.google.maps.Marker({
+          position: { 
+            lat: value.latitude || 25.0330, 
+            lng: value.longitude || 121.5654 
+          },
+          map: mapInstance,
+          draggable: true,
+        })
 
-      // Update location when marker is dragged
-      markerInstance.addListener('dragend', () => {
-        const position = markerInstance.getPosition()
-        if (position) {
-          const lat = position.lat()
-          const lng = position.lng()
-          
-          // Use Google Geocoding to get address
-          const geocoder = new window.google.maps.Geocoder()
-          geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-            if (status === 'OK' && results && results[0]) {
-              const result = results[0]
-              const addressComponents = result.address_components
-              
-              // Extract address components
-              let country = ''
-              let city = ''
-              let district = ''
-              let streetAddress = ''
-              let apartmentNo = ''
-              
-              addressComponents.forEach((component: any) => {
-                const types = component.types
-                if (types.includes('country')) {
-                  country = component.long_name
-                } else if (types.includes('administrative_area_level_1')) {
-                  city = component.long_name
-                } else if (types.includes('administrative_area_level_2') || types.includes('sublocality')) {
-                  district = component.long_name
-                } else if (types.includes('route')) {
-                  streetAddress = component.long_name
-                } else if (types.includes('street_number')) {
-                  apartmentNo = component.long_name
+        // Update location when marker is dragged
+        markerInstance.addListener('dragend', () => {
+          const position = markerInstance.getPosition()
+          if (position) {
+            const lat = position.lat()
+            const lng = position.lng()
+            
+            // Use Google Geocoding to get address
+            const geocoder = new window.google.maps.Geocoder()
+            geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+              if (status === 'OK' && results && results[0]) {
+                const result = results[0]
+                const addressComponents = result.address_components
+                
+                // Extract address components
+                let country = ''
+                let city = ''
+                let district = ''
+                let streetAddress = ''
+                let apartmentNo = ''
+                
+                addressComponents.forEach((component: any) => {
+                  const types = component.types
+                  if (types.includes('country')) {
+                    country = component.long_name
+                  } else if (types.includes('administrative_area_level_1')) {
+                    city = component.long_name
+                  } else if (types.includes('administrative_area_level_2') || types.includes('sublocality')) {
+                    district = component.long_name
+                  } else if (types.includes('route')) {
+                    streetAddress = component.long_name
+                  } else if (types.includes('street_number')) {
+                    apartmentNo = component.long_name
+                  }
+                })
+                
+                // Parse the full address for Taiwan addresses
+                const parsedAddress = parseTaiwanAddress(result.formatted_address)
+                
+                const newLocation = {
+                  ...value,
+                  latitude: lat,
+                  longitude: lng,
+                  address: result.formatted_address,
+                  country: country || value.country || 'Taiwan',
+                  city: parsedAddress.city || city || value.city,
+                  district: parsedAddress.district || district || value.district,
+                  streetAddress: parsedAddress.streetAddress || streetAddress || value.streetAddress,
+                  apartmentNo: parsedAddress.apartmentNo || apartmentNo || value.apartmentNo
                 }
-              })
-              
-              // Parse the full address for Taiwan addresses
-              const parsedAddress = parseTaiwanAddress(result.formatted_address)
-              
-              const newLocation = {
-                ...value,
-                latitude: lat,
-                longitude: lng,
-                address: result.formatted_address,
-                country: country || value.country || 'Taiwan',
-                city: parsedAddress.city || city || value.city,
-                district: parsedAddress.district || district || value.district,
-                streetAddress: parsedAddress.streetAddress || streetAddress || value.streetAddress,
-                apartmentNo: parsedAddress.apartmentNo || apartmentNo || value.apartmentNo
+                onChange(newLocation)
+              } else {
+                // Fallback: just update coordinates
+                const newLocation = {
+                  ...value,
+                  latitude: lat,
+                  longitude: lng,
+                }
+                onChange(newLocation)
               }
-              onChange(newLocation)
-            } else {
-              // Fallback: just update coordinates
-              const newLocation = {
-                ...value,
-                latitude: lat,
-                longitude: lng,
-              }
-              onChange(newLocation)
-            }
-          })
-        }
-      })
+            })
+          }
+        })
 
-      setMap(mapInstance)
-      setMarker(markerInstance)
-      setIsMapInitialized(true)
-    } else if (showMap && !window.google) {
-      // Google Maps not loaded, show error
-      alert('Google Maps is not loaded. Please check your internet connection and try again.')
-      setShowMap(false)
+        setMap(mapInstance)
+        setMarker(markerInstance)
+        setIsMapInitialized(true)
+        console.log('✅ Google Maps initialized successfully')
+      } else if (showMap && !window.google) {
+        // Google Maps not loaded, retry after a short delay
+        console.log('⏳ Google Maps not loaded yet, retrying in 500ms...')
+        setTimeout(() => {
+          if (window.google) {
+            initializeMap()
+          } else {
+            console.error('❌ Google Maps failed to load after retry')
+            alert('Google Maps is not loaded. Please check your internet connection and try again.')
+            setShowMap(false)
+          }
+        }, 500)
+      }
+    }
+
+    if (showMap) {
+      initializeMap()
     }
   }, [showMap, map, value, onChange])
 
@@ -280,6 +296,25 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
   }
 
   const handleMapClick = () => {
+    // Check if Google Maps is loaded
+    if (typeof window !== 'undefined' && !window.google) {
+      console.log('⏳ Google Maps not loaded yet, waiting...')
+      // Wait for Google Maps to load
+      const checkGoogleMaps = () => {
+        if (window.google) {
+          console.log('✅ Google Maps loaded, opening map...')
+          openMap()
+        } else {
+          setTimeout(checkGoogleMaps, 100)
+        }
+      }
+      checkGoogleMaps()
+    } else {
+      openMap()
+    }
+  }
+
+  const openMap = () => {
     if (value.latitude && value.longitude) {
       setShowMap(true)
     } else {

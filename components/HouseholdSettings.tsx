@@ -364,6 +364,13 @@ export default function HouseholdSettings() {
                       <span className="ml-2 text-gray-900 dark:text-gray-100">{household.apartmentNo}</span>
                     </div>
                   )}
+                  
+                  {household.telephone && (
+                    <div className="text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Telephone:</span>
+                      <span className="ml-2 text-gray-900 dark:text-gray-100">{household.telephone}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

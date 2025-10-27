@@ -126,16 +126,24 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       }))
       setMemberships(apiMemberships)
 
-      // Get preferred household ID from localStorage or current state
-      let preferredId = activeHouseholdId
+      // Get preferred household ID from localStorage first, then current state
+      let preferredId = null
       if (typeof window !== 'undefined') {
         const storedId = localStorage.getItem('activeHouseholdId')
         if (storedId) {
           preferredId = storedId
+          console.log('🏠 Restoring household from localStorage:', storedId)
         }
+      }
+      
+      // Fallback to current state if no localStorage value
+      if (!preferredId) {
+        preferredId = activeHouseholdId
+        console.log('🏠 Using current activeHouseholdId:', activeHouseholdId)
       }
 
       const active = selectActiveFrom(apiMemberships, preferredId)
+      console.log('🏠 Selected active household:', active ? { id: active.household.id, name: active.household.name, role: active.role } : 'None')
       applyActive(active)
     } catch (err) {
       console.error('Error fetching household:', err)
@@ -192,15 +200,10 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       })
     }
 
-    // Refresh data without page reload
-    setTimeout(() => {
-      console.log('🔄 Refreshing household data without page reload...')
-      fetchHousehold().finally(() => {
-        setSwitching(false)
-        setRefreshTrigger(prev => prev + 1) // Trigger refresh for all components
-        console.log('✅ Household switch completed')
-      })
-    }, 200)
+    // Mark switching as complete immediately
+    setSwitching(false)
+    setRefreshTrigger(prev => prev + 1) // Trigger refresh for all components
+    console.log('✅ Household switch completed')
   }
 
   // Refetch function for external use

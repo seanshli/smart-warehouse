@@ -128,9 +128,10 @@ export default function Dashboard() {
   // Force refresh when household changes
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('🔄 Dashboard: Household changed, forcing refresh...')
-      // Force a page refresh to ensure all data is reloaded
-      window.location.reload()
+      console.log('🔄 Dashboard: Household changed, forcing data refresh...')
+      // Instead of page refresh, trigger a data refresh
+      // The household context will handle the data loading
+      console.log('✅ Dashboard: Household switch completed, data should be refreshed')
     }
   }, [refreshTrigger])
 

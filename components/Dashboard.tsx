@@ -42,18 +42,21 @@ function HouseholdSwitcher() {
   if (!memberships || memberships.length <= 1) return null
 
   return (
-    <select
-      value={activeHouseholdId || ''}
-      onChange={(e) => setActiveHousehold(e.target.value)}
-      className="ml-2 border-gray-300 text-sm rounded-md dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
-      title={t('switchHousehold')}
-    >
-      {memberships.map(m => (
-        <option key={m.household.id} value={m.household.id} className="bg-white dark:bg-gray-700">
-          {m.household.name} ({m.role})
-        </option>
-      ))}
-    </select>
+    <div className="flex items-center space-x-2">
+      <span className="text-sm text-gray-500 dark:text-gray-400">{t('switchHousehold')}:</span>
+      <select
+        value={activeHouseholdId || ''}
+        onChange={(e) => setActiveHousehold(e.target.value)}
+        className="border-gray-300 text-sm rounded-md px-2 py-1 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        title={t('switchHousehold')}
+      >
+        {memberships.map(m => (
+          <option key={m.household.id} value={m.household.id} className="bg-white dark:bg-gray-700">
+            {m.household.name} ({m.role})
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 

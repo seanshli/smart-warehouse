@@ -41,24 +41,25 @@ export default function AdminHouseholdsPage() {
   const [selectedHousehold, setSelectedHousehold] = useState<string | null>(null)
   const [cleanupLoading, setCleanupLoading] = useState(false)
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      const [res, sres] = await Promise.all([
-        fetch('/api/admin/households'),
-        fetch('/api/admin/stats')
-      ])
-      if (!res.ok) {
-        setError('Forbidden or failed to load')
-        setLoading(false)
-        return
-      }
-      const data = await res.json()
-      setHouseholds(data.households || [])
-      setStats(sres.ok ? await sres.json() : null)
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    const [res, sres] = await Promise.all([
+      fetch('/api/admin/households'),
+      fetch('/api/admin/stats')
+    ])
+    if (!res.ok) {
+      setError('Forbidden or failed to load')
       setLoading(false)
+      return
     }
+    const data = await res.json()
+    setHouseholds(data.households || [])
+    setStats(sres.ok ? await sres.json() : null)
+    setLoading(false)
+  }
+
+  useEffect(() => {
     load()
   }, [])
 
@@ -194,7 +195,7 @@ export default function AdminHouseholdsPage() {
                     if (response.ok) {
                       const result = await response.json()
                       alert(`Cleanup completed! Removed ${result.deletedCount} duplicate households.`)
-                      location.reload()
+                      load() // Refresh data instead of page reload
                     } else {
                       alert('Failed to cleanup duplicates')
                     }
@@ -398,7 +399,7 @@ export default function AdminHouseholdsPage() {
                                   if (!confirm(`Remove ${m.user.email} from household?`)) return
                                   try {
                                     await fetch(`/api/admin/households/${h.id}/members?memberId=${m.id}`, { method: 'DELETE' })
-                                    location.reload()
+                                    load() // Refresh data instead of page reload
                                   } catch (error) {
                                     alert('Failed to remove member')
                                   }
@@ -430,7 +431,7 @@ export default function AdminHouseholdsPage() {
                             headers: { 'Content-Type': 'application/json' }, 
                             body: JSON.stringify({ name }) 
                           })
-                          location.reload()
+                          load() // Refresh data instead of page reload
                         } catch (error) {
                           alert('Failed to rename household')
                         }
@@ -452,7 +453,7 @@ export default function AdminHouseholdsPage() {
                             headers: { 'Content-Type': 'application/json' }, 
                             body: JSON.stringify({ email, role }) 
                           })
-                          location.reload()
+                          load() // Refresh data instead of page reload
                         } catch (error) {
                           alert('Failed to add member')
                         }
@@ -468,7 +469,7 @@ export default function AdminHouseholdsPage() {
                         if (!confirm(`Delete household "${h.name}" and ALL its data? This action cannot be undone.`)) return
                         try {
                           await fetch(`/api/admin/households/${h.id}`, { method: 'DELETE' })
-                          location.reload()
+                          load() // Refresh data instead of page reload
                         } catch (error) {
                           alert('Failed to delete household')
                         }

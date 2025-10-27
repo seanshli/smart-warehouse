@@ -16,22 +16,38 @@ export async function GET() {
 
     const userId = (session?.user as any)?.id
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
+    // Get user's household memberships
+    const memberships = await prisma.householdMember.findMany({
       where: {
-        members: {
-          some: {
-            userId: userId
-          }
-        }
+        userId: userId
+      },
+      include: {
+        household: true
+      },
+      orderBy: {
+        joinedAt: 'asc'
       }
     })
 
-    if (!household) {
-      return NextResponse.json({ householdId: null })
+    if (!memberships || memberships.length === 0) {
+      return NextResponse.json({ 
+        householdId: null,
+        memberships: []
+      })
     }
 
-    return NextResponse.json({ householdId: household.id })
+    // Return the first household as the default active household
+    const activeHousehold = memberships[0].household
+
+    return NextResponse.json({ 
+      householdId: activeHousehold.id,
+      memberships: memberships.map(m => ({
+        id: m.id,
+        role: m.role,
+        joinedAt: m.joinedAt,
+        household: m.household
+      }))
+    })
   } catch (error) {
     console.error('Error fetching household ID:', error)
     return NextResponse.json(

@@ -26,6 +26,7 @@ interface HouseholdData {
   latitude: number | null
   longitude: number | null
   address: string | null
+  telephone: string | null
   members: Array<{
     id: string
     role: string

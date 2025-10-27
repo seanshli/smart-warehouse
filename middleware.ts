@@ -39,6 +39,7 @@ export async function middleware(request: NextRequest) {
     '/auth/signup',
     '/auth/signout',
     '/admin-auth/signin',
+    '/admin-auth/signout',
     '/api/auth/',
     '/api/health'
   ]
@@ -55,22 +56,16 @@ export async function middleware(request: NextRequest) {
   // Check authentication for all other routes
   const token = await getToken({ req: request })
   
-  if (!token) {
-    // Redirect to sign in for web routes
+  if (!token || Object.keys(token).length === 0) {
+    // Redirect to appropriate sign in page based on route
     if (!request.nextUrl.pathname.startsWith('/api/')) {
+      if (request.nextUrl.pathname.startsWith('/admin')) {
+        return NextResponse.redirect(new URL('/admin-auth/signin', request.url))
+      }
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
     // Return 401 for API routes
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Check if token is valid (not empty object)
-  if (Object.keys(token).length === 0) {
-    // Invalid token, redirect to sign in
-    if (!request.nextUrl.pathname.startsWith('/api/')) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
-    }
-    return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
   }
 
   // Multi-user security: Check session age and force re-authentication
@@ -83,6 +78,9 @@ export async function middleware(request: NextRequest) {
   if (!sessionId || sessionAge > maxSessionAge) {
     // Session expired or invalid, force re-authentication
     if (!request.nextUrl.pathname.startsWith('/api/')) {
+      if (request.nextUrl.pathname.startsWith('/admin')) {
+        return NextResponse.redirect(new URL('/admin-auth/signin?error=session_expired', request.url))
+      }
       return NextResponse.redirect(new URL('/auth/signin?error=session_expired', request.url))
     }
     return NextResponse.json({ error: 'Session expired' }, { status: 401 })

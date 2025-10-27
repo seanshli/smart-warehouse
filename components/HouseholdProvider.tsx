@@ -74,12 +74,17 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
 
   // Helper function to apply active household
   const applyActive = (active: Membership | null) => {
+    console.log('🎯 applyActive called with:', active ? { id: active.household.id, name: active.household.name, role: active.role } : 'null')
+    
     if (active) {
+      console.log('🎯 Setting household to:', active.household.name)
       setHousehold(active.household)
       setRole(active.role)
       setPermissions(getPermissions(active.role))
       setActiveHouseholdId(active.household.id)
+      console.log('🎯 State should now be:', { household: active.household.name, role: active.role, id: active.household.id })
     } else {
+      console.log('🎯 Clearing household state')
       setHousehold(null)
       setRole(null)
       setPermissions(null)
@@ -160,8 +165,11 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
 
   // Simplified household switching
   const setActiveHousehold = (householdId: string) => {
+    console.log('🔄 ===== HOUSEHOLD SWITCHING STARTED =====')
     console.log('🔄 Switching to household:', householdId)
     console.log('📋 Available memberships:', memberships.map(m => ({ id: m.household.id, name: m.household.name, role: m.role })))
+    console.log('🏠 Current activeHouseholdId:', activeHouseholdId)
+    console.log('🏠 Current household:', household ? { id: household.id, name: household.name } : 'None')
     
     setSwitching(true)
     setError(null)
@@ -182,11 +190,16 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('activeHouseholdId', householdId)
       console.log('💾 Stored household ID in localStorage:', householdId)
+      // Verify it was stored
+      const stored = localStorage.getItem('activeHouseholdId')
+      console.log('💾 Verified stored value:', stored)
     }
 
     // Apply the new active household immediately
+    console.log('🎯 Applying active household...')
     applyActive(targetMembership)
     console.log('🎯 Applied active household:', targetMembership.household.name)
+    console.log('🏠 New activeHouseholdId should be:', targetMembership.household.id)
     
     // Clear caches to ensure fresh data
     if (typeof window !== 'undefined' && 'caches' in window) {
@@ -202,8 +215,12 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
 
     // Mark switching as complete immediately
     setSwitching(false)
-    setRefreshTrigger(prev => prev + 1) // Trigger refresh for all components
-    console.log('✅ Household switch completed')
+    setRefreshTrigger(prev => {
+      const newTrigger = prev + 1
+      console.log('🔄 Refresh trigger updated:', newTrigger)
+      return newTrigger
+    })
+    console.log('✅ ===== HOUSEHOLD SWITCHING COMPLETED =====')
   }
 
   // Refetch function for external use

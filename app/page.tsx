@@ -38,6 +38,13 @@ function CacheClearer() {
       // Clear localStorage and sessionStorage
       localStorage.clear()
       sessionStorage.clear()
+      
+      // Clear NextAuth cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      console.log('🧹 Cleared all caches and storage')
     } catch (error) {
       console.warn('Storage clearing failed:', error)
     }

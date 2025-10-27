@@ -103,7 +103,7 @@ function HouseholdSwitcher() {
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const { t } = useLanguage()
-  const { household, role, permissions } = useHousehold()
+  const { household, role, permissions, refreshTrigger } = useHousehold()
   const deviceInfo = useDeviceDetection()
 
   // Add error boundary for client-side errors
@@ -124,6 +124,15 @@ export default function Dashboard() {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
     }
   }, [])
+
+  // Force refresh when household changes
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('🔄 Dashboard: Household changed, forcing refresh...')
+      // Force a page refresh to ensure all data is reloaded
+      window.location.reload()
+    }
+  }, [refreshTrigger])
 
   // Handle authentication errors
   useEffect(() => {

@@ -52,15 +52,24 @@ export async function middleware(request: NextRequest) {
       
       // If no token, redirect to sign in
       if (!token || Object.keys(token).length === 0) {
-        return NextResponse.redirect(new URL('/auth/signin', request.url))
+        console.log('[Middleware] No token found, redirecting to signin')
+        const response = NextResponse.redirect(new URL('/auth/signin', request.url))
+        // Clear any existing session cookies
+        response.cookies.delete('next-auth.session-token')
+        response.cookies.delete('__Secure-next-auth.session-token')
+        return response
       }
       
       // If authenticated, allow through to page.tsx
+      console.log('[Middleware] Token found, allowing access to dashboard')
       return NextResponse.next()
     } catch (error) {
       console.error('[Middleware] Root path token error:', error)
       // If token retrieval fails, redirect to signin
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+      const response = NextResponse.redirect(new URL('/auth/signin', request.url))
+      response.cookies.delete('next-auth.session-token')
+      response.cookies.delete('__Secure-next-auth.session-token')
+      return response
     }
   }
   

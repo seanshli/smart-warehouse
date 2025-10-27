@@ -18,7 +18,10 @@ const config: CapacitorConfig = {
   },
   android: {
     // Configure for external hosting
-    overrideUserAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15'
+    overrideUserAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
   },
   plugins: {
     Camera: {
@@ -27,6 +30,12 @@ const config: CapacitorConfig = {
     Filesystem: {
       iosIsDocumentPickerEnabled: true,
       androidIsDocumentPickerEnabled: true
+    },
+    Geolocation: {
+      permissions: ['location']
+    },
+    GoogleMaps: {
+      apiKey: process.env.GOOGLE_MAPS_API_KEY || ''
     }
   }
 };

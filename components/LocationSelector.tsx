@@ -125,7 +125,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Country
@@ -252,7 +252,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
 
       {showMap && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+          <div className="relative top-4 sm:top-20 mx-auto p-3 sm:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">
                 Select Location on Map
@@ -264,7 +264,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
                 ✕
               </button>
             </div>
-            <div ref={mapRef} className="w-full h-96 rounded-md"></div>
+            <div ref={mapRef} className="w-full h-64 sm:h-96 rounded-md"></div>
             <div className="mt-4 flex justify-end space-x-3">
               <button
                 onClick={() => setShowMap(false)}

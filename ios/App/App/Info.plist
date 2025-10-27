@@ -63,6 +63,10 @@
 	<string>Select images to decode invoices</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save images if needed</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location is used to set household location and find nearby items</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Location is used to set household location and find nearby items</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

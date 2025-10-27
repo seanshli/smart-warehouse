@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       qrCode,
       imageUrl,
       language,
+      tags,
       // Taiwan invoice fields
       buyDate,
       buyCost,
@@ -360,6 +361,7 @@ export async function POST(request: NextRequest) {
           qrCode: qrCode || null,
           imageUrl,
           language: language || null,
+          tags: tags || [],
           // Taiwan invoice fields
           buyDate: buyDate ? new Date(buyDate) : null,
           buyCost: buyCost || null,

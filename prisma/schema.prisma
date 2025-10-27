@@ -73,6 +73,15 @@ model Household {
   name           String
   description    String?
   invitationCode String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  // Location fields
+  country        String?
+  city           String?
+  district       String?
+  community      String?
+  apartmentNo    String?           @map("apartment_no")
+  latitude       Float?
+  longitude      Float?
+  address        String?
   createdAt      DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   categories     Category[]
@@ -169,6 +178,7 @@ model Item {
   buyLocation   String?        @map("buy_location")
   invoiceNumber String?        @map("invoice_number")
   sellerName    String?        @map("seller_name")
+  tags          String[]       @default([])
   history       ItemHistory[]
   addedBy       User           @relation(fields: [addedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
   cabinet       Cabinet?       @relation(fields: [cabinetId], references: [id], onUpdate: NoAction)

@@ -73,6 +73,10 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   const [aiReviewSelectedSubcategoryId, setAiReviewSelectedSubcategoryId] = useState('')
   const [aiReviewSelectedLevel3Id, setAiReviewSelectedLevel3Id] = useState('')
 
+  // Tags
+  const [tags, setTags] = useState<string[]>([])
+  const [newTag, setNewTag] = useState('')
+
   // Room and cabinet data
   const [rooms, setRooms] = useState<any[]>([])
   const [cabinets, setCabinets] = useState<any[]>([])
@@ -87,6 +91,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
     category: '',
     subcategory: '',
     level3: '',
+    tags: [] as string[],
     room: '',
     cabinet: '',
     barcode: '',
@@ -398,7 +403,10 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include session cookies for authentication
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          tags: tags
+        }),
       })
 
       console.log('Response status:', response.status)
@@ -1215,6 +1223,64 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                 rows={3}
                 className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Tags
+              </label>
+              <div className="mt-1">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                        className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500"
+                      >
+                        <span className="sr-only">Remove</span>
+                        <svg className="w-2 h-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
+                          <path strokeLinecap="round" strokeWidth="1.5" d="m1 1 6 6m0-6L1 7" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        if (newTag.trim() && !tags.includes(newTag.trim())) {
+                          setTags([...tags, newTag.trim()])
+                          setNewTag('')
+                        }
+                      }
+                    }}
+                    placeholder="Add a tag..."
+                    className="flex-1 border-gray-300 dark:border-gray-600 rounded-l-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newTag.trim() && !tags.includes(newTag.trim())) {
+                        setTags([...tags, newTag.trim()])
+                        setNewTag('')
+                      }
+                    }}
+                    className="px-3 py-2 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-md bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-500"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-between">

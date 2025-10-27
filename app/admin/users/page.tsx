@@ -27,6 +27,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' })
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null)
+  const [newPassword, setNewPassword] = useState('')
 
   useEffect(() => {
     loadAdminUsers()
@@ -91,6 +93,35 @@ export default function AdminUsersPage() {
       }
 
       await loadAdminUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    }
+  }
+
+  const resetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) return
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users/${resetPasswordUser.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword })
+      })
+
+      if (res.ok) {
+        setResetPasswordUser(null)
+        setNewPassword('')
+        setError(null)
+        alert(`Password reset successfully for ${resetPasswordUser.email}`)
+      } else {
+        const error = await res.json()
+        setError(error.message || 'Failed to reset password')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     }
@@ -242,18 +273,68 @@ export default function AdminUsersPage() {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => removeAdminPrivileges(user.id)}
-                        className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50"
-                      >
-                        <UserMinusIcon className="h-3 w-3 mr-1" />
-                        Remove Admin
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setResetPasswordUser(user)}
+                          className="inline-flex items-center px-3 py-1 border border-blue-300 shadow-sm text-xs font-medium rounded text-blue-700 bg-white hover:bg-blue-50"
+                        >
+                          Reset Password
+                        </button>
+                        <button
+                          onClick={() => removeAdminPrivileges(user.id)}
+                          className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50"
+                        >
+                          <UserMinusIcon className="h-3 w-3 mr-1" />
+                          Remove Admin
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Reset Password Modal */}
+        {resetPasswordUser && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Reset Password for {resetPasswordUser.email}
+                </h3>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter new password (min 6 characters)"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setResetPasswordUser(null)
+                      setNewPassword('')
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={resetPassword}
+                    className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Reset Password
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

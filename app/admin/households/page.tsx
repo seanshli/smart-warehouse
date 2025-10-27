@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useLanguage } from '@/components/LanguageProvider'
+import LocationSelector from '@/components/LocationSelector'
 import { 
   HomeIcon, 
   UserGroupIcon, 
@@ -14,7 +15,8 @@ import {
   TrashIcon,
   PlusIcon,
   KeyIcon,
-  UserMinusIcon
+  UserMinusIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminUser { id: string; email: string; name: string | null; createdAt?: string }
@@ -28,6 +30,15 @@ interface AdminHousehold {
   members: AdminMember[];
   rooms?: { id: string; name: string }[];
   categories?: { id: string; name: string; level: number }[];
+  // Location fields
+  country?: string;
+  city?: string;
+  district?: string;
+  community?: string;
+  apartmentNo?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 export default function AdminHouseholdsPage() {
@@ -264,6 +275,15 @@ export default function AdminHouseholdsPage() {
                   </div>
                   {h.description && (
                     <p className="mt-2 text-sm text-gray-600">{h.description}</p>
+                  )}
+                  {(h.country || h.city || h.district || h.address) && (
+                    <div className="mt-2 flex items-center text-sm text-gray-500">
+                      <MapPinIcon className="h-4 w-4 mr-1" />
+                      <span>
+                        {[h.country, h.city, h.district, h.community, h.apartmentNo].filter(Boolean).join(', ')}
+                        {h.address && ` (${h.address})`}
+                      </span>
+                    </div>
                   )}
                 </div>
                 <div className="ml-4 flex-shrink-0">

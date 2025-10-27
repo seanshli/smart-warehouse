@@ -146,38 +146,38 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     const active = memberships.find(m => m.household.id === householdId) || null
     applyActive(active)
     
-    // Instead of immediate reload, try to refresh data gracefully
+    // Store the selection in localStorage BEFORE clearing other data
     if (typeof window !== 'undefined') {
-      // Clear all caches
+      localStorage.setItem('activeHouseholdId', householdId)
+      
+      // Clear only specific caches, not all localStorage
       if ('caches' in window) {
         caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => caches.delete(cacheName))
+          cacheNames.forEach(cacheName => {
+            // Only clear data caches, not the household selection
+            if (!cacheName.includes('household')) {
+              caches.delete(cacheName)
+            }
+          })
         }).catch(error => {
           console.warn('Cache clearing failed:', error)
         })
       }
       
-      // Clear localStorage and sessionStorage
+      // Clear only sessionStorage, keep localStorage for household selection
       try {
-        localStorage.clear()
         sessionStorage.clear()
       } catch (error) {
-        console.warn('Storage clearing failed:', error)
+        console.warn('Session storage clearing failed:', error)
       }
       
-      // Try to refresh data first, then reload if needed
+      // Trigger a data refresh without reloading
       setTimeout(() => {
         try {
-          // Trigger a data refresh by calling refetch
           fetchHousehold()
-          
-          // If that doesn't work, do a soft reload
-          setTimeout(() => {
-            window.location.reload()
-          }, 1000)
         } catch (error) {
           console.error('Household switch error:', error)
-          // Fallback to hard reload
+          // Only reload as last resort
           window.location.reload()
         }
       }, 100)

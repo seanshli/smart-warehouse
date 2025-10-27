@@ -191,6 +191,7 @@ export interface Translations {
   googleMapsNotAvailable: string
   enterLocationManually: string
   coordinates: string
+  enterFullAddressToAutoParse: string
   editCabinet: string
   updateCabinet: string
   deleteCabinet: string
@@ -639,6 +640,7 @@ const en: Translations = {
   googleMapsNotAvailable: 'Google Maps not available',
   enterLocationManually: 'Please enter location manually using the form above',
   coordinates: 'Coordinates',
+  enterFullAddressToAutoParse: 'Enter full address to automatically parse into components',
   editCabinet: 'Edit Cabinet',
   updateCabinet: 'Update Cabinet',
   deleteCabinet: 'Delete Cabinet',
@@ -1087,6 +1089,7 @@ const zhTW: Translations = {
   googleMapsNotAvailable: 'Google 地圖不可用',
   enterLocationManually: '請使用上方表單手動輸入位置',
   coordinates: '座標',
+  enterFullAddressToAutoParse: '輸入完整地址以自動解析為各個組件',
   editCabinet: '編輯櫥櫃',
   updateCabinet: '更新櫥櫃',
   deleteCabinet: '刪除櫥櫃',
@@ -1544,6 +1547,7 @@ const zh: Translations = {
   googleMapsNotAvailable: 'Google 地图不可用',
   enterLocationManually: '请使用上方表单手动输入位置',
   coordinates: '坐标',
+  enterFullAddressToAutoParse: '输入完整地址以自动解析为各个组件',
   editCabinet: '编辑橱柜',
   updateCabinet: '更新橱柜',
   deleteCabinet: '删除橱柜',
@@ -1999,6 +2003,7 @@ const ja: Translations = {
   googleMapsNotAvailable: 'Google マップが利用できません',
   enterLocationManually: '上記のフォームを使用して手動で位置を入力してください',
   coordinates: '座標',
+  enterFullAddressToAutoParse: '完全な住所を入力して自動的にコンポーネントに解析',
   editCabinet: 'キャビネットを編集',
   updateCabinet: 'キャビネットを更新',
   deleteCabinet: 'キャビネットを削除',

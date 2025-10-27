@@ -85,6 +85,71 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
   const [isMapInitialized, setIsMapInitialized] = useState(false)
   const mapRef = useRef<HTMLDivElement>(null)
 
+  // Address parsing function for Traditional Chinese addresses
+  const parseTaiwanAddress = (address: string) => {
+    if (!address) return {}
+    
+    const result: Partial<LocationData> = {}
+    
+    // Extract city (台北市, 新北市, etc.)
+    const cityMatch = address.match(/(台北市|新北市|桃園市|台中市|台南市|高雄市|基隆市|新竹市|嘉義市|嘉義縣|新竹縣|苗栗縣|彰化縣|南投縣|雲林縣|屏東縣|宜蘭縣|花蓮縣|台東縣)/)
+    if (cityMatch) {
+      result.city = cityMatch[1]
+    }
+    
+    // Extract district (大安區, 信義區, etc.)
+    const districtMatch = address.match(/([^市縣]+區|[^市縣]+鄉|[^市縣]+鎮|[^市縣]+市)/)
+    if (districtMatch) {
+      result.district = districtMatch[1]
+    }
+    
+    // Extract street address (和平東路一段55巷一弄4號7樓)
+    // Look for patterns like: 路名+段+巷+弄+號+樓
+    const streetMatch = address.match(/([^市縣區鄉鎮]+(?:路|街|大道|巷|弄|號|樓))/g)
+    if (streetMatch) {
+      result.streetAddress = streetMatch.join('')
+    }
+    
+    // Extract apartment number (4號7樓, 7F, etc.)
+    const apartmentMatch = address.match(/(\d+號\d+樓|\d+[F樓]|\d+號)/)
+    if (apartmentMatch) {
+      result.apartmentNo = apartmentMatch[1]
+    }
+    
+    return result
+  }
+
+  // Build full address from components
+  const buildFullAddress = (data: LocationData) => {
+    const parts = []
+    
+    if (data.country && data.country !== 'Taiwan') {
+      parts.push(data.country)
+    }
+    
+    if (data.city) {
+      parts.push(data.city)
+    }
+    
+    if (data.district) {
+      parts.push(data.district)
+    }
+    
+    if (data.community) {
+      parts.push(data.community)
+    }
+    
+    if (data.streetAddress) {
+      parts.push(data.streetAddress)
+    }
+    
+    if (data.apartmentNo) {
+      parts.push(data.apartmentNo)
+    }
+    
+    return parts.join('')
+  }
+
   // Initialize Google Maps
   useEffect(() => {
     if (showMap && mapRef.current && !map && typeof window !== 'undefined' && window.google) {
@@ -127,6 +192,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
               let city = ''
               let district = ''
               let streetAddress = ''
+              let apartmentNo = ''
               
               addressComponents.forEach((component: any) => {
                 const types = component.types
@@ -138,18 +204,24 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
                   district = component.long_name
                 } else if (types.includes('route')) {
                   streetAddress = component.long_name
+                } else if (types.includes('street_number')) {
+                  apartmentNo = component.long_name
                 }
               })
+              
+              // Parse the full address for Taiwan addresses
+              const parsedAddress = parseTaiwanAddress(result.formatted_address)
               
               const newLocation = {
                 ...value,
                 latitude: lat,
                 longitude: lng,
                 address: result.formatted_address,
-                country: country || value.country,
-                city: city || value.city,
-                district: district || value.district,
-                streetAddress: streetAddress || value.streetAddress
+                country: country || value.country || 'Taiwan',
+                city: parsedAddress.city || city || value.city,
+                district: parsedAddress.district || district || value.district,
+                streetAddress: parsedAddress.streetAddress || streetAddress || value.streetAddress,
+                apartmentNo: parsedAddress.apartmentNo || apartmentNo || value.apartmentNo
               }
               onChange(newLocation)
             } else {
@@ -191,6 +263,17 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
       updatedLocation.community = ''
     } else if (field === 'district') {
       updatedLocation.community = ''
+    }
+
+    // If full address is being changed, parse it
+    if (field === 'address' && newValue) {
+      const parsed = parseTaiwanAddress(newValue)
+      Object.assign(updatedLocation, parsed)
+    }
+
+    // Auto-build full address when individual components change
+    if (field !== 'address' && (field === 'city' || field === 'district' || field === 'streetAddress' || field === 'apartmentNo')) {
+      updatedLocation.address = buildFullAddress(updatedLocation)
     }
 
     onChange(updatedLocation)
@@ -373,6 +456,9 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
             placeholder={t('completeAddress')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {t('enterFullAddressToAutoParse') || 'Enter full address to automatically parse into components'}
+          </p>
         </div>
       </div>
 

@@ -12,6 +12,9 @@ interface LocationData {
   latitude?: number
   longitude?: number
   address?: string
+  streetAddress?: string
+  buildingAddress?: string
+  telephone?: string
 }
 
 interface LocationSelectorProps {
@@ -20,7 +23,7 @@ interface LocationSelectorProps {
   disabled?: boolean
 }
 
-// Taiwan major cities and districts
+// Taiwan major cities and districts with translations
 const TAIWAN_LOCATIONS = {
   '台北市': ['中正區', '大同區', '中山區', '松山區', '大安區', '萬華區', '信義區', '士林區', '北投區', '內湖區', '南港區', '文山區'],
   '新北市': ['板橋區', '三重區', '中和區', '永和區', '新莊區', '新店區', '樹林區', '鶯歌區', '三峽區', '淡水區', '汐止區', '瑞芳區', '土城區', '蘆洲區', '五股區', '泰山區', '林口區', '深坑區', '石碇區', '坪林區', '三芝區', '石門區', '八里區', '平溪區', '雙溪區', '貢寮區', '金山區', '萬里區', '烏來區'],
@@ -43,26 +46,66 @@ const TAIWAN_LOCATIONS = {
   '台東縣': ['台東市', '綠島鄉', '蘭嶼鄉', '延平鄉', '卑南鄉', '鹿野鄉', '關山鎮', '海端鄉', '池上鄉', '東河鄉', '成功鎮', '長濱鄉', '太麻里鄉', '金峰鄉', '大武鄉', '達仁鄉']
 }
 
+// Country translations
+const COUNTRY_TRANSLATIONS = {
+  'en': {
+    'Taiwan': 'Taiwan',
+    'USA': 'United States',
+    'Japan': 'Japan',
+    'Singapore': 'Singapore',
+    'Other': 'Other'
+  },
+  'zh-TW': {
+    'Taiwan': '台灣',
+    'USA': '美國',
+    'Japan': '日本',
+    'Singapore': '新加坡',
+    'Other': '其他'
+  },
+  'zh': {
+    'Taiwan': '台湾',
+    'USA': '美国',
+    'Japan': '日本',
+    'Singapore': '新加坡',
+    'Other': '其他'
+  },
+  'ja': {
+    'Taiwan': '台湾',
+    'USA': 'アメリカ',
+    'Japan': '日本',
+    'Singapore': 'シンガポール',
+    'Other': 'その他'
+  }
+}
+
 export default function LocationSelector({ value, onChange, disabled = false }: LocationSelectorProps) {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [showMap, setShowMap] = useState(false)
   const [map, setMap] = useState<any>(null)
   const [marker, setMarker] = useState<any>(null)
+  const [isMapInitialized, setIsMapInitialized] = useState(false)
   const mapRef = useRef<HTMLDivElement>(null)
+  const [cityLocked, setCityLocked] = useState(false)
 
   // Initialize Google Maps
   useEffect(() => {
     if (showMap && mapRef.current && !map && typeof window !== 'undefined' && window.google) {
       const mapInstance = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 25.0330, lng: 121.5654 }, // Taipei coordinates
-        zoom: 12,
+        center: { 
+          lat: value.latitude || 25.0330, 
+          lng: value.longitude || 121.5654 
+        },
+        zoom: 15,
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,
       })
 
       const markerInstance = new window.google.maps.Marker({
-        position: { lat: 25.0330, lng: 121.5654 },
+        position: { 
+          lat: value.latitude || 25.0330, 
+          lng: value.longitude || 121.5654 
+        },
         map: mapInstance,
         draggable: true,
       })
@@ -71,17 +114,62 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
       markerInstance.addListener('dragend', () => {
         const position = markerInstance.getPosition()
         if (position) {
-          const newLocation = {
-            ...value,
-            latitude: position.lat(),
-            longitude: position.lng(),
-          }
-          onChange(newLocation)
+          const lat = position.lat()
+          const lng = position.lng()
+          
+          // Use Google Geocoding to get address
+          const geocoder = new window.google.maps.Geocoder()
+          geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            if (status === 'OK' && results[0]) {
+              const result = results[0]
+              const addressComponents = result.address_components
+              
+              // Extract address components
+              let country = ''
+              let city = ''
+              let district = ''
+              let streetAddress = ''
+              
+              addressComponents.forEach((component: any) => {
+                const types = component.types
+                if (types.includes('country')) {
+                  country = component.long_name
+                } else if (types.includes('administrative_area_level_1')) {
+                  city = component.long_name
+                } else if (types.includes('administrative_area_level_2') || types.includes('sublocality')) {
+                  district = component.long_name
+                } else if (types.includes('route')) {
+                  streetAddress = component.long_name
+                }
+              })
+              
+              const newLocation = {
+                ...value,
+                latitude: lat,
+                longitude: lng,
+                address: result.formatted_address,
+                country: country || value.country,
+                city: city || value.city,
+                district: district || value.district,
+                streetAddress: streetAddress || value.streetAddress
+              }
+              onChange(newLocation)
+            } else {
+              // Fallback: just update coordinates
+              const newLocation = {
+                ...value,
+                latitude: lat,
+                longitude: lng,
+              }
+              onChange(newLocation)
+            }
+          })
         }
       })
 
       setMap(mapInstance)
       setMarker(markerInstance)
+      setIsMapInitialized(true)
     } else if (showMap && !window.google) {
       // Google Maps not loaded, show error
       alert('Google Maps is not loaded. Please check your internet connection and try again.')
@@ -90,17 +178,33 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
   }, [showMap, map, value, onChange])
 
   const handleLocationChange = (field: keyof LocationData, newValue: string) => {
-    onChange({
+    const updatedLocation = {
       ...value,
       [field]: newValue
-    })
+    }
+
+    // Auto-clear dependent fields when parent changes
+    if (field === 'country') {
+      updatedLocation.city = ''
+      updatedLocation.district = ''
+      updatedLocation.community = ''
+      setCityLocked(false)
+    } else if (field === 'city') {
+      updatedLocation.district = ''
+      updatedLocation.community = ''
+      setCityLocked(true) // Lock city after selection
+    } else if (field === 'district') {
+      updatedLocation.community = ''
+    }
+
+    onChange(updatedLocation)
   }
 
   const handleMapClick = () => {
     if (value.latitude && value.longitude) {
       setShowMap(true)
     } else {
-      // Get current location
+      // Get current location first
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -114,29 +218,13 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
           },
           (error) => {
             console.error('Error getting location:', error)
-            // Fallback: Use browser geolocation without map
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                (position) => {
-                  const newLocation = {
-                    ...value,
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                  }
-                  onChange(newLocation)
-                  alert(`Location set to: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`)
-                },
-                () => {
-                  alert('Unable to get location. Please enter address manually.')
-                }
-              )
-            } else {
-              alert('Location services not available. Please enter address manually.')
-            }
+            // Fallback: Show map with default location
+            setShowMap(true)
           }
         )
       } else {
-        alert('Location services not available. Please enter address manually.')
+        // Fallback: Show map with default location
+        setShowMap(true)
       }
     }
   }
@@ -145,66 +233,79 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
     return TAIWAN_LOCATIONS[city as keyof typeof TAIWAN_LOCATIONS] || []
   }
 
+  const getCountryOptions = () => {
+    const translations = COUNTRY_TRANSLATIONS[currentLanguage as keyof typeof COUNTRY_TRANSLATIONS] || COUNTRY_TRANSLATIONS['en']
+    return Object.entries(translations).map(([key, translatedName]) => ({
+      value: key,
+      label: translatedName
+    }))
+  }
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Country */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Country
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('country')}
           </label>
           <select
             value={value.country || ''}
             onChange={(e) => handleLocationChange('country', e.target.value)}
             disabled={disabled}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
-            <option value="">Select Country</option>
-            <option value="Taiwan">Taiwan</option>
-            <option value="USA">United States</option>
-            <option value="Japan">Japan</option>
-            <option value="Singapore">Singapore</option>
-            <option value="Other">Other</option>
+            <option value="">{t('selectCountry')}</option>
+            {getCountryOptions().map((option) => (
+              <option key={option.value} value={option.value}>
+                {String(option.label)}
+              </option>
+            ))}
           </select>
         </div>
 
+        {/* City - only show for Taiwan */}
         {value.country === 'Taiwan' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('city')}
             </label>
             <select
               value={value.city || ''}
-              onChange={(e) => {
-                handleLocationChange('city', e.target.value)
-                handleLocationChange('district', '')
-                handleLocationChange('community', '')
-              }}
-              disabled={disabled}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => handleLocationChange('city', e.target.value)}
+              disabled={disabled || cityLocked}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
-              <option value="">Select City</option>
+              <option value="">{t('selectCity')}</option>
               {Object.keys(TAIWAN_LOCATIONS).map((city) => (
                 <option key={city} value={city}>{city}</option>
               ))}
             </select>
+            {cityLocked && (
+              <button
+                type="button"
+                onClick={() => setCityLocked(false)}
+                className="mt-1 text-xs text-primary-600 hover:text-primary-800"
+              >
+                {t('unlockCity')}
+              </button>
+            )}
           </div>
         )}
 
+        {/* District - only show for Taiwan with city selected */}
         {value.country === 'Taiwan' && value.city && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              District
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('district')}
             </label>
             <select
               value={value.district || ''}
-              onChange={(e) => {
-                handleLocationChange('district', e.target.value)
-                handleLocationChange('community', '')
-              }}
+              onChange={(e) => handleLocationChange('district', e.target.value)}
               disabled={disabled}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
-              <option value="">Select District</option>
+              <option value="">{t('selectDistrict')}</option>
               {getCityDistricts(value.city).map((district) => (
                 <option key={district} value={district}>{district}</option>
               ))}
@@ -212,76 +313,126 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
           </div>
         )}
 
+        {/* Community/Neighborhood */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Community/Neighborhood
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('community')}
           </label>
           <input
             type="text"
             value={value.community || ''}
             onChange={(e) => handleLocationChange('community', e.target.value)}
             disabled={disabled}
-            placeholder="Enter community or neighborhood"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder={t('enterCommunity')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
 
+        {/* Street Address */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Apartment/Building No.
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('streetAddress')}
+          </label>
+          <input
+            type="text"
+            value={value.streetAddress || ''}
+            onChange={(e) => handleLocationChange('streetAddress', e.target.value)}
+            disabled={disabled}
+            placeholder={t('enterStreetAddress')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+          />
+        </div>
+
+        {/* Building Address */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('buildingAddress')}
+          </label>
+          <input
+            type="text"
+            value={value.buildingAddress || ''}
+            onChange={(e) => handleLocationChange('buildingAddress', e.target.value)}
+            disabled={disabled}
+            placeholder={t('enterBuildingAddress')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+          />
+        </div>
+
+        {/* Apartment/Building No. */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('apartmentNo')}
           </label>
           <input
             type="text"
             value={value.apartmentNo || ''}
             onChange={(e) => handleLocationChange('apartmentNo', e.target.value)}
             disabled={disabled}
-            placeholder="e.g., 123, Building A"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder={t('enterApartmentNo')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
 
+        {/* Telephone */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Full Address
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('telephone')}
+          </label>
+          <input
+            type="tel"
+            value={value.telephone || ''}
+            onChange={(e) => handleLocationChange('telephone', e.target.value)}
+            disabled={disabled}
+            placeholder={t('enterTelephone')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+          />
+        </div>
+
+        {/* Full Address */}
+        <div className="sm:col-span-2 lg:col-span-3">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('fullAddress')}
           </label>
           <input
             type="text"
             value={value.address || ''}
             onChange={(e) => handleLocationChange('address', e.target.value)}
             disabled={disabled}
-            placeholder="Complete address"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder={t('completeAddress')}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
       </div>
 
+      {/* Map Button */}
       <div>
         <button
           type="button"
           onClick={handleMapClick}
           disabled={disabled}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
-          📍 {value.latitude && value.longitude ? 'Update Location on Map' : 'Set Location on Map'}
+          📍 {value.latitude && value.longitude ? t('updateLocationOnMap') : t('setLocationOnMap')}
         </button>
         
         {value.latitude && value.longitude && (
-          <div className="mt-2 text-sm text-gray-600">
-            Coordinates: {value.latitude.toFixed(6)}, {value.longitude.toFixed(6)}
+          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            {t('coordinates')}: {value.latitude.toFixed(6)}, {value.longitude.toFixed(6)}
           </div>
         )}
       </div>
 
+      {/* Map Modal */}
       {showMap && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-4 sm:top-20 mx-auto p-3 sm:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+          <div className="relative top-4 sm:top-20 mx-auto p-3 sm:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                Select Location on Map
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {t('selectLocationOnMap')}
               </h3>
               <button
                 onClick={() => setShowMap(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
                 ✕
               </button>
@@ -289,26 +440,26 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
             {typeof window !== 'undefined' && window.google ? (
               <div ref={mapRef} className="w-full h-64 sm:h-96 rounded-md"></div>
             ) : (
-              <div className="w-full h-64 sm:h-96 rounded-md bg-gray-100 flex items-center justify-center">
+              <div className="w-full h-64 sm:h-96 rounded-md bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-gray-500 mb-2">📍</div>
-                  <p className="text-gray-600">Google Maps not available</p>
-                  <p className="text-sm text-gray-500">Please enter location manually using the form above</p>
+                  <div className="text-gray-500 dark:text-gray-400 mb-2">📍</div>
+                  <p className="text-gray-600 dark:text-gray-300">{t('googleMapsNotAvailable')}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('enterLocationManually')}</p>
                 </div>
               </div>
             )}
             <div className="mt-4 flex justify-end space-x-3">
               <button
                 onClick={() => setShowMap(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={() => setShowMap(false)}
-                className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
+                className="px-4 py-2 bg-primary-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary-700"
               >
-                Save Location
+                {t('saveLocation')}
               </button>
             </div>
           </div>

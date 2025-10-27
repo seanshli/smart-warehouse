@@ -58,6 +58,9 @@ export default function HouseholdSettings() {
     community: '',
     apartmentNo: '',
     address: '',
+    streetAddress: '',
+    buildingAddress: '',
+    telephone: '',
     latitude: null as number | null,
     longitude: null as number | null
   })
@@ -87,6 +90,9 @@ export default function HouseholdSettings() {
         community: data.community || '',
         apartmentNo: data.apartmentNo || '',
         address: data.address || '',
+        streetAddress: data.streetAddress || '',
+        buildingAddress: data.buildingAddress || '',
+        telephone: data.telephone || '',
         latitude: data.latitude,
         longitude: data.longitude
       })

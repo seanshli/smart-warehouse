@@ -167,6 +167,32 @@ export interface Translations {
   createNewItem: string
   useExistingItem: string
   location: string
+  country: string
+  city: string
+  district: string
+  community: string
+  streetAddress: string
+  buildingAddress: string
+  apartmentNo: string
+  telephone: string
+  fullAddress: string
+  selectCountry: string
+  selectCity: string
+  selectDistrict: string
+  enterCommunity: string
+  enterStreetAddress: string
+  enterBuildingAddress: string
+  enterApartmentNo: string
+  enterTelephone: string
+  completeAddress: string
+  setLocationOnMap: string
+  updateLocationOnMap: string
+  selectLocationOnMap: string
+  saveLocation: string
+  unlockCity: string
+  googleMapsNotAvailable: string
+  enterLocationManually: string
+  coordinates: string
   editCabinet: string
   updateCabinet: string
   deleteCabinet: string
@@ -591,6 +617,32 @@ const en: Translations = {
   createNewItem: 'Create New Item',
   useExistingItem: 'Use Existing Item',
   location: 'Location',
+  country: 'Country',
+  city: 'City',
+  district: 'District',
+  community: 'Community/Neighborhood',
+  streetAddress: 'Street Address',
+  buildingAddress: 'Building Address',
+  apartmentNo: 'Apartment/Building No.',
+  telephone: 'Telephone',
+  fullAddress: 'Full Address',
+  selectCountry: 'Select Country',
+  selectCity: 'Select City',
+  selectDistrict: 'Select District',
+  enterCommunity: 'Enter community or neighborhood',
+  enterStreetAddress: 'Enter street address',
+  enterBuildingAddress: 'Enter building address',
+  enterApartmentNo: 'e.g., 123, Building A',
+  enterTelephone: 'Enter telephone number',
+  completeAddress: 'Complete address',
+  setLocationOnMap: 'Set Location on Map',
+  updateLocationOnMap: 'Update Location on Map',
+  selectLocationOnMap: 'Select Location on Map',
+  saveLocation: 'Save Location',
+  unlockCity: 'Unlock City',
+  googleMapsNotAvailable: 'Google Maps not available',
+  enterLocationManually: 'Please enter location manually using the form above',
+  coordinates: 'Coordinates',
   editCabinet: 'Edit Cabinet',
   updateCabinet: 'Update Cabinet',
   deleteCabinet: 'Delete Cabinet',
@@ -1015,6 +1067,32 @@ const zhTW: Translations = {
   createNewItem: '創建新物品',
   useExistingItem: '使用現有物品',
   location: '位置',
+  country: '國家',
+  city: '城市',
+  district: '區域',
+  community: '社區/鄰里',
+  streetAddress: '街道地址',
+  buildingAddress: '建築物地址',
+  apartmentNo: '公寓/建築物號碼',
+  telephone: '電話',
+  fullAddress: '完整地址',
+  selectCountry: '選擇國家',
+  selectCity: '選擇城市',
+  selectDistrict: '選擇區域',
+  enterCommunity: '輸入社區或鄰里',
+  enterStreetAddress: '輸入街道地址',
+  enterBuildingAddress: '輸入建築物地址',
+  enterApartmentNo: '例如：123號，A棟',
+  enterTelephone: '輸入電話號碼',
+  completeAddress: '完整地址',
+  setLocationOnMap: '在地圖上設定位置',
+  updateLocationOnMap: '在地圖上更新位置',
+  selectLocationOnMap: '在地圖上選擇位置',
+  saveLocation: '儲存位置',
+  unlockCity: '解鎖城市',
+  googleMapsNotAvailable: 'Google 地圖不可用',
+  enterLocationManually: '請使用上方表單手動輸入位置',
+  coordinates: '座標',
   editCabinet: '編輯櫥櫃',
   updateCabinet: '更新櫥櫃',
   deleteCabinet: '刪除櫥櫃',
@@ -1448,6 +1526,32 @@ const zh: Translations = {
   createNewItem: '创建新物品',
   useExistingItem: '使用现有物品',
   location: '位置',
+  country: '国家',
+  city: '城市',
+  district: '区域',
+  community: '社区/邻里',
+  streetAddress: '街道地址',
+  buildingAddress: '建筑物地址',
+  apartmentNo: '公寓/建筑物号码',
+  telephone: '电话',
+  fullAddress: '完整地址',
+  selectCountry: '选择国家',
+  selectCity: '选择城市',
+  selectDistrict: '选择区域',
+  enterCommunity: '输入社区或邻里',
+  enterStreetAddress: '输入街道地址',
+  enterBuildingAddress: '输入建筑物地址',
+  enterApartmentNo: '例如：123号，A栋',
+  enterTelephone: '输入电话号码',
+  completeAddress: '完整地址',
+  setLocationOnMap: '在地图上设定位置',
+  updateLocationOnMap: '在地图上更新位置',
+  selectLocationOnMap: '在地图上选择位置',
+  saveLocation: '保存位置',
+  unlockCity: '解锁城市',
+  googleMapsNotAvailable: 'Google 地图不可用',
+  enterLocationManually: '请使用上方表单手动输入位置',
+  coordinates: '坐标',
   editCabinet: '编辑橱柜',
   updateCabinet: '更新橱柜',
   deleteCabinet: '删除橱柜',
@@ -1879,6 +1983,32 @@ const ja: Translations = {
   createNewItem: '新しいアイテムを作成',
   useExistingItem: '既存のアイテムを使用',
   location: '場所',
+  country: '国',
+  city: '都市',
+  district: '地区',
+  community: 'コミュニティ/近隣',
+  streetAddress: '住所',
+  buildingAddress: '建物住所',
+  apartmentNo: 'アパート/建物番号',
+  telephone: '電話',
+  fullAddress: '完全な住所',
+  selectCountry: '国を選択',
+  selectCity: '都市を選択',
+  selectDistrict: '地区を選択',
+  enterCommunity: 'コミュニティまたは近隣を入力',
+  enterStreetAddress: '住所を入力',
+  enterBuildingAddress: '建物住所を入力',
+  enterApartmentNo: '例：123号、A棟',
+  enterTelephone: '電話番号を入力',
+  completeAddress: '完全な住所',
+  setLocationOnMap: '地図で位置を設定',
+  updateLocationOnMap: '地図で位置を更新',
+  selectLocationOnMap: '地図で位置を選択',
+  saveLocation: '位置を保存',
+  unlockCity: '都市のロックを解除',
+  googleMapsNotAvailable: 'Google マップが利用できません',
+  enterLocationManually: '上記のフォームを使用して手動で位置を入力してください',
+  coordinates: '座標',
   editCabinet: 'キャビネットを編集',
   updateCabinet: 'キャビネットを更新',
   deleteCabinet: 'キャビネットを削除',

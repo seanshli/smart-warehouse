@@ -82,6 +82,9 @@ model Household {
   latitude       Float?
   longitude      Float?
   address        String?
+  streetAddress  String?           @map("street_address")
+  buildingAddress String?          @map("building_address")
+  telephone      String?
   createdAt      DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   categories     Category[]

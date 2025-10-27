@@ -83,6 +83,9 @@ export async function PATCH(
       community,
       apartmentNo,
       address,
+      streetAddress,
+      buildingAddress,
+      telephone,
       latitude,
       longitude
     } = body
@@ -114,6 +117,9 @@ export async function PATCH(
         community: community?.trim() || null,
         apartmentNo: apartmentNo?.trim() || null,
         address: address?.trim() || null,
+        streetAddress: streetAddress?.trim() || null,
+        buildingAddress: buildingAddress?.trim() || null,
+        telephone: telephone?.trim() || null,
         latitude: latitude || null,
         longitude: longitude || null
       },

@@ -64,6 +64,18 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     setMounted(true)
   }, [])
 
+  // Trigger refresh when household changes (for external components)
+  useEffect(() => {
+    if (mounted && household) {
+      console.log('🔄 Household changed, triggering refresh for external components')
+      setRefreshTrigger(prev => {
+        const newTrigger = prev + 1
+        console.log('🔄 Refresh trigger updated due to household change:', newTrigger)
+        return newTrigger
+      })
+    }
+  }, [household?.id, mounted]) // Only trigger when household ID changes
+
   // Helper function to select active household from memberships
   const selectActiveFrom = (memberships: Membership[], preferredId?: string | null): Membership | null => {
     if (!memberships || memberships.length === 0) return null
@@ -229,11 +241,6 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
 
     // Mark switching as complete immediately
     setSwitching(false)
-    setRefreshTrigger(prev => {
-      const newTrigger = prev + 1
-      console.log('🔄 Refresh trigger updated:', newTrigger)
-      return newTrigger
-    })
     console.log('✅ ===== HOUSEHOLD SWITCHING COMPLETED =====')
   }
 

@@ -125,19 +125,6 @@ export default function Dashboard() {
     }
   }, [])
 
-  // Force refresh when household changes
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      console.log('🔄 ===== DASHBOARD REFRESH TRIGGERED =====')
-      console.log('🔄 Dashboard: Household changed, refreshTrigger:', refreshTrigger)
-      console.log('🏠 Current household:', household ? { id: household.id, name: household.name } : 'None')
-      console.log('🔄 Dashboard: Forcing data refresh...')
-      // Instead of page refresh, trigger a data refresh
-      // The household context will handle the data loading
-      console.log('✅ Dashboard: Household switch completed, data should be refreshed')
-      console.log('🔄 ===== DASHBOARD REFRESH COMPLETED =====')
-    }
-  }, [refreshTrigger, household])
 
   // Handle authentication errors - with debugging and less aggressive redirects
   useEffect(() => {
@@ -231,6 +218,27 @@ export default function Dashboard() {
     console.log('Dashboard: ItemsList onRef called with function:', typeof refreshFn)
     setRefreshItemsList(refreshFn)
   }, [])
+
+  // Force refresh when household changes
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('🔄 ===== DASHBOARD REFRESH TRIGGERED =====')
+      console.log('🔄 Dashboard: Household changed, refreshTrigger:', refreshTrigger)
+      console.log('🏠 Current household:', household ? { id: household.id, name: household.name } : 'None')
+      console.log('🔄 Dashboard: Forcing data refresh...')
+      
+      // Refresh the items list when household changes
+      if (refreshItemsList && typeof refreshItemsList === 'function') {
+        console.log('🔄 Dashboard: Refreshing items list for new household')
+        refreshItemsList()
+      } else {
+        console.log('🔄 Dashboard: refreshItemsList not available yet')
+      }
+      
+      console.log('✅ Dashboard: Household switch completed, data should be refreshed')
+      console.log('🔄 ===== DASHBOARD REFRESH COMPLETED =====')
+    }
+  }, [refreshTrigger, household, refreshItemsList])
 
   const tabs = [
     { id: 'dashboard', name: t('dashboard'), icon: HomeIcon },

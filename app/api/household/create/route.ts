@@ -47,6 +47,25 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Preload 5 default rooms for the new household
+    const defaultRooms = [
+      { name: '客廳', description: 'Living room' },
+      { name: '主臥室', description: 'Master bedroom' },
+      { name: '兒童房', description: 'Kids room' },
+      { name: '廚房', description: 'Kitchen' },
+      { name: '車庫', description: 'Garage' }
+    ]
+
+    await prisma.room.createMany({
+      data: defaultRooms.map(room => ({
+        name: room.name,
+        description: room.description,
+        householdId: household.id
+      }))
+    })
+
+    console.log(`✅ Created ${defaultRooms.length} default rooms for household: ${household.name}`)
+
     return NextResponse.json({
       success: true,
       household: {

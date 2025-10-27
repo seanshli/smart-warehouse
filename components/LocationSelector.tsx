@@ -46,14 +46,14 @@ const TAIWAN_LOCATIONS = {
 export default function LocationSelector({ value, onChange, disabled = false }: LocationSelectorProps) {
   const { t } = useLanguage()
   const [showMap, setShowMap] = useState(false)
-  const [map, setMap] = useState<google.maps.Map | null>(null)
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null)
+  const [map, setMap] = useState<any>(null)
+  const [marker, setMarker] = useState<any>(null)
   const mapRef = useRef<HTMLDivElement>(null)
 
   // Initialize Google Maps
   useEffect(() => {
-    if (showMap && mapRef.current && !map) {
-      const mapInstance = new google.maps.Map(mapRef.current, {
+    if (showMap && mapRef.current && !map && typeof window !== 'undefined' && window.google) {
+      const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: { lat: 25.0330, lng: 121.5654 }, // Taipei coordinates
         zoom: 12,
         mapTypeControl: true,
@@ -61,7 +61,7 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
         fullscreenControl: true,
       })
 
-      const markerInstance = new google.maps.Marker({
+      const markerInstance = new window.google.maps.Marker({
         position: { lat: 25.0330, lng: 121.5654 },
         map: mapInstance,
         draggable: true,
@@ -82,6 +82,10 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
 
       setMap(mapInstance)
       setMarker(markerInstance)
+    } else if (showMap && !window.google) {
+      // Google Maps not loaded, show error
+      alert('Google Maps is not loaded. Please check your internet connection and try again.')
+      setShowMap(false)
     }
   }, [showMap, map, value, onChange])
 

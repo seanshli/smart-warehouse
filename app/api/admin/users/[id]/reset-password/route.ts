@@ -36,15 +36,24 @@ export async function POST(
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 12)
 
-    // Update the user's password
-    const updatedUser = await prisma.user.update({
+    // Update the user's password in UserCredentials
+    await prisma.userCredentials.upsert({
+      where: { userId: userId },
+      update: { password: hashedPassword },
+      create: {
+        userId: userId,
+        password: hashedPassword
+      }
+    })
+
+    // Get the updated user info
+    const updatedUser = await prisma.user.findUnique({
       where: { id: userId },
-      data: { password: hashedPassword },
       select: { 
         id: true, 
         email: true, 
         name: true,
-        households: {
+        householdMemberships: {
           select: {
             household: {
               select: { name: true }
@@ -53,6 +62,12 @@ export async function POST(
         }
       }
     })
+
+    if (!updatedUser) {
+      return NextResponse.json({ 
+        error: 'User not found' 
+      }, { status: 404 })
+    }
 
     return NextResponse.json({ 
       success: true, 

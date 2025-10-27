@@ -622,48 +622,13 @@ function DashboardContent({
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [householdChangeDetected, setHouseholdChangeDetected] = useState(false)
 
-  useEffect(() => {
-    try {
-      fetchDashboardStats()
-      
-      // Check for household changes every 30 seconds
-      const interval = setInterval(() => {
-        checkForHouseholdChanges()
-      }, 30000)
-      
-      return () => clearInterval(interval)
-    } catch (error) {
-      console.error('Error in useEffect:', error)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeFilter]) // Only re-fetch when timeFilter changes
-
-  const checkForHouseholdChanges = async () => {
-    try {
-      const response = await fetch('/api/realtime')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.hasChanges) {
-          setHouseholdChangeDetected(true)
-        }
-      }
-    } catch (error) {
-      console.error('Error checking for household changes:', error)
-    }
-  }
-
-  const handleRefresh = () => {
-    setHouseholdChangeDetected(false)
-    fetchDashboardStats()
-  }
-
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {
       setLoading(true)
       
       // Fetch both dashboard stats and filtered activities
-      const householdId = household?.id
-      const bypassCache = refreshTrigger > 0 ? 'true' : 'false'
+      const householdId = currentHousehold?.id || ''
+      const bypassCache = (currentRefreshTrigger || 0) > 0 ? 'true' : 'false'
       const [statsResponse, activitiesResponse] = await Promise.all([
         fetch(`/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`),
         fetch(`/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`)
@@ -711,6 +676,41 @@ function DashboardContent({
       setLoading(false)
     }
   }
+
+  const checkForHouseholdChanges = async () => {
+    try {
+      const response = await fetch('/api/realtime')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.hasChanges) {
+          setHouseholdChangeDetected(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for household changes:', error)
+    }
+  }
+
+  const handleRefresh = () => {
+    setHouseholdChangeDetected(false)
+    fetchDashboardStats(household, refreshTrigger)
+  }
+
+  useEffect(() => {
+    try {
+      fetchDashboardStats(household, refreshTrigger)
+      
+      // Check for household changes every 30 seconds
+      const interval = setInterval(() => {
+        checkForHouseholdChanges()
+      }, 30000)
+      
+      return () => clearInterval(interval)
+    } catch (error) {
+      console.error('Error in useEffect:', error)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeFilter]) // Only re-fetch when timeFilter changes
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -922,7 +922,7 @@ function DashboardContent({
                     {t('recentActivity')}
                   </h3>
                   <button
-                    onClick={fetchDashboardStats}
+                    onClick={() => fetchDashboardStats(household, refreshTrigger)}
                     className="text-sm text-primary-600 hover:text-primary-700"
                   >
                     {t('refresh')}

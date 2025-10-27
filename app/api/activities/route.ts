@@ -19,9 +19,11 @@ export async function GET(request: NextRequest) {
 
     const userId = (session?.user as any)?.id
     
-    // Get time filter from query params
+    // Get query params
     const { searchParams } = new URL(request.url)
     const timeFilter = searchParams.get('timeFilter') || 'all'
+    const activeHouseholdId = searchParams.get('householdId')
+    const bypassCache = searchParams.get('bypassCache') === 'true'
     
     // Calculate date range based on filter
     let dateFilter = {}
@@ -56,15 +58,31 @@ export async function GET(request: NextRequest) {
     const t = getTranslations(userLanguage)
 
     // Get user's household for cache key
-    const household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
+    let household
+    if (activeHouseholdId) {
+      // Use the specified household ID
+      household = await prisma.household.findFirst({
+        where: {
+          id: activeHouseholdId,
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
-      }
-    })
+      })
+    } else {
+      // Fallback to first household
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      })
+    }
 
     if (!household) {
       return NextResponse.json({ error: 'No household found' }, { status: 404 })
@@ -72,7 +90,7 @@ export async function GET(request: NextRequest) {
 
     // Check cache first (include time filter in cache key)
     const cacheKey = `${CacheKeys.activities(household.id, userId)}_${timeFilter}`
-    const cachedData = cache.get(cacheKey)
+    const cachedData = !bypassCache ? cache.get(cacheKey) : null
     
     if (cachedData) {
       console.log('Activities API: Returning cached data for household:', household.id, 'filter:', timeFilter)

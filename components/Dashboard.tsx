@@ -662,9 +662,11 @@ function DashboardContent({
       setLoading(true)
       
       // Fetch both dashboard stats and filtered activities
+      const householdId = household?.id
+      const bypassCache = refreshTrigger > 0 ? 'true' : 'false'
       const [statsResponse, activitiesResponse] = await Promise.all([
-        fetch('/api/dashboard/stats'),
-        fetch(`/api/activities?timeFilter=${timeFilter}`)
+        fetch(`/api/dashboard/stats?householdId=${householdId}&bypassCache=${bypassCache}`),
+        fetch(`/api/activities?timeFilter=${timeFilter}&householdId=${householdId}&bypassCache=${bypassCache}`)
       ])
       
       if (statsResponse.ok && activitiesResponse.ok) {

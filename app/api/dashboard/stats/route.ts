@@ -17,25 +17,43 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = (session?.user as any)?.id
+    const { searchParams } = new URL(request.url)
+    const activeHouseholdId = searchParams.get('householdId')
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
+    let household
+    if (activeHouseholdId) {
+      // Use the specified household ID
+      household = await prisma.household.findFirst({
+        where: {
+          id: activeHouseholdId,
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
-      }
-    })
+      })
+    } else {
+      // Fallback to first household
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      })
+    }
 
     if (!household) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
     }
 
-    // Check cache first
+    // Check cache first (but bypass if switching households)
     const cacheKey = CacheKeys.dashboardStats(household.id)
-    const cachedData = cache.get(cacheKey)
+    const bypassCache = searchParams.get('bypassCache') === 'true'
+    const cachedData = !bypassCache ? cache.get(cacheKey) : null
     
     if (cachedData) {
       console.log('Dashboard Stats API: Returning cached data for household:', household.id)

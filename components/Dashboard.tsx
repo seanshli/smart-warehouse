@@ -149,7 +149,7 @@ export default function Dashboard() {
               }`}>
                 {t('smartWarehouse')}
               </h1>
-              {household && !deviceInfo.isMobile && (
+              {household && (
                 <div className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-1 sm:space-x-2 truncate">
                   <span className="truncate">{household.name}<span className="hidden sm:inline"> • {role || 'Member'}</span></span>
                   {/* Household switcher */}
@@ -427,6 +427,13 @@ export default function Dashboard() {
       )}
 
 
+      {/* Mobile Household Switcher */}
+      {deviceInfo.isMobile && (
+        <div className="fixed bottom-16 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 z-40">
+          <HouseholdSwitcher />
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation */}
       {deviceInfo.isMobile && (
         <div className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1 z-50 ${
@@ -464,8 +471,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Add bottom padding for mobile navigation */}
-      <div className={`${deviceInfo.isMobile ? 'h-16' : 'h-0'} sm:hidden`}></div>
+      {/* Add bottom padding for mobile navigation and household switcher */}
+      <div className={`${deviceInfo.isMobile ? 'h-24' : 'h-0'} sm:hidden`}></div>
     </div>
   )
 }

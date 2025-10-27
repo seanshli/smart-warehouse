@@ -239,10 +239,10 @@ export default function SettingsPage() {
   const goBack = () => {
     if (hasChanges) {
       if (confirm('You have unsaved changes. Are you sure you want to go back?')) {
-        router.back()
+        router.push('/')
       }
     } else {
-      router.back()
+      router.push('/')
     }
   }
 

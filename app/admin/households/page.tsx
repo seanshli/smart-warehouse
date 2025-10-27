@@ -45,8 +45,20 @@ export default function AdminHouseholdsPage() {
     setLoading(true)
     setError(null)
     const [res, sres] = await Promise.all([
-      fetch('/api/admin/households'),
-      fetch('/api/admin/stats')
+      fetch('/api/admin/households', { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }),
+      fetch('/api/admin/stats', { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
     ])
     if (!res.ok) {
       setError('Forbidden or failed to load')

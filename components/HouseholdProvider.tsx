@@ -190,13 +190,11 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       })
     }
 
-    // Refresh data after a short delay to ensure the switch is complete
+    // Force a page refresh to ensure all data is reloaded with the new household
     setTimeout(() => {
-      console.log('🔄 Refreshing household data...')
-      fetchHousehold().finally(() => {
-        setSwitching(false)
-      })
-    }, 300)
+      console.log('🔄 Refreshing page to load new household data...')
+      window.location.reload()
+    }, 100)
   }
 
   // Refetch function for external use

@@ -70,7 +70,10 @@ function HouseholdSwitcher() {
       
       {/* Create New Household Button */}
       <button
-        onClick={() => setShowCreateModal(true)}
+        onClick={() => {
+          console.log('🔄 Create household button clicked')
+          setShowCreateModal(true)
+        }}
         className="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/20 dark:text-primary-400 rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30 focus:outline-none focus:ring-2 focus:ring-primary-500"
         title={t('createNewHousehold') || 'Create New Household'}
       >
@@ -86,7 +89,12 @@ function HouseholdSwitcher() {
 
       {/* Create Household Modal */}
       {showCreateModal && (
-        <CreateHouseholdModal onClose={() => setShowCreateModal(false)} />
+        <CreateHouseholdModal 
+          onClose={() => {
+            console.log('🔄 Closing create household modal')
+            setShowCreateModal(false)
+          }} 
+        />
       )}
     </div>
   )

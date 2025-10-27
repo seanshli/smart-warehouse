@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from './LanguageProvider'
+import { useHousehold } from './HouseholdProvider'
 import ItemCard from './ItemCard'
 
 interface Item {
@@ -57,6 +58,7 @@ export default function ItemsList({
   onRef
 }: ItemsListProps) {
   const { t } = useLanguage()
+  const { household } = useHousehold()
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,9 +76,11 @@ export default function ItemsList({
       if (searchTerm) params.append('search', searchTerm)
       if (selectedCategory) params.append('category', selectedCategory)
       if (selectedRoom) params.append('room', selectedRoom)
+      if (household?.id) params.append('householdId', household.id)
       
       const url = `/api/items${params.toString() ? '?' + params.toString() : ''}`
       console.log('ItemsList: Fetching from URL:', url)
+      console.log('ItemsList: Active household:', household?.id)
       const response = await fetch(url)
       
       if (response.ok) {
@@ -100,7 +104,7 @@ export default function ItemsList({
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, selectedCategory, selectedRoom])
+  }, [searchTerm, selectedCategory, selectedRoom, household?.id])
 
   useEffect(() => {
     fetchGroupedItems()

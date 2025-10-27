@@ -478,17 +478,34 @@ export async function GET(request: NextRequest) {
     const roomId = searchParams.get('roomId')
     const subcategory = searchParams.get('subcategory')
     const level3 = searchParams.get('level3')
+    const activeHouseholdId = searchParams.get('householdId')
 
-    // Get user's household
-    let household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
+    // Get user's household - use activeHouseholdId if provided, otherwise find first
+    let household
+    if (activeHouseholdId) {
+      // Verify user has access to this household
+      household = await prisma.household.findFirst({
+        where: {
+          id: activeHouseholdId,
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
-      }
-    })
+      })
+    } else {
+      // Fallback to first household
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      })
+    }
 
     // If user has no household, create one automatically
     if (!household) {

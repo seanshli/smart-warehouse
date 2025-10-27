@@ -48,6 +48,7 @@ interface HouseholdProviderProps {
 
 export function HouseholdProvider({ children }: HouseholdProviderProps) {
   const { data: session, status } = useSession()
+  const [mounted, setMounted] = useState(false)
   const [household, setHousehold] = useState<Household | null>(null)
   const [role, setRole] = useState<UserRole | null>(null)
   const [permissions, setPermissions] = useState<Permissions | null>(null)
@@ -57,6 +58,11 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   const [activeHouseholdId, setActiveHouseholdId] = useState<string | null>(null)
   const [switching, setSwitching] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // Set mounted to true after hydration to prevent SSR/client mismatches
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Helper function to select active household from memberships
   const selectActiveFrom = (memberships: Membership[], preferredId?: string | null): Membership | null => {
@@ -133,11 +139,15 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
 
       // Get preferred household ID from localStorage first, then current state
       let preferredId = null
-      if (typeof window !== 'undefined') {
-        const storedId = localStorage.getItem('activeHouseholdId')
-        if (storedId) {
-          preferredId = storedId
-          console.log('🏠 Restoring household from localStorage:', storedId)
+      if (mounted && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        try {
+          const storedId = localStorage.getItem('activeHouseholdId')
+          if (storedId) {
+            preferredId = storedId
+            console.log('🏠 Restoring household from localStorage:', storedId)
+          }
+        } catch (error) {
+          console.warn('Error accessing localStorage:', error)
         }
       }
       
@@ -187,12 +197,16 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     console.log('✅ Found target membership:', { id: targetMembership.household.id, name: targetMembership.household.name, role: targetMembership.role })
 
     // Store the selection in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('activeHouseholdId', householdId)
-      console.log('💾 Stored household ID in localStorage:', householdId)
-      // Verify it was stored
-      const stored = localStorage.getItem('activeHouseholdId')
-      console.log('💾 Verified stored value:', stored)
+    if (mounted && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('activeHouseholdId', householdId)
+        console.log('💾 Stored household ID in localStorage:', householdId)
+        // Verify it was stored
+        const stored = localStorage.getItem('activeHouseholdId')
+        console.log('💾 Verified stored value:', stored)
+      } catch (error) {
+        console.warn('Error storing to localStorage:', error)
+      }
     }
 
     // Apply the new active household immediately

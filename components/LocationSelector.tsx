@@ -114,11 +114,29 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
           },
           (error) => {
             console.error('Error getting location:', error)
-            setShowMap(true)
+            // Fallback: Use browser geolocation without map
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const newLocation = {
+                    ...value,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                  }
+                  onChange(newLocation)
+                  alert(`Location set to: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`)
+                },
+                () => {
+                  alert('Unable to get location. Please enter address manually.')
+                }
+              )
+            } else {
+              alert('Location services not available. Please enter address manually.')
+            }
           }
         )
       } else {
-        setShowMap(true)
+        alert('Location services not available. Please enter address manually.')
       }
     }
   }
@@ -268,7 +286,17 @@ export default function LocationSelector({ value, onChange, disabled = false }: 
                 ✕
               </button>
             </div>
-            <div ref={mapRef} className="w-full h-64 sm:h-96 rounded-md"></div>
+            {typeof window !== 'undefined' && window.google ? (
+              <div ref={mapRef} className="w-full h-64 sm:h-96 rounded-md"></div>
+            ) : (
+              <div className="w-full h-64 sm:h-96 rounded-md bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-gray-500 mb-2">📍</div>
+                  <p className="text-gray-600">Google Maps not available</p>
+                  <p className="text-sm text-gray-500">Please enter location manually using the form above</p>
+                </div>
+              </div>
+            )}
             <div className="mt-4 flex justify-end space-x-3">
               <button
                 onClick={() => setShowMap(false)}

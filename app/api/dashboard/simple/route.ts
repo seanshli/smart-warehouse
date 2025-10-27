@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
     const startTime = Date.now()
     
     const [itemCount, roomCount, memberCount] = await Promise.all([
-      prisma.$queryRaw`SELECT COUNT(*) as count FROM "Item" WHERE "householdId" = ${household.id}`,
-      prisma.$queryRaw`SELECT COUNT(*) as count FROM "Room" WHERE "householdId" = ${household.id}`,
-      prisma.$queryRaw`SELECT COUNT(*) as count FROM "HouseholdMember" WHERE "householdId" = ${household.id}`
+      prisma.$queryRaw`SELECT COUNT(*) as count FROM "items" WHERE "household_id" = ${household.id}`,
+      prisma.$queryRaw`SELECT COUNT(*) as count FROM "rooms" WHERE "household_id" = ${household.id}`,
+      prisma.$queryRaw`SELECT COUNT(*) as count FROM "household_members" WHERE "household_id" = ${household.id}`
     ])
 
     const queryTime = Date.now() - startTime

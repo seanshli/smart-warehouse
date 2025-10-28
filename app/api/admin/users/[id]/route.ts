@@ -6,10 +6,10 @@ import { prisma } from '@/lib/prisma'
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-// DELETE /api/admin/users/[userId] - Delete user
+// DELETE /api/admin/users/[id] - Delete user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,7 +19,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
     }
 
-    const { userId } = params
+    const { id: userId } = params
 
     // Check if user exists
     const user = await prisma.user.findUnique({

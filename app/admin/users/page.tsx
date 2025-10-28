@@ -268,7 +268,8 @@ export default function AdminUsersPage() {
       })
 
       if (response.ok) {
-        alert('Password reset successfully. User will need to set a new password on next login.')
+        const data = await response.json()
+        alert(`Password reset successfully. Temporary password: ${data.tempPassword}\n\nPlease communicate this password to the user securely.`)
       } else {
         const errorData = await response.json()
         alert(errorData.error || 'Failed to reset password')

@@ -1,341 +1,510 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useLanguage } from '@/components/LanguageProvider'
+import { useRouter } from 'next/navigation'
 import { 
-  UserGroupIcon,
-  PlusIcon,
-  TrashIcon,
-  ShieldCheckIcon,
-  UserMinusIcon
+  UserPlusIcon, 
+  TrashIcon, 
+  KeyIcon, 
+  EyeIcon,
+  PencilIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon
 } from '@heroicons/react/24/outline'
+import { useLanguage } from '@/components/LanguageProvider'
 
-interface AdminUser {
-  id: string;
-  email: string;
-  name: string | null;
-  isAdmin: boolean;
-  createdAt: string;
+interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  contact?: string
+  language: string
+  isAdmin: boolean
+  createdAt: string
+  households: Array<{
+    id: string
+    name: string
+    role: string
+    joinedAt: string
+  }>
 }
 
-export default function AdminUsersPage() {
-  const { data: session } = useSession()
+interface CreateUserModalProps {
+  onClose: () => void
+  onSuccess: () => void
+}
+
+function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
   const { t } = useLanguage()
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newUser, setNewUser] = useState({ email: '', password: '', name: '' })
-  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null)
-  const [newPassword, setNewPassword] = useState('')
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    contact: '',
+    password: '',
+    isAdmin: false
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    loadAdminUsers()
-  }, [])
-
-  const loadAdminUsers = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setLoading(true)
-    setError(null)
+    setError('')
+
     try {
-      const res = await fetch('/api/admin/manage')
-      if (!res.ok) {
-        throw new Error('Failed to load admin users')
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      if (response.ok) {
+        onSuccess()
+        onClose()
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to create user')
       }
-      const data = await res.json()
-      setAdminUsers(data.adminUsers || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError('Network error')
     } finally {
       setLoading(false)
     }
   }
 
-  const createAdminUser = async () => {
-    if (!newUser.email || !newUser.password) {
-      setError('Email and password are required')
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black opacity-30" onClick={onClose}></div>
+        
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Create New User
+          </h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email *
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Contact Info
+              </label>
+              <input
+                type="text"
+                value={formData.contact}
+                onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Password *
+              </label>
+              <input
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isAdmin"
+                checked={formData.isAdmin}
+                onChange={(e) => setFormData(prev => ({ ...prev, isAdmin: e.target.checked }))}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                Admin User
+              </label>
+            </div>
+
+            {error && (
+              <div className="text-red-600 text-sm">{error}</div>
+            )}
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create User'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminUsersPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const { t } = useLanguage()
+  
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'user'>('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showUserDetails, setShowUserDetails] = useState(false)
+
+  // Check admin access
+  useEffect(() => {
+    if (status === 'loading') return
+    
+    if (!session?.user || !(session.user as any)?.isAdmin) {
+      router.push('/admin-auth/signin')
       return
     }
+  }, [session, status, router])
 
+  // Fetch users
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/admin/manage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || 'Failed to create admin user')
+      setLoading(true)
+      const response = await fetch('/api/admin/users')
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUsers(data.users || [])
+      } else {
+        setError('Failed to fetch users')
       }
-
-      setNewUser({ email: '', password: '', name: '' })
-      setShowCreateForm(false)
-      await loadAdminUsers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError('Network error')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const removeAdminPrivileges = async (userId: string) => {
-    if (!confirm('Are you sure you want to remove admin privileges from this user?')) {
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       return
     }
 
     try {
-      const res = await fetch(`/api/admin/manage?userId=${userId}`, {
+      const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE'
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || 'Failed to remove admin privileges')
+      if (response.ok) {
+        fetchUsers() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to delete user')
       }
-
-      await loadAdminUsers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      alert('Network error')
     }
   }
 
-  const resetPassword = async () => {
-    if (!resetPasswordUser || !newPassword) return
-
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long')
+  const handleResetPassword = async (userId: string) => {
+    if (!confirm('Are you sure you want to reset this user\'s password? They will need to set a new password on next login.')) {
       return
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${resetPasswordUser.id}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword })
+      const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST'
       })
 
-      if (res.ok) {
-        setResetPasswordUser(null)
-        setNewPassword('')
-        setError(null)
-        alert(`Password reset successfully for ${resetPasswordUser.email}`)
+      if (response.ok) {
+        alert('Password reset successfully. User will need to set a new password on next login.')
       } else {
-        const error = await res.json()
-        setError(error.message || 'Failed to reset password')
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to reset password')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      alert('Network error')
     }
   }
 
-  if (loading) {
+  // Filter users
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesRole = filterRole === 'all' || 
+                       (filterRole === 'admin' && user.isAdmin) ||
+                       (filterRole === 'user' && !user.isAdmin)
+    
+    return matchesSearch && matchesRole
+  })
+
+  if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading admin users...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{t('adminUserManagement')}</h1>
-        <p className="text-gray-600 mt-1">Manage admin users and their privileges</p>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div className="text-sm text-red-600">{error}</div>
-        </div>
-      )}
-
-      {/* Create Admin User Button */}
-      <div className="mb-6">
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Create Admin User
-        </button>
-      </div>
-
-      {/* Create Admin User Form */}
-      {showCreateForm && (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Admin User</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                placeholder="admin@example.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                placeholder="Secure password"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
-              <input
-                type="text"
-                value={newUser.name}
-                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                placeholder="Admin Name"
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex space-x-3">
-            <button
-              onClick={createAdminUser}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
-            >
-              Create Admin User
-            </button>
-            <button
-              onClick={() => {
-                setShowCreateForm(false)
-                setNewUser({ email: '', password: '', name: '' })
-              }}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Admin Users Table */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Admin Users ({adminUsers.length})
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Users with administrative privileges
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Manage all users in the system
           </p>
         </div>
-        
-        {adminUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No admin users</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating an admin user.</p>
+
+        {/* Controls */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              />
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {adminUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                            <ShieldCheckIcon className="h-5 w-5 text-red-600" />
+          
+          <div className="flex gap-2">
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="all">All Users</option>
+              <option value="admin">Admins Only</option>
+              <option value="user">Regular Users</option>
+            </select>
+            
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            >
+              <UserPlusIcon className="h-5 w-5 mr-2" />
+              Add User
+            </button>
+          </div>
+        </div>
+
+        {/* Users Table */}
+        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400">No users found</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredUsers.map((user) => (
+                <li key={user.id} className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.email}</div>
-                          <div className="text-sm text-gray-500">{user.name || 'No name'}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                              {user.name}
+                            </p>
+                            {user.isAdmin && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            {user.email}
+                          </p>
+                          <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                            {user.phone && <span>📞 {user.phone}</span>}
+                            <span>🏠 {user.households.length} household(s)</span>
+                            <span>📅 Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setResetPasswordUser(user)}
-                          className="inline-flex items-center px-3 py-1 border border-blue-300 shadow-sm text-xs font-medium rounded text-blue-700 bg-white hover:bg-blue-50"
-                        >
-                          Reset Password
-                        </button>
-                        <button
-                          onClick={() => removeAdminPrivileges(user.id)}
-                          className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50"
-                        >
-                          <UserMinusIcon className="h-3 w-3 mr-1" />
-                          Remove Admin
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user)
+                          setShowUserDetails(true)
+                        }}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                        title="View Details"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleResetPassword(user.id)}
+                        className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                        title="Reset Password"
+                      >
+                        <KeyIcon className="h-4 w-4" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="inline-flex items-center px-2 py-1 border border-red-300 dark:border-red-600 text-xs font-medium rounded text-red-700 dark:text-red-300 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900"
+                        title="Delete User"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-        {/* Reset Password Modal */}
-        {resetPasswordUser && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Reset Password for {resetPasswordUser.email}
+        {/* User Details Modal */}
+        {showUserDetails && selectedUser && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowUserDetails(false)}></div>
+              
+              <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                  User Details: {selectedUser.name}
                 </h3>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter new password (min 6 characters)"
-                  />
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.email}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.phone || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.contact || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.language}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">
+                        {selectedUser.isAdmin ? 'Admin' : 'User'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Households</label>
+                    {selectedUser.households.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No households</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectedUser.households.map((household) => (
+                          <div key={household.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{household.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Role: {household.role}</p>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Joined: {new Date(household.joinedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex justify-end space-x-3">
+                
+                <div className="mt-6 flex justify-end">
                   <button
-                    onClick={() => {
-                      setResetPasswordUser(null)
-                      setNewPassword('')
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    onClick={() => setShowUserDetails(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={resetPassword}
-                    className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
-                  >
-                    Reset Password
+                    Close
                   </button>
                 </div>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Create User Modal */}
+        {showCreateModal && (
+          <CreateUserModal
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={fetchUsers}
+          />
         )}
       </div>
     </div>

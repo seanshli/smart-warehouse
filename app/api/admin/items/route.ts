@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         imageUrl: true,
         createdAt: true,
         updatedAt: true,
-        household: { select: { id: true, name: true } },
+        household: { select: { id: true, name: true, country: true, city: true, district: true } },
         room: { select: { id: true, name: true } },
         cabinet: { select: { id: true, name: true } },
         category: { select: { id: true, name: true, level: true } },

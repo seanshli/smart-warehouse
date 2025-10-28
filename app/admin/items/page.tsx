@@ -23,7 +23,13 @@ interface AdminItem {
   imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
-  household: { id: string; name: string }; 
+  household: { 
+    id: string; 
+    name: string;
+    country?: string | null;
+    city?: string | null;
+    district?: string | null;
+  }; 
   room?: { id: string; name: string } | null; 
   cabinet?: { id: string; name: string } | null;
   category?: { id: string; name: string; level: number } | null;
@@ -34,7 +40,7 @@ export default function AdminItemsPage() {
   const [items, setItems] = useState<AdminItem[]>([])
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
-  const [sortBy, setSortBy] = useState<'name' | 'quantity' | 'createdAt' | 'household'>('name')
+  const [sortBy, setSortBy] = useState<'name' | 'quantity' | 'createdAt' | 'household' | 'location'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [filterHousehold, setFilterHousehold] = useState<string>('')
 
@@ -126,6 +132,11 @@ export default function AdminItemsPage() {
         case 'household':
           aVal = a.household.name.toLowerCase()
           bVal = b.household.name.toLowerCase()
+          break
+        case 'location':
+          // Sort by: Country > City > District > Household Name
+          aVal = [a.household.country, a.household.city, a.household.district, a.household.name].filter(Boolean).join(' ').toLowerCase()
+          bVal = [b.household.country, b.household.city, b.household.district, b.household.name].filter(Boolean).join(' ').toLowerCase()
           break
         default:
           return 0
@@ -340,8 +351,18 @@ export default function AdminItemsPage() {
                       )}
                     </div>
                   </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '150px' }}>
-                    {t('location')}
+                  <th 
+                    scope="col" 
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    style={{ width: '200px' }}
+                    onClick={() => handleSort('location')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>{t('location')}</span>
+                      {sortBy === 'location' && (
+                        <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
                   </th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '150px' }}>
                     {t('category')}

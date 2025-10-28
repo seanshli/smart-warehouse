@@ -51,6 +51,7 @@ export default function AdminHouseholdsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedHousehold, setSelectedHousehold] = useState<string | null>(null)
   const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [sortBy, setSortBy] = useState<'name' | 'location' | 'members' | 'items' | 'created'>('name')
 
   const load = async () => {
     setLoading(true)
@@ -91,15 +92,37 @@ export default function AdminHouseholdsPage() {
     load()
   }, [])
 
-  // Filter households based on search term
-  const filteredHouseholds = households.filter(household => 
-    household.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    household.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    household.members.some(member => 
-      member.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter and sort households
+  const filteredAndSortedHouseholds = households
+    .filter(household => 
+      household.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      household.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      household.members.some(member => 
+        member.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      ) ||
+      household.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      household.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      household.district?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'location':
+          // Sort by: Country > City > District > Name
+          const locationA = [a.country, a.city, a.district].filter(Boolean).join(' ').toLowerCase()
+          const locationB = [b.country, b.city, b.district].filter(Boolean).join(' ').toLowerCase()
+          return locationA.localeCompare(locationB) || a.name.localeCompare(b.name)
+        case 'members':
+          return b._count.members - a._count.members
+        case 'items':
+          return b._count.items - a._count.items
+        case 'created':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name)
+      }
+    })
 
   if (loading) {
     return (
@@ -203,16 +226,29 @@ export default function AdminHouseholdsPage() {
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">{t('adminHouseholds')} ({filteredHouseholds.length})</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">{t('adminHouseholds')} ({filteredAndSortedHouseholds.length})</h2>
             <div className="flex space-x-4">
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder={t('adminSearchHouseholds')}
+                  placeholder={t('adminSearchHouseholds') + ' (name, email, location)'}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
                 />
+              </div>
+              <div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="location">Sort by Location</option>
+                  <option value="members">Sort by Members</option>
+                  <option value="items">Sort by Items</option>
+                  <option value="created">Sort by Date</option>
+                </select>
               </div>
               <button
                 onClick={async () => {
@@ -255,7 +291,7 @@ export default function AdminHouseholdsPage() {
 
       {/* Households List */}
       <div className="space-y-6">
-        {filteredHouseholds.map(h => (
+        {filteredAndSortedHouseholds.map(h => (
           <div key={h.id} className="bg-white shadow rounded-lg overflow-hidden">
             {/* Household Header */}
             <div className="px-6 py-4 border-b border-gray-200">
@@ -557,7 +593,7 @@ export default function AdminHouseholdsPage() {
       </div>
 
       {/* No households found */}
-      {filteredHouseholds.length === 0 && searchTerm && (
+      {filteredAndSortedHouseholds.length === 0 && searchTerm && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No households found matching "{searchTerm}"</p>
           <button

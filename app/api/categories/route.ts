@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
 
     const categories = await prisma.category.findMany({
       where: {
-        householdId: household.id
+        householdId: household.id,
+        level: 1 // Only get level 1 categories, children will be included via include
       },
       include: {
         children: {
@@ -70,7 +71,6 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: [
-        { level: 'asc' },
         { name: 'asc' }
       ]
     })

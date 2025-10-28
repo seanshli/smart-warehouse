@@ -41,8 +41,32 @@ function HouseholdSwitcher() {
   const { memberships, activeHouseholdId, setActiveHousehold, switching, error } = useHousehold()
   const { t } = useLanguage()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [pendingHouseholdId, setPendingHouseholdId] = useState<string | null>(null)
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false)
 
   if (!memberships || memberships.length === 0) return null
+
+  const handleHouseholdChange = (householdId: string) => {
+    if (householdId === activeHouseholdId) return // No change
+    
+    setPendingHouseholdId(householdId)
+    setShowSwitchConfirm(true)
+  }
+
+  const confirmSwitch = () => {
+    if (pendingHouseholdId) {
+      setActiveHousehold(pendingHouseholdId)
+    }
+    setShowSwitchConfirm(false)
+    setPendingHouseholdId(null)
+  }
+
+  const cancelSwitch = () => {
+    setShowSwitchConfirm(false)
+    setPendingHouseholdId(null)
+  }
+
+  const pendingHousehold = memberships.find(m => m.household.id === pendingHouseholdId)
 
   return (
     <div className="flex items-center space-x-2">
@@ -50,7 +74,7 @@ function HouseholdSwitcher() {
       <div className="relative">
         <select
           value={activeHouseholdId || ''}
-          onChange={(e) => setActiveHousehold(e.target.value)}
+          onChange={(e) => handleHouseholdChange(e.target.value)}
           disabled={switching}
           className="border-gray-300 text-sm rounded-md px-2 py-1 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
           title={t('switchHousehold')}
@@ -67,6 +91,40 @@ function HouseholdSwitcher() {
           </div>
         )}
       </div>
+      
+      {/* Confirmation Modal */}
+      {showSwitchConfirm && pendingHousehold && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black opacity-30" onClick={cancelSwitch}></div>
+            
+            {/* Modal */}
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                Confirm Household Switch
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-6">
+                Are you sure you want to switch to <strong>{pendingHousehold.household.name}</strong>?
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={cancelSwitch}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={confirmSwitch}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                >
+                  {t('continue')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Create New Household Button */}
       <button

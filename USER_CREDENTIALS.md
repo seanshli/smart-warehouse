@@ -72,6 +72,12 @@
 - **Role**: System Administrator
 - **Permissions**: Full admin access
 
+#### 9. Sean Li Mac Account
+- **Email**: `seanshli@mac.com`
+- **Password**: `Smtengo1324!`
+- **Role**: System Administrator
+- **Permissions**: Full admin access
+
 ## 🔄 Password Reset
 
 If you need to reset a password, you can use the script:

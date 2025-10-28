@@ -312,22 +312,22 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header - Streamlined for tablets */}
+      {/* Header - Ultra-compact for mobile */}
       <header className={`bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 ${
         deviceInfo.isMobile ? 'pt-safe-top' : 'pt-0'
       }`}>
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="max-w-7xl mx-auto px-1 sm:px-4 lg:px-6">
           <div className={`flex justify-between items-center ${
-            deviceInfo.isMobile ? 'h-12' : deviceInfo.isTablet ? 'h-12' : 'h-14'
+            deviceInfo.isMobile ? 'h-10' : deviceInfo.isTablet ? 'h-12' : 'h-14'
           }`}>
-            {/* Left side: App name + Household */}
-            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            {/* Left side: App name only on mobile */}
+            <div className="flex items-center space-x-1 sm:space-x-3 min-w-0 flex-1">
               <h1 className={`font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0 ${
-                deviceInfo.isMobile ? 'text-sm' : deviceInfo.isTablet ? 'text-base' : 'text-lg'
+                deviceInfo.isMobile ? 'text-xs' : deviceInfo.isTablet ? 'text-base' : 'text-lg'
               }`}>
-                {t('smartWarehouse')}
+                {deviceInfo.isMobile ? 'SW' : t('smartWarehouse')}
               </h1>
-              {household && (
+              {household && !deviceInfo.isMobile && (
                 <>
                   <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
                   <div className="min-w-0">
@@ -337,28 +337,28 @@ export default function Dashboard() {
               )}
             </div>
             
-            {/* Right side: Compact action buttons */}
+            {/* Right side: Minimal buttons on mobile */}
             <div className="flex items-center space-x-1 sm:space-x-2">
               {/* Add Item - Primary action */}
               <button
                 onClick={() => setShowAddItem(true)}
                 className={`inline-flex items-center border border-transparent font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 flex-shrink-0 ${
-                  deviceInfo.isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'
+                  deviceInfo.isMobile ? 'px-1.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
                 }`}
               >
-                <PlusIcon className="h-4 w-4 mr-1" />
-                {!deviceInfo.isMobile && <span>{t('addItem')}</span>}
+                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                {!deviceInfo.isMobile && <span className="ml-1">{t('addItem')}</span>}
               </button>
               
-              {/* Search */}
+              {/* Search - Icon only on mobile */}
               <button
                 onClick={() => setShowSearch(true)}
                 className={`inline-flex items-center border border-gray-300 dark:border-gray-600 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex-shrink-0 ${
-                  deviceInfo.isMobile ? 'px-2 py-1' : deviceInfo.isTablet ? 'px-2 py-1.5' : 'px-3 py-1.5'
+                  deviceInfo.isMobile ? 'px-1.5 py-1' : deviceInfo.isTablet ? 'px-2 py-1.5' : 'px-3 py-1.5'
                 }`}
                 title={t('search')}
               >
-                <MagnifyingGlassIcon className="h-4 w-4" />
+                <MagnifyingGlassIcon className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
 
               {/* Settings - Only on larger screens */}
@@ -374,14 +374,13 @@ export default function Dashboard() {
                 </a>
               )}
 
-              {/* Language */}
-              <CompactLanguageSelector />
+              {/* Language - Compact on mobile */}
+              {!deviceInfo.isMobile && <CompactLanguageSelector />}
 
-              {/* Sign Out */}
+              {/* Sign Out - Icon only on mobile */}
               <button
                 onClick={() => {
                   console.log('Signing out...')
-                  // Redirect to the dedicated signout page which handles proper cleanup
                   window.location.href = '/auth/signout'
                 }}
                 className={`text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 ${
@@ -389,18 +388,18 @@ export default function Dashboard() {
                 }`}
                 title={t('signOut')}
               >
-                {deviceInfo.isMobile ? t('signOut').slice(0, 2) : t('signOut')}
+                {deviceInfo.isMobile ? '⏻' : t('signOut')}
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation Tabs - Compact for tablets */}
+      {/* Navigation Tabs - Ultra-compact for mobile */}
       <nav className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="max-w-7xl mx-auto px-1 sm:px-4 lg:px-6">
           <div className={`flex overflow-x-auto whitespace-nowrap ${
-            deviceInfo.isTablet ? 'space-x-1' : 'space-x-2 sm:space-x-4'
+            deviceInfo.isMobile ? 'space-x-0.5' : deviceInfo.isTablet ? 'space-x-1' : 'space-x-2 sm:space-x-4'
           }`}>
             {tabs.map((tab) => {
               // Check if user has permission for this tab
@@ -414,7 +413,7 @@ export default function Dashboard() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex-shrink-0 border-b-2 font-medium ${
                     deviceInfo.isMobile 
-                      ? 'py-2 px-2 text-xs' 
+                      ? 'py-1.5 px-1.5 text-xs' 
                       : deviceInfo.isTablet 
                         ? 'py-2 px-2 text-xs'
                         : 'py-3 px-3 text-sm'
@@ -425,7 +424,7 @@ export default function Dashboard() {
                   }`}
                 >
                   <tab.icon className={`inline ${
-                    deviceInfo.isTablet ? 'h-4 w-4 mr-1' : 'h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-1.5'
+                    deviceInfo.isMobile ? 'h-3 w-3' : deviceInfo.isTablet ? 'h-4 w-4 mr-1' : 'h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-1.5'
                   }`} />
                   <span className={deviceInfo.isMobile ? 'hidden' : ''}>{tab.name}</span>
                 </button>
@@ -609,17 +608,17 @@ export default function Dashboard() {
       )}
 
 
-      {/* Mobile Household Switcher */}
+      {/* Mobile Household Switcher - Compact */}
       {deviceInfo.isMobile && (
-        <div className="fixed bottom-16 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 z-40">
+        <div className="fixed bottom-12 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1 z-40">
           <HouseholdSwitcher />
         </div>
       )}
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - Ultra-compact */}
       {deviceInfo.isMobile && (
-        <div className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1 z-50 ${
-          deviceInfo.orientation === 'landscape' ? 'pb-safe-bottom' : 'pb-1'
+        <div className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-1 py-0.5 z-50 ${
+          deviceInfo.orientation === 'landscape' ? 'pb-safe-bottom' : 'pb-0.5'
         }`}>
           <div className="flex justify-around">
             {tabs.slice(0, 4).map((tab) => {
@@ -632,19 +631,19 @@ export default function Dashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center py-2 px-1 text-xs ${
+                  className={`flex flex-col items-center py-1 px-0.5 text-xs ${
                     activeTab === tab.id
                       ? 'text-primary-600'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}
                 >
-                  <tab.icon className={`mb-1 ${
-                    deviceInfo.orientation === 'landscape' ? 'h-4 w-4' : 'h-5 w-5'
+                  <tab.icon className={`mb-0.5 ${
+                    deviceInfo.orientation === 'landscape' ? 'h-3 w-3' : 'h-4 w-4'
                   }`} />
                   <span className={`truncate ${
-                    deviceInfo.orientation === 'landscape' ? 'max-w-12 text-xs' : 'max-w-16'
+                    deviceInfo.orientation === 'landscape' ? 'max-w-10 text-xs' : 'max-w-12 text-xs'
                   }`}>
-                    {deviceInfo.orientation === 'landscape' ? tab.name.slice(0, 3) : tab.name}
+                    {deviceInfo.orientation === 'landscape' ? tab.name.slice(0, 2) : tab.name.slice(0, 4)}
                   </span>
                 </button>
               )
@@ -654,7 +653,7 @@ export default function Dashboard() {
       )}
 
       {/* Add bottom padding for mobile navigation and household switcher */}
-      <div className={`${deviceInfo.isMobile ? 'h-24' : 'h-0'} sm:hidden`}></div>
+      <div className={`${deviceInfo.isMobile ? 'h-20' : 'h-0'} sm:hidden`}></div>
     </div>
   )
 }

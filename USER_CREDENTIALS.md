@@ -2,8 +2,22 @@
 
 ## 🔐 All User Accounts
 
-### Production Admin Account
+### Production Admin Accounts
+
+#### 1. Sean Li (Primary Admin)
 - **Email**: `sean.li@smtengo.com`
+- **Password**: `Smtengo1324!`
+- **Role**: System Administrator
+- **Permissions**: Full admin access
+
+#### 2. Van Lee (Admin)
+- **Email**: `van.lee@smtengo.com`
+- **Password**: `Smtengo1324!`
+- **Role**: System Administrator
+- **Permissions**: Full admin access
+
+#### 3. Max Lin (Admin)
+- **Email**: `max.lin@smtengo.com`
 - **Password**: `Smtengo1324!`
 - **Role**: System Administrator
 - **Permissions**: Full admin access
@@ -128,6 +142,8 @@ curl -X POST http://localhost:3000/api/test-login \
 | Email | Password | Role | Status |
 |-------|----------|------|--------|
 | sean.li@smtengo.com | Smtengo1324! | Admin | Active |
+| van.lee@smtengo.com | Smtengo1324! | Admin | Active |
+| max.lin@smtengo.com | Smtengo1324! | Admin | Active |
 | admin@smartwarehouse.com | admin123 | Admin | Active |
 | seanshlitw@gmail.com | smtengo888 | Admin | Active |
 | demo@smartwarehouse.com | demo123 | User | Active |

@@ -18,7 +18,9 @@ const userCredentials = [
   { email: 'carol@smartwarehouse.com', password: 'carol123' },
   { email: 'test@example.com', password: 'test123' },
   { email: 'seanshlitw@gmail.com', password: 'smtengo888' },
-  { email: 'admin@smartwarehouse.com', password: 'admin123' }
+  { email: 'admin@smartwarehouse.com', password: 'admin123' },
+  { email: 'van.lee@smtengo.com', password: 'Smtengo1324!' },
+  { email: 'max.lin@smtengo.com', password: 'Smtengo1324!' }
 ]
 
 async function setupUserCredentials() {

@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       imageUrl,
       language,
       tags,
+      householdId,
       // Taiwan invoice fields
       buyDate,
       buyCost,
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
     
     console.log('=== ITEM CREATION REQUEST ===')
     console.log('User ID:', userId)
+    console.log('Provided Household ID:', householdId)
     console.log('Request body:', body)
 
     // Validate required fields
@@ -61,30 +63,56 @@ export async function POST(request: NextRequest) {
     
     // Note: Cabinet is optional - if not provided, we'll create a default one or use existing
 
-    // Get user's household (for now, we'll create a default one or get the first one)
-    let household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
-          }
-        }
-      }
-    })
-
-    if (!household) {
-      // Create a default household for the user
-      household = await prisma.household.create({
-        data: {
-          name: `${(session?.user as any)?.name || (session?.user as any)?.email || 'User'}'s Household`,
+    // Get user's household - use provided householdId or find first
+    let household = null
+    
+    if (householdId) {
+      // Verify user is a member of this household
+      household = await prisma.household.findFirst({
+        where: {
+          id: householdId,
           members: {
-            create: {
-              userId: userId,
-              role: 'ADMIN'
+            some: {
+              userId: userId
             }
           }
         }
       })
+      
+      if (!household) {
+        console.error('User is not a member of household:', householdId)
+        return NextResponse.json({ error: 'You are not a member of this household' }, { status: 403 })
+      }
+      
+      console.log('Using provided household:', household.id, household.name)
+    } else {
+      // Fallback: Get first household
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      })
+
+      if (!household) {
+        // Create a default household for the user
+        household = await prisma.household.create({
+          data: {
+            name: `${(session?.user as any)?.name || (session?.user as any)?.email || 'User'}'s Household`,
+            members: {
+              create: {
+                userId: userId,
+                role: 'ADMIN'
+              }
+            }
+          }
+        })
+      }
+      
+      console.log('Using fallback household:', household.id, household.name)
     }
 
     // Find or create room

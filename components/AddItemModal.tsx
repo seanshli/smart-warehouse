@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import BarcodeScanner from './BarcodeScanner'
 import TaiwanInvoiceUploader from './TaiwanInvoiceUploader'
 import { useLanguage } from './LanguageProvider'
+import { useHousehold } from './HouseholdProvider'
 // AI functions are now called via API route
 
 interface AddItemModalProps {
@@ -17,6 +18,7 @@ interface AddItemModalProps {
 export default function AddItemModal({ onClose }: AddItemModalProps) {
   const { data: session } = useSession()
   const { t, currentLanguage } = useLanguage()
+  const { household } = useHousehold()
 
   // Helper function to call AI recognition API
   const callAIRecognition = async (type: 'image' | 'barcode', data: string) => {
@@ -122,10 +124,16 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
 
   // Fetch categories
   const fetchCategories = async () => {
+    if (!household?.id) {
+      console.log('AddItemModal: No household ID, skipping categories fetch')
+      return
+    }
+    
     try {
-      const response = await fetch('/api/categories')
+      const response = await fetch(`/api/categories?householdId=${household.id}&language=${currentLanguage}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('AddItemModal: Fetched categories for household:', household.id, 'language:', currentLanguage)
         setCategories(data.categories || data)
       }
     } catch (error) {
@@ -136,11 +144,17 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   // Fetch rooms and cabinets
   useEffect(() => {
     const fetchRooms = async () => {
+      if (!household?.id) {
+        console.log('AddItemModal: No household ID, skipping rooms fetch')
+        return
+      }
+      
       try {
         setLoadingRooms(true)
-        const response = await fetch('/api/rooms')
+        const response = await fetch(`/api/rooms?householdId=${household.id}&language=${currentLanguage}`)
         if (response.ok) {
           const roomsData = await response.json()
+          console.log('AddItemModal: Fetched rooms for household:', household.id, 'language:', currentLanguage)
           setRooms(roomsData.rooms || roomsData) // Handle both old and new API response formats
         }
       } catch (error) {
@@ -151,13 +165,13 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
     }
 
     fetchRooms()
-  }, [])
+  }, [household?.id, currentLanguage])
 
   useEffect(() => {
     if (step === 'details' || step === 'ai-review') {
       fetchCategories()
     }
-  }, [step])
+  }, [step, household?.id, currentLanguage])
 
   // Fetch cabinets when room changes
   useEffect(() => {
@@ -392,6 +406,12 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
 
   const handleSubmit = async () => {
     try {
+      if (!household?.id) {
+        toast.error('No active household selected')
+        return
+      }
+      
+      console.log('Submitting item to household:', household.id)
       console.log('Submitting item:', formData)
       
       // Save barcode data to database if available
@@ -405,6 +425,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
         credentials: 'include', // Include session cookies for authentication
         body: JSON.stringify({
           ...formData,
+          householdId: household.id,
           tags: tags
         }),
       })

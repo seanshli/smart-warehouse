@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const userId = (session.user as any).id
     const { searchParams } = new URL(request.url)
     const householdId = searchParams.get('householdId')
+    const userLanguage = searchParams.get('language') || (session.user as any)?.language || 'en'
 
     let household
 
@@ -74,25 +75,41 @@ export async function GET(request: NextRequest) {
       ]
     })
 
+    // Translate category names using category-translations
+    const { getNormalizedCategoryKey, getCategoryDisplayName } = await import('@/lib/category-translations')
+    
+    const translateCategory = (cat: any): any => {
+      const normalizedKey = getNormalizedCategoryKey(cat.name)
+      return {
+        ...cat,
+        name: getCategoryDisplayName(normalizedKey, userLanguage),
+        originalName: cat.name,
+        children: cat.children ? cat.children.map(translateCategory) : undefined
+      }
+    }
+    
+    const translatedCategories = categories.map(translateCategory)
+
     // Return all categories - let the frontend build the hierarchy
     // Add debug information for duplicate checking
-    const nameCounts = categories.reduce((acc, category) => {
+    const nameCounts = translatedCategories.reduce((acc, category) => {
       const key = `${category.name}_${category.level}_${category.parentId || 'null'}`
       acc[key] = (acc[key] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
     const duplicates = Object.entries(nameCounts)
-      .filter(([key, count]) => count > 1)
-      .map(([key, count]) => ({ key, count }))
+      .filter(([_key, count]) => (count as number) > 1)
+      .map(([key, count]) => ({ key, count: count as number }))
 
     return NextResponse.json({
-      categories,
+      categories: translatedCategories,
       debug: {
-        totalCategories: categories.length,
+        totalCategories: translatedCategories.length,
         nameCounts,
         duplicates,
-        householdId: household.id
+        householdId: household.id,
+        userLanguage
       }
     })
   } catch (error) {

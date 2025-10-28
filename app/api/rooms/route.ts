@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const requestedHouseholdId = searchParams.get('householdId')
+    const userLanguage = searchParams.get('language') || (session.user as any)?.language || 'en'
 
     // If a specific householdId is provided, validate membership and use it
     let householdIdToUse: string | null = null
@@ -71,8 +72,19 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Translate room names using room-translations
+    const { getNormalizedRoomKey, getRoomDisplayName } = await import('@/lib/room-translations')
+    const translatedRooms = rooms.map(room => {
+      const normalizedKey = getNormalizedRoomKey(room.name)
+      return {
+        ...room,
+        name: getRoomDisplayName(normalizedKey, userLanguage),
+        originalName: room.name // Keep original for reference
+      }
+    })
+
     // Add debug information for duplicate checking
-    const nameCounts = rooms.reduce((acc, room) => {
+    const nameCounts = translatedRooms.reduce((acc, room) => {
       acc[room.name] = (acc[room.name] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -82,12 +94,13 @@ export async function GET(request: NextRequest) {
       .map(([name, count]) => ({ name, count }))
 
     return NextResponse.json({
-      rooms,
+      rooms: translatedRooms,
       debug: {
-        totalRooms: rooms.length,
+        totalRooms: translatedRooms.length,
         nameCounts,
         duplicates,
-        householdId: householdIdToUse
+        householdId: householdIdToUse,
+        userLanguage
       }
     })
   } catch (error) {

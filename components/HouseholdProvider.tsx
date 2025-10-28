@@ -154,6 +154,20 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       let preferredId = null
       if (mounted && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         try {
+          // Check if this is a fresh login by comparing session IDs
+          const storedSessionId = localStorage.getItem('lastSessionId')
+          const currentSessionId = (session as any)?.sessionId
+          
+          if (currentSessionId && storedSessionId !== currentSessionId) {
+            // Fresh login detected - clear household selection
+            console.log('🏠 Fresh login detected, clearing household selection')
+            localStorage.removeItem('activeHouseholdId')
+            localStorage.setItem('lastSessionId', currentSessionId)
+          } else if (currentSessionId) {
+            // Store current session ID for future comparison
+            localStorage.setItem('lastSessionId', currentSessionId)
+          }
+          
           const storedId = localStorage.getItem('activeHouseholdId')
           if (storedId) {
             preferredId = storedId

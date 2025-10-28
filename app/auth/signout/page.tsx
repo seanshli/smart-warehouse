@@ -10,32 +10,59 @@ export default function SignOut() {
   useEffect(() => {
     const handleSignOut = async () => {
       try {
-        // Clear all browser storage
-        localStorage.clear()
-        sessionStorage.clear()
+        console.log('[Auth] Signing out from main app...')
         
-        // Clear any cached data
-        if ('caches' in window) {
-          const cacheNames = await caches.keys()
-          await Promise.all(
-            cacheNames.map(cacheName => caches.delete(cacheName))
-          )
+        // Clear all browser storage first
+        if (typeof window !== 'undefined') {
+          localStorage.clear()
+          sessionStorage.clear()
+          
+          // Specifically clear session tracking
+          localStorage.removeItem('lastSessionId')
+          localStorage.removeItem('activeHouseholdId')
+          
+          // Clear any cached data
+          if ('caches' in window) {
+            const cacheNames = await caches.keys()
+            await Promise.all(
+              cacheNames.map(cacheName => caches.delete(cacheName))
+            )
+          }
+          
+          // Clear cookies more aggressively
+          document.cookie.split(";").forEach(function(c) { 
+            const cookie = c.replace(/^ +/, "").split("=")[0]
+            document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/`
+            document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/;domain=${window.location.hostname}`
+            document.cookie = `${cookie}=;expires=${new Date(0).toUTCString()};path=/;domain=.${window.location.hostname}`
+          });
+          
+          // Clear NextAuth specific cookies
+          const nextAuthCookies = [
+            'next-auth.session-token',
+            '__Secure-next-auth.session-token',
+            'next-auth.csrf-token',
+            '__Host-next-auth.csrf-token'
+          ]
+          
+          nextAuthCookies.forEach(cookieName => {
+            document.cookie = `${cookieName}=;expires=${new Date(0).toUTCString()};path=/`
+            document.cookie = `${cookieName}=;expires=${new Date(0).toUTCString()};path=/;domain=${window.location.hostname}`
+            document.cookie = `${cookieName}=;expires=${new Date(0).toUTCString()};path=/;domain=.${window.location.hostname}`
+          })
         }
         
-        // Clear cookies
-        document.cookie.split(";").forEach(function(c) { 
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-        });
-        
-        // Sign out with NextAuth - force complete logout
+        // Sign out with NextAuth and redirect to signin
         await signOut({ 
           callbackUrl: '/auth/signin',
           redirect: true 
         })
       } catch (error) {
-        console.error('Sign out error:', error)
+        console.error('[Auth] Sign out error:', error)
         // Force redirect even if there's an error
-        window.location.href = '/auth/signin'
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/signin'
+        }
       }
     }
 

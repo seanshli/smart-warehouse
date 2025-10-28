@@ -381,6 +381,7 @@ export default function Dashboard() {
               <button
                 onClick={() => {
                   console.log('Signing out...')
+                  // Redirect to the dedicated signout page which handles proper cleanup
                   window.location.href = '/auth/signout'
                 }}
                 className={`text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 ${

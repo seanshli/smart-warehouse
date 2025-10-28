@@ -103,7 +103,7 @@ function HouseholdSwitcher() {
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const { t } = useLanguage()
-  const { household, role, permissions, refreshTrigger } = useHousehold()
+  const { household, role, permissions, refreshTrigger, forceRefresh } = useHousehold()
   const deviceInfo = useDeviceDetection()
 
   // Add error boundary for client-side errors
@@ -483,7 +483,16 @@ export default function Dashboard() {
 
       {/* Modals */}
       {showAddItem && (
-        <AddItemModal onClose={() => setShowAddItem(false)} />
+        <AddItemModal onClose={() => {
+          setShowAddItem(false)
+          // Refresh items list and dashboard stats after adding an item
+          console.log('AddItemModal closed, refreshing data...')
+          if (refreshItemsList && typeof refreshItemsList === 'function') {
+            refreshItemsList()
+          }
+          // Force a refresh of all household data (will trigger dashboard stats refresh)
+          forceRefresh()
+        }} />
       )}
       {showSearch && (
         <SearchModal onClose={() => setShowSearch(false)} />

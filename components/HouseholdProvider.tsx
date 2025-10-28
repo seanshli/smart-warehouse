@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { getPermissions, Permissions, UserRole } from '@/lib/permissions'
 
@@ -30,6 +30,7 @@ interface HouseholdContextType {
   refreshTrigger: number
   setActiveHousehold: (householdId: string) => void
   refetch: () => Promise<void>
+  forceRefresh: () => void
 }
 
 const HouseholdContext = createContext<HouseholdContextType | undefined>(undefined)
@@ -266,6 +267,11 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     fetchHousehold()
   }, [session, status])
 
+  const forceRefresh = useCallback(() => {
+    console.log('🔄 HouseholdProvider: Force refresh triggered')
+    setRefreshTrigger(prev => prev + 1)
+  }, [])
+
   const value: HouseholdContextType = {
     household,
     role,
@@ -277,7 +283,8 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
     switching,
     refreshTrigger,
     setActiveHousehold,
-    refetch
+    refetch,
+    forceRefresh
   }
 
   return (

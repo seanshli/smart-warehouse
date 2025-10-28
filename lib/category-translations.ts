@@ -120,23 +120,130 @@ export function getNormalizedCategoryKey(categoryName: string): string {
 // Get display name for a normalized key in a specific language
 export function getCategoryDisplayName(normalizedKey: string, language: string): string {
   const displayNames: Record<string, Record<string, string>> = {
+    // Level 1 categories
+    'accessory': {
+      'en': 'Accessory',
+      'zh-TW': '配件',
+      'zh': '配件',
+      'ja': 'アクセサリー'
+    },
+    'book': {
+      'en': 'Book',
+      'zh-TW': '書籍',
+      'zh': '书籍',
+      'ja': '本'
+    },
+    'clothes': {
+      'en': 'Clothes',
+      'zh-TW': '衣服',
+      'zh': '衣服',
+      'ja': '服'
+    },
     'electronics': {
       'en': 'Electronics',
       'zh-TW': '電子產品',
       'zh': '电子产品',
       'ja': '電子機器'
     },
-    'kitchen': {
-      'en': 'Kitchen',
+    'kitchenware': {
+      'en': 'Kitchenware',
       'zh-TW': '廚房用品',
       'zh': '厨房用品',
-      'ja': 'キッチン'
+      'ja': 'キッチン用品'
+    },
+    'mics': {
+      'en': 'Miscellaneous',
+      'zh-TW': '雜項',
+      'zh': '杂项',
+      'ja': 'その他'
     },
     'tools': {
       'en': 'Tools',
       'zh-TW': '工具',
       'zh': '工具',
       'ja': '工具'
+    },
+    
+    // Level 2 - Kitchenware subcategories
+    'pots_and_pans': {
+      'en': 'Pots and Pans',
+      'zh-TW': '鍋具',
+      'zh': '锅具',
+      'ja': '鍋類'
+    },
+    'drinkware': {
+      'en': 'Drinkware',
+      'zh-TW': '飲具',
+      'zh': '饮具',
+      'ja': '飲料容器'
+    },
+    'dishes': {
+      'en': 'Dishes',
+      'zh-TW': '餐具',
+      'zh': '餐具',
+      'ja': '食器'
+    },
+    'utensil': {
+      'en': 'Utensil',
+      'zh-TW': '廚具',
+      'zh': '厨具',
+      'ja': '調理器具'
+    },
+    
+    // Level 2 - Clothes subcategories
+    'top': {
+      'en': 'Top',
+      'zh-TW': '上衣',
+      'zh': '上衣',
+      'ja': 'トップス'
+    },
+    'bottom': {
+      'en': 'Bottom',
+      'zh-TW': '下身',
+      'zh': '下身',
+      'ja': 'ボトムス'
+    },
+    
+    // Level 3 - Top subcategories
+    'jacket': {
+      'en': 'Jacket',
+      'zh-TW': '外套',
+      'zh': '外套',
+      'ja': 'ジャケット'
+    },
+    't_shirt': {
+      'en': 'T-Shirt',
+      'zh-TW': 'T恤',
+      'zh': 'T恤',
+      'ja': 'Tシャツ'
+    },
+    'shirt': {
+      'en': 'Shirt',
+      'zh-TW': '襯衫',
+      'zh': '衬衫',
+      'ja': 'シャツ'
+    },
+    
+    // Level 3 - Bottom subcategories
+    'pants': {
+      'en': 'Pants',
+      'zh-TW': '褲子',
+      'zh': '裤子',
+      'ja': 'ズボン'
+    },
+    'skirt': {
+      'en': 'Skirt',
+      'zh-TW': '裙子',
+      'zh': '裙子',
+      'ja': 'スカート'
+    },
+    
+    // Legacy categories
+    'kitchen': {
+      'en': 'Kitchen',
+      'zh-TW': '廚房用品',
+      'zh': '厨房用品',
+      'ja': 'キッチン'
     },
     'clothing': {
       'en': 'Clothing',

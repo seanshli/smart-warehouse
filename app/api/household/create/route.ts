@@ -47,12 +47,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Preload 4 default rooms for the new household
+    // Preload 4 default rooms for the new household (using translation keys)
     const defaultRooms = [
-      { name: '廚房', description: 'Kitchen', cabinets: ['A', 'B', 'C', 'D'] },
-      { name: '主臥室', description: 'Master bedroom', cabinets: ['主櫥櫃'] },
-      { name: '兒童房', description: 'Kids room', cabinets: ['兒童衣櫥'] },
-      { name: '客廳', description: 'Living room', cabinets: ['客廳櫃'] }
+      { name: 'kitchen', description: 'Kitchen', cabinets: ['A', 'B', 'C', 'D'] },
+      { name: 'master_bedroom', description: 'Master bedroom', cabinets: ['主櫥櫃'] },
+      { name: 'kids_room', description: 'Kids room', cabinets: ['兒童衣櫥'] },
+      { name: 'living_room', description: 'Living room', cabinets: ['客廳櫃'] }
     ]
 
     // Create rooms and cabinets
@@ -77,26 +77,94 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Preload 7 default categories
-    const defaultCategories = [
-      { name: 'accessory', level: 1 },
-      { name: 'book', level: 1 },
-      { name: 'clothes', level: 1 },
-      { name: 'electronics', level: 1 },
-      { name: 'kitchenware', level: 1 },
-      { name: 'mics', level: 1 },
-      { name: 'tools', level: 1 }
+    // Preload categories with subcategories
+    // Level 1 categories
+    const level1Categories = [
+      'accessory',
+      'book',
+      'clothes',
+      'electronics',
+      'kitchenware',
+      'mics',
+      'tools'
     ]
 
-    await prisma.category.createMany({
-      data: defaultCategories.map(category => ({
-        name: category.name,
-        level: category.level,
-        householdId: household.id
-      }))
-    })
+    const createdCategories: { [key: string]: any } = {}
 
-    console.log(`✅ Created ${defaultRooms.length} rooms with cabinets and ${defaultCategories.length} categories for household: ${household.name}`)
+    // Create Level 1 categories
+    for (const categoryName of level1Categories) {
+      const category = await prisma.category.create({
+        data: {
+          name: categoryName,
+          level: 1,
+          householdId: household.id
+        }
+      })
+      createdCategories[categoryName] = category
+    }
+
+    // Create Level 2 subcategories for kitchenware
+    const kitchenwareSubcategories = [
+      'pots_and_pans',
+      'drinkware',
+      'dishes',
+      'utensil'
+    ]
+
+    for (const subcategoryName of kitchenwareSubcategories) {
+      await prisma.category.create({
+        data: {
+          name: subcategoryName,
+          level: 2,
+          parentId: createdCategories['kitchenware'].id,
+          householdId: household.id
+        }
+      })
+    }
+
+    // Create Level 2 subcategories for clothes
+    const clothesLevel2 = ['top', 'bottom']
+    const clothesLevel2Categories: { [key: string]: any } = {}
+
+    for (const subcategoryName of clothesLevel2) {
+      const category = await prisma.category.create({
+        data: {
+          name: subcategoryName,
+          level: 2,
+          parentId: createdCategories['clothes'].id,
+          householdId: household.id
+        }
+      })
+      clothesLevel2Categories[subcategoryName] = category
+    }
+
+    // Create Level 3 subcategories under Top
+    const topLevel3 = ['jacket', 't_shirt', 'shirt']
+    for (const subcategoryName of topLevel3) {
+      await prisma.category.create({
+        data: {
+          name: subcategoryName,
+          level: 3,
+          parentId: clothesLevel2Categories['top'].id,
+          householdId: household.id
+        }
+      })
+    }
+
+    // Create Level 3 subcategories under Bottom
+    const bottomLevel3 = ['pants', 'skirt']
+    for (const subcategoryName of bottomLevel3) {
+      await prisma.category.create({
+        data: {
+          name: subcategoryName,
+          level: 3,
+          parentId: clothesLevel2Categories['bottom'].id,
+          householdId: household.id
+        }
+      })
+    }
+
+    console.log(`✅ Created ${defaultRooms.length} rooms with cabinets and categories with subcategories for household: ${household.name}`)
 
     return NextResponse.json({
       success: true,

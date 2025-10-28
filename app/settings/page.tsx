@@ -17,9 +17,11 @@ import {
   ExclamationTriangleIcon,
   ArrowLeftIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
+import ChangePasswordModal from '@/components/ChangePasswordModal'
 
 interface ThemeSettings {
   mode: 'light' | 'dark' | 'system'
@@ -40,6 +42,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [householdId, setHouseholdId] = useState<string>('')
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   useEffect(() => {
     // Load settings from database first, then localStorage as fallback
@@ -453,14 +456,30 @@ export default function SettingsPage() {
               <CogIcon className="h-5 w-5 text-primary-600" />
               <h2 className="text-xl font-semibold">Account Information</h2>
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-3">
               <p><strong>Email:</strong> {session?.user?.email}</p>
               <p><strong>Name:</strong> {session?.user?.name}</p>
               <p><strong>Role:</strong> {(session?.user as any)?.isAdmin ? 'Administrator' : 'User'}</p>
+              
+              {/* Change Password Button */}
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  <KeyIcon className="h-4 w-4 mr-2" />
+                  Change Password
+                </button>
+              </div>
             </div>
           </section>
         </div>
       </main>
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
     </div>
   )
 }

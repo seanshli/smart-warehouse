@@ -56,6 +56,14 @@ export interface Translations {
   commonCurrentLanguage: string
   commonSignOut: string
   
+  // Password Change
+  changePassword: string
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+  passwordRequirements: string
+  changing: string
+  
   // Dashboard Time Filters
   today: string
   pastWeek: string
@@ -504,6 +512,14 @@ const en: Translations = {
   commonLanguage: 'Language',
   commonCurrentLanguage: 'Current Language',
   commonSignOut: 'Sign Out',
+  
+  // Password Change
+  changePassword: 'Change Password',
+  currentPassword: 'Current Password',
+  newPassword: 'New Password',
+  confirmPassword: 'Confirm New Password',
+  passwordRequirements: 'Minimum 6 characters',
+  changing: 'Changing...',
   
   // Dashboard Time Filters
   today: 'Today',
@@ -957,6 +973,14 @@ const zhTW: Translations = {
   commonLanguage: '語言',
   commonCurrentLanguage: '目前語言',
   commonSignOut: '登出',
+  
+  // Password Change
+  changePassword: '變更密碼',
+  currentPassword: '目前密碼',
+  newPassword: '新密碼',
+  confirmPassword: '確認新密碼',
+  passwordRequirements: '至少 6 個字元',
+  changing: '變更中...',
   
   // Dashboard Time Filters
   today: '今天',
@@ -1421,6 +1445,14 @@ const zh: Translations = {
   commonCurrentLanguage: '当前语言',
   commonSignOut: '登出',
   
+  // Password Change
+  changePassword: '更改密码',
+  currentPassword: '当前密码',
+  newPassword: '新密码',
+  confirmPassword: '确认新密码',
+  passwordRequirements: '至少 6 个字符',
+  changing: '更改中...',
+  
   // Dashboard Time Filters
   today: '今天',
   pastWeek: '过去一周',
@@ -1881,6 +1913,14 @@ const ja: Translations = {
   commonLanguage: '言語',
   commonCurrentLanguage: '現在の言語',
   commonSignOut: 'サインアウト',
+  
+  // Password Change
+  changePassword: 'パスワードの変更',
+  currentPassword: '現在のパスワード',
+  newPassword: '新しいパスワード',
+  confirmPassword: '新しいパスワードの確認',
+  passwordRequirements: '最低6文字',
+  changing: '変更中...',
   
   // Dashboard Time Filters
   today: '今日',

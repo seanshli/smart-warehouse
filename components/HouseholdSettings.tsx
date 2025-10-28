@@ -108,7 +108,12 @@ export default function HouseholdSettings() {
   }, [activeHouseholdId])
 
   // Handle form submission
-  const handleSave = async () => {
+  const handleSave = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     if (!activeHouseholdId) return
 
     try {
@@ -204,13 +209,19 @@ export default function HouseholdSettings() {
               {editing ? (
                 <>
                   <button
-                    onClick={() => setEditing(false)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setEditing(false)
+                    }}
                     className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
                   >
                     <XMarkIcon className="h-4 w-4 mr-1" />
                     Cancel
                   </button>
                   <button
+                    type="button"
                     onClick={handleSave}
                     disabled={saving}
                     className="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
@@ -225,7 +236,12 @@ export default function HouseholdSettings() {
                 </>
               ) : (
                 <button
-                  onClick={() => setEditing(true)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setEditing(true)
+                  }}
                   className="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />

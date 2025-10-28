@@ -149,6 +149,12 @@ export interface Translations {
   moveItem: string
   checkoutItem: string
   itemHistory: string
+  
+  // Error handling
+  errorOccurred: string
+  unexpectedError: string
+  refreshPage: string
+  goHome: string
   moveToRoom: string
   checkoutQuantity: string
   reason: string
@@ -606,6 +612,12 @@ const en: Translations = {
   moveItem: 'Move Item',
   checkoutItem: 'Checkout Item',
   itemHistory: 'Item History',
+  
+  // Error handling
+  errorOccurred: 'Something went wrong',
+  unexpectedError: 'An unexpected error occurred. Please try refreshing the page.',
+  refreshPage: 'Refresh Page',
+  goHome: 'Go Home',
   moveToRoom: 'Move to Room',
   checkoutQuantity: 'Checkout Quantity',
   reason: 'Reason',
@@ -1067,6 +1079,12 @@ const zhTW: Translations = {
   moveItem: '移動物品',
   checkoutItem: '結帳物品',
   itemHistory: '物品歷史',
+  
+  // Error handling
+  errorOccurred: '出了點問題',
+  unexpectedError: '發生意外錯誤。請嘗試刷新頁面。',
+  refreshPage: '重新整理頁面',
+  goHome: '回家',
   moveToRoom: '移動到房間',
   checkoutQuantity: '結帳數量',
   reason: '原因',
@@ -1538,6 +1556,12 @@ const zh: Translations = {
   moveItem: '移动物品',
   checkoutItem: '结账物品',
   itemHistory: '物品历史',
+  
+  // Error handling
+  errorOccurred: '出了点问题',
+  unexpectedError: '发生意外错误。请尝试刷新页面。',
+  refreshPage: '刷新页面',
+  goHome: '回家',
   moveToRoom: '移动到房间',
   checkoutQuantity: '结账数量',
   reason: '原因',
@@ -2007,6 +2031,12 @@ const ja: Translations = {
   moveItem: 'アイテムを移動',
   checkoutItem: 'アイテムをチェックアウト',
   itemHistory: 'アイテム履歴',
+  
+  // Error handling
+  errorOccurred: '問題が発生しました',
+  unexpectedError: '予期しないエラーが発生しました。ページを更新してください。',
+  refreshPage: 'ページを更新',
+  goHome: 'ホームに戻る',
   moveToRoom: '部屋に移動',
   checkoutQuantity: 'チェックアウト数量',
   reason: '理由',

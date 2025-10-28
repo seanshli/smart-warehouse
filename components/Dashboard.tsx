@@ -374,8 +374,8 @@ export default function Dashboard() {
                 </a>
               )}
 
-              {/* Language - Compact on mobile */}
-              {!deviceInfo.isMobile && <CompactLanguageSelector />}
+              {/* Language - Always show, compact on mobile */}
+              <CompactLanguageSelector />
 
               {/* Sign Out - Icon only on mobile */}
               <button

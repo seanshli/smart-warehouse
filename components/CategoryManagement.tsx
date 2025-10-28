@@ -49,12 +49,19 @@ export default function CategoryManagement() {
 
   const fetchCategories = async () => {
     try {
+      // CRITICAL: Don't fetch until household is loaded
+      if (!household?.id) {
+        console.log('CategoryManagement: Waiting for household to load, skipping fetch')
+        setCategories([])
+        return
+      }
+      
       const params = new URLSearchParams()
-      if (household?.id) params.append('householdId', household.id)
+      params.append('householdId', household.id) // Always include householdId
       
       const url = `/api/categories${params.toString() ? '?' + params.toString() : ''}`
       console.log('CategoryManagement: Fetching from URL:', url)
-      console.log('CategoryManagement: Active household:', household?.id)
+      console.log('CategoryManagement: Active household:', household.id, household.name)
       
       const response = await fetch(url)
       if (response.ok) {

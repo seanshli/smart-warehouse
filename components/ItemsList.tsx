@@ -68,6 +68,14 @@ export default function ItemsList({
       setLoading(true)
       setError(null)
       
+      // CRITICAL: Don't fetch until household is loaded
+      if (!household?.id) {
+        console.log('ItemsList: Waiting for household to load, skipping fetch')
+        setLoading(false)
+        setItems([])
+        return
+      }
+      
       // Add a small delay to prevent rapid-fire requests
       await new Promise(resolve => setTimeout(resolve, 100))
       
@@ -76,11 +84,11 @@ export default function ItemsList({
       if (searchTerm) params.append('search', searchTerm)
       if (selectedCategory) params.append('category', selectedCategory)
       if (selectedRoom) params.append('room', selectedRoom)
-      if (household?.id) params.append('householdId', household.id)
+      params.append('householdId', household.id) // Always include householdId
       
       const url = `/api/items${params.toString() ? '?' + params.toString() : ''}`
       console.log('ItemsList: Fetching from URL:', url)
-      console.log('ItemsList: Active household:', household?.id)
+      console.log('ItemsList: Active household:', household.id, household.name)
       const response = await fetch(url)
       
       if (response.ok) {

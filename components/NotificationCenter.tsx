@@ -28,12 +28,19 @@ export default function NotificationCenter() {
 
   const fetchNotifications = async () => {
     try {
+      // CRITICAL: Don't fetch until household is loaded
+      if (!household?.id) {
+        console.log('NotificationCenter: Waiting for household to load, skipping fetch')
+        setNotifications([])
+        return
+      }
+      
       const params = new URLSearchParams()
-      if (household?.id) params.append('householdId', household.id)
+      params.append('householdId', household.id) // Always include householdId
       
       const url = `/api/notifications${params.toString() ? '?' + params.toString() : ''}`
       console.log('NotificationCenter: Fetching from URL:', url)
-      console.log('NotificationCenter: Active household:', household?.id)
+      console.log('NotificationCenter: Active household:', household.id, household.name)
       
       const response = await fetch(url)
       if (response.ok) {

@@ -54,13 +54,22 @@ export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
   const fetchActivities = async () => {
     try {
       setLoading(true)
+      
+      // CRITICAL: Don't fetch until household is loaded
+      if (!household?.id) {
+        console.log('Activities: Waiting for household to load, skipping fetch')
+        setLoading(false)
+        setActivities([])
+        return
+      }
+      
       const params = new URLSearchParams()
       params.append('timeFilter', timeFilter)
-      if (household?.id) params.append('householdId', household.id)
+      params.append('householdId', household.id) // Always include householdId
       
       const url = `/api/activities?${params.toString()}`
       console.log('Activities: Fetching from URL:', url)
-      console.log('Activities: Active household:', household?.id)
+      console.log('Activities: Active household:', household.id, household.name)
       
       const response = await fetch(url)
       if (response.ok) {

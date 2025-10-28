@@ -312,114 +312,95 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {/* Header - Streamlined for tablets */}
       <header className={`bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 ${
         deviceInfo.isMobile ? 'pt-safe-top' : 'pt-0'
       }`}>
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
           <div className={`flex justify-between items-center ${
-            deviceInfo.isMobile ? 'h-12' : 'h-14 sm:h-16'
-          } flex-wrap gap-1 sm:gap-2`}>
-            <div className="flex items-center min-w-0 flex-1">
-              <h1 className={`font-semibold text-gray-900 dark:text-gray-100 truncate ${
-                deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-xl'
+            deviceInfo.isMobile ? 'h-12' : deviceInfo.isTablet ? 'h-12' : 'h-14'
+          }`}>
+            {/* Left side: App name + Household */}
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <h1 className={`font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0 ${
+                deviceInfo.isMobile ? 'text-sm' : deviceInfo.isTablet ? 'text-base' : 'text-lg'
               }`}>
                 {t('smartWarehouse')}
               </h1>
               {household && (
-                <div className="ml-2 sm:ml-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-1 sm:space-x-2 truncate">
-                  <span className="truncate">{household.name}<span className="hidden sm:inline"> • {role || 'Member'}</span></span>
-                  {/* Household switcher */}
-                  <HouseholdSwitcher />
-                </div>
+                <>
+                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
+                  <div className="min-w-0">
+                    <HouseholdSwitcher />
+                  </div>
+                </>
               )}
             </div>
             
-            <div className={`flex items-center ${
-              deviceInfo.isMobile ? 'space-x-1' : 'space-x-1 sm:space-x-4'
-            }`}>
-              {/* Primary action - always visible */}
+            {/* Right side: Compact action buttons */}
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              {/* Add Item - Primary action */}
               <button
                 onClick={() => setShowAddItem(true)}
-                className={`inline-flex items-center border border-transparent font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 ${
-                  deviceInfo.isMobile 
-                    ? 'px-2 py-1.5 text-xs' 
-                    : 'px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm'
+                className={`inline-flex items-center border border-transparent font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 flex-shrink-0 ${
+                  deviceInfo.isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'
                 }`}
               >
-                <PlusIcon className={deviceInfo.isMobile ? "h-3 w-3" : "h-4 w-4"} />
-                <span className={deviceInfo.isMobile ? "hidden" : "hidden sm:inline ml-2"}>{t('addItem')}</span>
+                <PlusIcon className="h-4 w-4 mr-1" />
+                {!deviceInfo.isMobile && <span>{t('addItem')}</span>}
               </button>
               
-              {/* Secondary actions - hide on mobile if needed */}
+              {/* Search */}
+              <button
+                onClick={() => setShowSearch(true)}
+                className={`inline-flex items-center border border-gray-300 dark:border-gray-600 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex-shrink-0 ${
+                  deviceInfo.isMobile ? 'px-2 py-1' : deviceInfo.isTablet ? 'px-2 py-1.5' : 'px-3 py-1.5'
+                }`}
+                title={t('search')}
+              >
+                <MagnifyingGlassIcon className="h-4 w-4" />
+              </button>
+
+              {/* Settings - Only on larger screens */}
               {!deviceInfo.isMobile && (
-                <>
-                  <a
-                    href="/duplicates"
-                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                  >
-                    <ExclamationTriangleIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">{t('duplicates')}</span>
-                  </a>
-                  
-                  <button
-                    onClick={() => setShowSearch(true)}
-                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                  >
-                    <MagnifyingGlassIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">{t('search')}</span>
-                  </button>
-
-                  <a
-                    href="/settings"
-                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                  >
-                    <CogIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">Settings</span>
-                  </a>
-                </>
+                <a
+                  href="/settings"
+                  className={`inline-flex items-center border border-gray-300 dark:border-gray-600 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex-shrink-0 ${
+                    deviceInfo.isTablet ? 'px-2 py-1.5' : 'px-3 py-1.5'
+                  }`}
+                  title="Settings"
+                >
+                  <CogIcon className="h-4 w-4" />
+                </a>
               )}
 
-              {/* Mobile menu button for secondary actions */}
-              {deviceInfo.isMobile && (
-                <button
-                  onClick={() => {
-                    // Toggle mobile menu or show actions
-                    setShowSearch(true)
-                  }}
-                  className="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                >
-                  <MagnifyingGlassIcon className="h-3 w-3" />
-                </button>
-              )}
+              {/* Language */}
+              <CompactLanguageSelector />
 
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <CompactLanguageSelector />
-                {!deviceInfo.isMobile && (
-                  <div className="hidden lg:block text-sm text-gray-700 dark:text-gray-300">
-                    {t('welcome')}, {session?.user?.name || session?.user?.email}
-                  </div>
-                )}
-                <button
-                  onClick={() => {
-                    console.log('Signing out...')
-                    window.location.href = '/auth/signout'
-                  }}
-                  className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-1"
-                >
-                  <span className="hidden sm:inline">{t('signOut')}</span>
-                  <span className="sm:hidden">{t('signOut').slice(0, 4)}</span>
-                </button>
-              </div>
+              {/* Sign Out */}
+              <button
+                onClick={() => {
+                  console.log('Signing out...')
+                  window.location.href = '/auth/signout'
+                }}
+                className={`text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 ${
+                  deviceInfo.isMobile ? 'px-1' : 'px-2'
+                }`}
+                title={t('signOut')}
+              >
+                {deviceInfo.isMobile ? t('signOut').slice(0, 2) : t('signOut')}
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation Tabs */}
+      {/* Navigation Tabs - Compact for tablets */}
       <nav className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 sm:space-x-4 overflow-x-auto whitespace-nowrap pb-1 sm:pb-2">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div className={`flex overflow-x-auto whitespace-nowrap ${
+            deviceInfo.isTablet ? 'space-x-1' : 'space-x-2 sm:space-x-4'
+          }`}>
             {tabs.map((tab) => {
               // Check if user has permission for this tab
               if (tab.permission && (!permissions || !permissions[tab.permission as keyof typeof permissions])) {
@@ -430,14 +411,22 @@ export default function Dashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
+                  className={`flex-shrink-0 border-b-2 font-medium ${
+                    deviceInfo.isMobile 
+                      ? 'py-2 px-2 text-xs' 
+                      : deviceInfo.isTablet 
+                        ? 'py-2 px-2 text-xs'
+                        : 'py-3 px-3 text-sm'
+                  } ${
                     activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
-                  } flex-shrink-0`}
+                  }`}
                 >
-                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 inline mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">{tab.name}</span>
+                  <tab.icon className={`inline ${
+                    deviceInfo.isTablet ? 'h-4 w-4 mr-1' : 'h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-1.5'
+                  }`} />
+                  <span className={deviceInfo.isMobile ? 'hidden' : ''}>{tab.name}</span>
                 </button>
               )
             })}

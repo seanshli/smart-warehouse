@@ -66,8 +66,12 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
 
   useEffect(() => {
     if (selectedRoom) {
+      console.log('MoveItemModal: Room selected, fetching cabinets for:', selectedRoom)
+      // Clear cabinet selection when room changes
+      setSelectedCabinet('')
       fetchCabinets(selectedRoom)
     } else {
+      console.log('MoveItemModal: No room selected, clearing cabinets')
       setCabinets([])
       setSelectedCabinet('')
     }
@@ -289,7 +293,19 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                 min="1"
                 max={item.quantity}
                 value={moveQuantity}
-                onChange={(e) => setMoveQuantity(Math.max(1, Math.min(item.quantity, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => {
+                      const inputValue = e.target.value
+                      if (inputValue === '') {
+                        setMoveQuantity(1)
+                        return
+                      }
+                      const numValue = parseInt(inputValue)
+                      if (!isNaN(numValue)) {
+                        if (numValue >= 1 && numValue <= item.quantity) {
+                          setMoveQuantity(numValue)
+                        }
+                      }
+                    }}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 required
               />
@@ -303,9 +319,9 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                 <div className="flex items-center">
                   <ArrowRightIcon className="h-5 w-5 text-blue-600 mr-2" />
                   <span className="text-sm text-blue-800">
-                    {t('moveConfirmation')}: {rooms.find(r => r.id === selectedRoom)?.name}
-                    {selectedCabinet && ` → ${cabinets.find(c => c.id === selectedCabinet)?.name}`}
-                    {selectedCategory && ` → ${categories.find(c => c.id === selectedCategory)?.name}`}
+                    {t('moveConfirmation')}: {rooms.find(r => r.id === selectedRoom)?.name || 'Unknown Room'}
+                    {selectedCabinet && cabinets.find(c => c.id === selectedCabinet)?.name && ` → ${cabinets.find(c => c.id === selectedCabinet)?.name}`}
+                    {selectedCategory && categories.find(c => c.id === selectedCategory)?.name && ` → ${categories.find(c => c.id === selectedCategory)?.name}`}
                   </span>
                 </div>
               </div>

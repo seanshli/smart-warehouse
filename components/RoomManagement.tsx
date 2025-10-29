@@ -1266,7 +1266,20 @@ export default function RoomManagement() {
                     min="1"
                     max={selectedItemForMove?.quantity || 1}
                     value={moveQuantity}
-                    onChange={(e) => setMoveQuantity(Math.max(1, Math.min(selectedItemForMove?.quantity || 1, parseInt(e.target.value) || 1)))}
+                    onChange={(e) => {
+                      const inputValue = e.target.value
+                      if (inputValue === '') {
+                        setMoveQuantity(1)
+                        return
+                      }
+                      const numValue = parseInt(inputValue)
+                      if (!isNaN(numValue)) {
+                        const maxQty = selectedItemForMove?.quantity || 1
+                        if (numValue >= 1 && numValue <= maxQty) {
+                          setMoveQuantity(numValue)
+                        }
+                      }
+                    }}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                     required
                   />

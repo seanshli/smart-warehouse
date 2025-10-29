@@ -136,18 +136,30 @@ export async function POST(request: NextRequest) {
     const userId = (session.user as any).id
 
     const body = await request.json()
-    const { name, description, level, parentId } = body
+    const { name, description, level, parentId, householdId } = body
 
-    // Get user's household
-    let household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
+    // Resolve target household (explicit param preferred)
+    let household = null as any
+    if (householdId) {
+      const membership = await prisma.householdMember.findUnique({
+        where: { userId_householdId: { userId, householdId } },
+        select: { householdId: true }
+      })
+      if (membership) {
+        household = { id: membership.householdId }
+      }
+    }
+    if (!household) {
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
           }
         }
-      }
-    })
+      })
+    }
 
     if (!household) {
       // Create a default household for the user

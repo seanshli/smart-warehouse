@@ -58,6 +58,11 @@ export async function GET(request: NextRequest) {
       include: {
         cabinets: {
           include: {
+            items: {
+              include: {
+                category: true
+              }
+            },
             _count: {
               select: { items: true }
             }

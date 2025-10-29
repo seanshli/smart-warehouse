@@ -10,12 +10,12 @@ export const authOptions: NextAuthOptions = {
   // Force fresh login for multi-user security
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
-    updateAge: 24 * 60 * 60, // Update session age every 24 hours
+    maxAge: 0, // Force immediate expiration
+    updateAge: 0, // No session updates
   },
   // Disable session persistence across browser sessions
   jwt: {
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 0, // Force immediate expiration
   },
   // Use secure cookies for production, but allow SameSite=None for mobile apps
   useSecureCookies: process.env.NODE_ENV === 'production',

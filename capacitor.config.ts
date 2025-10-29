@@ -21,7 +21,10 @@ const config: CapacitorConfig = {
     overrideUserAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: true,
+    // Tablet and phone support
+    appendUserAgent: 'SmartWarehouse/1.0.1',
+    // Enable responsive design
   },
   plugins: {
     Camera: {

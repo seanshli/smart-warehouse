@@ -17,18 +17,33 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const categoryId = params.id
     const userId = (session?.user as any)?.id
     const body = await request.json()
-    const { newLevel, newParentId } = body
+    const { newLevel, newParentId, householdId } = body
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
-      where: {
-        members: {
-          some: {
-            userId: userId
-          }
-        }
+    // Resolve user's household (prefer explicit householdId)
+    let household: any = null
+    if (householdId) {
+      const membership = await prisma.householdMember.findUnique({
+        where: { userId_householdId: { userId, householdId } },
+        select: { householdId: true }
+      })
+      if (membership) {
+        household = { id: membership.householdId }
       }
-    })
+    }
+    if (!household) {
+      household = await prisma.household.findFirst({
+        where: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        },
+        include: {
+          categories: true
+        }
+      })
+    }
 
     if (!household) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
@@ -51,6 +66,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     })
 
     if (!category) {
+      console.error(`Category not found: categoryId=${categoryId}, householdId=${household.id}`)
+      console.error(`Available categories:`, (household as any).categories?.map((c: any) => ({ id: c.id, name: c.name })))
       return NextResponse.json({ error: 'Category not found or access denied' }, { status: 404 })
     }
 

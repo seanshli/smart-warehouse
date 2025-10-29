@@ -122,6 +122,7 @@ export default function CategoryManagement() {
           description: newCategoryDescription,
           level: newCategoryLevel,
           parentId: newCategoryParent || null,
+          householdId: household?.id || null,
         }),
       })
 
@@ -267,10 +268,13 @@ export default function CategoryManagement() {
         body: JSON.stringify({
           newLevel: moveToLevel,
           newParentId: moveToParent || null,
+          householdId: household?.id || null,
         }),
       })
 
       if (response.ok) {
+        const data = await response.json()
+        console.log('Category move successful:', data)
         toast.success('Category moved successfully!')
         setShowMoveCategory(false)
         setMovingCategory(null)
@@ -280,6 +284,7 @@ export default function CategoryManagement() {
         await fetchCategories()
       } else {
         const errorData = await response.json()
+        console.error('Category move failed:', errorData)
         toast.error(errorData.error || 'Failed to move category')
       }
     } catch (error) {
@@ -904,12 +909,12 @@ export default function CategoryManagement() {
                         <option value="">Select a parent category</option>
                         {moveToLevel === 2 && getParentCategories(2).map((category) => (
                           <option key={category.id} value={category.id}>
-                            {category.name}
+                            {translateCategoryName(category.name, currentLanguage)}
                           </option>
                         ))}
                         {moveToLevel === 3 && getParentCategories(3, moveToGrandParent).map((category) => (
                           <option key={category.id} value={category.id}>
-                            {category.name}
+                            {translateCategoryName(category.name, currentLanguage)}
                           </option>
                         ))}
                       </select>

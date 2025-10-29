@@ -199,9 +199,14 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
           <div className="mb-6">
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="font-medium text-gray-900 mb-2">{item?.name || 'Unknown Item'}</h4>
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Current location:</span> {currentLocation}
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Current location:</span> {currentLocation}
+                </p>
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {t('qty')}: {item?.quantity || 0}
+                </span>
+              </div>
             </div>
           </div>
 

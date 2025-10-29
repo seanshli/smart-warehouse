@@ -64,7 +64,18 @@ export async function POST(request: NextRequest) {
         '上衣': 'shirts',
         't-shirt': 'shirts',
         '食物': 'food',
-        'food': 'food'
+        'food': 'food',
+        '雜項': 'miscellaneous',
+        '廚房用品': 'kitchenware',
+        '飲具': 'drinkware',
+        '飲料': 'beverages',
+        '配件': 'accessory',
+        '書本': 'book',
+        '服飾': 'clothes',
+        '電子': 'electronics',
+        '廚房用具': 'kitchenware',
+        '雜物': 'miscellaneous',
+        '器具': 'tools'
       }
       
       // If it's a Chinese name, normalize to English equivalent
@@ -230,7 +241,18 @@ export async function GET(request: NextRequest) {
         '上衣': 'shirts',
         't-shirt': 'shirts',
         '食物': 'food',
-        'food': 'food'
+        'food': 'food',
+        '雜項': 'miscellaneous',
+        '廚房用品': 'kitchenware',
+        '飲具': 'drinkware',
+        '飲料': 'beverages',
+        '配件': 'accessory',
+        '書本': 'book',
+        '服飾': 'clothes',
+        '電子': 'electronics',
+        '廚房用具': 'kitchenware',
+        '雜物': 'miscellaneous',
+        '器具': 'tools'
       }
       
       // If it's a Chinese name, normalize to English equivalent

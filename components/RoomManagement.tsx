@@ -963,7 +963,15 @@ export default function RoomManagement() {
                     }
                     
                     return (
-                    <div key={cabinet.id} className="border border-gray-200 rounded-lg p-4">
+                    <div 
+                      key={cabinet.id} 
+                      className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => {
+                        // Toggle cabinet expansion or navigate to cabinet detail
+                        console.log('Cabinet clicked:', cabinet.name)
+                        // You can add navigation logic here
+                      }}
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center">
                           <CubeIcon className="h-6 w-6 text-gray-600 mr-2" />
@@ -991,7 +999,7 @@ export default function RoomManagement() {
                           </div>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {cabinet._count?.items || 0} {t('items')}
+                          {cabinet.items?.length || 0} {t('items')}
                         </span>
                       </div>
                       

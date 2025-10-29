@@ -51,29 +51,64 @@ export async function PUT(
       }, { status: 400 })
     }
 
-    // Get new location details
-    const newRoom = await prisma.room.findUnique({
-      where: { id: roomId }
+    // Get new location details with user access validation
+    const newRoom = await prisma.room.findFirst({
+      where: { 
+        id: roomId,
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      }
     })
 
-    const newCabinet = cabinetId ? await prisma.cabinet.findUnique({
-      where: { id: cabinetId }
+    const newCabinet = cabinetId ? await prisma.cabinet.findFirst({
+      where: { 
+        id: cabinetId,
+        room: {
+          household: {
+            members: {
+              some: {
+                userId: userId
+              }
+            }
+          }
+        }
+      }
     }) : null
 
-    const newCategory = categoryId ? await prisma.category.findUnique({
-      where: { id: categoryId }
+    const newCategory = categoryId ? await prisma.category.findFirst({
+      where: { 
+        id: categoryId,
+        household: {
+          members: {
+            some: {
+              userId: userId
+            }
+          }
+        }
+      }
     }) : null
+
+    console.log('[move] Location validation - roomId:', roomId, 'cabinetId:', cabinetId, 'categoryId:', categoryId)
+    console.log('[move] Room found:', !!newRoom, 'Cabinet found:', !!newCabinet, 'Category found:', !!newCategory)
 
     if (!newRoom) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+      console.error('[move] Room not found or access denied:', roomId)
+      return NextResponse.json({ error: 'Room not found or access denied' }, { status: 404 })
     }
 
     if (cabinetId && !newCabinet) {
-      return NextResponse.json({ error: 'Cabinet not found' }, { status: 404 })
+      console.error('[move] Cabinet not found or access denied:', cabinetId)
+      return NextResponse.json({ error: 'Cabinet not found or access denied' }, { status: 404 })
     }
 
     if (categoryId && !newCategory) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+      console.error('[move] Category not found or access denied:', categoryId)
+      return NextResponse.json({ error: 'Category not found or access denied' }, { status: 404 })
     }
 
     // Handle partial move vs full move

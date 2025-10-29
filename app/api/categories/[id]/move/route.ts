@@ -101,9 +101,52 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       )
     }
 
+    // First, get all subcategories that need to be moved with this category
+    const getAllSubcategories = async (parentId: string, level: number): Promise<any[]> => {
+      const directChildren = await prisma.category.findMany({
+        where: {
+          parentId: parentId,
+          householdId: household.id
+        }
+      })
+      
+      let allChildren = [...directChildren]
+      
+      // Recursively get children of children
+      for (const child of directChildren) {
+        const grandChildren = await getAllSubcategories(child.id, level + 1)
+        allChildren = [...allChildren, ...grandChildren]
+      }
+      
+      return allChildren
+    }
+
+    const subcategories = await getAllSubcategories(categoryId, newLevel + 1)
+    console.log(`Moving category "${category.name}" with ${subcategories.length} subcategories`)
+
+    // Calculate level adjustments for subcategories
+    const levelAdjustment = newLevel - category.level
+
+    // Get all items that use this category or any of its subcategories
+    const categoryIds = [categoryId, ...subcategories.map(sc => sc.id)]
+    const itemsUsingCategory = await prisma.item.findMany({
+      where: {
+        categoryId: {
+          in: categoryIds
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        categoryId: true
+      }
+    })
+
+    console.log(`Found ${itemsUsingCategory.length} items using this category tree`)
+
     // Use transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
-      // Update the category
+      // Update the main category
       const updatedCategory = await tx.category.update({
         where: {
           id: categoryId
@@ -114,36 +157,42 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         }
       })
 
-      // Update all items that reference this category
-      // This ensures items maintain their category reference even after the move
-      await tx.item.updateMany({
-        where: {
-          categoryId: categoryId
-        },
-        data: {
-          // No changes needed to item data, just ensure the reference is maintained
+      // Update all subcategories to maintain the tree structure
+      for (const subcategory of subcategories) {
+        const newSubLevel = subcategory.level + levelAdjustment
+        
+        // Ensure subcategory level doesn't exceed maximum (3)
+        if (newSubLevel <= 3) {
+          await tx.category.update({
+            where: {
+              id: subcategory.id
+            },
+            data: {
+              level: newSubLevel
+            }
+          })
+          console.log(`Updated subcategory "${subcategory.name}" to level ${newSubLevel}`)
+        } else {
+          console.warn(`Subcategory "${subcategory.name}" would exceed max level, skipping`)
         }
-      })
+      }
 
-      // Log the category move in item history for all items using this category
-      const itemsUsingCategory = await tx.item.findMany({
-        where: {
-          categoryId: categoryId
-        },
-        select: {
-          id: true
-        }
-      })
-
+      // Log the category move in item history for all items using this category tree
       for (const item of itemsUsingCategory) {
-        await tx.itemHistory.create({
-          data: {
-            itemId: item.id,
-            action: 'category_moved',
-            description: `Category "${category.name}" was moved to level ${newLevel}${newParentId ? ' under new parent' : ''}`,
-            performedBy: userId
-          }
-        })
+        const itemCategory = categoryIds.includes(item.categoryId) ? 
+          (item.categoryId === categoryId ? category : subcategories.find(sc => sc.id === item.categoryId)) :
+          null
+
+        if (itemCategory) {
+          await tx.itemHistory.create({
+            data: {
+              itemId: item.id,
+              action: 'category_moved',
+              description: `Category tree "${category.name}" was moved to level ${newLevel}${newParentId ? ' under new parent' : ''}. Item "${item.name}" uses subcategory "${itemCategory.name}"`,
+              performedBy: userId
+            }
+          })
+        }
       }
 
       return updatedCategory
@@ -152,7 +201,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({
       message: 'Category moved successfully',
       category: result,
-      itemsUpdated: category._count.items
+      subcategoriesMoved: subcategories.length,
+      itemsUpdated: itemsUsingCategory.length
     })
   } catch (error) {
     console.error('Error moving category:', error)

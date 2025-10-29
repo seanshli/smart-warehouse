@@ -140,6 +140,7 @@ export default function RoomManagement() {
   const [selectedItemForMove, setSelectedItemForMove] = useState<any>(null)
   const [moveToRoom, setMoveToRoom] = useState('')
   const [moveToCabinet, setMoveToCabinet] = useState('')
+  const [moveQuantity, setMoveQuantity] = useState(1)
   const [showItemHistory, setShowItemHistory] = useState(false)
   const [selectedItemForHistory, setSelectedItemForHistory] = useState<any>(null)
   const [itemHistory, setItemHistory] = useState<any[]>([])
@@ -290,6 +291,7 @@ export default function RoomManagement() {
     setSelectedItemForMove(item)
     setMoveToRoom('')
     setMoveToCabinet('')
+    setMoveQuantity(1)
     setShowMoveItem(true)
   }
 
@@ -297,14 +299,15 @@ export default function RoomManagement() {
     if (!selectedItemForMove || !moveToRoom) return
 
     try {
-      const response = await fetch(`/api/items/${selectedItemForMove.id}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/items/${selectedItemForMove.id}/move`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           roomId: moveToRoom,
           cabinetId: moveToCabinet || null,
+          quantity: moveQuantity
         }),
       })
 
@@ -314,6 +317,7 @@ export default function RoomManagement() {
         setSelectedItemForMove(null)
         setMoveToRoom('')
         setMoveToCabinet('')
+        setMoveQuantity(1)
         
         // Refresh the room detail view
         if (selectedRoomForDetail) {
@@ -1252,6 +1256,24 @@ export default function RoomManagement() {
                     )) : null}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t('moveQuantity') || 'Quantity to Move'} *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={selectedItemForMove?.quantity || 1}
+                    value={moveQuantity}
+                    onChange={(e) => setMoveQuantity(Math.max(1, Math.min(selectedItemForMove?.quantity || 1, parseInt(e.target.value) || 1)))}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Available: {selectedItemForMove?.quantity || 0} | Moving: {moveQuantity}
+                  </p>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 mt-6">
@@ -1261,6 +1283,7 @@ export default function RoomManagement() {
                     setSelectedItemForMove(null)
                     setMoveToRoom('')
                     setMoveToCabinet('')
+                    setMoveQuantity(1)
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >

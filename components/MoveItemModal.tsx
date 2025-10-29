@@ -97,7 +97,10 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
 
   const fetchCabinets = async (roomId: string) => {
     try {
+      console.log('MoveItemModal - Fetching cabinets for roomId:', roomId, 'householdId:', activeHouseholdId)
       const response = await fetch(`/api/cabinets?roomId=${roomId}`, { credentials: 'include' })
+      console.log('MoveItemModal - Cabinet API response status:', response.status)
+      
       if (response.ok) {
         const cabinetsData = await response.json()
         console.log('MoveItemModal - Cabinets API response:', cabinetsData)
@@ -107,7 +110,12 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                              cabinetsData.cabinets || 
                              (cabinetsData.data ? cabinetsData.data : [])
         
+        console.log('MoveItemModal - Processed cabinets array:', cabinetsArray)
         setCabinets(cabinetsArray)
+      } else {
+        const errorData = await response.json()
+        console.error('MoveItemModal - Cabinet API error:', errorData)
+        toast.error(`Failed to load cabinets: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error fetching cabinets:', error)

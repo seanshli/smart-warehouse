@@ -159,6 +159,10 @@ export interface Translations {
   // Add Item Modal
   selectRoom: string
   autoCreateDefaultCabinet: string
+  checkoutQuantity: string
+  reason: string
+  moveToRoom: string
+  moveConfirmation: string
   
   // Missing translations for hardcoded strings
   startAddingItems: string
@@ -621,6 +625,10 @@ const en: Translations = {
   // Add Item Modal
   selectRoom: 'Select a room',
   autoCreateDefaultCabinet: 'Auto-create default cabinet',
+  checkoutQuantity: 'Checkout Quantity',
+  reason: 'Reason',
+  moveToRoom: 'Move to Room',
+  moveConfirmation: 'Moving to',
   
   // Missing translations for hardcoded strings
   noItemsFound: 'No items found',
@@ -1087,6 +1095,10 @@ const zhTW: Translations = {
   // Add Item Modal
   selectRoom: '選擇房間',
   autoCreateDefaultCabinet: '自動創建默認櫥櫃',
+  checkoutQuantity: '結帳數量',
+  reason: '原因',
+  moveToRoom: '移動到房間',
+  moveConfirmation: '移動到',
   
   // Missing translations for hardcoded strings
   noItemsFound: '找不到物品',
@@ -1563,6 +1575,10 @@ const zh: Translations = {
   // Add Item Modal
   selectRoom: '选择房间',
   autoCreateDefaultCabinet: '自动创建默认橱柜',
+  checkoutQuantity: '结账数量',
+  reason: '原因',
+  moveToRoom: '移动到房间',
+  moveConfirmation: '移动到',
   
   // Missing translations for hardcoded strings
   noItemsFound: '找不到物品',
@@ -2037,6 +2053,10 @@ const ja: Translations = {
   // Add Item Modal
   selectRoom: '部屋を選択',
   autoCreateDefaultCabinet: 'デフォルトキャビネットを自動作成',
+  checkoutQuantity: 'チェックアウト数量',
+  reason: '理由',
+  moveToRoom: '部屋に移動',
+  moveConfirmation: '移動先',
   
   // Missing translations for hardcoded strings
   noItemsFound: 'アイテムが見つかりません',

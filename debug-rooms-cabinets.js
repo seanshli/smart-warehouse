@@ -2,40 +2,16 @@ const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 
-async function debugRoomsCabinets() {
+async function debugRoomsAndCabinets() {
   try {
     console.log('🔍 Debugging rooms and cabinets...')
     
-    // Get all households
-    const households = await prisma.household.findMany({
-      include: {
-        rooms: {
-          include: {
-            cabinets: true
-          }
-        }
-      }
-    })
-    
-    console.log(`\n📊 Found ${households.length} households:`)
-    
-    for (const household of households) {
-      console.log(`\n🏠 Household: ${household.name} (ID: ${household.id})`)
-      console.log(`   Rooms: ${household.rooms.length}`)
-      
-      for (const room of household.rooms) {
-        console.log(`   📦 Room: ${room.name} (ID: ${room.id})`)
-        console.log(`      Cabinets: ${room.cabinets.length}`)
-        for (const cabinet of room.cabinets) {
-          console.log(`         - ${cabinet.name} (ID: ${cabinet.id})`)
-        }
-      }
-    }
-    
-    // Check specifically for 黎家 household
-    const liJiaHousehold = await prisma.household.findFirst({
+    // Find the 黎家 household
+    const household = await prisma.household.findFirst({
       where: {
-        name: { contains: '黎家' }
+        name: {
+          contains: '黎家'
+        }
       },
       include: {
         rooms: {
@@ -46,20 +22,31 @@ async function debugRoomsCabinets() {
       }
     })
     
-    if (liJiaHousehold) {
-      console.log(`\n🎯 黎家 Household Details:`)
-      console.log(`   ID: ${liJiaHousehold.id}`)
-      console.log(`   Rooms: ${liJiaHousehold.rooms.length}`)
-      
-      for (const room of liJiaHousehold.rooms) {
-        console.log(`   📦 Room: ${room.name} (ID: ${room.id})`)
-        console.log(`      Cabinets: ${room.cabinets.length}`)
-        for (const cabinet of room.cabinets) {
-          console.log(`         - ${cabinet.name} (ID: ${cabinet.id})`)
-        }
-      }
+    if (!household) {
+      console.log('❌ No 黎家 household found')
+      return
+    }
+    
+    console.log('🏠 Found household:', household.name, '(ID:', household.id, ')')
+    console.log('📊 Total rooms:', household.rooms.length)
+    
+    household.rooms.forEach(room => {
+      console.log(`\n🚪 Room: ${room.name} (ID: ${room.id})`)
+      console.log(`   📦 Cabinets (${room.cabinets.length}):`)
+      room.cabinets.forEach(cabinet => {
+        console.log(`      - ${cabinet.name} (ID: ${cabinet.id})`)
+      })
+    })
+    
+    // Check specifically for kitchen
+    const kitchen = household.rooms.find(r => r.name.includes('kitchen') || r.name.includes('廚房'))
+    if (kitchen) {
+      console.log('\n🍳 Kitchen details:')
+      console.log('   Name:', kitchen.name)
+      console.log('   ID:', kitchen.id)
+      console.log('   Cabinets:', kitchen.cabinets.map(c => c.name))
     } else {
-      console.log('\n❌ 黎家 household not found')
+      console.log('\n❌ No kitchen found')
     }
     
   } catch (error) {
@@ -69,5 +56,4 @@ async function debugRoomsCabinets() {
   }
 }
 
-debugRoomsCabinets()
-
+debugRoomsAndCabinets()

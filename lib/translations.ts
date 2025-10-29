@@ -155,10 +155,10 @@ export interface Translations {
   unexpectedError: string
   refreshPage: string
   goHome: string
-  moveToRoom: string
-  checkoutQuantity: string
-  reason: string
-  moveConfirmation: string
+  
+  // Add Item Modal
+  selectRoom: string
+  autoCreateDefaultCabinet: string
   
   // Missing translations for hardcoded strings
   startAddingItems: string
@@ -280,7 +280,6 @@ export interface Translations {
   whereIsThisItemStored: string
   selectARoom: string
   selectACabinet: string
-  autoCreateDefaultCabinet: string
   
   // Invitation Codes
   invitationCode: string
@@ -618,10 +617,10 @@ const en: Translations = {
   unexpectedError: 'An unexpected error occurred. Please try refreshing the page.',
   refreshPage: 'Refresh Page',
   goHome: 'Go Home',
-  moveToRoom: 'Move to Room',
-  checkoutQuantity: 'Checkout Quantity',
-  reason: 'Reason',
-  moveConfirmation: 'Moving to',
+  
+  // Add Item Modal
+  selectRoom: 'Select a room',
+  autoCreateDefaultCabinet: 'Auto-create default cabinet',
   
   // Missing translations for hardcoded strings
   noItemsFound: 'No items found',
@@ -746,7 +745,6 @@ const en: Translations = {
   whereIsThisItemStored: 'Where is this item stored?',
   selectARoom: 'Select a room',
   selectACabinet: 'Select a cabinet',
-  autoCreateDefaultCabinet: 'Auto-create default cabinet',
   
   // AI Recognition
   aiRecognitionResults: 'AI Recognition Results',
@@ -1085,10 +1083,10 @@ const zhTW: Translations = {
   unexpectedError: '發生意外錯誤。請嘗試刷新頁面。',
   refreshPage: '重新整理頁面',
   goHome: '回家',
-  moveToRoom: '移動到房間',
-  checkoutQuantity: '結帳數量',
-  reason: '原因',
-  moveConfirmation: '移動到',
+  
+  // Add Item Modal
+  selectRoom: '選擇房間',
+  autoCreateDefaultCabinet: '自動創建默認櫥櫃',
   
   // Missing translations for hardcoded strings
   noItemsFound: '找不到物品',
@@ -1213,7 +1211,6 @@ const zhTW: Translations = {
   whereIsThisItemStored: '此物品存放在哪裡？',
   selectARoom: '選擇房間',
   selectACabinet: '選擇櫥櫃',
-  autoCreateDefaultCabinet: '自動建立預設櫥櫃',
   
   // AI Recognition
   aiRecognitionResults: 'AI 識別結果',
@@ -1562,10 +1559,10 @@ const zh: Translations = {
   unexpectedError: '发生意外错误。请尝试刷新页面。',
   refreshPage: '刷新页面',
   goHome: '回家',
-  moveToRoom: '移动到房间',
-  checkoutQuantity: '结账数量',
-  reason: '原因',
-  moveConfirmation: '移动到',
+  
+  // Add Item Modal
+  selectRoom: '选择房间',
+  autoCreateDefaultCabinet: '自动创建默认橱柜',
   
   // Missing translations for hardcoded strings
   noItemsFound: '找不到物品',
@@ -1690,7 +1687,6 @@ const zh: Translations = {
   whereIsThisItemStored: '此物品存放在哪里？',
   selectARoom: '选择房间',
   selectACabinet: '选择橱柜',
-  autoCreateDefaultCabinet: '自动创建默认橱柜',
   
   // AI Recognition
   aiRecognitionResults: 'AI 识别结果',
@@ -2037,10 +2033,10 @@ const ja: Translations = {
   unexpectedError: '予期しないエラーが発生しました。ページを更新してください。',
   refreshPage: 'ページを更新',
   goHome: 'ホームに戻る',
-  moveToRoom: '部屋に移動',
-  checkoutQuantity: 'チェックアウト数量',
-  reason: '理由',
-  moveConfirmation: '移動先',
+  
+  // Add Item Modal
+  selectRoom: '部屋を選択',
+  autoCreateDefaultCabinet: 'デフォルトキャビネットを自動作成',
   
   // Missing translations for hardcoded strings
   noItemsFound: 'アイテムが見つかりません',
@@ -2165,7 +2161,6 @@ const ja: Translations = {
   whereIsThisItemStored: 'このアイテムはどこに保管されていますか？',
   selectARoom: '部屋を選択',
   selectACabinet: 'キャビネットを選択',
-  autoCreateDefaultCabinet: 'デフォルトキャビネットを自動作成',
   
   // AI Recognition
   aiRecognitionResults: 'AI認識結果',

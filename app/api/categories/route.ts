@@ -90,28 +90,8 @@ export async function GET(request: NextRequest) {
     
     const translatedCategories = categories.map(translateCategory)
 
-    // Return all categories - let the frontend build the hierarchy
-    // Add debug information for duplicate checking
-    const nameCounts = translatedCategories.reduce((acc, category) => {
-      const key = `${category.name}_${category.level}_${category.parentId || 'null'}`
-      acc[key] = (acc[key] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    const duplicates = Object.entries(nameCounts)
-      .filter(([_key, count]) => (count as number) > 1)
-      .map(([key, count]) => ({ key, count: count as number }))
-
-    return NextResponse.json({
-      categories: translatedCategories,
-      debug: {
-        totalCategories: translatedCategories.length,
-        nameCounts,
-        duplicates,
-        householdId: household.id,
-        userLanguage
-      }
-    })
+    // Return only translated categories (no duplicates)
+    return NextResponse.json(translatedCategories)
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(

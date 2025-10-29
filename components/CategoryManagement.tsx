@@ -68,39 +68,11 @@ export default function CategoryManagement() {
         const data = await response.json()
         console.log('Raw categories data from API:', data)
         
-        // Build hierarchical structure from flat API response
-        const buildHierarchy = (categories: any[]): any[] => {
-          const categoryMap = new Map()
-          const roots: any[] = []
-          
-          // First pass: create map of all categories
-          categories.forEach(category => {
-            categoryMap.set(category.id, {
-              ...category,
-              children: []
-            })
-          })
-          
-          // Second pass: build hierarchy
-          categories.forEach(category => {
-            const categoryObj = categoryMap.get(category.id)
-            if (category.parentId) {
-              const parent = categoryMap.get(category.parentId)
-              if (parent) {
-                parent.children.push(categoryObj)
-              }
-            } else {
-              roots.push(categoryObj)
-            }
-          })
-          
-          return roots
-        }
+        // API now returns hierarchical structure directly
+        const categories = Array.isArray(data) ? data : data.categories || []
         
-        console.log('Categories API response:', data)
-        const hierarchicalData = buildHierarchy(data.categories || data)
-        console.log('Hierarchical categories:', hierarchicalData)
-        setCategories(hierarchicalData)
+        console.log('Categories API response:', categories)
+        setCategories(categories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)

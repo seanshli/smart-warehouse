@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
+    
+    console.log('[cabinets] GET /api/cabinets - roomId:', roomId, 'userId:', (session?.user as any)?.id)
 
     // Get user's household
     const household = await prisma.household.findFirst({
@@ -54,6 +56,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('[cabinets] GET /api/cabinets - Found cabinets:', cabinets.length, 'for roomId:', roomId, 'householdId:', household.id)
     return NextResponse.json(cabinets)
   } catch (error) {
     console.error('Error fetching cabinets:', error)

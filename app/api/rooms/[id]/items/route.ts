@@ -13,10 +13,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const session = await getServerSession(authOptions)
 
     if (!(session?.user as any)?.id) {
+      console.log('[rooms] GET /api/rooms/[id]/items - Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const roomId = params.id
+    console.log('[rooms] GET /api/rooms/[id]/items - roomId:', roomId, 'userId:', (session?.user as any)?.id)
 
     // Get user's household
     const household = await prisma.household.findFirst({
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     if (!household) {
+      console.log('[rooms] GET /api/rooms/[id]/items - Household not found for user:', (session?.user as any)?.id)
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
     }
 
@@ -63,9 +66,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     if (!room) {
+      console.log('[rooms] GET /api/rooms/[id]/items - Room not found:', roomId, 'householdId:', household.id)
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
 
+    console.log('[rooms] GET /api/rooms/[id]/items - Success:', roomId, 'cabinets:', room.cabinets?.length || 0, 'items:', room._count?.items || 0)
     return NextResponse.json(room)
   } catch (error) {
     console.error('Error fetching room details:', error)

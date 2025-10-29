@@ -154,8 +154,12 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
         const response = await fetch(`/api/rooms?householdId=${household.id}&language=${currentLanguage}`)
         if (response.ok) {
           const roomsData = await response.json()
-          console.log('AddItemModal: Fetched rooms for household:', household.id, 'language:', currentLanguage)
-          setRooms(roomsData.rooms || roomsData) // Handle both old and new API response formats
+          console.log('AddItemModal: Fetched rooms for household:', household.id, 'language:', currentLanguage, 'roomsData:', roomsData)
+          const roomsArray = roomsData.rooms || roomsData
+          console.log('AddItemModal: Setting rooms array:', roomsArray)
+          setRooms(roomsArray) // Handle both old and new API response formats
+        } else {
+          console.error('AddItemModal: Failed to fetch rooms, status:', response.status)
         }
       } catch (error) {
         console.error('Failed to fetch rooms:', error)
@@ -177,23 +181,35 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   useEffect(() => {
     const fetchCabinets = async () => {
       if (!formData.room) {
+        console.log('AddItemModal: No room selected, clearing cabinets')
         setCabinets([])
         return
       }
 
       try {
+        console.log('AddItemModal: Fetching cabinets for room:', formData.room)
+        console.log('AddItemModal: Current rooms state:', rooms)
+        console.log('AddItemModal: Selected room details:', rooms.find(r => r.id === formData.room))
+        
         const response = await fetch(`/api/cabinets?roomId=${formData.room}`)
+        console.log('AddItemModal: Cabinet API response status:', response.status)
+        
         if (response.ok) {
           const cabinetsData = await response.json()
+          console.log('AddItemModal: Fetched cabinets:', cabinetsData)
+          console.log('AddItemModal: Cabinet count:', cabinetsData.length)
           setCabinets(cabinetsData)
+        } else {
+          const errorText = await response.text()
+          console.error('AddItemModal: Failed to fetch cabinets, status:', response.status, 'error:', errorText)
         }
       } catch (error) {
-        console.error('Failed to fetch cabinets:', error)
+        console.error('AddItemModal: Failed to fetch cabinets:', error)
       }
     }
 
     fetchCabinets()
-  }, [formData.room])
+  }, [formData.room, rooms])
 
   const handleImageUpload = async (file: File) => {
     setIsProcessing(true)
@@ -1335,14 +1351,18 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                   </label>
                   <select
                     value={formData.room}
-                    onChange={(e) => setFormData(prev => ({ ...prev, room: e.target.value, cabinet: '' }))}
+                    onChange={(e) => {
+                      console.log('AddItemModal: Room selected:', e.target.value)
+                      console.log('AddItemModal: Available rooms:', rooms)
+                      setFormData(prev => ({ ...prev, room: e.target.value, cabinet: '' }))
+                    }}
                     className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                     disabled={loadingRooms}
                   >
                     <option value="" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">Select a room</option>
                     {rooms.map((room) => (
                       <option key={room.id} value={room.id} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                        {room.name}
+                        {room.name} (ID: {room.id})
                       </option>
                     ))}
                   </select>
@@ -1354,14 +1374,18 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
                   </label>
                   <select
                     value={formData.cabinet}
-                    onChange={(e) => setFormData(prev => ({ ...prev, cabinet: e.target.value }))}
+                    onChange={(e) => {
+                      console.log('AddItemModal: Cabinet selected:', e.target.value)
+                      console.log('AddItemModal: Available cabinets:', cabinets)
+                      setFormData(prev => ({ ...prev, cabinet: e.target.value }))
+                    }}
                     className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                     disabled={!formData.room}
                   >
                     <option value="" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">Auto-create default cabinet</option>
                     {cabinets.map((cabinet) => (
                       <option key={cabinet.id} value={cabinet.id} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                        {cabinet.name}
+                        {cabinet.name} (ID: {cabinet.id})
                       </option>
                     ))}
                   </select>

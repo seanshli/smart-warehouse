@@ -149,7 +149,8 @@ export async function PUT(
           roomId: roomId,
           cabinetId: cabinetId,
           categoryId: categoryId || item.categoryId,
-          householdId: item.householdId
+          householdId: item.householdId,
+          addedById: userId
         },
         include: {
           category: {

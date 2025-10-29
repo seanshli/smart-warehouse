@@ -53,6 +53,7 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
   const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
   const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
   const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
+  const [moveQuantity, setMoveQuantity] = useState(1)
   const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
   const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -156,7 +157,8 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
         body: JSON.stringify({
           roomId: selectedRoom,
           cabinetId: selectedCabinet || null,
-          categoryId: selectedCategory || null
+          categoryId: selectedCategory || null,
+          quantity: moveQuantity
         })
       })
 
@@ -267,6 +269,25 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="moveQuantity" className="block text-sm font-medium text-gray-700">
+                {t('moveQuantity') || 'Quantity to Move'} *
+              </label>
+              <input
+                type="number"
+                id="moveQuantity"
+                min="1"
+                max={item.quantity}
+                value={moveQuantity}
+                onChange={(e) => setMoveQuantity(Math.max(1, Math.min(item.quantity, parseInt(e.target.value) || 1)))}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Available: {item.quantity} | Moving: {moveQuantity}
+              </p>
             </div>
 
             {selectedRoom && (

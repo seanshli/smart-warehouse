@@ -71,6 +71,19 @@ const categoryTranslationsMap = new Map<string, string>([
   ['玩具', 'toys'],
   ['園藝用品', 'garden'],
   ['rs485控制器', 'electronics'],
+  // Level 2 subcategories
+  ['飲具', 'drinkware'],
+  ['鍋具', 'pots_and_pans'],
+  ['餐具', 'dishes'],
+  ['廚具', 'utensil'],
+  ['上衣', 'top'],
+  ['下身', 'bottom'],
+  ['外套', 'jacket'],
+  ['T恤', 't_shirt'],
+  ['襯衫', 'shirt'],
+  ['褲子', 'pants'],
+  ['裙子', 'skirt'],
+  ['茶飲料', 'tea_beverages'],
   
   // Simplified Chinese to normalized key
   ['电子产品', 'electronics'],
@@ -280,6 +293,12 @@ export function getCategoryDisplayName(normalizedKey: string, language: string):
       'zh-TW': '飲料',
       'zh': '饮料',
       'ja': '飲料'
+    },
+    'tea_beverages': {
+      'en': 'Tea Beverages',
+      'zh-TW': '茶飲料',
+      'zh': '茶饮料',
+      'ja': '茶飲料'
     },
     'medicine': {
       'en': 'Medicine',

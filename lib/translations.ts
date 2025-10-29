@@ -163,6 +163,7 @@ export interface Translations {
   reason: string
   moveToRoom: string
   moveConfirmation: string
+  moveQuantity: string
   
   // Category Management
   categoryHierarchy: string
@@ -633,6 +634,7 @@ const en: Translations = {
   reason: 'Reason',
   moveToRoom: 'Move to Room',
   moveConfirmation: 'Moving to',
+  moveQuantity: 'Quantity to Move',
   
   // Category Management
   categoryHierarchy: 'Category Hierarchy',
@@ -1107,6 +1109,7 @@ const zhTW: Translations = {
   reason: '原因',
   moveToRoom: '移動到房間',
   moveConfirmation: '移動到',
+  moveQuantity: '移動數量',
   
   // Category Management
   categoryHierarchy: '分類層次',
@@ -1591,6 +1594,7 @@ const zh: Translations = {
   reason: '原因',
   moveToRoom: '移动到房间',
   moveConfirmation: '移动到',
+  moveQuantity: '移动数量',
   
   // Category Management
   categoryHierarchy: '分类层次',
@@ -2073,6 +2077,7 @@ const ja: Translations = {
   reason: '理由',
   moveToRoom: '部屋に移動',
   moveConfirmation: '移動先',
+  moveQuantity: '移動数量',
   
   // Category Management
   categoryHierarchy: 'カテゴリ階層',

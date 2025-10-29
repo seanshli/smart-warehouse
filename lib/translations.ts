@@ -164,6 +164,10 @@ export interface Translations {
   moveToRoom: string
   moveConfirmation: string
   
+  // Category Management
+  categoryHierarchy: string
+  cleanDuplicateCategories: string
+  
   // Missing translations for hardcoded strings
   startAddingItems: string
   forceRefreshPage: string
@@ -629,6 +633,10 @@ const en: Translations = {
   reason: 'Reason',
   moveToRoom: 'Move to Room',
   moveConfirmation: 'Moving to',
+  
+  // Category Management
+  categoryHierarchy: 'Category Hierarchy',
+  cleanDuplicateCategories: '🗂️ CLEAN DUPLICATE CATEGORIES',
   
   // Missing translations for hardcoded strings
   noItemsFound: 'No items found',
@@ -1099,6 +1107,10 @@ const zhTW: Translations = {
   reason: '原因',
   moveToRoom: '移動到房間',
   moveConfirmation: '移動到',
+  
+  // Category Management
+  categoryHierarchy: '分類層次',
+  cleanDuplicateCategories: '🗂️ 清理重複分類',
   
   // Missing translations for hardcoded strings
   noItemsFound: '找不到物品',
@@ -1580,6 +1592,10 @@ const zh: Translations = {
   moveToRoom: '移动到房间',
   moveConfirmation: '移动到',
   
+  // Category Management
+  categoryHierarchy: '分类层次',
+  cleanDuplicateCategories: '🗂️ 清理重复分类',
+  
   // Missing translations for hardcoded strings
   noItemsFound: '找不到物品',
   startAddingItems: '开始添加一些物品到您的库存中。',
@@ -2057,6 +2073,10 @@ const ja: Translations = {
   reason: '理由',
   moveToRoom: '部屋に移動',
   moveConfirmation: '移動先',
+  
+  // Category Management
+  categoryHierarchy: 'カテゴリ階層',
+  cleanDuplicateCategories: '🗂️ 重複カテゴリをクリーンアップ',
   
   // Missing translations for hardcoded strings
   noItemsFound: 'アイテムが見つかりません',

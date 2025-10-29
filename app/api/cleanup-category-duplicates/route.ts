@@ -62,7 +62,9 @@ export async function POST(request: NextRequest) {
         '其他': 'miscellaneous',
         '工具': 'tools',
         '上衣': 'shirts',
-        't-shirt': 'shirts'
+        't-shirt': 'shirts',
+        '食物': 'food',
+        'food': 'food'
       }
       
       // If it's a Chinese name, normalize to English equivalent
@@ -226,7 +228,9 @@ export async function GET(request: NextRequest) {
         '其他': 'miscellaneous',
         '工具': 'tools',
         '上衣': 'shirts',
-        't-shirt': 'shirts'
+        't-shirt': 'shirts',
+        '食物': 'food',
+        'food': 'food'
       }
       
       // If it's a Chinese name, normalize to English equivalent

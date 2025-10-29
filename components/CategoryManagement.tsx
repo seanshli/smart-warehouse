@@ -522,7 +522,7 @@ export default function CategoryManagement() {
             }}
             className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 font-bold text-lg"
           >
-            🗂️ CLEAN DUPLICATE CATEGORIES
+{t('cleanDuplicateCategories') || '🗂️ CLEAN DUPLICATE CATEGORIES'}
           </button>
         </div>
       </div>
@@ -530,7 +530,7 @@ export default function CategoryManagement() {
       {/* Category Tree */}
       <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Category Hierarchy
+          {t('categoryHierarchy') || 'Category Hierarchy'}
         </h3>
         {categories.length > 0 ? (
           <div className="space-y-2">

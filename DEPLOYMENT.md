@@ -198,6 +198,10 @@ node scripts/test-external-access.js
 - Verify domain is accessible
 
 ### Database Connection:
+
+---
+
+Deployment trigger: 2025-10-30T00:00:00Z – force redeploy
 - Verify `DATABASE_URL` format
 - Check database accessibility
 - Run migrations if needed

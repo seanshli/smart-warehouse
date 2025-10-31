@@ -78,50 +78,47 @@ export async function GET(request: NextRequest) {
     // Translate category names using category-translations
     const { getNormalizedCategoryKey, getCategoryDisplayName } = await import('@/lib/category-translations')
     
+    const ensureCount = (node: any) => ({
+      ...node,
+      _count: node?._count?.items !== undefined ? node._count : { items: 0 }
+    })
+
     const translateCategory = (cat: any): any => {
       const normalizedKey = getNormalizedCategoryKey(cat.name)
       const translatedName = getCategoryDisplayName(normalizedKey, userLanguage)
-      // Ensure children is an array
+
+      // Ensure children array (do NOT dedupe here to preserve distinct trees like Drinkware vs 飲品)
       const rawChildren: any[] = Array.isArray(cat.children) ? cat.children : []
-      // Translate and deduplicate children by normalized key
-      const childMap = new Map<string, any>()
-      for (const child of rawChildren) {
-        const childNorm = getNormalizedCategoryKey(child.name)
-        const translatedChild = translateCategory(child)
-        if (childMap.has(childNorm)) {
-          // Merge: keep first, append grandchildren (avoid duplicates)
-          const existing = childMap.get(childNorm)
-          const existingChildren = Array.isArray(existing.children) ? existing.children : []
-          const newChildren = Array.isArray(translatedChild.children) ? translatedChild.children : []
-          // Merge grandchildren by normalized key
-          const gcMap = new Map<string, any>()
-          for (const gc of [...existingChildren, ...newChildren]) {
-            const gcNorm = getNormalizedCategoryKey(gc.name)
-            if (!gcMap.has(gcNorm)) gcMap.set(gcNorm, gc)
-          }
-          existing.children = Array.from(gcMap.values())
-          childMap.set(childNorm, existing)
-        } else {
-          childMap.set(childNorm, translatedChild)
-        }
-      }
-      return {
+
+      // Translate and sanitize each child
+      const translatedChildren = rawChildren.map(child => {
+        const tChild = translateCategory(child)
+        // Guard: keep parent-child consistency and cap level at 3
+        tChild.level = Math.min((child.level ?? (cat.level ?? 1) + 1), 3)
+        return ensureCount(tChild)
+      })
+
+      return ensureCount({
         ...cat,
         name: translatedName,
         originalName: cat.name,
-        children: Array.from(childMap.values())
-      }
+        children: translatedChildren
+      })
     }
     
     const translatedCategories = categories.map(translateCategory)
 
-    // Defensive: remove any self-referencing cycles and ensure proper levels
-    const sanitizeLevels = (nodes: any[], level = 1): any[] => {
-      return nodes.map(n => ({
-        ...n,
-        level,
-        children: Array.isArray(n.children) ? sanitizeLevels(n.children, Math.min(level + 1, 3)) : []
-      }))
+    // Defensive: remove self-cycles, enforce levels, and ensure counts
+    const sanitizeLevels = (nodes: any[], level = 1, seen = new Set<string>()): any[] => {
+      return nodes.map(n => {
+        const id = String(n.id || `${n.name}-${level}`)
+        if (seen.has(id)) {
+          return ensureCount({ ...n, level, children: [] })
+        }
+        seen.add(id)
+        const kids = Array.isArray(n.children) ? sanitizeLevels(n.children, Math.min(level + 1, 3), seen) : []
+        return ensureCount({ ...n, level, children: kids })
+      })
     }
     const safeTree = sanitizeLevels(translatedCategories)
 

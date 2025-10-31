@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       byParent.get(key)!.push(cat)
     }
 
-    for (const [parentKey, cats] of byParent.entries()) {
+    for (const [parentKey, cats] of Array.from(byParent.entries())) {
       const groups = new Map<string, any[]>()
       for (const c of cats) {
         const k = getNormalizedCategoryKey(c.name)
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         groups.get(k)!.push(c)
       }
 
-      for (const [norm, group] of groups.entries()) {
+      for (const [norm, group] of Array.from(groups.entries())) {
         if (group.length <= 1) continue
         // Keep oldest with most items
         group.sort((a, b) => {

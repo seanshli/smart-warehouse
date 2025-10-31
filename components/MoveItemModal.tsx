@@ -86,6 +86,10 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
     }
   }, [hasMultipleLocations, item.locations])
 
+  // When moving from multiple sources, auto-calculate total to move from selected sources
+  const totalSelectedFromSources = selectedSources.reduce((sum, s) => sum + s.quantity, 0)
+  const effectiveMoveQuantity = hasMultipleLocations ? totalSelectedFromSources : moveQuantity
+
   useEffect(() => {
     fetchRooms()
     fetchCategories()
@@ -455,49 +459,38 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
               </select>
             </div>
 
-            <div>
-              <label htmlFor="moveQuantity" className="block text-sm font-medium text-gray-700">
-                {t('moveQuantity') || 'Quantity to Move'} *
-              </label>
-              <input
-                type="number"
-                id="moveQuantity"
-                min="1"
-                max={availableQuantity}
-                value={moveQuantity}
-                onChange={(e) => {
-                  const inputValue = e.target.value
-                  if (inputValue === '') {
-                    setMoveQuantity(1)
-                    return
-                  }
-                  const numValue = parseInt(inputValue)
-                  if (!isNaN(numValue)) {
-                    if (numValue >= 1 && numValue <= availableQuantity) {
-                      setMoveQuantity(numValue)
-                      // Auto-distribute quantity across selected sources if no manual quantities set
-                      if (hasMultipleLocations && selectedSources.length > 0) {
-                        const totalSelected = selectedSources.reduce((sum, s) => sum + s.quantity, 0)
-                        if (totalSelected === 0) {
-                          // Auto-distribute evenly
-                          const perSource = Math.floor(numValue / selectedSources.length)
-                          const remainder = numValue % selectedSources.length
-                          setSelectedSources(selectedSources.map((s, idx) => ({
-                            ...s,
-                            quantity: perSource + (idx < remainder ? 1 : 0)
-                          })))
-                        }
+            {!hasMultipleLocations && (
+              <div>
+                <label htmlFor="moveQuantity" className="block text-sm font-medium text-gray-700">
+                  {t('moveQuantity') || 'Quantity to Move'} *
+                </label>
+                <input
+                  type="number"
+                  id="moveQuantity"
+                  min="1"
+                  max={availableQuantity}
+                  value={moveQuantity}
+                  onChange={(e) => {
+                    const inputValue = e.target.value
+                    if (inputValue === '') {
+                      setMoveQuantity(1)
+                      return
+                    }
+                    const numValue = parseInt(inputValue)
+                    if (!isNaN(numValue)) {
+                      if (numValue >= 1 && numValue <= availableQuantity) {
+                        setMoveQuantity(numValue)
                       }
                     }
-                  }
-                }}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                required
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Available: {availableQuantity} | Moving: {moveQuantity}
-              </p>
-            </div>
+                  }}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Available: {availableQuantity} | Moving: {moveQuantity}
+                </p>
+              </div>
+            )}
 
             {selectedRoom && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
@@ -507,6 +500,7 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                     {t('moveConfirmation')}: {rooms.find(r => r.id === selectedRoom)?.name || 'Unknown Room'}
                     {selectedCabinet && cabinets.find(c => c.id === selectedCabinet)?.name && ` → ${cabinets.find(c => c.id === selectedCabinet)?.name}`}
                     {selectedCategory && categories.find(c => c.id === selectedCategory)?.name && ` → ${categories.find(c => c.id === selectedCategory)?.name}`}
+                    {` • ${t('moveQuantity') || 'Quantity to Move'}: ${effectiveMoveQuantity}`}
                   </span>
                 </div>
               </div>
@@ -524,7 +518,7 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
               <button
                 type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                disabled={isLoading || !selectedRoom}
+                disabled={isLoading || !selectedRoom || (hasMultipleLocations && effectiveMoveQuantity <= 0)}
               >
                 {isLoading ? t('moving') : t('move')}
               </button>

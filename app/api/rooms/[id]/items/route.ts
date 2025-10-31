@@ -104,21 +104,25 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         }
       })
 
-      // Enrich items in room with total quantity and isLowStock
-      room.cabinets = room.cabinets.map(cabinet => ({
-        ...cabinet,
-        items: cabinet.items.map((item: any) => {
+      // Enrich and de-duplicate items per cabinet by name/category
+      room.cabinets = room.cabinets.map(cabinet => {
+        const dedupMap = new Map<string, any>()
+        for (const item of cabinet.items as any[]) {
           const normalizedName = item.name.trim().toLowerCase()
+          const key = `${normalizedName}|${item.categoryId || 'none'}`
           const totals = itemTotals.get(normalizedName) || { totalQuantity: item.quantity, minQuantity: item.minQuantity }
           const isLowStock = totals.minQuantity !== null && totals.totalQuantity <= totals.minQuantity
-          
-          return {
-            ...item,
-            totalQuantity: totals.totalQuantity,
-            isLowStock
+          if (dedupMap.has(key)) {
+            const existing = dedupMap.get(key)
+            existing.quantity += item.quantity
+            existing.totalQuantity = totals.totalQuantity
+            existing.isLowStock = isLowStock
+          } else {
+            dedupMap.set(key, { ...item, totalQuantity: totals.totalQuantity, isLowStock })
           }
-        })
-      }))
+        }
+        return { ...cabinet, items: Array.from(dedupMap.values()) }
+      })
     }
 
     // Translate room name

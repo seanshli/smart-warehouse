@@ -416,7 +416,7 @@ export default function CategoryManagement() {
         
         {expandedCategories.has(category.id) && (
           <div className="ml-4 mt-2">
-            {category.children.length > 0 ? (
+            {Array.isArray(category.children) && category.children.length > 0 ? (
               renderCategoryTree(category.children, level + 1)
             ) : (
               <div className="text-sm text-gray-500 italic p-2 bg-gray-50 rounded">

@@ -157,6 +157,31 @@ export async function PUT(
         }
       })
 
+      // Attempt to merge with an existing item at the destination (same name/category/location)
+      try {
+        const existingAtDestination = await prisma.item.findFirst({
+          where: {
+            id: { not: updatedItem.id },
+            householdId: item.householdId,
+            name: item.name,
+            roomId: roomId,
+            cabinetId: cabinetId,
+            categoryId: updatedItem.categoryId || null
+          }
+        })
+
+        if (existingAtDestination) {
+          const merged = await prisma.item.update({
+            where: { id: existingAtDestination.id },
+            data: { quantity: existingAtDestination.quantity + updatedItem.quantity }
+          })
+          await prisma.item.delete({ where: { id: updatedItem.id } })
+          return NextResponse.json(merged)
+        }
+      } catch (mergeErr) {
+        console.error('[move] Merge after full move failed:', mergeErr)
+      }
+
       return NextResponse.json(updatedItem)
     } else {
       // Partial move - reduce original item quantity and create new item
@@ -229,6 +254,31 @@ export async function PUT(
           performedBy: userId
         }
       })
+
+      // Attempt to merge with an existing item at the destination (same name/category/location)
+      try {
+        const existingAtDestination = await prisma.item.findFirst({
+          where: {
+            id: { not: newItem.id },
+            householdId: item.householdId,
+            name: item.name,
+            roomId: roomId,
+            cabinetId: cabinetId,
+            categoryId: newItem.categoryId || null
+          }
+        })
+
+        if (existingAtDestination) {
+          const merged = await prisma.item.update({
+            where: { id: existingAtDestination.id },
+            data: { quantity: existingAtDestination.quantity + newItem.quantity }
+          })
+          await prisma.item.delete({ where: { id: newItem.id } })
+          return NextResponse.json(merged)
+        }
+      } catch (mergeErr) {
+        console.error('[move] Merge after partial move failed:', mergeErr)
+      }
 
       return NextResponse.json(newItem)
     }

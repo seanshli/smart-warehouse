@@ -48,6 +48,7 @@ interface ItemCardProps {
   onMove?: (item: Item) => void
   onCheckout?: (item: Item) => void
   onHistory?: (item: Item) => void
+  onQuantityAdjust?: (item: Item) => void
   className?: string
 }
 
@@ -59,6 +60,7 @@ export default function ItemCard({
   onMove,
   onCheckout,
   onHistory,
+  onQuantityAdjust,
   className = ''
 }: ItemCardProps) {
   // Handle null or invalid items
@@ -349,7 +351,7 @@ export default function ItemCard({
       </div>
 
       {/* Action Buttons - Horizontal Layout at Bottom */}
-      {(onEdit || onMove || onCheckout || onHistory) && (
+      {(onEdit || onMove || onCheckout || onHistory || onQuantityAdjust) && (
         <div className="flex space-x-1 bg-gray-50 p-1 rounded-lg mt-2">
             {onEdit && (
               <button
@@ -374,6 +376,23 @@ export default function ItemCard({
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+            
+            {onQuantityAdjust && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Quantity adjust button clicked for item:', item.name)
+                  onQuantityAdjust(item)
+                }}
+                className="p-3 sm:p-2 text-orange-600 bg-orange-100 hover:text-orange-800 hover:bg-orange-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"
+                title={t('adjustQuantity') || 'Adjust Quantity'}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </button>
             )}

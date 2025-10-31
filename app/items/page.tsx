@@ -1,18 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useLanguage } from '@/components/LanguageProvider'
 import ItemsList from '@/components/ItemsList'
 import AddItemModal from '@/components/AddItemModal'
+import EditItemModal from '@/components/EditItemModal'
+import MoveItemModal from '@/components/MoveItemModal'
+import CheckoutModal from '@/components/CheckoutModal'
+import QuantityAdjustModal from '@/components/QuantityAdjustModal'
 import { PlusIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
+
+interface Item {
+  id: string
+  name: string
+  description?: string
+  quantity: number
+  minQuantity: number
+  imageUrl?: string
+  category?: {
+    id?: string
+    name: string
+    parent?: {
+      name: string
+    }
+  }
+  room?: {
+    id?: string
+    name: string
+  }
+  cabinet?: {
+    id?: string
+    name: string
+  }
+}
 
 export default function ItemsPage() {
   const { t } = useLanguage()
   const [showAddItem, setShowAddItem] = useState(false)
+  const [showEditItem, setShowEditItem] = useState(false)
+  const [showMoveItem, setShowMoveItem] = useState(false)
+  const [showCheckoutItem, setShowCheckoutItem] = useState(false)
+  const [showQuantityAdjust, setShowQuantityAdjust] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedRoom, setSelectedRoom] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const refreshItemsListRef = useRef<(() => void) | null>(null)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -152,28 +186,111 @@ export default function ItemsPage() {
         <ItemsList 
           showCategory={true}
           showLocation={true}
+          searchTerm={searchTerm}
+          selectedCategory={selectedCategory}
+          selectedRoom={selectedRoom}
+          onRef={(refreshFn) => {
+            refreshItemsListRef.current = refreshFn
+          }}
           onItemEdit={(item) => {
-            // TODO: Implement edit functionality
-            console.log('Edit item:', item)
+            setSelectedItem(item)
+            setShowEditItem(true)
           }}
           onItemMove={(item) => {
-            // TODO: Implement move functionality
-            console.log('Move item:', item)
+            setSelectedItem(item)
+            setShowMoveItem(true)
           }}
           onItemCheckout={(item) => {
-            // TODO: Implement checkout functionality
-            console.log('Checkout item:', item)
+            setSelectedItem(item)
+            setShowCheckoutItem(true)
           }}
           onItemHistory={(item) => {
-            // TODO: Implement history functionality
+            // TODO: Implement history functionality - for now just log
             console.log('View history for item:', item)
+          }}
+          onItemQuantityAdjust={(item: Item) => {
+            setSelectedItem(item)
+            setShowQuantityAdjust(true)
           }}
         />
       </div>
 
-      {/* Add Item Modal */}
+      {/* Modals */}
       {showAddItem && (
-        <AddItemModal onClose={() => setShowAddItem(false)} />
+        <AddItemModal onClose={() => {
+          setShowAddItem(false)
+          if (refreshItemsListRef.current) {
+            refreshItemsListRef.current()
+          }
+        }} />
+      )}
+      
+      {showEditItem && selectedItem && (
+        <EditItemModal 
+          item={selectedItem} 
+          onClose={() => {
+            setShowEditItem(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            setShowEditItem(false)
+            setSelectedItem(null)
+            if (refreshItemsListRef.current) {
+              refreshItemsListRef.current()
+            }
+          }}
+        />
+      )}
+      
+      {showMoveItem && selectedItem && (
+        <MoveItemModal 
+          item={selectedItem} 
+          onClose={() => {
+            setShowMoveItem(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            setShowMoveItem(false)
+            setSelectedItem(null)
+            if (refreshItemsListRef.current) {
+              refreshItemsListRef.current()
+            }
+          }}
+        />
+      )}
+      
+      {showCheckoutItem && selectedItem && (
+        <CheckoutModal 
+          item={selectedItem}
+          onClose={() => {
+            setShowCheckoutItem(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            setShowCheckoutItem(false)
+            setSelectedItem(null)
+            if (refreshItemsListRef.current) {
+              refreshItemsListRef.current()
+            }
+          }}
+        />
+      )}
+      
+      {showQuantityAdjust && selectedItem && (
+        <QuantityAdjustModal 
+          item={selectedItem}
+          onClose={() => {
+            setShowQuantityAdjust(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            setShowQuantityAdjust(false)
+            setSelectedItem(null)
+            if (refreshItemsListRef.current) {
+              refreshItemsListRef.current()
+            }
+          }}
+        />
       )}
     </div>
   )

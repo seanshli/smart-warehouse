@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, MapPinIcon, CubeIcon, TrashIcon, PencilIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import CheckoutModal from './CheckoutModal'
+import EditItemModal from './EditItemModal'
+import MoveItemModal from './MoveItemModal'
+import QuantityAdjustModal from './QuantityAdjustModal'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 import ItemCard from './ItemCard'
@@ -157,6 +160,10 @@ export default function RoomManagement() {
   const [cabinetToDelete, setCabinetToDelete] = useState<any>(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [selectedItemForCheckout, setSelectedItemForCheckout] = useState<any>(null)
+  const [showEditItem, setShowEditItem] = useState(false)
+  const [selectedItemForEdit, setSelectedItemForEdit] = useState<any>(null)
+  const [showQuantityAdjust, setShowQuantityAdjust] = useState(false)
+  const [selectedItemForQuantityAdjust, setSelectedItemForQuantityAdjust] = useState<any>(null)
 
   useEffect(() => {
     fetchRooms()
@@ -1023,8 +1030,8 @@ export default function RoomManagement() {
                                 item={item}
                                 onEdit={(item) => {
                                   console.log('Room: Edit item called for:', item?.name || 'Unknown Item')
-                                  // For now, just show an alert since we don't have the modal state here
-                                  alert(`Edit functionality for "${item?.name || 'Unknown Item'}" - This would open the edit modal`)
+                                  setSelectedItemForEdit(item)
+                                  setShowEditItem(true)
                                 }}
                               onMove={() => {
                                 setSelectedItemForMove(item)
@@ -1038,6 +1045,10 @@ export default function RoomManagement() {
                               }}
                               onHistory={() => {
                                 handleViewHistory(item)
+                              }}
+                              onQuantityAdjust={(item) => {
+                                setSelectedItemForQuantityAdjust(item)
+                                setShowQuantityAdjust(true)
                               }}
                             />
                             )
@@ -1549,6 +1560,69 @@ export default function RoomManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Item Modal */}
+      {showEditItem && selectedItemForEdit && (
+        <EditItemModal
+          item={selectedItemForEdit}
+          onClose={() => {
+            setShowEditItem(false)
+            setSelectedItemForEdit(null)
+          }}
+          onSuccess={() => {
+            setShowEditItem(false)
+            setSelectedItemForEdit(null)
+            // Refresh the room data to show updated items
+            if (selectedRoomForDetail) {
+              handleRoomClick(selectedRoomForDetail)
+            }
+          }}
+        />
+      )}
+
+      {/* Move Item Modal - Replaced custom modal with MoveItemModal */}
+      {showMoveItem && selectedItemForMove && (
+        <MoveItemModal
+          item={selectedItemForMove}
+          onClose={() => {
+            setShowMoveItem(false)
+            setSelectedItemForMove(null)
+            setMoveToRoom('')
+            setMoveToCabinet('')
+            setMoveQuantity(1)
+          }}
+          onSuccess={() => {
+            setShowMoveItem(false)
+            setSelectedItemForMove(null)
+            setMoveToRoom('')
+            setMoveToCabinet('')
+            setMoveQuantity(1)
+            // Refresh the room data to show updated items
+            if (selectedRoomForDetail) {
+              handleRoomClick(selectedRoomForDetail)
+            }
+          }}
+        />
+      )}
+
+      {/* Quantity Adjust Modal */}
+      {showQuantityAdjust && selectedItemForQuantityAdjust && (
+        <QuantityAdjustModal
+          item={selectedItemForQuantityAdjust}
+          onClose={() => {
+            setShowQuantityAdjust(false)
+            setSelectedItemForQuantityAdjust(null)
+          }}
+          onSuccess={() => {
+            setShowQuantityAdjust(false)
+            setSelectedItemForQuantityAdjust(null)
+            // Refresh the room data to show updated quantities
+            if (selectedRoomForDetail) {
+              handleRoomClick(selectedRoomForDetail)
+            }
+          }}
+        />
       )}
 
       {/* Checkout Modal */}

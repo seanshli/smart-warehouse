@@ -164,6 +164,15 @@ export interface Translations {
   moveToRoom: string
   moveConfirmation: string
   moveQuantity: string
+  adjustQuantity: string
+  currentQuantity: string
+  newQuantity: string
+  adjustment: string
+  noQuantityChange: string
+  invalidQuantity: string
+  failedToUpdateQuantity: string
+  updateQuantity: string
+  updating: string
   
   // Category Management
   categoryHierarchy: string
@@ -635,6 +644,15 @@ const en: Translations = {
   moveToRoom: 'Move to Room',
   moveConfirmation: 'Moving to',
   moveQuantity: 'Quantity to Move',
+  adjustQuantity: 'Adjust Quantity',
+  currentQuantity: 'Current Quantity',
+  newQuantity: 'New Quantity',
+  adjustment: 'Adjustment',
+  noQuantityChange: 'No quantity change specified',
+  invalidQuantity: 'Quantity cannot be negative',
+  failedToUpdateQuantity: 'Failed to update quantity',
+  updateQuantity: 'Update Quantity',
+  updating: 'Updating',
   
   // Category Management
   categoryHierarchy: 'Category Hierarchy',
@@ -1110,6 +1128,15 @@ const zhTW: Translations = {
   moveToRoom: '移動到房間',
   moveConfirmation: '移動到',
   moveQuantity: '移動數量',
+  adjustQuantity: '調整數量',
+  currentQuantity: '目前數量',
+  newQuantity: '新數量',
+  adjustment: '調整量',
+  noQuantityChange: '未指定數量變更',
+  invalidQuantity: '數量不能為負數',
+  failedToUpdateQuantity: '更新數量失敗',
+  updateQuantity: '更新數量',
+  updating: '更新中',
   
   // Category Management
   categoryHierarchy: '分類層次',
@@ -1595,6 +1622,15 @@ const zh: Translations = {
   moveToRoom: '移动到房间',
   moveConfirmation: '移动到',
   moveQuantity: '移动数量',
+  adjustQuantity: '调整数量',
+  currentQuantity: '当前数量',
+  newQuantity: '新数量',
+  adjustment: '调整量',
+  noQuantityChange: '未指定数量变更',
+  invalidQuantity: '数量不能为负数',
+  failedToUpdateQuantity: '更新数量失败',
+  updateQuantity: '更新数量',
+  updating: '更新中',
   
   // Category Management
   categoryHierarchy: '分类层次',
@@ -2078,6 +2114,15 @@ const ja: Translations = {
   moveToRoom: '部屋に移動',
   moveConfirmation: '移動先',
   moveQuantity: '移動数量',
+  adjustQuantity: '数量を調整',
+  currentQuantity: '現在の数量',
+  newQuantity: '新しい数量',
+  adjustment: '調整量',
+  noQuantityChange: '数量変更が指定されていません',
+  invalidQuantity: '数量は負の値にできません',
+  failedToUpdateQuantity: '数量の更新に失敗しました',
+  updateQuantity: '数量を更新',
+  updating: '更新中',
   
   // Category Management
   categoryHierarchy: 'カテゴリ階層',

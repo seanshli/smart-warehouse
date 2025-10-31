@@ -37,6 +37,7 @@ interface ItemsListProps {
   onItemMove?: (item: Item) => void
   onItemCheckout?: (item: Item) => void
   onItemHistory?: (item: Item) => void
+  onItemQuantityAdjust?: (item: Item) => void
   className?: string
   searchTerm?: string
   selectedCategory?: string
@@ -51,6 +52,7 @@ export default function ItemsList({
   onItemMove,
   onItemCheckout,
   onItemHistory,
+  onItemQuantityAdjust,
   className = '',
   searchTerm = '',
   selectedCategory = '',
@@ -264,6 +266,10 @@ export default function ItemsList({
             onHistory={(itemData) => {
               console.log('ItemsList: onItemHistory called for:', itemData.name)
               onItemHistory?.(itemData)
+            }}
+            onQuantityAdjust={(itemData) => {
+              console.log('ItemsList: onItemQuantityAdjust called for:', itemData.name)
+              onItemQuantityAdjust?.(itemData)
             }}
           />
         ))}

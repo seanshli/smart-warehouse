@@ -103,49 +103,70 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // First, get all subcategories that need to be moved with this category
     const getAllSubcategories = async (parentId: string, level: number): Promise<any[]> => {
-      const directChildren = await prisma.category.findMany({
-        where: {
-          parentId: parentId,
-          householdId: household.id
+      try {
+        const directChildren = await prisma.category.findMany({
+          where: {
+            parentId: parentId,
+            householdId: household.id
+          }
+        })
+        
+        let allChildren = [...directChildren]
+        
+        // Recursively get children of children
+        for (const child of directChildren) {
+          const grandChildren = await getAllSubcategories(child.id, level + 1)
+          allChildren = [...allChildren, ...grandChildren]
         }
-      })
-      
-      let allChildren = [...directChildren]
-      
-      // Recursively get children of children
-      for (const child of directChildren) {
-        const grandChildren = await getAllSubcategories(child.id, level + 1)
-        allChildren = [...allChildren, ...grandChildren]
+        
+        return allChildren
+      } catch (error) {
+        console.error('Error fetching subcategories:', error)
+        return []
       }
-      
-      return allChildren
     }
 
-    const subcategories = await getAllSubcategories(categoryId, newLevel + 1)
-    console.log(`Moving category "${category.name}" with ${subcategories.length} subcategories`)
+    let subcategories: any[] = []
+    let itemsUsingCategory: any[] = []
+    let levelAdjustment = 0
+    let categoryIds: string[] = []
+    
+    try {
+      subcategories = await getAllSubcategories(categoryId, category.level + 1)
+      console.log(`Moving category "${category.name}" with ${subcategories.length} subcategories`)
 
-    // Calculate level adjustments for subcategories
-    const levelAdjustment = newLevel - category.level
+      // Calculate level adjustments for subcategories
+      levelAdjustment = newLevel - category.level
 
-    // Get all items that use this category or any of its subcategories
-    const categoryIds = [categoryId, ...subcategories.map(sc => sc.id)]
-    const itemsUsingCategory = await prisma.item.findMany({
-      where: {
-        categoryId: {
-          in: categoryIds
+      // Get all items that use this category or any of its subcategories
+      categoryIds = [categoryId, ...subcategories.map(sc => sc.id)]
+      itemsUsingCategory = await prisma.item.findMany({
+        where: {
+          categoryId: {
+            in: categoryIds
+          },
+          householdId: household.id
+        },
+        select: {
+          id: true,
+          name: true,
+          categoryId: true
         }
-      },
-      select: {
-        id: true,
-        name: true,
-        categoryId: true
-      }
-    })
+      })
 
-    console.log(`Found ${itemsUsingCategory.length} items using this category tree`)
+      console.log(`Found ${itemsUsingCategory.length} items using this category tree`)
+    } catch (error) {
+      console.error('Error preparing category move:', error)
+      return NextResponse.json(
+        { error: 'Failed to prepare category move. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     // Use transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
+    let result: any
+    try {
+      result = await prisma.$transaction(async (tx) => {
       // Update the main category
       const updatedCategory = await tx.category.update({
         where: {
@@ -195,19 +216,48 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         }
       }
 
-      return updatedCategory
-    })
+        return updatedCategory
+      }, {
+        timeout: 10000 // 10 second timeout
+      })
+    } catch (error: any) {
+      console.error('Transaction error moving category:', error)
+      // More specific error messages
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Category move would create a duplicate. Please check category names.' },
+          { status: 409 }
+        )
+      }
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: 'Category not found. It may have been deleted.' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(
+        { error: `Failed to move category: ${error.message || 'Unknown error'}` },
+        { status: 500 }
+      )
+    }
 
+    // Return safe response structure
     return NextResponse.json({
+      success: true,
       message: 'Category moved successfully',
-      category: result,
+      category: {
+        id: result.id,
+        name: result.name,
+        level: result.level,
+        parentId: result.parentId
+      },
       subcategoriesMoved: subcategories.length,
       itemsUpdated: itemsUsingCategory.length
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error moving category:', error)
     return NextResponse.json(
-      { error: 'Failed to move category' },
+      { error: `Failed to move category: ${error.message || 'Unknown error'}` },
       { status: 500 }
     )
   }

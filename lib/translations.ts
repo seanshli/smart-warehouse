@@ -164,6 +164,7 @@ export interface Translations {
   moveToRoom: string
   moveConfirmation: string
   moveQuantity: string
+  moveFrom: string
   adjustQuantity: string
   currentQuantity: string
   newQuantity: string
@@ -644,6 +645,7 @@ const en: Translations = {
   moveToRoom: 'Move to Room',
   moveConfirmation: 'Moving to',
   moveQuantity: 'Quantity to Move',
+  moveFrom: 'Move from',
   adjustQuantity: 'Adjust Quantity',
   currentQuantity: 'Current Quantity',
   newQuantity: 'New Quantity',
@@ -1128,6 +1130,7 @@ const zhTW: Translations = {
   moveToRoom: '移動到房間',
   moveConfirmation: '移動到',
   moveQuantity: '移動數量',
+  moveFrom: '從哪裡移動',
   adjustQuantity: '調整數量',
   currentQuantity: '目前數量',
   newQuantity: '新數量',
@@ -1622,6 +1625,7 @@ const zh: Translations = {
   moveToRoom: '移动到房间',
   moveConfirmation: '移动到',
   moveQuantity: '移动数量',
+  moveFrom: '从哪里移动',
   adjustQuantity: '调整数量',
   currentQuantity: '当前数量',
   newQuantity: '新数量',
@@ -2114,6 +2118,7 @@ const ja: Translations = {
   moveToRoom: '部屋に移動',
   moveConfirmation: '移動先',
   moveQuantity: '移動数量',
+  moveFrom: '移動元',
   adjustQuantity: '数量を調整',
   currentQuantity: '現在の数量',
   newQuantity: '新しい数量',

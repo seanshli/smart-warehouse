@@ -351,7 +351,7 @@ export default function ItemCard({
       </div>
 
       {/* Action Buttons - Horizontal Layout at Bottom */}
-      {(onEdit || onMove || onCheckout || onHistory || onQuantityAdjust) && (
+      {(onEdit || onMove || onHistory || onQuantityAdjust) && (
         <div className="flex space-x-1 bg-gray-50 p-1 rounded-lg mt-2">
             {onEdit && (
               <button
@@ -410,23 +410,6 @@ export default function ItemCard({
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </button>
-            )}
-            
-            {onCheckout && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('Checkout button clicked for item:', item.name)
-                  onCheckout(item)
-                }}
-                className="p-3 sm:p-2 text-purple-600 bg-purple-100 hover:text-purple-800 hover:bg-purple-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md"
-                title={t('checkout')}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9.5M17 13v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6" />
                 </svg>
               </button>
             )}

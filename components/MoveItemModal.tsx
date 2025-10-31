@@ -28,6 +28,15 @@ interface Item {
     id?: string
     name: string
   }
+  // Grouped item fields
+  locations?: Array<{
+    id: string // Actual item ID in database
+    quantity: number
+    room: { id: string; name: string } | null
+    cabinet: { id: string; name: string } | null
+  }>
+  totalQuantity?: number
+  itemIds?: string[]
 }
 
 interface Category {
@@ -58,6 +67,24 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
   const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Source selection for grouped items
+  const availableQuantity = item.totalQuantity || item.quantity
+  const hasMultipleLocations = item.locations && item.locations.length > 1
+  const [selectedSources, setSelectedSources] = useState<Array<{itemId: string, locationId: string, quantity: number, available: number}>>([])
+  
+  // Initialize sources when modal opens
+  useEffect(() => {
+    if (hasMultipleLocations && item.locations) {
+      // Auto-select first location if only moving small amount
+      setSelectedSources([{
+        itemId: item.locations[0].id,
+        locationId: `${item.locations[0].room?.id || ''}_${item.locations[0].cabinet?.id || ''}`,
+        quantity: 0,
+        available: item.locations[0].quantity
+      }])
+    }
+  }, [hasMultipleLocations, item.locations])
 
   useEffect(() => {
     fetchRooms()
@@ -157,30 +184,123 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
       return
     }
 
+    // Validate source selection for grouped items with multiple locations
+    if (hasMultipleLocations && item.locations && item.locations.length > 1) {
+      if (selectedSources.length === 0) {
+        toast.error('Please select at least one source location')
+        return
+      }
+      
+      // Auto-distribute if user selected sources but didn't specify quantities
+      let totalFromSources = selectedSources.reduce((sum, s) => sum + s.quantity, 0)
+      if (totalFromSources === 0) {
+        // Auto-distribute moveQuantity across selected sources
+        const perSource = Math.floor(moveQuantity / selectedSources.length)
+        const remainder = moveQuantity % selectedSources.length
+        const updatedSources = selectedSources.map((s, idx) => ({
+          ...s,
+          quantity: perSource + (idx < remainder ? 1 : 0)
+        }))
+        setSelectedSources(updatedSources)
+        totalFromSources = moveQuantity
+      }
+      
+      if (totalFromSources !== moveQuantity) {
+        toast.error(`Selected source quantities (${totalFromSources}) must equal move quantity (${moveQuantity})`)
+        return
+      }
+      
+      // Validate each source has enough quantity
+      for (const source of selectedSources) {
+        const location = item.locations.find(l => l.id === source.itemId)
+        if (!location || source.quantity > location.quantity) {
+          toast.error(`Invalid quantity for source: ${location?.room?.name || 'Unknown'}`)
+          return
+        }
+      }
+    }
+
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/items/${item.id}/move`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          roomId: selectedRoom,
-          cabinetId: selectedCabinet || null,
-          categoryId: selectedCategory || null,
-          quantity: moveQuantity
-        })
-      })
+      // For grouped items with multiple sources, move from each source
+      if (hasMultipleLocations && item.locations && item.locations.length > 1 && selectedSources.length > 0) {
+        let successCount = 0
+        let errorCount = 0
+        
+        for (const source of selectedSources) {
+          try {
+            const response = await fetch(`/api/items/${source.itemId}/move`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                roomId: selectedRoom,
+                cabinetId: selectedCabinet || null,
+                categoryId: selectedCategory || null,
+                quantity: source.quantity
+              })
+            })
 
-      if (response.ok) {
-        toast.success('Item moved successfully!')
-        onSuccess()
-        onClose()
+            if (response.ok) {
+              successCount++
+            } else {
+              const errorData = await response.json()
+              console.error(`Failed to move from source ${source.itemId}:`, errorData.error)
+              errorCount++
+            }
+          } catch (error) {
+            console.error(`Error moving from source ${source.itemId}:`, error)
+            errorCount++
+          }
+        }
+        
+        if (successCount > 0 && errorCount === 0) {
+          toast.success(`Successfully moved ${moveQuantity} items from ${successCount} location(s)!`)
+          onSuccess()
+          onClose()
+        } else if (successCount > 0) {
+          toast.error(`Partially moved: ${successCount} succeeded, ${errorCount} failed`)
+          onSuccess() // Still refresh to show partial updates
+          onClose()
+        } else {
+          toast.error(`Failed to move items from all sources`)
+        }
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to move item')
+        // Single item or single location - use original logic
+        let itemIdToUse = item.id
+        if (hasMultipleLocations && item.locations && item.locations.length === 1) {
+          // Single location grouped item - use that location's item ID
+          itemIdToUse = item.locations[0].id
+        } else if (hasMultipleLocations && selectedSources.length === 1) {
+          // User selected single source
+          itemIdToUse = selectedSources[0].itemId
+        }
+        
+        const response = await fetch(`/api/items/${itemIdToUse}/move`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            roomId: selectedRoom,
+            cabinetId: selectedCabinet || null,
+            categoryId: selectedCategory || null,
+            quantity: moveQuantity
+          })
+        })
+
+        if (response.ok) {
+          toast.success('Item moved successfully!')
+          onSuccess()
+          onClose()
+        } else {
+          const errorData = await response.json()
+          toast.error(errorData.error || 'Failed to move item')
+        }
       }
     } catch (error) {
       console.error('Error moving item:', error)
@@ -215,12 +335,64 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
               <h4 className="font-medium text-gray-900 mb-2">{item?.name || 'Unknown Item'}</h4>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Current location:</span> {currentLocation}
+                  <span className="font-medium">Total {t('qty')}:</span> {availableQuantity}
                 </p>
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {t('qty')}: {item?.quantity || 0}
-                </span>
               </div>
+              {hasMultipleLocations && item.locations && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs font-medium text-gray-700 mb-2">{t('moveFrom') || 'Move from'}:</p>
+                  <div className="space-y-2">
+                    {item.locations.map((location, idx) => {
+                      const source = selectedSources.find(s => s.itemId === location.id)
+                      const isSelected = !!source
+                      return (
+                        <div key={location.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSources([...selectedSources, {
+                                  itemId: location.id,
+                                  locationId: `${location.room?.id || ''}_${location.cabinet?.id || ''}`,
+                                  quantity: 0,
+                                  available: location.quantity
+                                }])
+                              } else {
+                                setSelectedSources(selectedSources.filter(s => s.itemId !== location.id))
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <label className="flex-1 text-sm text-gray-700">
+                            {location.room?.name || 'No room'} {location.cabinet?.name ? `→ ${location.cabinet.name}` : ''} 
+                            <span className="text-gray-500 ml-1">({location.quantity} {t('qty') || 'available'})</span>
+                          </label>
+                          {isSelected && (
+                            <input
+                              type="number"
+                              min="1"
+                              max={location.quantity}
+                              value={source?.quantity || 0}
+                              onChange={(e) => {
+                                const qty = parseInt(e.target.value) || 0
+                                setSelectedSources(selectedSources.map(s => 
+                                  s.itemId === location.id ? { ...s, quantity: Math.min(qty, location.quantity) } : s
+                                ))
+                              }}
+                              className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+                              placeholder="Qty"
+                            />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selected total: {selectedSources.reduce((sum, s) => sum + s.quantity, 0)} / {moveQuantity}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -291,26 +463,39 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
                 type="number"
                 id="moveQuantity"
                 min="1"
-                max={item.quantity}
+                max={availableQuantity}
                 value={moveQuantity}
-                    onChange={(e) => {
-                      const inputValue = e.target.value
-                      if (inputValue === '') {
-                        setMoveQuantity(1)
-                        return
-                      }
-                      const numValue = parseInt(inputValue)
-                      if (!isNaN(numValue)) {
-                        if (numValue >= 1 && numValue <= item.quantity) {
-                          setMoveQuantity(numValue)
+                onChange={(e) => {
+                  const inputValue = e.target.value
+                  if (inputValue === '') {
+                    setMoveQuantity(1)
+                    return
+                  }
+                  const numValue = parseInt(inputValue)
+                  if (!isNaN(numValue)) {
+                    if (numValue >= 1 && numValue <= availableQuantity) {
+                      setMoveQuantity(numValue)
+                      // Auto-distribute quantity across selected sources if no manual quantities set
+                      if (hasMultipleLocations && selectedSources.length > 0) {
+                        const totalSelected = selectedSources.reduce((sum, s) => sum + s.quantity, 0)
+                        if (totalSelected === 0) {
+                          // Auto-distribute evenly
+                          const perSource = Math.floor(numValue / selectedSources.length)
+                          const remainder = numValue % selectedSources.length
+                          setSelectedSources(selectedSources.map((s, idx) => ({
+                            ...s,
+                            quantity: perSource + (idx < remainder ? 1 : 0)
+                          })))
                         }
                       }
-                    }}
+                    }
+                  }
+                }}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                Available: {item.quantity} | Moving: {moveQuantity}
+                Available: {availableQuantity} | Moving: {moveQuantity}
               </p>
             </div>
 

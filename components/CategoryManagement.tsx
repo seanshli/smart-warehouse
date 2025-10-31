@@ -253,21 +253,30 @@ export default function CategoryManagement() {
       if (response.ok) {
         const data = await response.json()
         console.log('Category move successful:', data)
-        toast.success('Category moved successfully!')
+        toast.success(`Category moved successfully! ${data.subcategoriesMoved || 0} subcategories updated, ${data.itemsUpdated || 0} items affected.`)
         setShowMoveCategory(false)
         setMovingCategory(null)
         setMoveToLevel(1)
         setMoveToParent('')
         setMoveToGrandParent('')
-        await fetchCategories()
+        
+        // Small delay before refetching to ensure database is fully updated
+        setTimeout(async () => {
+          try {
+            await fetchCategories()
+          } catch (fetchError) {
+            console.error('Error refetching categories after move:', fetchError)
+            // Don't show error to user, just log it - categories will refresh on next page load
+          }
+        }, 500)
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Category move failed:', errorData)
         toast.error(errorData.error || 'Failed to move category')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error moving category:', error)
-      toast.error('An error occurred while moving the category')
+      toast.error(`An error occurred while moving the category: ${error.message || 'Unknown error'}`)
     }
   }
 

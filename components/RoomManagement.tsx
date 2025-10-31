@@ -223,8 +223,9 @@ export default function RoomManagement() {
       
       console.log('Fetching room details for:', room.id)
       
-      // Fetch detailed room data including items
-      const response = await fetch(`/api/rooms/${room.id}/items`)
+      // Fetch detailed room data including items with language parameter
+      const language = currentLanguage || 'en'
+      const response = await fetch(`/api/rooms/${room.id}/items?language=${encodeURIComponent(language)}`)
       if (response.ok) {
         const roomDetail = await response.json()
         console.log('Room detail response:', roomDetail)

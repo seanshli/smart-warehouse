@@ -91,6 +91,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           { status: 400 }
         )
       }
+
+      // If destination already has a sibling with same normalized key, we'll merge after move
+      const { getNormalizedCategoryKey } = await import('@/lib/category-translations')
+      const destinationSiblings = await prisma.category.findMany({
+        where: {
+          householdId: household.id,
+          parentId: newParentId,
+          id: { not: categoryId }
+        }
+      })
+      const normalizedSource = getNormalizedCategoryKey(category.name)
+      const duplicateSibling = destinationSiblings.find(sib => getNormalizedCategoryKey(sib.name) === normalizedSource)
+      if (duplicateSibling) {
+        // Merge logic executed after transaction below
+        console.log('Detected duplicate at destination. Will merge into:', duplicateSibling.id)
+      }
     }
 
     // Check if category has children that would become invalid
@@ -216,7 +232,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         }
       }
 
-        return updatedCategory
+      return updatedCategory
       }, {
         timeout: 10000 // 10 second timeout
       })
@@ -239,6 +255,34 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         { error: `Failed to move category: ${error.message || 'Unknown error'}` },
         { status: 500 }
       )
+    }
+
+    // If moving created a duplicate under the same parent with the same normalized key,
+    // merge the two categories (move items and children, then delete the source)
+    try {
+      if (newParentId) {
+        const { getNormalizedCategoryKey } = await import('@/lib/category-translations')
+        const siblings = await prisma.category.findMany({
+          where: { householdId: household.id, parentId: newParentId, id: { not: result.id } },
+          include: { children: true, items: true }
+        })
+        const norm = getNormalizedCategoryKey(result.name)
+        const dupe = siblings.find(s => getNormalizedCategoryKey(s.name) === norm)
+        if (dupe) {
+          console.log('Merging moved category into existing sibling with same normalized key', { target: dupe.id, source: result.id })
+          await prisma.$transaction(async (tx) => {
+            // Move items
+            await tx.item.updateMany({ where: { categoryId: result.id }, data: { categoryId: dupe.id } })
+            // Re-parent children
+            await tx.category.updateMany({ where: { parentId: result.id }, data: { parentId: dupe.id } })
+            // Delete the moved source node
+            await tx.category.delete({ where: { id: result.id } })
+          })
+          result = dupe
+        }
+      }
+    } catch (mergeErr) {
+      console.error('Post-move merge failed:', mergeErr)
     }
 
     // Return safe response structure

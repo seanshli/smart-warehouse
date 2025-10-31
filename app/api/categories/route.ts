@@ -80,18 +80,52 @@ export async function GET(request: NextRequest) {
     
     const translateCategory = (cat: any): any => {
       const normalizedKey = getNormalizedCategoryKey(cat.name)
+      const translatedName = getCategoryDisplayName(normalizedKey, userLanguage)
+      // Ensure children is an array
+      const rawChildren: any[] = Array.isArray(cat.children) ? cat.children : []
+      // Translate and deduplicate children by normalized key
+      const childMap = new Map<string, any>()
+      for (const child of rawChildren) {
+        const childNorm = getNormalizedCategoryKey(child.name)
+        const translatedChild = translateCategory(child)
+        if (childMap.has(childNorm)) {
+          // Merge: keep first, append grandchildren (avoid duplicates)
+          const existing = childMap.get(childNorm)
+          const existingChildren = Array.isArray(existing.children) ? existing.children : []
+          const newChildren = Array.isArray(translatedChild.children) ? translatedChild.children : []
+          // Merge grandchildren by normalized key
+          const gcMap = new Map<string, any>()
+          for (const gc of [...existingChildren, ...newChildren]) {
+            const gcNorm = getNormalizedCategoryKey(gc.name)
+            if (!gcMap.has(gcNorm)) gcMap.set(gcNorm, gc)
+          }
+          existing.children = Array.from(gcMap.values())
+          childMap.set(childNorm, existing)
+        } else {
+          childMap.set(childNorm, translatedChild)
+        }
+      }
       return {
         ...cat,
-        name: getCategoryDisplayName(normalizedKey, userLanguage),
+        name: translatedName,
         originalName: cat.name,
-        children: cat.children ? cat.children.map(translateCategory) : undefined
+        children: Array.from(childMap.values())
       }
     }
     
     const translatedCategories = categories.map(translateCategory)
 
-    // Return only translated categories (no duplicates)
-    return NextResponse.json(translatedCategories)
+    // Defensive: remove any self-referencing cycles and ensure proper levels
+    const sanitizeLevels = (nodes: any[], level = 1): any[] => {
+      return nodes.map(n => ({
+        ...n,
+        level,
+        children: Array.isArray(n.children) ? sanitizeLevels(n.children, Math.min(level + 1, 3)) : []
+      }))
+    }
+    const safeTree = sanitizeLevels(translatedCategories)
+
+    return NextResponse.json(safeTree)
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(

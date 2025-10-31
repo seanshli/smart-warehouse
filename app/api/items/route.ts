@@ -743,12 +743,25 @@ export async function GET(request: NextRequest) {
       }
     })
     
-    // Convert map to array and calculate low stock based on total quantity
-    const result = Array.from(groupedItems.values()).map(item => ({
-      ...item,
-      quantity: item.totalQuantity, // Use totalQuantity for display
-      isLowStock: item.minQuantity !== null && item.totalQuantity <= item.minQuantity
-    }))
+    // Merge duplicate location entries with same room/cabinet in each grouped item
+    const result = Array.from(groupedItems.values()).map(item => {
+      const mergedLocationsMap = new Map<string, any>()
+      for (const loc of item.locations) {
+        const key = `${loc.room?.id || 'none'}|${loc.cabinet?.id || 'none'}`
+        if (mergedLocationsMap.has(key)) {
+          mergedLocationsMap.get(key).quantity += loc.quantity
+        } else {
+          mergedLocationsMap.set(key, { ...loc })
+        }
+      }
+      const mergedLocations = Array.from(mergedLocationsMap.values())
+      return {
+        ...item,
+        locations: mergedLocations,
+        quantity: item.totalQuantity,
+        isLowStock: item.minQuantity !== null && item.totalQuantity <= item.minQuantity
+      }
+    })
 
     return NextResponse.json(result)
   } catch (error) {

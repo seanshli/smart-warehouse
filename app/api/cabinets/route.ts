@@ -16,38 +16,75 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
+    const userId = (session?.user as any)?.id
     
-    console.log('[cabinets] GET /api/cabinets - roomId:', roomId, 'userId:', (session?.user as any)?.id)
+    console.log('[cabinets] GET /api/cabinets - roomId:', roomId, 'userId:', userId)
 
-    // Get user's household
-    const household = await prisma.household.findFirst({
+    // If roomId is specified, verify it belongs to a household the user has access to
+    // This ensures we're getting cabinets from the correct household when user has multiple households
+    if (roomId) {
+      const room = await prisma.room.findFirst({
+        where: {
+          id: roomId,
+          household: {
+            members: {
+              some: {
+                userId: userId
+              }
+            }
+          }
+        },
+        include: {
+          household: true
+        }
+      })
+
+      if (!room) {
+        console.log('[cabinets] GET /api/cabinets - Room not found or access denied:', roomId)
+        return NextResponse.json({ error: 'Room not found or access denied' }, { status: 404 })
+      }
+
+      // Fetch cabinets for this specific room (which implicitly ensures correct household)
+      const cabinets = await prisma.cabinet.findMany({
+        where: {
+          roomId: roomId
+        },
+        include: {
+          room: true
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      })
+
+      console.log('[cabinets] GET /api/cabinets - Found cabinets:', cabinets.length, 'for roomId:', roomId, 'householdId:', room.householdId)
+      return NextResponse.json(cabinets)
+    }
+
+    // No roomId specified - get all cabinets from all households user has access to
+    const households = await prisma.household.findMany({
       where: {
         members: {
           some: {
-            userId: (session?.user as any)?.id
+            userId: userId
           }
         }
+      },
+      select: {
+        id: true
       }
     })
 
-    if (!household) {
-      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
-    }
-
-    // Build where clause
-    const whereClause: any = {
-      room: {
-        householdId: household.id
-      }
-    }
-
-    // Filter by room if specified
-    if (roomId) {
-      whereClause.roomId = roomId
-    }
+    const householdIds = households.map(h => h.id)
 
     const cabinets = await prisma.cabinet.findMany({
-      where: whereClause,
+      where: {
+        room: {
+          householdId: {
+            in: householdIds
+          }
+        }
+      },
       include: {
         room: true
       },
@@ -56,7 +93,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log('[cabinets] GET /api/cabinets - Found cabinets:', cabinets.length, 'for roomId:', roomId, 'householdId:', household.id)
+    console.log('[cabinets] GET /api/cabinets - Found cabinets:', cabinets.length, 'across', householdIds.length, 'households')
     return NextResponse.json(cabinets)
   } catch (error) {
     console.error('Error fetching cabinets:', error)

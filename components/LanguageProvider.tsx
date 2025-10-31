@@ -38,6 +38,54 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     // Always load language preference on mount
     if (typeof window !== 'undefined') {
       loadUserLanguagePreference()
+      
+      // Prevent keyboard language locking on mobile devices
+      // Add lang="" to all text inputs to allow free keyboard language switching
+      const preventKeyboardLock = () => {
+        const textInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="search"], textarea')
+        textInputs.forEach((input) => {
+          // Set lang to empty string to allow any keyboard language
+          input.setAttribute('lang', '')
+          // Also set inputMode appropriately for better mobile experience
+          if (!input.getAttribute('inputmode')) {
+            const inputType = input.getAttribute('type')
+            if (inputType === 'email') {
+              input.setAttribute('inputmode', 'email')
+            } else if (inputType === 'tel') {
+              input.setAttribute('inputmode', 'tel')
+            } else if (inputType === 'number') {
+              input.setAttribute('inputmode', 'numeric')
+            } else {
+              // For text inputs, use 'text' to allow language switching
+              input.setAttribute('inputmode', 'text')
+            }
+          }
+        })
+      }
+      
+      // Run on mount and whenever inputs are added
+      preventKeyboardLock()
+      
+      // Watch for dynamically added inputs
+      const observer = new MutationObserver(preventKeyboardLock)
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      })
+      
+      // Also run on focus events to catch any missed inputs
+      const handleFocusIn = (e: Event) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+          e.target.setAttribute('lang', '')
+        }
+      }
+      document.addEventListener('focusin', handleFocusIn, true)
+      
+      // Cleanup function
+      return () => {
+        observer.disconnect()
+        document.removeEventListener('focusin', handleFocusIn, true)
+      }
     }
   }, []) // Only run once on mount
 
@@ -55,9 +103,10 @@ export default function LanguageProvider({ children, initialLanguage }: Language
           console.log('LanguageProvider: Loading language from database:', data.language)
           setCurrentLanguageState(data.language)
           saveUserLanguage(data.language)
-          // Set HTML lang attribute
+          // Set HTML lang attribute for content
           if (typeof window !== 'undefined') {
             document.documentElement.lang = data.language
+            document.documentElement.setAttribute('data-content-lang', data.language)
           }
           setIsLoading(false)
           return
@@ -71,9 +120,10 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     const detectedLanguage = initialLanguage || detectUserLanguage()
     console.log('LanguageProvider: Using detected language:', detectedLanguage)
     setCurrentLanguageState(detectedLanguage)
-    // Set HTML lang attribute
+    // Set HTML lang attribute for content
     if (typeof window !== 'undefined') {
       document.documentElement.lang = detectedLanguage
+      document.documentElement.setAttribute('data-content-lang', detectedLanguage)
     }
     setIsLoading(false)
   }
@@ -86,8 +136,13 @@ export default function LanguageProvider({ children, initialLanguage }: Language
     // Mark that language has been set by user
     if (typeof window !== 'undefined') {
       localStorage.setItem('smart-warehouse-language-set', 'true')
-      // Also set the HTML lang attribute
+      // Set HTML lang attribute for content language (accessibility)
       document.documentElement.lang = languageCode
+      document.documentElement.setAttribute('data-content-lang', languageCode)
+      
+      // Prevent keyboard language locking on mobile devices
+      // Add a data attribute to allow inputs to override keyboard language
+      // The CSS will ensure inputs can switch keyboard language freely
     }
     
     // Update user language preference in database

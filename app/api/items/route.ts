@@ -685,7 +685,72 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(items)
+    // Group items by name (normalized) and aggregate quantities
+    const groupedItems = new Map<string, any>()
+    
+    items.forEach(item => {
+      // Normalize item name for grouping (case-insensitive, trim whitespace)
+      const normalizedName = item.name.trim().toLowerCase()
+      
+      if (groupedItems.has(normalizedName)) {
+        const existing = groupedItems.get(normalizedName)
+        
+        // Aggregate quantities
+        existing.totalQuantity += item.quantity
+        existing.itemIds.push(item.id)
+        
+        // Use the lowest minQuantity (most restrictive)
+        if (item.minQuantity !== null) {
+          existing.minQuantity = existing.minQuantity !== null
+            ? Math.min(existing.minQuantity, item.minQuantity)
+            : item.minQuantity
+        }
+        
+        // Collect all locations for this item
+        existing.locations.push({
+          id: item.id,
+          quantity: item.quantity,
+          room: item.room ? { id: item.room.id, name: item.room.name } : null,
+          cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null
+        })
+        
+        // Keep the most recent image/description
+        if (item.imageUrl && !existing.imageUrl) {
+          existing.imageUrl = item.imageUrl
+        }
+        if (item.description && !existing.description) {
+          existing.description = item.description
+        }
+      } else {
+        // First instance of this item name
+        groupedItems.set(normalizedName, {
+          id: item.id, // Use first item ID as primary
+          name: item.name, // Keep original casing
+          description: item.description,
+          totalQuantity: item.quantity,
+          minQuantity: item.minQuantity,
+          imageUrl: item.imageUrl,
+          category: item.category,
+          itemIds: [item.id],
+          locations: [{
+            id: item.id,
+            quantity: item.quantity,
+            room: item.room ? { id: item.room.id, name: item.room.name } : null,
+            cabinet: item.cabinet ? { id: item.cabinet.id, name: item.cabinet.name } : null
+          }],
+          addedBy: item.addedBy
+        })
+      }
+    })
+    
+    // Convert map to array and calculate low stock based on total quantity
+    const result = Array.from(groupedItems.values()).map(item => ({
+      ...item,
+      quantity: item.totalQuantity, // Use totalQuantity for display
+      isLowStock: item.minQuantity !== null && item.totalQuantity <= item.minQuantity
+    }))
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching items:', error)
     return NextResponse.json(

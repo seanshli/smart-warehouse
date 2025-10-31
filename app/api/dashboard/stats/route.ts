@@ -79,11 +79,12 @@ export async function GET(request: NextRequest) {
       itemsWithQuantities,
       recentActivities
     ] = await Promise.all([
-      // Total items count - optimized
-      prisma.item.count({
+      // Total items quantity across household (sum of quantities)
+      prisma.item.aggregate({
         where: {
           householdId: household.id
-        }
+        },
+        _sum: { quantity: true }
       }),
       
       // Total rooms count - optimized
@@ -156,8 +157,9 @@ export async function GET(request: NextRequest) {
       performer: activity.performer
     }))
 
+    const totalItemsQuantity = (totalItems as any)?._sum?.quantity || 0
     const result = {
-      totalItems,
+      totalItems: Number(totalItemsQuantity),
       totalRooms,
       lowStockItems,
       householdMembers,

@@ -29,7 +29,33 @@ export default function ItemsPage() {
                   Manage your inventory items with photos and quantities
                 </p>
               </div>
-              <div className="mt-4 flex md:mt-0 md:ml-4">
+              <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      console.log('Starting item duplicate check...')
+                      const response = await fetch('/api/items/check-duplicates', { method: 'POST' })
+                      const result = await response.json()
+                      
+                      if (response.ok) {
+                        if (result.duplicates && result.duplicates.length > 0) {
+                          alert(`Found ${result.duplicates.length} groups of duplicate items. Check console for details.`)
+                          console.log('Duplicate items:', result.duplicates)
+                        } else {
+                          alert('No duplicate items found.')
+                        }
+                      } else {
+                        alert(`Duplicate check error: ${result.error}`)
+                      }
+                    } catch (error) {
+                      console.error('Item duplicate check error:', error)
+                      alert(`Duplicate check error: ${error}`)
+                    }
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-orange-300 dark:border-orange-600 rounded-md shadow-sm text-sm font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                >
+                  🔍 {t('checkDuplicates') || 'Check Duplicates'}
+                </button>
                 <button
                   onClick={() => setShowAddItem(true)}
                   className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"

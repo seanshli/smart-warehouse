@@ -28,6 +28,16 @@ interface Item {
     id: string
     name: string
   }
+  // Grouped item fields
+  locations?: Array<{
+    id: string
+    quantity: number
+    room: { id: string; name: string } | null
+    cabinet: { id: string; name: string } | null
+  }>
+  totalQuantity?: number
+  isLowStock?: boolean
+  itemIds?: string[]
 }
 
 interface ItemCardProps {
@@ -282,13 +292,16 @@ export default function ItemCard({
           )}
 
           {/* Quantity Badge */}
-          <div className="flex items-center mt-2 space-x-2">
+          <div className="flex items-center mt-2 space-x-2 flex-wrap">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {getFallbackTranslation('qty')}: {item.quantity}
+              {getFallbackTranslation('qty')}: {item.totalQuantity !== undefined ? item.totalQuantity : item.quantity}
             </span>
             
-            {/* Low Stock Warning */}
-            {item.minQuantity > 0 && item.quantity <= item.minQuantity && (
+            {/* Low Stock Warning - use isLowStock flag if available, otherwise calculate */}
+            {(item.isLowStock !== undefined 
+              ? item.isLowStock 
+              : (item.minQuantity > 0 && (item.totalQuantity !== undefined ? item.totalQuantity : item.quantity) <= item.minQuantity)
+            ) && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
                 {t('lowStock')}
               </span>
@@ -310,12 +323,25 @@ export default function ItemCard({
                 </div>
               )}
               
-              {showLocation && (item.room || item.cabinet) && (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  <span className="font-medium">{getFallbackTranslation('whereIsThisItemStored')}:</span>{' '}
-                  {item.room?.name ? translateLocationName(item.room.name) : ''}
-                  {item.cabinet && ` → ${translateLocationName(item.cabinet.name)}`}
-                </div>
+              {showLocation && (
+                item.locations && item.locations.length > 0 ? (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <span className="font-medium">{getFallbackTranslation('whereIsThisItemStored')}:</span>
+                    {item.locations.map((location, idx) => (
+                      <div key={location.id} className="ml-2">
+                        {location.room?.name ? translateLocationName(location.room.name) : ''}
+                        {location.cabinet && ` → ${translateLocationName(location.cabinet.name)}`}
+                        <span className="ml-1 text-gray-400">({location.quantity})</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (item.room || item.cabinet) && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="font-medium">{getFallbackTranslation('whereIsThisItemStored')}:</span>{' '}
+                    {item.room?.name ? translateLocationName(item.room.name) : ''}
+                    {item.cabinet && ` → ${translateLocationName(item.cabinet.name)}`}
+                  </div>
+                )
               )}
             </div>
           )}

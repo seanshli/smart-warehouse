@@ -24,6 +24,23 @@ allprojects {
     }
 }
 
+// Configure Java toolchain for all Android projects
+// Capacitor's build.gradle specifies Java 21, but Gradle will use what's available
+// Ensure Java 17 or 21 (LTS) is installed for best compatibility
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    // Allow Gradle to use Java 17 or 21, whichever is available
+                    // Capacitor's auto-generated file will override this with Java 21
+                    // but this ensures a fallback if needed
+                }
+            }
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

@@ -298,21 +298,34 @@ interface SynthesizeOptions {
 }
 
 function getIFLYTEKVoiceForLanguage(language?: string): string {
-  if (!language) return 'xiaoyan'
+  if (!language) {
+    return 'aisxping' // default to English female
+  }
+
   const normalized = language.toLowerCase()
-  if (normalized.startsWith('zh')) {
-    return 'xiaoyan'
+  const voiceMap: Record<string, string> = {
+    'zh': 'xiaoyan',
+    'zh-cn': 'xiaoyan',
+    'zh-hans': 'xiaoyan',
+    'zh-tw': 'aisjinger',
+    'zh-hant': 'aisjinger',
+    'en': 'aisxping',
+    'en-us': 'aisxping',
+    'en-gb': 'aisxping',
+    'ja': 'aisjinki',
+    'ja-jp': 'aisjinki',
   }
-  if (normalized.startsWith('ja')) {
-    return 'aisjinky'
+
+  if (voiceMap[normalized]) {
+    return voiceMap[normalized]
   }
-  if (normalized.startsWith('ko')) {
-    return 'aisjinki'
+
+  const prefix = normalized.split('-')[0]
+  if (voiceMap[prefix]) {
+    return voiceMap[prefix]
   }
-  if (normalized.startsWith('en')) {
-    return 'aisxping'
-  }
-  return 'xiaoyan'
+
+  return 'aisxping'
 }
 
 function generateIFLYTEKTTSParam(options: SynthesizeOptions): string {

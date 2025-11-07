@@ -35,6 +35,16 @@ export default function VoiceCommentRecorder({
   const currentAudioUrlRef = useRef<string | null>(existingAudioUrl || null)
   const promptAudioRef = useRef<HTMLAudioElement | null>(null)
 
+  const getSpeechLocale = useCallback((languageCode?: string) => {
+    if (!languageCode) return 'en-US'
+    const normalized = languageCode.toLowerCase()
+    if (normalized === 'zh-tw' || normalized === 'zh_hant') return 'zh-TW'
+    if (normalized === 'zh-cn' || normalized === 'zh' || normalized === 'zh_hans') return 'zh-CN'
+    if (normalized.startsWith('ja')) return 'ja-JP'
+    if (normalized.startsWith('en')) return 'en-US'
+    return languageCode
+  }, [])
+
   const playPrompt = useCallback(
     async (text: string | undefined) => {
       if (!text || text.trim().length === 0) {
@@ -76,7 +86,7 @@ export default function VoiceCommentRecorder({
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
           try {
             const utterance = new SpeechSynthesisUtterance(text)
-            utterance.lang = currentLanguage || 'en-US'
+            utterance.lang = getSpeechLocale(currentLanguage)
             window.speechSynthesis.speak(utterance)
           } catch (speechError) {
             console.error('SpeechSynthesis failed:', speechError)
@@ -84,7 +94,7 @@ export default function VoiceCommentRecorder({
         }
       }
     },
-    [currentLanguage]
+    [currentLanguage, getSpeechLocale]
   )
 
   useEffect(() => {

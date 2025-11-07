@@ -167,14 +167,17 @@ async function transcribeWithIFLYTEK(
 // Create a File object from Buffer for Node.js
 // Node.js 18+ has native File API support
 function createFileFromBuffer(buffer: Buffer, filename: string, mimeType: string): File {
+  // Convert Buffer to Uint8Array for compatibility
+  const uint8Array = new Uint8Array(buffer)
+  
   // Node.js 18+ has File API
   if (typeof File !== 'undefined') {
-    return new File([buffer], filename, { type: mimeType })
+    return new File([uint8Array], filename, { type: mimeType })
   }
   
   // Fallback for older Node.js versions: Create a File-like object from Blob
   if (typeof Blob !== 'undefined') {
-    const blob = new Blob([buffer], { type: mimeType })
+    const blob = new Blob([uint8Array], { type: mimeType })
     return Object.assign(blob, {
       name: filename,
       lastModified: Date.now()

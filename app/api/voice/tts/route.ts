@@ -32,10 +32,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (!audioResult) {
-      return NextResponse.json(
-        { error: 'Failed to synthesize speech' },
-        { status: 500 }
-      )
+      // Return 200 with null payload so the client can fall back to the browser Speech API
+      return NextResponse.json({ audioBase64: null }, { status: 200 })
     }
 
     return NextResponse.json({

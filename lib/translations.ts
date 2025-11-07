@@ -691,8 +691,8 @@ const en: Translations = {
   playingVoiceComment: 'Playing...',
   voiceTranscript: 'Transcription',
   transcribingVoice: 'Transcribing...',
-  voicePromptStart: 'What can I help you with?',
-  voicePromptEnd: 'Received.',
+  voicePromptStart: 'What can I help you?',
+  voicePromptEnd: 'Received',
   
   // Category Management
   categoryHierarchy: 'Category Hierarchy',
@@ -1196,7 +1196,7 @@ const zhTW: Translations = {
   voiceTranscript: '轉錄文字',
   transcribingVoice: '轉錄中...',
   voicePromptStart: '我可以為你做些什麼？',
-  voicePromptEnd: '收到。',
+  voicePromptEnd: '收到',
   
   // Category Management
   categoryHierarchy: '分類層次',
@@ -1710,7 +1710,7 @@ const zh: Translations = {
   voiceTranscript: '转录文字',
   transcribingVoice: '转录中...',
   voicePromptStart: '我可以为你做些什么？',
-  voicePromptEnd: '收到。',
+  voicePromptEnd: '收到',
   
   // Category Management
   categoryHierarchy: '分类层次',
@@ -2222,7 +2222,7 @@ const ja: Translations = {
   voiceTranscript: '文字起こし',
   transcribingVoice: '文字起こし中...',
   voicePromptStart: 'どのようにお手伝いできますか？',
-  voicePromptEnd: '了解しました。',
+  voicePromptEnd: '了解しました',
   
   // Category Management
   categoryHierarchy: 'カテゴリ階層',

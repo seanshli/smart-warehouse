@@ -104,7 +104,9 @@ export default function VoiceCommentRecorder({
           const newDuration = prev + 1
           if (newDuration >= maxDurationSeconds) {
             stopRecording()
-            toast.warning(t('voiceCommentMaxDuration') || `Recording stopped at ${maxDurationSeconds} seconds`)
+            toast(t('voiceCommentMaxDuration') || `Recording stopped at ${maxDurationSeconds} seconds`, {
+              icon: '⚠️',
+            })
           }
           return newDuration
         })

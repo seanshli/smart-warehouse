@@ -22,6 +22,7 @@ import SearchModal from './SearchModal'
 import EditItemModal from './EditItemModal'
 import MoveItemModal from './MoveItemModal'
 import CheckoutModal from './CheckoutModal'
+import QuantityAdjustModal from './QuantityAdjustModal'
 import ItemHistoryModal from './ItemHistoryModal'
 import RoomManagement from './RoomManagement'
 import CategoryManagement from './CategoryManagement'
@@ -266,6 +267,7 @@ export default function Dashboard() {
   const [showEditItem, setShowEditItem] = useState(false)
   const [showMoveItem, setShowMoveItem] = useState(false)
   const [showCheckoutItem, setShowCheckoutItem] = useState(false)
+  const [showQuantityAdjust, setShowQuantityAdjust] = useState(false)
   const [showItemHistory, setShowItemHistory] = useState(false)
 
   const [selectedItem, setSelectedItem] = useState<any>(null)
@@ -463,6 +465,11 @@ export default function Dashboard() {
                      setSelectedItem(item)
                      setShowCheckoutItem(true)
                    }}
+                   onItemQuantityAdjust={(item) => {
+                     console.log('Dashboard: Quantity adjust handler called for item:', item.name)
+                     setSelectedItem(item)
+                     setShowQuantityAdjust(true)
+                   }}
                    onItemHistory={(item) => {
                      console.log('Dashboard: History handler called for item:', item.name)
                      setSelectedItem(item)
@@ -492,6 +499,11 @@ export default function Dashboard() {
                        setSelectedItem(item)
                        setShowCheckoutItem(true)
                      }}
+                    onItemQuantityAdjust={(item) => {
+                      console.log('Dashboard: Quantity adjust handler called for item:', item.name)
+                      setSelectedItem(item)
+                      setShowQuantityAdjust(true)
+                    }}
                      onItemHistory={(item) => {
                        console.log('Dashboard: History handler called for item:', item.name)
                        setSelectedItem(item)
@@ -597,6 +609,24 @@ export default function Dashboard() {
           }}
         />
       )}
+      {showQuantityAdjust && selectedItem && (
+        <QuantityAdjustModal
+          item={selectedItem}
+          onClose={() => {
+            setShowQuantityAdjust(false)
+            setSelectedItem(null)
+          }}
+          onSuccess={() => {
+            setShowQuantityAdjust(false)
+            setSelectedItem(null)
+            if (refreshItemsList && typeof refreshItemsList === 'function') {
+              refreshItemsList()
+            } else {
+              window.location.reload()
+            }
+          }}
+        />
+      )}
       {showItemHistory && selectedItem && (
         <ItemHistoryModal 
           item={selectedItem} 
@@ -665,6 +695,7 @@ function DashboardContent({
   onItemEdit, 
   onItemMove, 
   onItemCheckout, 
+  onItemQuantityAdjust,
   onItemHistory 
 }: {
   household: any
@@ -673,6 +704,7 @@ function DashboardContent({
   onItemEdit: (item: any) => void
   onItemMove: (item: any) => void
   onItemCheckout: (item: any) => void
+  onItemQuantityAdjust: (item: any) => void
   onItemHistory: (item: any) => void
 }) {
   const { t } = useLanguage()
@@ -734,7 +766,7 @@ function DashboardContent({
       
       // Add timeout to prevent hanging (reduced since we're only calling simple API)
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout to support slower connections
       
       // Use only simple API for maximum performance - no activities for now
       console.log('🔄 Dashboard: Using SIMPLE API only for better performance')
@@ -1043,6 +1075,10 @@ function DashboardContent({
             onItemEdit={onItemEdit}
             onItemMove={onItemMove}
             onItemCheckout={onItemCheckout}
+            onItemQuantityAdjust={(item) => {
+              console.log('Dashboard: Quantity adjust handler called for item:', item.name)
+              onItemQuantityAdjust(item)
+            }}
             onItemHistory={onItemHistory}
           />
         </div>

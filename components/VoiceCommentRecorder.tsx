@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { MicrophoneIcon, StopIcon, PlayIcon, PauseIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { MicrophoneIcon as MicrophoneIconSolid } from '@heroicons/react/24/solid'
 import toast from 'react-hot-toast'
@@ -21,7 +21,7 @@ export default function VoiceCommentRecorder({
   maxDurationSeconds = 60,
   disabled = false
 }: VoiceCommentRecorderProps) {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [isRecording, setIsRecording] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [recordingDuration, setRecordingDuration] = useState(0)
@@ -33,6 +33,59 @@ export default function VoiceCommentRecorder({
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const currentAudioUrlRef = useRef<string | null>(existingAudioUrl || null)
+  const promptAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  const playPrompt = useCallback(
+    async (text: string | undefined) => {
+      if (!text || text.trim().length === 0) {
+        return
+      }
+
+      // Stop any playing prompt audio
+      if (promptAudioRef.current) {
+        promptAudioRef.current.pause()
+        promptAudioRef.current = null
+      }
+
+      try {
+        const response = await fetch('/api/voice/tts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text,
+            language: currentLanguage,
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data?.audioBase64) {
+            const format = data.format || 'mp3'
+            const audio = new Audio(`data:audio/${format};base64,${data.audioBase64}`)
+            promptAudioRef.current = audio
+            await audio.play()
+            return
+          }
+        }
+
+        throw new Error('TTS API did not return audio')
+      } catch (error) {
+        console.warn('iFLYTEK TTS failed, falling back to SpeechSynthesis', error)
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          try {
+            const utterance = new SpeechSynthesisUtterance(text)
+            utterance.lang = currentLanguage || 'en-US'
+            window.speechSynthesis.speak(utterance)
+          } catch (speechError) {
+            console.error('SpeechSynthesis failed:', speechError)
+          }
+        }
+      }
+    },
+    [currentLanguage]
+  )
 
   useEffect(() => {
     return () => {
@@ -98,6 +151,8 @@ export default function VoiceCommentRecorder({
       setIsRecording(true)
       setRecordingDuration(0)
 
+      void playPrompt(t('voicePromptStart') || 'What can I help you?')
+
       // Start duration timer
       durationIntervalRef.current = setInterval(() => {
         setRecordingDuration((prev) => {
@@ -127,6 +182,8 @@ export default function VoiceCommentRecorder({
         clearInterval(durationIntervalRef.current)
         durationIntervalRef.current = null
       }
+
+      void playPrompt(t('voicePromptEnd') || 'Received')
     }
   }
 

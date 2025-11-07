@@ -155,7 +155,10 @@ export default function AdminAnalyticsPage() {
       // Load activity analytics if available
       if (activitiesRes.ok) {
         const activitiesData = await activitiesRes.json()
-        setData(prev => ({ ...prev, activityStats: activitiesData.stats }))
+        setData(prev => {
+          if (!prev) return prev
+          return { ...prev, activityStats: activitiesData.stats }
+        })
       }
       
       if (rolesRes.ok) {

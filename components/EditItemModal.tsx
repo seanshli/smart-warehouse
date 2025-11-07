@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { translateCategoryName } from '@/lib/translations'
 import { useHousehold } from './HouseholdProvider'
+import { useActivityTracker } from '@/lib/activity-tracker-client'
 
 interface Item {
   id: string
@@ -39,8 +40,9 @@ interface EditItemModalProps {
 
 export default function EditItemModal({ item, onClose, onSuccess }: EditItemModalProps) {
   const { t } = useLanguage()
-  const { activeHouseholdId } = useHousehold()
+  const { household } = useHousehold()
   const { currentLanguage } = useLanguage()
+  const { trackActivity } = useActivityTracker()
   
   // Debug logging for item data
   console.log('EditItemModal - Item data:', {
@@ -76,6 +78,28 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
   const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+
+  // Track item detail view when modal opens
+  useEffect(() => {
+    if (item?.id && household?.id) {
+      trackActivity(
+        'view_item',
+        'view_item_detail',
+        {
+          itemName: item.name,
+          itemId: item.id,
+          category: item.category?.name,
+          room: item.room?.name,
+          cabinet: item.cabinet?.name
+        },
+        `Opened item details: ${item.name}`,
+        item.id,
+        item.room?.id,
+        item.cabinet?.id,
+        item.category?.id
+      )
+    }
+  }, []) // Only track once when modal opens
 
   // Local room translator to reflect current language in dropdowns
   const translateRoomDisplayName = (roomName: string): string => {
@@ -145,7 +169,7 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
 
   useEffect(() => {
     fetchCategoriesAndRooms()
-  }, [activeHouseholdId])
+  }, [household?.id])
 
   // Also fetch data when modal opens
   useEffect(() => {
@@ -188,12 +212,12 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
   }, [])
 
   const fetchCategoriesAndRooms = async () => {
-    if (!activeHouseholdId) return
+    if (!household?.id) return
 
     try {
       const [categoriesResponse, roomsResponse] = await Promise.all([
-        fetch(`/api/categories?householdId=${activeHouseholdId}`, { credentials: 'include' }),
-        fetch(`/api/rooms?householdId=${activeHouseholdId}`, { credentials: 'include' })
+        fetch(`/api/categories?householdId=${household.id}`, { credentials: 'include' }),
+        fetch(`/api/rooms?householdId=${household.id}`, { credentials: 'include' })
       ])
 
       if (categoriesResponse.ok) {

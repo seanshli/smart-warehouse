@@ -51,6 +51,15 @@ interface AnalyticsData {
   itemsByRoom?: Record<string, number>
   usersByHousehold?: Record<string, number>
   activityByUser?: Record<string, number>
+  activityStats?: {
+    total: number
+    byActivityType: Record<string, number>
+    byAction: Record<string, number>
+    topSearches: Array<{ query: string; count: number }>
+    topItems: Record<string, number>
+    topLocations: Record<string, number>
+    topCategories: Record<string, number>
+  }
 }
 
 interface AdminUser {
@@ -127,8 +136,9 @@ export default function AdminAnalyticsPage() {
       if (filters.roomId !== 'all') params.append('roomId', filters.roomId)
       params.append('timeRange', filters.timeRange)
       
-      const [statsRes, rolesRes, householdsRes, categoriesRes, roomsRes] = await Promise.all([
+      const [statsRes, activitiesRes, rolesRes, householdsRes, categoriesRes, roomsRes] = await Promise.all([
         fetch(`/api/admin/stats?${params.toString()}`),
+        fetch(`/api/admin/analytics/activities?${params.toString()}`),
         fetch('/api/admin/roles'),
         fetch('/api/admin/households'),
         fetch('/api/admin/categories'),
@@ -141,6 +151,12 @@ export default function AdminAnalyticsPage() {
       
       const analyticsData = await statsRes.json()
       setData(analyticsData)
+      
+      // Load activity analytics if available
+      if (activitiesRes.ok) {
+        const activitiesData = await activitiesRes.json()
+        setData(prev => ({ ...prev, activityStats: activitiesData.stats }))
+      }
       
       if (rolesRes.ok) {
         const rolesData = await rolesRes.json()
@@ -644,6 +660,95 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* User Activity Statistics */}
+      {data?.activityStats && (
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className={`${deviceInfo.isMobile ? 'px-3 py-4' : 'px-4 py-5 sm:p-6'}`}>
+            <h3 className={`leading-6 font-medium text-gray-900 mb-4 ${
+              deviceInfo.isMobile ? 'text-base' : 'text-lg'
+            }`}>
+              <FunnelIcon className={`inline mr-2 ${
+                deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5'
+              }`} />
+              User Activity Statistics
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-sm text-gray-600 mb-1">Total Activities</div>
+                <div className="text-2xl font-bold text-gray-900">{data.activityStats.total}</div>
+              </div>
+              {Object.entries(data.activityStats.byActivityType).slice(0, 3).map(([type, count]) => (
+                <div key={type} className="bg-gray-50 rounded-lg p-4">
+                  <div className="text-sm text-gray-600 mb-1 capitalize">{type.replace('_', ' ')}</div>
+                  <div className="text-2xl font-bold text-gray-900">{count as number}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Top Searches */}
+            {data.activityStats.topSearches && data.activityStats.topSearches.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-md font-medium text-gray-900 mb-3">Top Searches</h4>
+                <div className="space-y-2">
+                  {data.activityStats.topSearches.slice(0, 10).map((search, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                      <span className="text-sm text-gray-700">"{search.query}"</span>
+                      <span className="text-sm font-medium text-gray-900">{search.count} searches</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top Items, Locations, Categories */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {Object.keys(data.activityStats.topItems || {}).length > 0 && (
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">Most Viewed Items</h4>
+                  <div className="space-y-2">
+                    {Object.entries(data.activityStats.topItems).slice(0, 5).map(([item, count]) => (
+                      <div key={item} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                        <span className="text-sm text-gray-700 truncate">{item}</span>
+                        <span className="text-sm font-medium text-gray-900 ml-2">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Object.keys(data.activityStats.topLocations || {}).length > 0 && (
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">Most Viewed Locations</h4>
+                  <div className="space-y-2">
+                    {Object.entries(data.activityStats.topLocations).slice(0, 5).map(([location, count]) => (
+                      <div key={location} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                        <span className="text-sm text-gray-700 truncate">{location}</span>
+                        <span className="text-sm font-medium text-gray-900 ml-2">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Object.keys(data.activityStats.topCategories || {}).length > 0 && (
+                <div>
+                  <h4 className="text-md font-medium text-gray-900 mb-3">Most Viewed Categories</h4>
+                  <div className="space-y-2">
+                    {Object.entries(data.activityStats.topCategories).slice(0, 5).map(([category, count]) => (
+                      <div key={category} className="flex items-center justify-between bg-gray-50 rounded p-2">
+                        <span className="text-sm text-gray-700 truncate">{category}</span>
+                        <span className="text-sm font-medium text-gray-900 ml-2">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

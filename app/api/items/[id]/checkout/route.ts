@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CacheInvalidation } from '@/lib/cache'
 import { checkAndCreateNotifications } from '@/lib/notifications'
+import { transcribeAudioFormData } from '@/lib/speech-to-text'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,7 @@ export async function POST(
 
     const checkoutQuantity = parseInt(body.quantity)
     const reason = body.reason || 'Checked out'
+    const voiceUrl = body.voiceUrl || null
 
     if (checkoutQuantity <= 0) {
       return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
@@ -71,12 +73,47 @@ export async function POST(
       }
     })
 
-    // Log checkout activity
-    await prisma.itemHistory.create({
+    // Build description with reason if provided
+    let description = `Item checked out. Quantity decreased from ${item.quantity} to ${newQuantity}`
+    if (reason && reason.trim() !== 'Checked out') {
+      description += `. Reason: ${reason}`
+    }
+
+    // Transcribe voice comment if available (non-blocking)
+    let voiceTranscript: string | null = null
+    if (voiceUrl) {
+      try {
+        // Get user's language preference for better transcription
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { language: true }
+        })
+        const userLanguage = user?.language || 'en'
+        
+        // Map language codes for Whisper (en, zh, ja, etc.)
+        const whisperLanguage = userLanguage === 'zh-TW' || userLanguage === 'zh' ? 'zh' : 
+                                userLanguage === 'ja' ? 'ja' : 'en'
+        
+        const transcript = await transcribeAudioFormData(voiceUrl, whisperLanguage)
+        if (transcript) {
+          voiceTranscript = transcript
+          // Append transcript to description for searchability
+          description += `. Voice note: "${transcript}"`
+        }
+      } catch (error) {
+        console.error('Failed to transcribe voice comment:', error)
+        // Continue without transcript - not critical
+      }
+    }
+
+    // Log checkout activity with voice comment and transcript if available
+    await (prisma as any).itemHistory.create({
       data: {
         itemId: itemId,
         action: 'checkout',
-        description: `Item checked out. Quantity decreased from ${item.quantity} to ${newQuantity}`,
+        description: description,
+        voiceUrl: voiceUrl ? `data:audio/webm;codecs=opus;base64,${voiceUrl}` : null,
+        voiceTranscript: voiceTranscript,
         performedBy: userId
       }
     })

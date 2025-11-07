@@ -26,9 +26,9 @@ export const authOptions: NextAuthOptions = {
         : `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'none', // Changed from 'lax' to 'none' for cross-origin support (iOS/Android)
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'lax' for local dev, 'none' for production
         path: '/',
-        secure: true, // Required when sameSite is 'none'
+        secure: process.env.NODE_ENV === 'production', // Only secure in production
       },
     },
   },

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { XMarkIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+import VoiceCommentRecorder from './VoiceCommentRecorder'
 
 interface Item {
   id: string
@@ -23,6 +24,8 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
   const { t } = useLanguage()
   const [adjustment, setAdjustment] = useState(0)
   const [reason, setReason] = useState('')
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
+  const [voiceBase64, setVoiceBase64] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const availableQuantity = item.totalQuantity || item.quantity
 
@@ -47,6 +50,30 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
       // If adjustment is negative (checkout/decrease), use checkout endpoint
       if (adjustment < 0) {
         const checkoutQuantity = Math.abs(adjustment)
+        
+        // Convert voice blob to base64 if available
+        let voiceBase64Data = null
+        if (voiceBlob) {
+          try {
+            voiceBase64Data = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onloadend = () => {
+                const base64String = reader.result as string
+                // Remove data URL prefix if present
+                const base64Data = base64String.includes(',') 
+                  ? base64String.split(',')[1] 
+                  : base64String
+                resolve(base64Data)
+              }
+              reader.onerror = reject
+              reader.readAsDataURL(voiceBlob)
+            })
+          } catch (error) {
+            console.error('Error converting voice to base64:', error)
+            toast.error(t('voiceCommentConversionError') || 'Failed to process voice recording')
+          }
+        }
+        
         const response = await fetch(`/api/items/${item.id}/checkout`, {
           method: 'POST',
           headers: {
@@ -55,7 +82,8 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
           credentials: 'include',
           body: JSON.stringify({
             quantity: checkoutQuantity,
-            reason: reason.trim() || (checkoutQuantity === 1 ? 'Checked out' : `${checkoutQuantity} items checked out`)
+            reason: reason.trim() || (checkoutQuantity === 1 ? 'Checked out' : `${checkoutQuantity} items checked out`),
+            voiceUrl: voiceBase64Data
           })
         })
 
@@ -171,19 +199,40 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
 
             {/* Optional reason field - show when decreasing (checkout) */}
             {adjustment < 0 && (
-              <div>
-                <label htmlFor="reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('reason')} ({t('optional') || 'Optional'})
-                </label>
-                <input
-                  type="text"
-                  id="reason"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="e.g., Used, Gifted, Donated"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
+              <>
+                <div>
+                  <label htmlFor="reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('reason')} ({t('optional') || 'Optional'})
+                  </label>
+                  <input
+                    type="text"
+                    id="reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="e.g., Used, Gifted, Donated"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('voiceComment') || 'Voice Comment'} ({t('optional') || 'Optional'})
+                  </label>
+                  <VoiceCommentRecorder
+                    onRecordingComplete={(blob, url) => {
+                      setVoiceBlob(blob)
+                      setVoiceBase64(url)
+                    }}
+                    onDelete={() => {
+                      setVoiceBlob(null)
+                      setVoiceBase64(null)
+                    }}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t('voiceCommentHint') || 'Record a voice note to explain why this item was checked out'}
+                  </p>
+                </div>
+              </>
             )}
 
             {adjustment < 0 && availableQuantity + adjustment < (item.minQuantity || 0) && (

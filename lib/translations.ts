@@ -175,6 +175,23 @@ export interface Translations {
   updateQuantity: string
   updating: string
   
+  // Voice Comments
+  voiceComment: string
+  voiceCommentHint: string
+  startRecording: string
+  stopRecording: string
+  pauseRecording: string
+  playRecording: string
+  deleteRecording: string
+  rerecord: string
+  voiceCommentMaxDuration: string
+  voiceCommentPermissionError: string
+  voiceCommentConversionError: string
+  playVoiceComment: string
+  playingVoiceComment: string
+  voiceTranscript: string
+  transcribingVoice: string
+  
   // Category Management
   categoryHierarchy: string
   cleanDuplicateCategories: string
@@ -655,6 +672,23 @@ const en: Translations = {
   failedToUpdateQuantity: 'Failed to update quantity',
   updateQuantity: 'Update Quantity',
   updating: 'Updating',
+  
+  // Voice Comments
+  voiceComment: 'Voice Comment',
+  voiceCommentHint: 'Record a voice note to explain why this item was checked out',
+  startRecording: 'Start Recording',
+  stopRecording: 'Stop Recording',
+  pauseRecording: 'Pause',
+  playRecording: 'Play',
+  deleteRecording: 'Delete Recording',
+  rerecord: 'Record Again',
+  voiceCommentMaxDuration: 'Recording stopped at maximum duration',
+  voiceCommentPermissionError: 'Microphone permission denied. Please allow microphone access.',
+  voiceCommentConversionError: 'Failed to process voice recording',
+  playVoiceComment: 'Play Voice Comment',
+  playingVoiceComment: 'Playing...',
+  voiceTranscript: 'Transcription',
+  transcribingVoice: 'Transcribing...',
   
   // Category Management
   categoryHierarchy: 'Category Hierarchy',
@@ -1140,6 +1174,23 @@ const zhTW: Translations = {
   failedToUpdateQuantity: '更新數量失敗',
   updateQuantity: '更新數量',
   updating: '更新中',
+  
+  // Voice Comments
+  voiceComment: '語音備註',
+  voiceCommentHint: '錄製語音備註以說明此物品被取出的原因',
+  startRecording: '開始錄音',
+  stopRecording: '停止錄音',
+  pauseRecording: '暫停',
+  playRecording: '播放',
+  deleteRecording: '刪除錄音',
+  rerecord: '重新錄製',
+  voiceCommentMaxDuration: '錄音已達最大時長',
+  voiceCommentPermissionError: '麥克風權限被拒絕。請允許麥克風存取。',
+  voiceCommentConversionError: '處理語音錄音失敗',
+  playVoiceComment: '播放語音備註',
+  playingVoiceComment: '播放中...',
+  voiceTranscript: '轉錄文字',
+  transcribingVoice: '轉錄中...',
   
   // Category Management
   categoryHierarchy: '分類層次',
@@ -1636,6 +1687,23 @@ const zh: Translations = {
   updateQuantity: '更新数量',
   updating: '更新中',
   
+  // Voice Comments
+  voiceComment: '语音备注',
+  voiceCommentHint: '录制语音备注以说明此物品被取出的原因',
+  startRecording: '开始录音',
+  stopRecording: '停止录音',
+  pauseRecording: '暂停',
+  playRecording: '播放',
+  deleteRecording: '删除录音',
+  rerecord: '重新录制',
+  voiceCommentMaxDuration: '录音已达最大时长',
+  voiceCommentPermissionError: '麦克风权限被拒绝。请允许麦克风访问。',
+  voiceCommentConversionError: '处理语音录音失败',
+  playVoiceComment: '播放语音备注',
+  playingVoiceComment: '播放中...',
+  voiceTranscript: '转录文字',
+  transcribingVoice: '转录中...',
+  
   // Category Management
   categoryHierarchy: '分类层次',
   cleanDuplicateCategories: '🗂️ 清理重复分类',
@@ -2128,6 +2196,23 @@ const ja: Translations = {
   failedToUpdateQuantity: '数量の更新に失敗しました',
   updateQuantity: '数量を更新',
   updating: '更新中',
+  
+  // Voice Comments
+  voiceComment: '音声コメント',
+  voiceCommentHint: 'このアイテムが取り出された理由を説明する音声メモを録音します',
+  startRecording: '録音開始',
+  stopRecording: '録音停止',
+  pauseRecording: '一時停止',
+  playRecording: '再生',
+  deleteRecording: '録音を削除',
+  rerecord: '再録音',
+  voiceCommentMaxDuration: '最大録音時間に達しました',
+  voiceCommentPermissionError: 'マイクのアクセス許可が拒否されました。マイクへのアクセスを許可してください。',
+  voiceCommentConversionError: '音声録音の処理に失敗しました',
+  playVoiceComment: '音声コメントを再生',
+  playingVoiceComment: '再生中...',
+  voiceTranscript: '文字起こし',
+  transcribingVoice: '文字起こし中...',
   
   // Category Management
   categoryHierarchy: 'カテゴリ階層',

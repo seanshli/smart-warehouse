@@ -1,9 +1,66 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { XMarkIcon, ClockIcon, PlusIcon, PencilIcon, ArrowsRightLeftIcon, ShoppingCartIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useRef } from 'react'
+import { XMarkIcon, ClockIcon, PlusIcon, PencilIcon, ArrowsRightLeftIcon, ShoppingCartIcon, ArrowDownTrayIcon, PlayIcon, PauseIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+
+// Voice Comment Player Component
+function VoiceCommentPlayer({ audioUrl }: { audioUrl: string }) {
+  const { t } = useLanguage()
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [])
+
+  const togglePlayback = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioUrl)
+      audioRef.current.onended = () => {
+        setIsPlaying(false)
+      }
+      audioRef.current.onpause = () => {
+        setIsPlaying(false)
+      }
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current.play()
+      setIsPlaying(true)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={togglePlayback}
+      className="flex items-center space-x-2 px-3 py-1.5 bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded-md hover:bg-primary-100 dark:hover:bg-primary-800 transition-colors text-sm"
+      title={isPlaying ? t('pauseRecording') : t('playVoiceComment')}
+    >
+      {isPlaying ? (
+        <>
+          <PauseIcon className="h-4 w-4" />
+          <span>{t('playingVoiceComment')}</span>
+        </>
+      ) : (
+        <>
+          <PlayIcon className="h-4 w-4" />
+          <span>{t('playVoiceComment')}</span>
+        </>
+      )}
+    </button>
+  )
+}
 
 interface Item {
   id: string
@@ -32,6 +89,8 @@ interface Activity {
   id: string
   action: string
   description: string
+  voiceUrl?: string | null
+  voiceTranscript?: string | null
   createdAt: string
   performedBy: string
   performer?: {
@@ -188,6 +247,23 @@ export default function ItemHistoryModal({ item, onClose }: ItemHistoryModalProp
                       <p className="text-sm text-gray-600 mt-1">
                         {activity.description}
                       </p>
+                      {activity.voiceUrl && (
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <VoiceCommentPlayer audioUrl={activity.voiceUrl} />
+                          </div>
+                          {activity.voiceTranscript && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-2">
+                              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">
+                                {t('voiceTranscript') || 'Transcription'}:
+                              </p>
+                              <p className="text-sm text-blue-900 dark:text-blue-100 italic">
+                                "{activity.voiceTranscript}"
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {activity.performer && (
                         <p className="text-xs text-gray-500 mt-1">
                           by {activity.performer.name || activity.performer.email}

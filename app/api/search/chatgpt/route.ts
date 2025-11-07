@@ -134,7 +134,17 @@ Be specific and helpful. If they're looking for something specific, suggest rela
             { description: { contains: term, mode: 'insensitive' } },
             { category: { name: { contains: term, mode: 'insensitive' } } },
             { room: { name: { contains: term, mode: 'insensitive' } } },
-            { cabinet: { name: { contains: term, mode: 'insensitive' } } }
+            { cabinet: { name: { contains: term, mode: 'insensitive' } } },
+            {
+              history: {
+                some: {
+                  voiceTranscript: {
+                    contains: term,
+                    mode: 'insensitive'
+                  } as any
+                }
+              }
+            }
           ]
         },
         include: {

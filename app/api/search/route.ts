@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { translateRoomName, translateCabinetName, translateCategoryName, translateItemContentEnhanced } from '@/lib/location-translations'
+import { trackActivity } from '@/lib/activity-tracker'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
     const householdId = userRecord.householdMemberships[0].household.id
 
     // Search for items that match the query
+    // Also search in voice transcripts from item history
     const items = await prisma.item.findMany({
       where: {
         householdId,
@@ -73,6 +75,16 @@ export async function GET(request: NextRequest) {
             cabinet: {
               name: {
                 contains: query,
+              }
+            }
+          },
+          {
+            history: {
+              some: {
+                voiceTranscript: {
+                  contains: query,
+                  mode: 'insensitive'
+                } as any
               }
             }
           }
@@ -126,6 +138,19 @@ export async function GET(request: NextRequest) {
         name: translateCabinetName(item.cabinet.name, userLanguage)
       } : undefined
     })))
+
+    // Track search activity (non-blocking)
+    trackActivity({
+      userId: (session?.user as any)?.id,
+      householdId,
+      activityType: 'search',
+      action: 'search_items',
+      description: `Searched for "${query}"`,
+      metadata: {
+        query,
+        resultCount: results.length
+      }
+    }).catch(err => console.error('Failed to track search activity:', err))
 
     return NextResponse.json({ results })
 

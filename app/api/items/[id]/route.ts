@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkAndCreateNotifications } from '@/lib/notifications'
+import { trackActivity } from '@/lib/activity-tracker'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,26 @@ export async function GET(
     if (!item) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
+
+    // Track item detail view activity (non-blocking)
+    trackActivity({
+      userId,
+      householdId: item.householdId,
+      activityType: 'view_item',
+      action: 'view_item_detail',
+      description: `Viewed item details: ${item.name}`,
+      metadata: {
+        itemName: item.name,
+        category: item.category?.name,
+        room: item.room?.name,
+        cabinet: item.cabinet?.name,
+        quantity: item.quantity
+      },
+      itemId: item.id,
+      roomId: item.roomId || undefined,
+      cabinetId: item.cabinetId || undefined,
+      categoryId: item.categoryId || undefined
+    }).catch(err => console.error('Failed to track item detail view activity:', err))
 
     return NextResponse.json(item)
   } catch (error) {

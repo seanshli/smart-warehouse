@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createPrismaClient } from '@/lib/prisma-factory'
+import { trackActivity } from '@/lib/activity-tracker'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -133,6 +134,22 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     console.log('[rooms] GET /api/rooms/[id]/items - Success:', roomId, 'cabinets:', room.cabinets?.length || 0, 'items:', room._count?.items || 0)
+    
+    // Track room view activity (non-blocking)
+    trackActivity({
+      userId: (session?.user as any)?.id,
+      householdId: household.id,
+      activityType: 'view_location',
+      action: 'view_room',
+      description: `Viewed room: ${room.name}`,
+      metadata: {
+        roomName: room.name,
+        cabinetCount: room.cabinets?.length || 0,
+        itemCount: room._count?.items || 0
+      },
+      roomId: room.id
+    }).catch(err => console.error('Failed to track room view activity:', err))
+    
     return NextResponse.json(room)
   } catch (error) {
     console.error('Error fetching room details:', error)

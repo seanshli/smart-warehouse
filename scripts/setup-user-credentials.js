@@ -12,6 +12,7 @@ const prisma = new PrismaClient()
 
 // Pre-defined user credentials
 const userCredentials = [
+  { email: 'sean.li@smtengo.com', password: 'Smtengo1324!', isAdmin: true },
   { email: 'demo@smartwarehouse.com', password: 'demo123' },
   { email: 'alice@smartwarehouse.com', password: 'alice123' },
   { email: 'bob@smartwarehouse.com', password: 'bob123' },
@@ -39,12 +40,13 @@ async function setupUserCredentials() {
         console.log(`   ⚠️  User ${email} not found, creating...`)
         
         // Create user
+        const userCred = userCredentials.find(uc => uc.email === email)
         const newUser = await prisma.user.create({
           data: {
             email: email.toLowerCase(),
             name: email.split('@')[0],
             language: 'en',
-            isAdmin: email === 'admin@smartwarehouse.com' || email === 'seanshlitw@gmail.com'
+            isAdmin: userCred?.isAdmin || email === 'admin@smartwarehouse.com' || email === 'seanshlitw@gmail.com' || email === 'sean.li@smtengo.com'
           }
         })
         

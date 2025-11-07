@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { trackActivity } from '@/lib/activity-tracker'
 import { CacheInvalidation } from '@/lib/cache'
 import { broadcastToHousehold } from '@/lib/realtime'
 import { checkAndCreateNotifications } from '@/lib/notifications'
@@ -588,7 +589,18 @@ export async function GET(request: NextRequest) {
         // Search in room names
         { room: { name: { contains: search } } },
         // Search in cabinet names
-        { cabinet: { name: { contains: search } } }
+        { cabinet: { name: { contains: search } } },
+        // Search in voice transcripts from item history
+        {
+          history: {
+            some: {
+              voiceTranscript: {
+                contains: search,
+                mode: 'insensitive'
+              } as any
+            }
+          }
+        }
       )
     }
 
@@ -762,6 +774,29 @@ export async function GET(request: NextRequest) {
         isLowStock: item.minQuantity !== null && item.totalQuantity <= item.minQuantity
       }
     })
+
+    // Track view/filter activity (non-blocking)
+    const activityMetadata: any = {
+      itemCount: result.length
+    }
+    if (search) activityMetadata.searchQuery = search
+    if (category || categoryId) activityMetadata.category = category || categoryId
+    if (room || roomId) activityMetadata.room = room || roomId
+    
+    trackActivity({
+      userId,
+      householdId: household.id,
+      activityType: search ? 'search' : category || room ? 'filter' : 'navigate',
+      action: search ? 'search_items' : category || room ? (category ? 'filter_by_category' : 'filter_by_room') : 'navigate_to_items',
+      description: search 
+        ? `Searched items: "${search}"`
+        : category 
+          ? `Filtered by category: ${category}`
+          : room
+            ? `Filtered by room: ${room}`
+            : 'Viewed items list',
+      metadata: activityMetadata
+    }).catch(err => console.error('Failed to track items view activity:', err))
 
     return NextResponse.json(result)
   } catch (error) {

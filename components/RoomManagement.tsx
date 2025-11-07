@@ -9,6 +9,7 @@ import MoveItemModal from './MoveItemModal'
 import QuantityAdjustModal from './QuantityAdjustModal'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
+import { useActivityTracker } from '@/lib/activity-tracker-client'
 import ItemCard from './ItemCard'
 
 interface Room {
@@ -32,7 +33,8 @@ interface Cabinet {
 
 export default function RoomManagement() {
   const { t, currentLanguage } = useLanguage()
-  const { activeHouseholdId } = useHousehold()
+  const { household } = useHousehold()
+  const { trackActivity } = useActivityTracker()
 
   // Function to translate room names based on their original English names
   const translateRoomName = (roomName: string) => {
@@ -167,7 +169,7 @@ export default function RoomManagement() {
 
   useEffect(() => {
     fetchRooms()
-  }, [activeHouseholdId])
+  }, [household?.id])
 
   // Force re-render when language changes to update translations
   useEffect(() => {
@@ -193,7 +195,7 @@ export default function RoomManagement() {
 
   const fetchRooms = async () => {
     try {
-      const params = activeHouseholdId ? `?householdId=${encodeURIComponent(activeHouseholdId)}` : ''
+      const params = household?.id ? `?householdId=${encodeURIComponent(household.id)}` : ''
       const response = await fetch(`/api/rooms${params}`)
       if (response.ok) {
         const data = await response.json()
@@ -243,6 +245,20 @@ export default function RoomManagement() {
           }
           setSelectedRoomForDetail(roomDetail)
           setViewMode('detail')
+          
+          // Track room view activity
+          trackActivity(
+            'view_location',
+            'view_room',
+            {
+              roomName: roomDetail.name,
+              cabinetCount: roomDetail.cabinets?.length || 0,
+              itemCount: roomDetail.cabinets?.reduce((sum: number, cab: any) => sum + (cab.items?.length || 0), 0) || 0
+            },
+            `Viewed room: ${roomDetail.name}`,
+            undefined,
+            room.id
+          )
         } else {
           console.error('Invalid room detail response:', roomDetail)
           toast.error('Failed to load room details')
@@ -372,7 +388,7 @@ export default function RoomManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: newRoomName, description: newRoomDescription, householdId: activeHouseholdId }),
+        body: JSON.stringify({ name: newRoomName, description: newRoomDescription, householdId: household?.id }),
       })
 
       if (response.ok) {

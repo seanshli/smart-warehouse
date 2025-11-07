@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { trackActivity } from '@/lib/activity-tracker'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -54,6 +55,20 @@ export async function GET(
         createdAt: 'desc'
       }
     })
+
+    // Track item history view activity (non-blocking)
+    trackActivity({
+      userId,
+      householdId: item.householdId,
+      activityType: 'view_item',
+      action: 'view_item_history',
+      description: `Viewed history for item: ${item.name}`,
+      metadata: {
+        itemName: item.name,
+        historyCount: activities.length
+      },
+      itemId: item.id
+    }).catch(err => console.error('Failed to track item history view activity:', err))
 
     return NextResponse.json(activities)
   } catch (error) {

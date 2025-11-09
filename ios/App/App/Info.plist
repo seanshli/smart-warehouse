@@ -59,6 +59,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera is used to scan barcodes and invoice</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone is required to record voice comments.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Select images to decode invoices</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import Foundation
+import AVFoundation
 @preconcurrency import WebKit
 
 @UIApplicationMain
@@ -12,7 +13,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Configure HTTP cookie storage for authentication
         HTTPCookieStorage.shared.cookieAcceptPolicy = .always
         
-        // Override point for customization after application launch.
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .defaultToSpeaker])
+            try audioSession.setActive(true)
+        } catch {
+            print("Failed to configure AVAudioSession: \\(error)")
+        }
+
         return true
     }
 

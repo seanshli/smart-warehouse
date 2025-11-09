@@ -35,6 +35,7 @@ export default function VoiceCommentRecorder({
   const currentAudioUrlRef = useRef<string | null>(existingAudioUrl || null)
   const promptAudioRef = useRef<HTMLAudioElement | null>(null)
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const voicesLoadedRef = useRef<boolean>(false)
 
   useEffect(() => {
     return () => {
@@ -54,6 +55,7 @@ export default function VoiceCommentRecorder({
       }
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel()
+        speechUtteranceRef.current = null
       }
     }
   }, [])
@@ -74,6 +76,51 @@ export default function VoiceCommentRecorder({
     if (normalized.startsWith('en')) return 'en-US'
     return 'en-US'
   }, [])
+
+  const speakWithBrowserTTS = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      return false
+    }
+
+    const speak = () => {
+      const synth = window.speechSynthesis
+      const voices = synth.getVoices()
+      const targetLang = mapLanguageToSpeechSynthesis(currentLanguage)
+      const matchingVoice = voices.find((voice) =>
+        voice.lang?.toLowerCase().startsWith(targetLang.toLowerCase().split('-')[0])
+      ) || voices.find((voice) => voice.lang === targetLang)
+
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = targetLang
+      if (matchingVoice) {
+        utterance.voice = matchingVoice
+      }
+      speechUtteranceRef.current = utterance
+      try {
+        synth.cancel()
+        synth.speak(utterance)
+        return true
+      } catch (error) {
+        console.error('Failed to speak with SpeechSynthesis:', error)
+        return false
+      }
+    }
+
+    if (!voicesLoadedRef.current && window.speechSynthesis.getVoices().length === 0) {
+      const handleVoicesChanged = () => {
+        voicesLoadedRef.current = true
+        speak()
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged)
+      }
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged)
+      window.speechSynthesis.getVoices()
+      // Attempt immediate speak as well in case voices are already available
+      return speak()
+    }
+
+    voicesLoadedRef.current = true
+    return speak()
+  }, [currentLanguage, mapLanguageToSpeechSynthesis])
 
   const playPrompt = useCallback(async (text?: string) => {
     if (!text || !text.trim()) return
@@ -107,19 +154,17 @@ export default function VoiceCommentRecorder({
           await audio.play()
           return
         }
+      } else {
+        console.error('TTS response not ok:', response.status)
       }
     } catch (error) {
       console.error('Failed to play TTS prompt:', error)
     }
 
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = mapLanguageToSpeechSynthesis(currentLanguage)
-      speechUtteranceRef.current = utterance
-      window.speechSynthesis.cancel()
-      window.speechSynthesis.speak(utterance)
+    if (!speakWithBrowserTTS(text)) {
+      console.warn('Browser speech synthesis unavailable.')
     }
-  }, [currentLanguage, mapLanguageToSpeechSynthesis])
+  }, [currentLanguage, speakWithBrowserTTS])
 
   const startRecording = async () => {
     try {

@@ -289,136 +289,6 @@ async function transcribeWithOpenAI(
   }
 }
 
-interface SynthesizeOptions {
-  voice?: string
-  speed?: number
-  pitch?: number
-  volume?: number
-  language?: string
-}
-
-function getIFLYTEKVoiceForLanguage(language?: string): string {
-  if (!language) {
-    return 'aisxping' // default to English female
-  }
-
-  const normalized = language.toLowerCase()
-  const voiceMap: Record<string, string> = {
-    'zh': 'xiaoyan',
-    'zh-cn': 'xiaoyan',
-    'zh-hans': 'xiaoyan',
-    'zh-tw': 'aisjinger',
-    'zh-hant': 'aisjinger',
-    'en': 'aisxping',
-    'en-us': 'aisxping',
-    'en-gb': 'aisxping',
-    'ja': 'aisjinki',
-    'ja-jp': 'aisjinki',
-  }
-
-  if (voiceMap[normalized]) {
-    return voiceMap[normalized]
-  }
-
-  const prefix = normalized.split('-')[0]
-  if (voiceMap[prefix]) {
-    return voiceMap[prefix]
-  }
-
-  return 'aisxping'
-}
-
-function generateIFLYTEKTTSParam(options: SynthesizeOptions): string {
-  const paramPayload = {
-    auf: 'audio/L16;rate=16000',
-    aue: 'lame',
-    voice_name: options.voice || 'xiaoyan',
-    vcn: options.voice || 'xiaoyan',
-    speed: String(options.speed ?? 50),
-    volume: String(options.volume ?? 50),
-    pitch: String(options.pitch ?? 50),
-    engine_type: 'intp65',
-    text_type: 'text',
-    tte: 'utf8',
-  }
-
-  return Buffer.from(JSON.stringify(paramPayload)).toString('base64')
-}
-
-export async function synthesizeSpeech(
-  text: string,
-  options: SynthesizeOptions = {}
-): Promise<{ audioBase64: string; format: string } | null> {
-  if (!text || !text.trim()) {
-    return null
-  }
-
-  const voice = options.voice || getIFLYTEKVoiceForLanguage(options.language)
-  const paramsBase64 = generateIFLYTEKTTSParam({ ...options, voice })
-  const curTime = Math.floor(Date.now() / 1000).toString()
-  const textBase64 = Buffer.from(text, 'utf8').toString('base64')
-
-  const checkSum = crypto
-    .createHash('md5')
-    .update(IFLYTEK_CONFIG.APP_KEY + curTime + paramsBase64 + textBase64)
-    .digest('hex')
-
-  try {
-    const response = await fetch(IFLYTEK_CONFIG.TTS_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Appid': IFLYTEK_CONFIG.APP_KEY,
-        'X-CurTime': curTime,
-        'X-Param': paramsBase64,
-        'X-CheckSum': checkSum,
-      },
-      body: JSON.stringify({
-        common: {
-          app_id: IFLYTEK_CONFIG.APP_KEY,
-        },
-        business: {
-          auf: 'audio/L16;rate=16000',
-          aue: 'lame',
-          voice_name: voice,
-          vcn: voice,
-          speed: options.speed ?? 50,
-          volume: options.volume ?? 50,
-          pitch: options.pitch ?? 50,
-          engine_type: 'intp65',
-          text_type: 'text',
-          tte: 'utf8',
-        },
-        data: {
-          text: textBase64,
-          status: 2,
-        },
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('iFLYTEK TTS API error:', response.status, errorText)
-      return null
-    }
-
-    const result = await response.json()
-
-    if (result.code === 0 && result.data?.audio) {
-      return {
-        audioBase64: result.data.audio,
-        format: result.data.format || 'mp3',
-      }
-    }
-
-    console.error('iFLYTEK TTS response error:', result)
-    return null
-  } catch (error) {
-    console.error('iFLYTEK TTS request failed:', error)
-    return null
-  }
-}
-
 /**
  * Main transcription function with dual engine support
  * Primary: iFLYTEK, Fallback: OpenAI
@@ -446,6 +316,113 @@ export async function transcribeAudioFormData(
   }
 
   console.warn('Both transcription engines failed')
+  return null
+}
+
+function getIFLYTEKVoiceForLanguage(language?: string): string {
+  if (!language) return 'xiaoyan'
+  const normalized = language.toLowerCase()
+
+  if (normalized.startsWith('ja')) return 'aisjinky'
+  if (normalized.startsWith('en')) return 'aisxping'
+  if (normalized.startsWith('zh-tw')) return 'xiaoyan'
+  if (normalized.startsWith('zh')) return 'xiaoyan'
+
+  return 'xiaoyan'
+}
+
+function getIFLYTEKLanguageCode(language?: string): string {
+  if (!language) return 'zh_cn'
+  const normalized = language.toLowerCase()
+
+  if (normalized.startsWith('ja')) return 'ja_jp'
+  if (normalized.startsWith('en')) return 'en_us'
+  if (normalized.startsWith('zh-tw')) return 'zh_tw'
+  if (normalized.startsWith('zh')) return 'zh_cn'
+
+  return 'zh_cn'
+}
+
+function generateIFLYTEKTTSParam(voice: string, language?: string): string {
+  const param = {
+    auf: 'audio/L16;rate=16000',
+    aue: 'lame',
+    voice_name: voice,
+    engine_type: 'intp65',
+    speed: 50,
+    pitch: 50,
+    volume: 77,
+    text_type: 'text',
+    language: getIFLYTEKLanguageCode(language),
+  }
+
+  return Buffer.from(JSON.stringify(param)).toString('base64')
+}
+
+async function synthesizeWithIFLYTEK(text: string, language?: string): Promise<string | null> {
+  if (!text || !text.trim()) {
+    return null
+  }
+
+  try {
+    if (!IFLYTEK_CONFIG.APP_KEY || IFLYTEK_CONFIG.APP_KEY === 'your-iflytek-app-key') {
+      console.warn('iFLYTEK TTS not configured - skipping')
+      return null
+    }
+
+    const sanitizedText = text.trim()
+    const voice = getIFLYTEKVoiceForLanguage(language)
+    const curTime = Math.floor(Date.now() / 1000).toString()
+    const paramsBase64 = generateIFLYTEKTTSParam(voice, language)
+    const textBase64 = Buffer.from(sanitizedText, 'utf-8').toString('base64')
+
+    const checkSum = crypto
+      .createHash('md5')
+      .update(IFLYTEK_CONFIG.APP_KEY + curTime + paramsBase64 + textBase64)
+      .digest('hex')
+
+    const response = await fetch(IFLYTEK_CONFIG.TTS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'X-Appid': IFLYTEK_CONFIG.APP_KEY,
+        'X-CurTime': curTime,
+        'X-Param': paramsBase64,
+        'X-CheckSum': checkSum,
+      },
+      body: new URLSearchParams({ text: textBase64 }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('iFLYTEK TTS API error:', response.status, errorText)
+      return null
+    }
+
+    const result = await response.json()
+
+    if (result.code === 0 && result.data?.audio) {
+      return result.data.audio as string
+    }
+
+    console.error('iFLYTEK TTS failed:', result)
+    return null
+  } catch (error) {
+    console.error('iFLYTEK TTS error:', error)
+    return null
+  }
+}
+
+export async function synthesizeSpeech(
+  text: string,
+  language?: string
+): Promise<string | null> {
+  const audioBase64 = await synthesizeWithIFLYTEK(text, language)
+
+  if (audioBase64 && audioBase64.length > 0) {
+    return audioBase64
+  }
+
   return null
 }
 

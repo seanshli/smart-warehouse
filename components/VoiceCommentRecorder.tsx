@@ -34,68 +34,7 @@ export default function VoiceCommentRecorder({
   const streamRef = useRef<MediaStream | null>(null)
   const currentAudioUrlRef = useRef<string | null>(existingAudioUrl || null)
   const promptAudioRef = useRef<HTMLAudioElement | null>(null)
-
-  const getSpeechLocale = useCallback((languageCode?: string) => {
-    if (!languageCode) return 'en-US'
-    const normalized = languageCode.toLowerCase()
-    if (normalized === 'zh-tw' || normalized === 'zh_hant') return 'zh-TW'
-    if (normalized === 'zh-cn' || normalized === 'zh' || normalized === 'zh_hans') return 'zh-CN'
-    if (normalized.startsWith('ja')) return 'ja-JP'
-    if (normalized.startsWith('en')) return 'en-US'
-    return languageCode
-  }, [])
-
-  const playPrompt = useCallback(
-    async (text: string | undefined) => {
-      if (!text || text.trim().length === 0) {
-        return
-      }
-
-      // Stop any playing prompt audio
-      if (promptAudioRef.current) {
-        promptAudioRef.current.pause()
-        promptAudioRef.current = null
-      }
-
-      try {
-        const response = await fetch('/api/voice/tts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            text,
-            language: currentLanguage,
-          }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data?.audioBase64) {
-            const format = data.format || 'mp3'
-            const audio = new Audio(`data:audio/${format};base64,${data.audioBase64}`)
-            promptAudioRef.current = audio
-            await audio.play()
-            return
-          }
-        }
-
-        throw new Error('TTS API did not return audio')
-      } catch (error) {
-        console.warn('iFLYTEK TTS failed, falling back to SpeechSynthesis', error)
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-          try {
-            const utterance = new SpeechSynthesisUtterance(text)
-            utterance.lang = getSpeechLocale(currentLanguage)
-            window.speechSynthesis.speak(utterance)
-          } catch (speechError) {
-            console.error('SpeechSynthesis failed:', speechError)
-          }
-        }
-      }
-    },
-    [currentLanguage, getSpeechLocale]
-  )
+  const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
   useEffect(() => {
     return () => {
@@ -109,6 +48,13 @@ export default function VoiceCommentRecorder({
       if (currentAudioUrlRef.current && currentAudioUrlRef.current.startsWith('blob:')) {
         URL.revokeObjectURL(currentAudioUrlRef.current)
       }
+      if (promptAudioRef.current) {
+        promptAudioRef.current.pause()
+        promptAudioRef.current = null
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
     }
   }, [])
 
@@ -118,6 +64,62 @@ export default function VoiceCommentRecorder({
       setHasRecording(true)
     }
   }, [existingAudioUrl])
+
+  const mapLanguageToSpeechSynthesis = useCallback((language?: string) => {
+    if (!language) return 'en-US'
+    const normalized = language.toLowerCase()
+    if (normalized.startsWith('zh-tw')) return 'zh-TW'
+    if (normalized.startsWith('zh')) return 'zh-CN'
+    if (normalized.startsWith('ja')) return 'ja-JP'
+    if (normalized.startsWith('en')) return 'en-US'
+    return 'en-US'
+  }, [])
+
+  const playPrompt = useCallback(async (text?: string) => {
+    if (!text || !text.trim()) return
+
+    try {
+      if (promptAudioRef.current) {
+        promptAudioRef.current.pause()
+        promptAudioRef.current = null
+      }
+      if (speechUtteranceRef.current && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+        speechUtteranceRef.current = null
+      }
+
+      const response = await fetch('/api/voice/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text.trim(),
+          language: currentLanguage,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data?.audioBase64) {
+          const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`)
+          promptAudioRef.current = audio
+          await audio.play()
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Failed to play TTS prompt:', error)
+    }
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = mapLanguageToSpeechSynthesis(currentLanguage)
+      speechUtteranceRef.current = utterance
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(utterance)
+    }
+  }, [currentLanguage, mapLanguageToSpeechSynthesis])
 
   const startRecording = async () => {
     try {
@@ -160,7 +162,6 @@ export default function VoiceCommentRecorder({
       mediaRecorder.start()
       setIsRecording(true)
       setRecordingDuration(0)
-
       void playPrompt(t('voicePromptStart') || 'What can I help you?')
 
       // Start duration timer
@@ -187,13 +188,12 @@ export default function VoiceCommentRecorder({
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
+      void playPrompt(t('voicePromptEnd') || 'Received.')
       
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current)
         durationIntervalRef.current = null
       }
-
-      void playPrompt(t('voicePromptEnd') || 'Received')
     }
   }
 

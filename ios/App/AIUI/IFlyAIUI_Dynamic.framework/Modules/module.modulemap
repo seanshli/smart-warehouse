@@ -1,0 +1,6 @@
+framework module IFlyAIUI_Dynamic {
+  umbrella header "IFlyAIUI_Dynamic.h"
+
+  export *
+  module * { export * }
+}

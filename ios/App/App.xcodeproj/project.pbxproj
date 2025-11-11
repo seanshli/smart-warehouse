@@ -15,6 +15,9 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		B1A31BC025AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A31BC125AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework */; };
+		B1A31BC225AA4C049AAE27A1 /* iflyAIUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1A31BC325AA4C049AAE27A1 /* iflyAIUI.framework */; };
+		B1A31BC425AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B1A31BC125AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,7 +33,23 @@
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
+		B1A31BC125AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IFlyAIUI_Dynamic.framework; path = AIUI/IFlyAIUI_Dynamic.framework; sourceTree = "<group>"; };
+		B1A31BC325AA4C049AAE27A1 /* iflyAIUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = iflyAIUI.framework; path = AIUI/iflyAIUI.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B1A31BC525AA4C049AAE27A1 /* Embed IFly Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				B1A31BC425AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework in Embed Frameworks */,
+			);
+			name = "Embed IFly Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		504EC3011FED79650016851F /* Frameworks */ = {
@@ -38,6 +57,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */,
+				B1A31BC025AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework in Frameworks */,
+				B1A31BC225AA4C049AAE27A1 /* iflyAIUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -48,6 +69,8 @@
 			isa = PBXGroup;
 			children = (
 				AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */,
+				B1A31BC125AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework */,
+				B1A31BC325AA4C049AAE27A1 /* iflyAIUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -106,6 +129,7 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
+				B1A31BC525AA4C049AAE27A1 /* Embed IFly Frameworks */,
 			);
 			buildRules = (
 			);

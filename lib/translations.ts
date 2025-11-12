@@ -36,6 +36,8 @@ export interface Translations {
   homeAssistantToggleOff: string
   homeAssistantToggleError: string
   homeAssistantToggleUnsupported: string
+  homeAssistantPowerOptionMissing: string
+  homeAssistantPowerUnavailable: string
   homeAssistantLastChanged: string
   homeAssistantClimateSection: string
   homeAssistantHumidifierSection: string
@@ -591,6 +593,8 @@ const en: Translations = {
   homeAssistantToggleOff: 'Turned off.',
   homeAssistantToggleError: 'Failed to trigger action.',
   homeAssistantToggleUnsupported: 'This device cannot be toggled from here.',
+  homeAssistantPowerOptionMissing: 'Power options unavailable.',
+  homeAssistantPowerUnavailable: 'Power entity unavailable.',
   homeAssistantLastChanged: 'Last changed',
   homeAssistantClimateSection: 'Humidity Control',
   homeAssistantHumidifierSection: 'Air Circulation',
@@ -1149,6 +1153,8 @@ const zhTW: Translations = {
   homeAssistantToggleOff: '已關閉。',
   homeAssistantToggleError: '操作失敗。',
   homeAssistantToggleUnsupported: '此裝置不支援快速開關控制。',
+  homeAssistantPowerOptionMissing: '無法取得電源選項。',
+  homeAssistantPowerUnavailable: '找不到電源控制。',
   homeAssistantLastChanged: '最後更新',
   homeAssistantClimateSection: '濕度控制',
   homeAssistantHumidifierSection: '空氣循環',
@@ -1717,6 +1723,8 @@ const zh: Translations = {
   homeAssistantToggleOff: '已关闭。',
   homeAssistantToggleError: '执行失败。',
   homeAssistantToggleUnsupported: '此设备不支持快速开关。',
+  homeAssistantPowerOptionMissing: '无法获取电源选项。',
+  homeAssistantPowerUnavailable: '找不到电源控制。',
   homeAssistantLastChanged: '最后更新',
   homeAssistantClimateSection: '湿度控制',
   homeAssistantHumidifierSection: '空气循环',
@@ -2283,6 +2291,8 @@ const ja: Translations = {
   homeAssistantToggleOff: 'オフにしました。',
   homeAssistantToggleError: '操作に失敗しました。',
   homeAssistantToggleUnsupported: 'このデバイスはここからオン/オフできません。',
+  homeAssistantPowerOptionMissing: '電源オプションを取得できません。',
+  homeAssistantPowerUnavailable: '電源制御が見つかりません。',
   homeAssistantLastChanged: '最終更新',
   homeAssistantClimateSection: '湿度コントロール',
   homeAssistantHumidifierSection: '空気循環',

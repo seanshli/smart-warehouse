@@ -82,6 +82,24 @@ export default function HomeAssistantPanel() {
     return map
   }, [data])
 
+  const derivedEntities = useMemo<FavoriteEntityConfig[]>(() => {
+    if (!data?.states || data.states.length === 0) {
+      return []
+    }
+
+    const preferredDomains = ['light', 'switch', 'climate', 'cover', 'scene']
+    return data.states
+      .filter((state) => preferredDomains.includes(state.entity_id.split('.')[0]))
+      .slice(0, 6)
+      .map((state) => ({
+        entity_id: state.entity_id,
+        name: state.attributes?.friendly_name || state.entity_id,
+        description: state.attributes?.state_class || undefined,
+      }))
+  }, [data])
+
+  const displayEntities = favoriteEntities.length > 0 ? favoriteEntities : derivedEntities
+
   const handleToggle = useCallback(
     async (entityId: string, turnOn: boolean) => {
       const domain = entityId.split('.')[0]
@@ -178,10 +196,12 @@ export default function HomeAssistantPanel() {
             </button>
           </div>
 
-          {favoriteEntities.length > 0 && (
+          {displayEntities.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              {favoriteEntities.map((entity) => {
+              {displayEntities.map((entity) => {
                 const state = statesByEntity.get(entity.entity_id)
+                const domain = entity.entity_id.split('.')[0]
+                const isToggleable = ['light', 'switch', 'fan', 'climate', 'cover'].includes(domain)
 
                 return (
                   <div
@@ -210,23 +230,30 @@ export default function HomeAssistantPanel() {
                       </div>
                     )}
 
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleToggle(entity.entity_id, true)}
-                        className="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700"
-                      >
-                        <PowerIcon className="h-4 w-4 mr-1" />
-                        {t('homeAssistantTurnOn') || '開啟'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggle(entity.entity_id, false)}
-                        className="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      >
-                        {t('homeAssistantTurnOff') || '關閉'}
-                      </button>
-                    </div>
+                    {isToggleable ? (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggle(entity.entity_id, true)}
+                          className="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700"
+                        >
+                          <PowerIcon className="h-4 w-4 mr-1" />
+                          {t('homeAssistantTurnOn') || '開啟'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggle(entity.entity_id, false)}
+                          className="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          {t('homeAssistantTurnOff') || '關閉'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-400">
+                        {t('homeAssistantToggleUnsupported') ||
+                          '此裝置不支援快速開關控制。'}
+                      </div>
+                    )}
 
                     {state?.last_changed && (
                       <div className="text-xs text-gray-400">
@@ -237,6 +264,11 @@ export default function HomeAssistantPanel() {
                   </div>
                 )
               })}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/30 p-4 text-sm text-gray-500 dark:text-gray-400">
+              {t('homeAssistantNoEntities') ||
+                '尚未設定常用實體。您可以在環境變數 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 中加入想要顯示的 entity_id，或直接使用下方自訂服務呼叫控制任意裝置。'}
             </div>
           )}
 

@@ -35,6 +35,7 @@ export interface Translations {
   homeAssistantToggleOn: string
   homeAssistantToggleOff: string
   homeAssistantToggleError: string
+  homeAssistantToggleUnsupported: string
   homeAssistantLastChanged: string
   homeAssistantCustomTitle: string
   homeAssistantCustomDescription: string
@@ -43,6 +44,7 @@ export interface Translations {
   homeAssistantCustomSuccess: string
   homeAssistantCustomError: string
   homeAssistantSendService: string
+  homeAssistantNoEntities: string
   householdSettings: string
   
   // Admin
@@ -568,6 +570,7 @@ const en: Translations = {
   homeAssistantToggleOn: 'Turned on.',
   homeAssistantToggleOff: 'Turned off.',
   homeAssistantToggleError: 'Failed to trigger action.',
+  homeAssistantToggleUnsupported: 'This device cannot be toggled from here.',
   homeAssistantLastChanged: 'Last changed',
   homeAssistantCustomTitle: 'Custom service call',
   homeAssistantCustomDescription: 'Enter a domain.service and JSON payload, e.g. light.turn_on, {"entity_id": "light.living_room"}',
@@ -576,6 +579,7 @@ const en: Translations = {
   homeAssistantCustomSuccess: 'Service call sent.',
   homeAssistantCustomError: 'Failed to call service.',
   homeAssistantSendService: 'Send',
+  homeAssistantNoEntities: 'No entities configured. Add NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES or use the custom service call below.',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -1104,6 +1108,7 @@ const zhTW: Translations = {
   homeAssistantToggleOn: '已開啟。',
   homeAssistantToggleOff: '已關閉。',
   homeAssistantToggleError: '操作失敗。',
+  homeAssistantToggleUnsupported: '此裝置不支援快速開關控制。',
   homeAssistantLastChanged: '最後更新',
   homeAssistantCustomTitle: '自訂服務呼叫',
   homeAssistantCustomDescription: '輸入 domain.service 與 JSON 載荷，例如：light.turn_on，{"entity_id": "light.living_room"}',
@@ -1112,6 +1117,7 @@ const zhTW: Translations = {
   homeAssistantCustomSuccess: '已送出服務呼叫。',
   homeAssistantCustomError: '服務呼叫失敗。',
   homeAssistantSendService: '送出',
+  homeAssistantNoEntities: '尚未設定常用實體。可在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 環境變數中加入 entity_id，或直接使用下方自訂服務控制裝置。',
   
   // Admin
   adminPanel: '管理面板',
@@ -1650,6 +1656,7 @@ const zh: Translations = {
   homeAssistantToggleOn: '已开启。',
   homeAssistantToggleOff: '已关闭。',
   homeAssistantToggleError: '执行失败。',
+  homeAssistantToggleUnsupported: '此设备不支持快速开关。',
   homeAssistantLastChanged: '最后更新',
   homeAssistantCustomTitle: '自定义服务调用',
   homeAssistantCustomDescription: '输入 domain.service 与 JSON 负载，例如：light.turn_on，{"entity_id": "light.living_room"}',
@@ -1658,6 +1665,7 @@ const zh: Translations = {
   homeAssistantCustomSuccess: '服务调用已发送。',
   homeAssistantCustomError: '服务调用失败。',
   homeAssistantSendService: '发送',
+  homeAssistantNoEntities: '尚未配置常用实体。可以在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 环境变量中添加 entity_id，或直接使用下面的自定义服务调用。',
   
   // Admin
   adminPanel: '管理面板',
@@ -2194,6 +2202,7 @@ const ja: Translations = {
   homeAssistantToggleOn: 'オンにしました。',
   homeAssistantToggleOff: 'オフにしました。',
   homeAssistantToggleError: '操作に失敗しました。',
+  homeAssistantToggleUnsupported: 'このデバイスはここからオン/オフできません。',
   homeAssistantLastChanged: '最終更新',
   homeAssistantCustomTitle: 'カスタムサービス呼び出し',
   homeAssistantCustomDescription: 'domain.service と JSON ペイロードを入力します。例: light.turn_on, {"entity_id": "light.living_room"}',
@@ -2202,6 +2211,7 @@ const ja: Translations = {
   homeAssistantCustomSuccess: 'サービス呼び出しを送信しました。',
   homeAssistantCustomError: 'サービス呼び出しに失敗しました。',
   homeAssistantSendService: '送信',
+  homeAssistantNoEntities: '表示するエンティティが設定されていません。NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES に entity_id を設定するか、下のカスタムサービス呼び出しを使用してください。',
   
   // Admin
   adminPanel: '管理パネル',

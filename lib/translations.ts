@@ -23,6 +23,26 @@ export interface Translations {
   assistantSourceAIUI: string
   assistantSourceFallback: string
   assistantEmptyState: string
+  homeAssistantPanelTitle: string
+  homeAssistantPanelDescription: string
+  homeAssistantStatusLoading: string
+  homeAssistantStatusError: string
+  homeAssistantStatusReady: string
+  homeAssistantRefresh: string
+  homeAssistantUnknown: string
+  homeAssistantTurnOn: string
+  homeAssistantTurnOff: string
+  homeAssistantToggleOn: string
+  homeAssistantToggleOff: string
+  homeAssistantToggleError: string
+  homeAssistantLastChanged: string
+  homeAssistantCustomTitle: string
+  homeAssistantCustomDescription: string
+  homeAssistantCustomEntityRequired: string
+  homeAssistantCustomFormatError: string
+  homeAssistantCustomSuccess: string
+  homeAssistantCustomError: string
+  homeAssistantSendService: string
   householdSettings: string
   
   // Admin
@@ -536,6 +556,26 @@ const en: Translations = {
   assistantSourceAIUI: 'Answered by AIUI',
   assistantSourceFallback: 'Answered by fallback AI',
   assistantEmptyState: 'No conversations yet. Try asking about inventory counts, weather, or anything else.',
+  homeAssistantPanelTitle: 'Home Assistant Control',
+  homeAssistantPanelDescription: 'View and control your smart home entities directly from Smart Warehouse.',
+  homeAssistantStatusLoading: 'Connecting to Home Assistant…',
+  homeAssistantStatusError: 'Unable to reach Home Assistant',
+  homeAssistantStatusReady: 'Connected',
+  homeAssistantRefresh: 'Refresh',
+  homeAssistantUnknown: 'Unknown',
+  homeAssistantTurnOn: 'Turn On',
+  homeAssistantTurnOff: 'Turn Off',
+  homeAssistantToggleOn: 'Turned on.',
+  homeAssistantToggleOff: 'Turned off.',
+  homeAssistantToggleError: 'Failed to trigger action.',
+  homeAssistantLastChanged: 'Last changed',
+  homeAssistantCustomTitle: 'Custom service call',
+  homeAssistantCustomDescription: 'Enter a domain.service and JSON payload, e.g. light.turn_on, {"entity_id": "light.living_room"}',
+  homeAssistantCustomEntityRequired: 'Entity ID required.',
+  homeAssistantCustomFormatError: 'Use domain.service format, e.g. light.turn_on',
+  homeAssistantCustomSuccess: 'Service call sent.',
+  homeAssistantCustomError: 'Failed to call service.',
+  homeAssistantSendService: 'Send',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -1052,6 +1092,26 @@ const zhTW: Translations = {
   assistantSourceAIUI: '由 AIUI 回答',
   assistantSourceFallback: '由備援 AI 回答',
   assistantEmptyState: '目前尚無對話。試著詢問庫存、天氣或其他問題。',
+  homeAssistantPanelTitle: 'Home Assistant 控制',
+  homeAssistantPanelDescription: '直接在 Smart Warehouse 檢視與控制智慧家庭裝置。',
+  homeAssistantStatusLoading: '正在連線 Home Assistant…',
+  homeAssistantStatusError: '無法連線到 Home Assistant',
+  homeAssistantStatusReady: '連線正常',
+  homeAssistantRefresh: '重新整理',
+  homeAssistantUnknown: '未知',
+  homeAssistantTurnOn: '開啟',
+  homeAssistantTurnOff: '關閉',
+  homeAssistantToggleOn: '已開啟。',
+  homeAssistantToggleOff: '已關閉。',
+  homeAssistantToggleError: '操作失敗。',
+  homeAssistantLastChanged: '最後更新',
+  homeAssistantCustomTitle: '自訂服務呼叫',
+  homeAssistantCustomDescription: '輸入 domain.service 與 JSON 載荷，例如：light.turn_on，{"entity_id": "light.living_room"}',
+  homeAssistantCustomEntityRequired: '需填寫實體 ID。',
+  homeAssistantCustomFormatError: '請使用 domain.service 格式，例如 light.turn_on',
+  homeAssistantCustomSuccess: '已送出服務呼叫。',
+  homeAssistantCustomError: '服務呼叫失敗。',
+  homeAssistantSendService: '送出',
   
   // Admin
   adminPanel: '管理面板',
@@ -1578,6 +1638,26 @@ const zh: Translations = {
   assistantSourceAIUI: '由 AIUI 回答',
   assistantSourceFallback: '由备用 AI 回答',
   assistantEmptyState: '目前还没有对话。试着询问库存、天气或其他问题。',
+  homeAssistantPanelTitle: 'Home Assistant 控制',
+  homeAssistantPanelDescription: '在 Smart Warehouse 中查看和控制智能家居实体。',
+  homeAssistantStatusLoading: '正在连接 Home Assistant…',
+  homeAssistantStatusError: '无法连接到 Home Assistant',
+  homeAssistantStatusReady: '连接正常',
+  homeAssistantRefresh: '刷新',
+  homeAssistantUnknown: '未知',
+  homeAssistantTurnOn: '开启',
+  homeAssistantTurnOff: '关闭',
+  homeAssistantToggleOn: '已开启。',
+  homeAssistantToggleOff: '已关闭。',
+  homeAssistantToggleError: '执行失败。',
+  homeAssistantLastChanged: '最后更新',
+  homeAssistantCustomTitle: '自定义服务调用',
+  homeAssistantCustomDescription: '输入 domain.service 与 JSON 负载，例如：light.turn_on，{"entity_id": "light.living_room"}',
+  homeAssistantCustomEntityRequired: '需要填写实体 ID。',
+  homeAssistantCustomFormatError: '请使用 domain.service 格式，例如 light.turn_on',
+  homeAssistantCustomSuccess: '服务调用已发送。',
+  homeAssistantCustomError: '服务调用失败。',
+  homeAssistantSendService: '发送',
   
   // Admin
   adminPanel: '管理面板',
@@ -2102,6 +2182,26 @@ const ja: Translations = {
   assistantSourceAIUI: 'AIUI による回答',
   assistantSourceFallback: '代替 AI による回答',
   assistantEmptyState: 'まだ会話がありません。在庫数や天気など、気になることを聞いてみましょう。',
+  homeAssistantPanelTitle: 'Home Assistant 制御',
+  homeAssistantPanelDescription: 'Smart Warehouse からスマートホームのエンティティを表示・操作します。',
+  homeAssistantStatusLoading: 'Home Assistant に接続中…',
+  homeAssistantStatusError: 'Home Assistant に接続できません',
+  homeAssistantStatusReady: '接続中',
+  homeAssistantRefresh: '更新',
+  homeAssistantUnknown: '不明',
+  homeAssistantTurnOn: 'オン',
+  homeAssistantTurnOff: 'オフ',
+  homeAssistantToggleOn: 'オンにしました。',
+  homeAssistantToggleOff: 'オフにしました。',
+  homeAssistantToggleError: '操作に失敗しました。',
+  homeAssistantLastChanged: '最終更新',
+  homeAssistantCustomTitle: 'カスタムサービス呼び出し',
+  homeAssistantCustomDescription: 'domain.service と JSON ペイロードを入力します。例: light.turn_on, {"entity_id": "light.living_room"}',
+  homeAssistantCustomEntityRequired: 'エンティティ ID が必要です。',
+  homeAssistantCustomFormatError: 'domain.service 形式（例: light.turn_on）で入力してください',
+  homeAssistantCustomSuccess: 'サービス呼び出しを送信しました。',
+  homeAssistantCustomError: 'サービス呼び出しに失敗しました。',
+  homeAssistantSendService: '送信',
   
   // Admin
   adminPanel: '管理パネル',

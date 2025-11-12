@@ -4,6 +4,29 @@ import { transcribeAudioFormData } from '@/lib/speech-to-text'
 
 export const dynamic = 'force-dynamic'
 
+function normalizeLanguageCode(language?: string): string | undefined {
+  if (!language) return undefined
+  const lower = language.toLowerCase()
+
+  if (lower.startsWith('zh')) {
+    return 'zh'
+  }
+  if (lower.startsWith('ja')) {
+    return 'ja'
+  }
+  if (lower.startsWith('en')) {
+    return 'en'
+  }
+  if (lower.startsWith('es')) {
+    return 'es'
+  }
+  if (lower.startsWith('fr')) {
+    return 'fr'
+  }
+
+  return undefined
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -14,11 +37,13 @@ export async function POST(request: NextRequest) {
       history?: Array<{ role: 'user' | 'assistant'; content: string }>
     }
 
+    const normalizedLanguage = normalizeLanguageCode(language)
+
     let prompt = typeof query === 'string' ? query.trim() : ''
 
     if (!prompt && typeof audioBase64 === 'string' && audioBase64.length > 0) {
       try {
-        const transcript = await transcribeAudioFormData(audioBase64, language)
+        const transcript = await transcribeAudioFormData(audioBase64, normalizedLanguage)
         if (transcript) {
           prompt = transcript.trim()
         }
@@ -43,7 +68,7 @@ export async function POST(request: NextRequest) {
         )
       : []
 
-    const aiResponse = await queryAIUIAgent(prompt, language, conversationHistory)
+    const aiResponse = await queryAIUIAgent(prompt, language || normalizedLanguage, conversationHistory)
 
     if (!aiResponse) {
       return NextResponse.json(

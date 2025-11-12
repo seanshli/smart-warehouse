@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { getOpenAI } from './ai'
 
 const AIUI_AGENT_ENDPOINT = 'https://openai.xfyun.cn/v2/aiui'
@@ -119,9 +120,17 @@ async function callOpenAI(query: string, history: Array<{ role: 'user' | 'assist
 
   try {
     const openai = getOpenAI()
-    const messages = [
-      { role: 'system', content: 'You are a helpful household inventory assistant. Answer clearly and concisely.' },
-      ...history.map((item) => ({ role: item.role, content: item.content })),
+    const historyMessages: ChatCompletionMessageParam[] = history.map((item) => ({
+      role: item.role,
+      content: item.content,
+    }))
+
+    const messages: ChatCompletionMessageParam[] = [
+      {
+        role: 'system',
+        content: 'You are a helpful household inventory assistant. Answer clearly and concisely.',
+      },
+      ...historyMessages,
       { role: 'user', content: query },
     ]
 

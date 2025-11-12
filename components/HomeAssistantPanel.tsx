@@ -201,7 +201,7 @@ export default function HomeAssistantPanel() {
                     </div>
 
                     <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {state?.state ?? t('homeAssistantUnknown') || '未知'}
+                      {state?.state ?? (t('homeAssistantUnknown') || '未知')}
                     </div>
 
                     {state?.attributes?.friendly_name && (

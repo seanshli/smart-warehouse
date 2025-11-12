@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         )
       : []
 
-    const aiResponse = await queryAIUIAgent(prompt, language || normalizedLanguage, conversationHistory)
+    const aiResponse = await queryAIUIAgent(prompt, normalizedLanguage, conversationHistory)
 
     if (!aiResponse) {
       return NextResponse.json(

@@ -75,6 +75,17 @@ async function callAIUI(query: string, language?: string): Promise<AIUIAgentResu
 
     const result = await response.json()
 
+    if (typeof result !== 'object' || result === null) {
+      console.warn('AIUI chat returned unexpected payload:', result)
+      return null
+    }
+
+    const statusCode: number | undefined = result.code ?? result.rc ?? result.status
+    if (statusCode && statusCode !== 0) {
+      console.warn('AIUI chat returned non-zero status:', statusCode, result)
+      return null
+    }
+
     // AIUI responses often contain nested result arrays; try to extract the best candidate
     let answer = ''
     if (result?.data?.answer) {

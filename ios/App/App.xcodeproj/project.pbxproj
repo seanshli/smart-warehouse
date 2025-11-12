@@ -130,6 +130,7 @@
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
 				B1A31BC525AA4C049AAE27A1 /* Embed IFly Frameworks */,
+				B1A31BC625AA4C049AAE27A1 /* Strip Unsupported Framework Architectures */,
 			);
 			buildRules = (
 			);
@@ -224,6 +225,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-App/Pods-App-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B1A31BC625AA4C049AAE27A1 /* Strip Unsupported Framework Architectures */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Strip Unsupported Framework Architectures";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ]; then\n  FRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\n  if [ -d \"$FRAMEWORKS_DIR\" ]; then\n    for FRAMEWORK in IFlyAIUI_Dynamic iflyAIUI; do\n      BINARY_PATH=\"$FRAMEWORKS_DIR/${FRAMEWORK}.framework/${FRAMEWORK}\"\n      if [ -f \"$BINARY_PATH\" ]; then\n        lipo -remove x86_64 \"$BINARY_PATH\" -o \"$BINARY_PATH\" 2>/dev/null || true\n        if command -v dsymutil >/dev/null 2>&1; then\n          mkdir -p \"${DWARF_DSYM_FOLDER_PATH}\"\n          dsymutil \"$BINARY_PATH\" -o \"${DWARF_DSYM_FOLDER_PATH}/${FRAMEWORK}.framework.dSYM\" >/dev/null 2>&1 || true\n        fi\n      fi\n    done\n  fi\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -377,14 +393,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 17;
+                CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = M358UZHL82;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Smart Warehouse";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0.0;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/AIUI",
+				);
+				MARKETING_VERSION = 1.0.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = com.smartwarehouse.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -402,14 +422,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 17;
+                CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = M358UZHL82;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Smart Warehouse";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0.0;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/AIUI",
+				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smartwarehouse.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

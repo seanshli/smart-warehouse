@@ -40,11 +40,49 @@ function getIFLYTEKAuthHeader(): string {
   return `Basic ${authString}`
 }
 
+function detectAudioFormat(audioBase64: string): { format: string; encoding: string } {
+  let format = 'audio/L16;rate=16000'
+  let encoding = 'raw'
+
+  try {
+    if (audioBase64.startsWith('data:')) {
+      const header = audioBase64.slice(5, audioBase64.indexOf(';'))
+      const normalized = header.toLowerCase()
+
+      if (normalized.includes('webm')) {
+        // Browser MediaRecorder default
+        format = 'audio/webm;codecs=opus'
+        encoding = 'opus'
+      } else if (normalized.includes('ogg')) {
+        format = 'audio/ogg;codecs=opus'
+        encoding = 'opus'
+      } else if (normalized.includes('mp3') || normalized.includes('mpeg')) {
+        format = 'audio/mpeg'
+        encoding = 'mp3'
+      } else if (normalized.includes('wav') || normalized.includes('x-wav')) {
+        format = 'audio/wav'
+        encoding = 'wav'
+      } else if (normalized.includes('m4a') || normalized.includes('mp4')) {
+        format = 'audio/mp4'
+        encoding = 'mp4'
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to detect audio format, falling back to PCM16:', error)
+  }
+
+  return { format, encoding }
+}
+
 /**
  * Generate X-Param for iFLYTEK API
  * Note: X-Param should NOT include the audio data in the base64 string
  */
-function generateIFLYTEKParam(language: string = 'zh_cn'): string {
+function generateIFLYTEKParam(
+  language: string = 'zh_cn',
+  format?: string,
+  encoding?: string
+): string {
   const param = {
     common: {
       app_id: IFLYTEK_CONFIG.APP_KEY,
@@ -57,8 +95,8 @@ function generateIFLYTEKParam(language: string = 'zh_cn'): string {
     },
     data: {
       status: 2, // 2 = last chunk, 1 = middle chunk, 0 = first chunk
-      format: 'audio/L16;rate=16000', // audio format
-      encoding: 'raw', // or 'opus', 'webm', etc.
+      format: format || 'audio/L16;rate=16000', // audio format
+      encoding: encoding || 'raw', // or 'opus', 'webm', etc.
       // audio field is NOT included in X-Param, it's sent in the request body
     },
   }
@@ -95,9 +133,11 @@ async function transcribeWithIFLYTEK(
     }
     const iflytekLang = language ? languageMap[language] || 'zh_cn' : 'zh_cn'
 
+    const { format: detectedFormat, encoding: detectedEncoding } = detectAudioFormat(audioBase64)
+
     // Generate X-Param and X-CurTime
     const curTime = Math.floor(Date.now() / 1000).toString()
-    const xParam = generateIFLYTEKParam(iflytekLang)
+    const xParam = generateIFLYTEKParam(iflytekLang, detectedFormat, detectedEncoding)
     
     // Generate X-CheckSum for authentication
     // Format: MD5(APP_KEY + APP_SECRET + X-CurTime + X-Param)
@@ -105,11 +145,6 @@ async function transcribeWithIFLYTEK(
       .createHash('md5')
       .update(IFLYTEK_CONFIG.APP_KEY + IFLYTEK_CONFIG.APP_SECRET + curTime + xParam)
       .digest('hex')
-
-    // Convert audio to proper format for iFLYTEK
-    // iFLYTEK typically expects PCM16, 16kHz, mono
-    // For now, we'll send the audio as-is and let iFLYTEK handle conversion
-    const audioBuffer = Buffer.from(base64Data, 'base64')
 
     // Use iFLYTEK REST API for transcription
     // Note: iFLYTEK also supports WebSocket for real-time, but REST is simpler for our use case
@@ -125,8 +160,8 @@ async function transcribeWithIFLYTEK(
       body: JSON.stringify({
         data: {
           status: 2, // last chunk
-          format: 'audio/L16;rate=16000', // iFLYTEK expects PCM16, 16kHz
-          encoding: 'raw',
+          format: detectedFormat,
+          encoding: detectedEncoding,
           audio: base64Data,
         },
       }),

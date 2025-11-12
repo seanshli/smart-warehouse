@@ -11,6 +11,18 @@ export interface Translations {
   items: string
   allItems: string
   duplicates: string
+  assistant: string
+  assistantDescription: string
+  assistantPlaceholder: string
+  assistantSend: string
+  assistantVoiceHint: string
+  assistantVoiceReady: string
+  assistantSendVoice: string
+  assistantProcessing: string
+  assistantNoResponse: string
+  assistantSourceAIUI: string
+  assistantSourceFallback: string
+  assistantEmptyState: string
   householdSettings: string
   
   // Admin
@@ -512,6 +524,18 @@ const en: Translations = {
   items: 'Items',
   allItems: 'All Items',
   duplicates: 'Duplicates',
+  assistant: 'Assistant',
+  assistantDescription: 'Ask the AIUI voice agent anything about your household or the world.',
+  assistantPlaceholder: 'Ask a question...',
+  assistantSend: 'Send',
+  assistantVoiceHint: 'Prefer voice? Record a question below and send it to the AIUI agent.',
+  assistantVoiceReady: 'Voice message ready. Press send to submit.',
+  assistantSendVoice: 'Send voice question',
+  assistantProcessing: 'Processing...',
+  assistantNoResponse: 'No response received. Please try again.',
+  assistantSourceAIUI: 'Answered by AIUI',
+  assistantSourceFallback: 'Answered by fallback AI',
+  assistantEmptyState: 'No conversations yet. Try asking about inventory counts, weather, or anything else.',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -1016,6 +1040,18 @@ const zhTW: Translations = {
   items: '物品',
   allItems: '所有物品',
   duplicates: '重複項目',
+  assistant: '語音助理',
+  assistantDescription: '向 AIUI 語音助手提問，瞭解家庭狀況或其他資訊。',
+  assistantPlaceholder: '請輸入問題...',
+  assistantSend: '送出',
+  assistantVoiceHint: '想使用語音嗎？在下方錄製問題並傳送給 AIUI 助理。',
+  assistantVoiceReady: '語音訊息已就緒，按送出提交。',
+  assistantSendVoice: '送出語音問題',
+  assistantProcessing: '思考中...',
+  assistantNoResponse: '尚未取得回應，請再試一次。',
+  assistantSourceAIUI: '由 AIUI 回答',
+  assistantSourceFallback: '由備援 AI 回答',
+  assistantEmptyState: '目前尚無對話。試著詢問庫存、天氣或其他問題。',
   
   // Admin
   adminPanel: '管理面板',
@@ -1530,6 +1566,18 @@ const zh: Translations = {
   items: '物品',
   allItems: '所有物品',
   duplicates: '重复项目',
+  assistant: '语音助手',
+  assistantDescription: '向 AIUI 语音助手提问，了解家庭状况或其他信息。',
+  assistantPlaceholder: '请输入问题...',
+  assistantSend: '发送',
+  assistantVoiceHint: '想使用语音吗？在下方录制问题并发送给 AIUI 助手。',
+  assistantVoiceReady: '语音消息已就绪，点击发送提交。',
+  assistantSendVoice: '发送语音问题',
+  assistantProcessing: '思考中...',
+  assistantNoResponse: '暂未收到响应，请再试一次。',
+  assistantSourceAIUI: '由 AIUI 回答',
+  assistantSourceFallback: '由备用 AI 回答',
+  assistantEmptyState: '目前还没有对话。试着询问库存、天气或其他问题。',
   
   // Admin
   adminPanel: '管理面板',
@@ -2042,6 +2090,18 @@ const ja: Translations = {
   items: 'アイテム',
   allItems: 'すべてのアイテム',
   duplicates: '重複アイテム',
+  assistant: 'ボイスアシスタント',
+  assistantDescription: 'AIUI ボイスエージェントに質問して、家庭状況やさまざまな情報を取得しましょう。',
+  assistantPlaceholder: '質問を入力してください...',
+  assistantSend: '送信',
+  assistantVoiceHint: '音声で質問しますか？下で録音して AIUI エージェントに送信できます。',
+  assistantVoiceReady: '音声メッセージの準備ができました。送信を押してください。',
+  assistantSendVoice: '音声質問を送信',
+  assistantProcessing: '処理中...',
+  assistantNoResponse: '応答がありませんでした。もう一度お試しください。',
+  assistantSourceAIUI: 'AIUI による回答',
+  assistantSourceFallback: '代替 AI による回答',
+  assistantEmptyState: 'まだ会話がありません。在庫数や天気など、気になることを聞いてみましょう。',
   
   // Admin
   adminPanel: '管理パネル',

@@ -37,6 +37,26 @@ export interface Translations {
   homeAssistantToggleError: string
   homeAssistantToggleUnsupported: string
   homeAssistantLastChanged: string
+  homeAssistantClimateSection: string
+  homeAssistantHumidifierSection: string
+  homeAssistantCurrentTemperature: string
+  homeAssistantTargetTemperature: string
+  homeAssistantCurrentHumidity: string
+  homeAssistantTargetHumidity: string
+  homeAssistantModes: string
+  homeAssistantTemperatureUpdated: string
+  homeAssistantHumidityUpdated: string
+  homeAssistantModeUpdated: string
+  homeAssistantModeHigh: string
+  homeAssistantModeMedium: string
+  homeAssistantModeLow: string
+  homeAssistantModeOffLabel: string
+  homeAssistantModeHeat: string
+  homeAssistantModeCool: string
+  homeAssistantModeAuto: string
+  homeAssistantModeDry: string
+  homeAssistantModeFan: string
+  homeAssistantModeOff: string
   homeAssistantCustomTitle: string
   homeAssistantCustomDescription: string
   homeAssistantCustomEntityRequired: string
@@ -572,6 +592,26 @@ const en: Translations = {
   homeAssistantToggleError: 'Failed to trigger action.',
   homeAssistantToggleUnsupported: 'This device cannot be toggled from here.',
   homeAssistantLastChanged: 'Last changed',
+  homeAssistantClimateSection: 'Humidity Control',
+  homeAssistantHumidifierSection: 'Air Circulation',
+  homeAssistantCurrentTemperature: 'Current temperature',
+  homeAssistantTargetTemperature: 'Target temperature',
+  homeAssistantCurrentHumidity: 'Filter remaining (days)',
+  homeAssistantTargetHumidity: 'Target humidity',
+  homeAssistantModes: 'Modes',
+  homeAssistantTemperatureUpdated: 'Temperature updated.',
+  homeAssistantHumidityUpdated: 'Humidity updated.',
+  homeAssistantModeUpdated: 'Mode updated.',
+  homeAssistantModeHigh: 'High',
+  homeAssistantModeMedium: 'Medium',
+  homeAssistantModeLow: 'Low',
+  homeAssistantModeOffLabel: 'Off',
+  homeAssistantModeHeat: 'Heat',
+  homeAssistantModeCool: 'Cool',
+  homeAssistantModeAuto: 'Auto',
+  homeAssistantModeDry: 'Dry',
+  homeAssistantModeFan: 'Fan',
+  homeAssistantModeOff: 'Off',
   homeAssistantCustomTitle: 'Custom service call',
   homeAssistantCustomDescription: 'Enter a domain.service and JSON payload, e.g. light.turn_on, {"entity_id": "light.living_room"}',
   homeAssistantCustomEntityRequired: 'Entity ID required.',
@@ -1110,6 +1150,26 @@ const zhTW: Translations = {
   homeAssistantToggleError: '操作失敗。',
   homeAssistantToggleUnsupported: '此裝置不支援快速開關控制。',
   homeAssistantLastChanged: '最後更新',
+  homeAssistantClimateSection: '濕度控制',
+  homeAssistantHumidifierSection: '空氣循環',
+  homeAssistantCurrentTemperature: '目前溫度',
+  homeAssistantTargetTemperature: '目標溫度',
+  homeAssistantCurrentHumidity: '濾網剩餘（天）',
+  homeAssistantTargetHumidity: '目標濕度',
+  homeAssistantModes: '模式',
+  homeAssistantTemperatureUpdated: '溫度已更新。',
+  homeAssistantHumidityUpdated: '濕度已更新。',
+  homeAssistantModeUpdated: '模式已更新。',
+  homeAssistantModeHigh: '高',
+  homeAssistantModeMedium: '中',
+  homeAssistantModeLow: '低',
+  homeAssistantModeOffLabel: '關閉',
+  homeAssistantModeHeat: '暖氣',
+  homeAssistantModeCool: '冷氣',
+  homeAssistantModeAuto: '自動',
+  homeAssistantModeDry: '除濕',
+  homeAssistantModeFan: '送風',
+  homeAssistantModeOff: '關閉',
   homeAssistantCustomTitle: '自訂服務呼叫',
   homeAssistantCustomDescription: '輸入 domain.service 與 JSON 載荷，例如：light.turn_on，{"entity_id": "light.living_room"}',
   homeAssistantCustomEntityRequired: '需填寫實體 ID。',
@@ -1658,6 +1718,26 @@ const zh: Translations = {
   homeAssistantToggleError: '执行失败。',
   homeAssistantToggleUnsupported: '此设备不支持快速开关。',
   homeAssistantLastChanged: '最后更新',
+  homeAssistantClimateSection: '湿度控制',
+  homeAssistantHumidifierSection: '空气循环',
+  homeAssistantCurrentTemperature: '当前温度',
+  homeAssistantTargetTemperature: '目标温度',
+  homeAssistantCurrentHumidity: '滤网剩余（天）',
+  homeAssistantTargetHumidity: '目标湿度',
+  homeAssistantModes: '模式',
+  homeAssistantTemperatureUpdated: '温度已更新。',
+  homeAssistantHumidityUpdated: '湿度已更新。',
+  homeAssistantModeUpdated: '模式已更新。',
+  homeAssistantModeHigh: '高',
+  homeAssistantModeMedium: '中',
+  homeAssistantModeLow: '低',
+  homeAssistantModeOffLabel: '关闭',
+  homeAssistantModeHeat: '制热',
+  homeAssistantModeCool: '制冷',
+  homeAssistantModeAuto: '自动',
+  homeAssistantModeDry: '除湿',
+  homeAssistantModeFan: '送风',
+  homeAssistantModeOff: '关闭',
   homeAssistantCustomTitle: '自定义服务调用',
   homeAssistantCustomDescription: '输入 domain.service 与 JSON 负载，例如：light.turn_on，{"entity_id": "light.living_room"}',
   homeAssistantCustomEntityRequired: '需要填写实体 ID。',
@@ -2204,6 +2284,26 @@ const ja: Translations = {
   homeAssistantToggleError: '操作に失敗しました。',
   homeAssistantToggleUnsupported: 'このデバイスはここからオン/オフできません。',
   homeAssistantLastChanged: '最終更新',
+  homeAssistantClimateSection: '湿度コントロール',
+  homeAssistantHumidifierSection: '空気循環',
+  homeAssistantCurrentTemperature: '現在の温度',
+  homeAssistantTargetTemperature: '目標温度',
+  homeAssistantCurrentHumidity: 'フィルター残り（日）',
+  homeAssistantTargetHumidity: '目標湿度',
+  homeAssistantModes: 'モード',
+  homeAssistantTemperatureUpdated: '温度を更新しました。',
+  homeAssistantHumidityUpdated: '湿度を更新しました。',
+  homeAssistantModeUpdated: 'モードを更新しました。',
+  homeAssistantModeHigh: '高',
+  homeAssistantModeMedium: '中',
+  homeAssistantModeLow: '低',
+  homeAssistantModeOffLabel: 'オフ',
+  homeAssistantModeHeat: '暖房',
+  homeAssistantModeCool: '冷房',
+  homeAssistantModeAuto: '自動',
+  homeAssistantModeDry: '除湿',
+  homeAssistantModeFan: '送風',
+  homeAssistantModeOff: 'オフ',
   homeAssistantCustomTitle: 'カスタムサービス呼び出し',
   homeAssistantCustomDescription: 'domain.service と JSON ペイロードを入力します。例: light.turn_on, {"entity_id": "light.living_room"}',
   homeAssistantCustomEntityRequired: 'エンティティ ID が必要です。',

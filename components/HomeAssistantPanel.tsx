@@ -1,15 +1,15 @@
 'use client'
 
 import useSWR from 'swr'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowPathIcon,
   LightBulbIcon,
-  PowerIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+import { FanSpeedOptions, SegmentedControl } from './HomeAssistantSegments'
 
 type HomeAssistantState = {
   entity_id: string
@@ -58,6 +58,9 @@ export default function HomeAssistantPanel() {
   const { t, currentLanguage } = useLanguage()
   const [customEntityId, setCustomEntityId] = useState('')
   const [customPayload, setCustomPayload] = useState('{"entity_id": ""}')
+  const [liveStates, setLiveStates] = useState<Map<string, HomeAssistantState>>(
+    new Map()
+  )
 
   const queryParam =
     favoriteEntities.length > 0
@@ -72,15 +75,61 @@ export default function HomeAssistantPanel() {
     refreshInterval: 30_000,
   })
 
-  const statesByEntity = useMemo(() => {
-    const map = new Map<string, HomeAssistantState>()
+  useEffect(() => {
     if (data?.states) {
-      for (const state of data.states) {
-        map.set(state.entity_id, state)
+      setLiveStates((prev) => {
+        const map = new Map(prev)
+        data.states.forEach((state) => {
+          map.set(state.entity_id, state)
+        })
+        return map
+      })
+    }
+  }, [data])
+
+  const entityIdsForStream = useMemo(() => {
+    const ids = new Set<string>()
+    if (favoriteEntities.length > 0) {
+      favoriteEntities.forEach((entity) => ids.add(entity.entity_id))
+    }
+    MEDOLE_ENTITY_ORDER.forEach((id) => ids.add(id))
+    return Array.from(ids)
+  }, [])
+
+  useEffect(() => {
+    if (entityIdsForStream.length === 0) return
+
+    const params = new URLSearchParams({
+      entities: entityIdsForStream.join(','),
+    })
+    const source = new EventSource(`/api/homeassistant/events?${params}`)
+
+    source.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data)
+        if (payload?.entity_id && payload?.new_state) {
+          setLiveStates((prev) => {
+            const map = new Map(prev)
+            map.set(payload.entity_id, payload.new_state)
+            return map
+          })
+        }
+      } catch (error) {
+        console.error('Failed to parse Home Assistant SSE payload:', error)
       }
     }
-    return map
-  }, [data])
+
+    source.onerror = (error) => {
+      console.error('Home Assistant SSE error:', error)
+      source.close()
+    }
+
+    return () => {
+      source.close()
+    }
+  }, [entityIdsForStream])
+
+  const statesByEntity = liveStates
 
   const derivedEntities = useMemo<FavoriteEntityConfig[]>(() => {
     if (!data?.states || data.states.length === 0) {
@@ -196,6 +245,13 @@ export default function HomeAssistantPanel() {
             </button>
           </div>
 
+          <MedoleDehumidifierCard
+            states={statesByEntity}
+            onServiceSuccess={mutate}
+            t={t}
+            currentLanguage={currentLanguage}
+          />
+
           {displayEntities.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {displayEntities.map((entity) => {
@@ -231,23 +287,12 @@ export default function HomeAssistantPanel() {
                     )}
 
                     {isToggleable ? (
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleToggle(entity.entity_id, true)}
-                          className="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700"
-                        >
-                          <PowerIcon className="h-4 w-4 mr-1" />
-                          {t('homeAssistantTurnOn') || '開啟'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggle(entity.entity_id, false)}
-                          className="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          {t('homeAssistantTurnOff') || '關閉'}
-                        </button>
-                      </div>
+                      <ToggleButtons
+                        entityId={entity.entity_id}
+                        state={state}
+                        t={t}
+                        onToggle={handleToggle}
+                      />
                     ) : (
                       <div className="text-xs text-gray-400">
                         {t('homeAssistantToggleUnsupported') ||
@@ -309,5 +354,350 @@ export default function HomeAssistantPanel() {
       </div>
     </div>
   )
+}
+
+const MEDOLE_ENTITIES = {
+  power: 'select.medole_erv_d9a344_pai_feng_ji_feng_su',
+  airRecycle: 'switch.medole_dehumidifier_d9a344_huan_qi_yun_zuo_xxx',
+  humidity1: 'fan.medole_dehumidifier_d9a344_shi_du_kong_zhi_qi_1',
+  humidity2: 'fan.medole_dehumidifier_d9a344_shi_du_kong_zhi_qi_2',
+  fanSpeed: 'select.delta_erv_d9a344_feng_liang_mo_shi',
+  filterDays: 'number.medole_dehumidifier_d9a344_lu_xin_geng_huan_shi_jian_tian',
+  setHumidity: 'select.medole_dehumidifier_d9a344_set_humidity',
+}
+
+const MEDOLE_ENTITY_ORDER = Object.values(MEDOLE_ENTITIES)
+
+type ToggleButtonsProps = {
+  entityId: string
+  state?: HomeAssistantState
+  t: (key: keyof import('@/lib/translations').Translations) => string
+  onToggle: (entity: string, turnOn: boolean) => Promise<void>
+}
+
+function ToggleButtons({ entityId, state, t, onToggle }: ToggleButtonsProps) {
+  const isOn = state?.state !== 'off'
+
+  return (
+    <div className="flex items-center space-x-2">
+      <button
+        type="button"
+        onClick={() => onToggle(entityId, true)}
+        className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium ${
+          isOn
+            ? 'bg-primary-600 text-white hover:bg-primary-700'
+            : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+        }`}
+      >
+        {t('homeAssistantTurnOn') || '開啟'}
+      </button>
+      <button
+        type="button"
+        onClick={() => onToggle(entityId, false)}
+        className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium ${
+          !isOn
+            ? 'bg-primary-200 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200'
+            : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+        }`}
+      >
+        {t('homeAssistantTurnOff') || '關閉'}
+      </button>
+    </div>
+  )
+}
+
+type MedoleCardProps = {
+  states: Map<string, HomeAssistantState>
+  onServiceSuccess: () => void
+  t: (key: keyof import('@/lib/translations').Translations) => string
+  currentLanguage: string
+}
+
+type MedoleFanLevel = 'high' | 'medium' | 'low' | 'off'
+
+const FAN_LEVELS: { key: MedoleFanLevel; label: string; percentage: number }[] =
+  [
+    { key: 'high', label: 'High', percentage: 100 },
+    { key: 'medium', label: 'Medium', percentage: 66 },
+    { key: 'low', label: 'Low', percentage: 33 },
+    { key: 'off', label: 'Off', percentage: 0 },
+  ]
+
+function getFanLevel(state?: HomeAssistantState): MedoleFanLevel {
+  if (!state || state.state === 'off') {
+    return 'off'
+  }
+  const percentage = state.attributes?.percentage ?? 0
+  if (percentage >= 90) return 'high'
+  if (percentage >= 60) return 'medium'
+  if (percentage >= 30) return 'low'
+  return 'off'
+}
+
+function formatRelativeTime(timestamp?: string, locale?: string) {
+  if (!timestamp) return ''
+  try {
+    const diffMs = Date.now() - new Date(timestamp).getTime()
+    const diffMinutes = Math.round(diffMs / 60000)
+    if (diffMinutes < 1) {
+      return 'Just now'
+    }
+    if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`
+    }
+    const diffHours = Math.round(diffMinutes / 60)
+    return `${diffHours} hr ago`
+  } catch {
+    return timestamp
+  }
+}
+
+function MedoleDehumidifierCard({
+  states,
+  onServiceSuccess,
+  t,
+  currentLanguage,
+}: MedoleCardProps) {
+  const powerState = states.get(MEDOLE_ENTITIES.power)
+  const airRecycleState = states.get(MEDOLE_ENTITIES.airRecycle)
+  const humidity1State = states.get(MEDOLE_ENTITIES.humidity1)
+  const humidity2State = states.get(MEDOLE_ENTITIES.humidity2)
+  const fanSpeedState = states.get(MEDOLE_ENTITIES.fanSpeed)
+  const filterState = states.get(MEDOLE_ENTITIES.filterDays)
+  const humidityTargetState = states.get(MEDOLE_ENTITIES.setHumidity)
+
+  const selectOptions = powerState?.attributes?.options ?? ['Off', 'On']
+  const fanOptions = fanSpeedState?.attributes?.options ?? []
+  const humidityOptions = humidityTargetState?.attributes?.options ?? []
+
+  const handleSelectOption = async (entityId: string, option: string) => {
+    try {
+      await fetch(
+        `/api/homeassistant/services/select/select_option`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            entity_id: entityId,
+            option,
+          }),
+        }
+      )
+      toast.success(t('homeAssistantModeUpdated') || 'Mode updated.')
+      onServiceSuccess()
+    } catch (error) {
+      console.error('Failed to set select option:', error)
+      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+    }
+  }
+
+  const handleFanLevel = async (
+    entityId: string,
+    level: MedoleFanLevel
+  ) => {
+    try {
+      if (level === 'off') {
+        await fetch(`/api/homeassistant/services/fan/turn_off`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entity_id: entityId }),
+        })
+      } else {
+        const target = FAN_LEVELS.find((option) => option.key === level)
+        await fetch(`/api/homeassistant/services/fan/set_percentage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entity_id: entityId,
+            percentage: target?.percentage ?? 0,
+          }),
+        })
+      }
+      toast.success(t('homeAssistantHumidityUpdated') || 'Updated.')
+      onServiceSuccess()
+    } catch (error) {
+      console.error('Failed to set fan level:', error)
+      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+    }
+  }
+
+  const handleSwitch = async (entityId: string, turnOn: boolean) => {
+    const domain = 'switch'
+    const service = turnOn ? 'turn_on' : 'turn_off'
+    try {
+      await fetch(`/api/homeassistant/services/${domain}/${service}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_id: entityId }),
+      })
+      toast.success(
+        turnOn
+          ? t('homeAssistantToggleOn') || 'Turned on.'
+          : t('homeAssistantToggleOff') || 'Turned off.'
+      )
+      onServiceSuccess()
+    } catch (error) {
+      console.error('Failed to toggle switch:', error)
+      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+    }
+  }
+
+  return (
+    <div className="rounded-3xl bg-gradient-to-br from-sky-100 via-white to-sky-200 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 shadow-md p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {powerState?.attributes?.friendly_name || 'Medole Dehumidifier'}
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {formatRelativeTime(powerState?.last_changed, currentLanguage)}
+          </p>
+        </div>
+        <div className="text-3xl font-bold text-primary-600 dark:text-primary-300">
+          {humidityTargetState?.state || '--'}
+        </div>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 p-4 space-y-4">
+          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+            {t('homeAssistantClimateSection') || 'Humidity Control'}
+          </h4>
+
+          <SegmentedControl
+            label={t('homeAssistantModes') || 'Mode'}
+            options={selectOptions}
+            value={powerState?.state || ''}
+            onSelect={(option) => handleSelectOption(MEDOLE_ENTITIES.power, option)}
+          />
+
+          <SegmentedControl
+            label={t('homeAssistantModes') || 'Mode'}
+            options={humidityOptions}
+            value={humidityTargetState?.state || ''}
+            onSelect={(option) =>
+              handleSelectOption(MEDOLE_ENTITIES.setHumidity, option)
+            }
+          />
+
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              {t('homeAssistantHumidifierSection') || 'Air Recycle'}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                handleSwitch(
+                  MEDOLE_ENTITIES.airRecycle,
+                  airRecycleState?.state !== 'on'
+                )
+              }
+              className={`w-full rounded-full py-2 text-sm font-medium transition ${
+                airRecycleState?.state === 'on'
+                  ? 'bg-primary-500 text-white hover:bg-primary-600'
+                  : 'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-gray-200'
+              }`}
+            >
+              {airRecycleState?.state === 'on'
+                ? t('homeAssistantTurnOff') || '關閉'
+                : t('homeAssistantTurnOn') || '開啟'}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {t('homeAssistantHumidifierSection') || 'Airflow Control'}
+            </h4>
+            <SegmentedControl
+              label={t('homeAssistantModes') || 'Mode'}
+              options={
+                FAN_LEVELS.map((option) =>
+                  t(`homeAssistantMode${capitalize(option.label)}` as any) ||
+                  option.label
+                ) as string[]
+              }
+              value={
+                t(
+                  `homeAssistantMode${capitalize(
+                    getFanLevel(humidity1State)
+                  )}` as any
+                ) || capitalize(getFanLevel(humidity1State))
+              }
+              onSelect={(label) => {
+                const option = FAN_LEVELS.find(
+                  (item) =>
+                    t(`homeAssistantMode${capitalize(item.label)}` as any) ===
+                      label || item.label === label
+                )
+                if (option) {
+                  handleFanLevel(MEDOLE_ENTITIES.humidity1, option.key)
+                }
+              }}
+            />
+            <SegmentedControl
+              label={t('homeAssistantModes') || 'Mode'}
+              options={
+                FAN_LEVELS.map((option) =>
+                  t(`homeAssistantMode${capitalize(option.label)}` as any) ||
+                  option.label
+                ) as string[]
+              }
+              value={
+                t(
+                  `homeAssistantMode${capitalize(
+                    getFanLevel(humidity2State)
+                  )}` as any
+                ) || capitalize(getFanLevel(humidity2State))
+              }
+              onSelect={(label) => {
+                const option = FAN_LEVELS.find(
+                  (item) =>
+                    t(`homeAssistantMode${capitalize(item.label)}` as any) ===
+                      label || item.label === label
+                )
+                if (option) {
+                  handleFanLevel(MEDOLE_ENTITIES.humidity2, option.key)
+                }
+              }}
+            />
+          </div>
+
+          <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {t('homeAssistantModes') || 'Fan Speed'}
+            </h4>
+            <SegmentedControl
+              label={t('homeAssistantModes') || 'Mode'}
+              options={fanOptions}
+              value={fanSpeedState?.state || ''}
+              onSelect={(option) =>
+                handleSelectOption(MEDOLE_ENTITIES.fanSpeed, option)
+              }
+            />
+          </div>
+
+          <div className="rounded-2xl bg-white/60 dark:bg-slate-900/50 p-4">
+            <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              {t('homeAssistantCurrentHumidity') || 'Filter Remaining (days)'}
+            </div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {filterState?.state || '--'}
+            </div>
+            <div className="text-xs text-gray-400">
+              {formatRelativeTime(filterState?.last_changed, currentLanguage)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 

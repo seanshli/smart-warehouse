@@ -9,6 +9,11 @@ const AIUI_CONFIG = {
   APP_SECRET: process.env.IFLYTEK_APP_SECRET || '',
 }
 
+const AIUI_DEVICE_SERIAL =
+  process.env.AIUI_DEVICE_SERIAL ||
+  process.env.NEXT_PUBLIC_AIUI_DEVICE_SERIAL ||
+  'SMARTPAD000037'
+
 type AIUIAgentResult = {
   text: string
   source: 'aiui' | 'openai'
@@ -33,9 +38,10 @@ function buildAIUIHeaders(language?: string) {
 
   const param = {
     scene: 'main',
-    userid: 'smart-warehouse',
+    userid: AIUI_DEVICE_SERIAL,
     language: lang,
     result_level: 'complete',
+    device_id: AIUI_DEVICE_SERIAL,
   }
 
   const xParam = Buffer.from(JSON.stringify(param)).toString('base64')
@@ -64,6 +70,7 @@ async function callAIUI(query: string, language?: string): Promise<AIUIAgentResu
       headers: buildAIUIHeaders(language),
       body: JSON.stringify({
         text: query,
+        device_serial: AIUI_DEVICE_SERIAL,
       }),
     })
 

@@ -27,6 +27,11 @@ const IFLYTEK_CONFIG = {
   TTS_API_URL: 'https://tts-api.xfyun.cn/v2/tts', // Text-to-Speech API
 }
 
+const AIUI_DEVICE_SERIAL =
+  process.env.AIUI_DEVICE_SERIAL ||
+  process.env.NEXT_PUBLIC_AIUI_DEVICE_SERIAL ||
+  'SMARTPAD000037'
+
 /**
  * Get iFLYTEK authentication token
  * iFLYTEK typically requires authentication via AppKey and AppSecret
@@ -86,12 +91,15 @@ function generateIFLYTEKParam(
   const param = {
     common: {
       app_id: IFLYTEK_CONFIG.APP_KEY,
+      device_id: AIUI_DEVICE_SERIAL,
+      uid: AIUI_DEVICE_SERIAL,
     },
     business: {
       language: language, // zh_cn, en_us, etc.
       domain: 'iat', // internet audio transcription
       accent: 'mandarin', // or 'cantonese' for Chinese
       vad_eos: 10000, // end of speech detection timeout
+      serial_no: AIUI_DEVICE_SERIAL,
     },
     data: {
       status: 2, // 2 = last chunk, 1 = middle chunk, 0 = first chunk
@@ -389,6 +397,7 @@ function generateIFLYTEKTTSParam(voice: string, language?: string): string {
     volume: 77,
     text_type: 'text',
     language: getIFLYTEKLanguageCode(language),
+    serial_no: AIUI_DEVICE_SERIAL,
   }
 
   return Buffer.from(JSON.stringify(param)).toString('base64')

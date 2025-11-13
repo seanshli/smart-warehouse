@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { XMarkIcon, PencilIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { Capacitor } from '@capacitor/core'
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner'
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void
@@ -19,8 +21,113 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
   const [manualBarcode, setManualBarcode] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const [isNative, setIsNative] = useState(false)
 
+  // Check if native scanning is available and check permissions
   useEffect(() => {
+    const checkNative = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          // Check camera permission
+          const permission = await BarcodeScanner.checkPermission({ force: false })
+          if (permission.granted) {
+            setIsNative(true)
+          } else {
+            console.log('Camera permission not granted, using web fallback')
+            setIsNative(false)
+          }
+        } catch (err) {
+          console.log('Native barcode scanner not available, using web fallback:', err)
+          setIsNative(false)
+        }
+      } else {
+        setIsNative(false)
+      }
+    }
+    checkNative()
+  }, [])
+
+  // Native barcode scanning
+  useEffect(() => {
+    if (!isNative) return
+
+    let isActive = true
+
+    const startNativeScanning = async () => {
+      try {
+        setIsScanning(true)
+        setError(null)
+
+        // Check permission first
+        const permission = await BarcodeScanner.checkPermission({ force: true })
+        if (!permission.granted) {
+          setError('Camera permission denied. Please allow camera access in settings.')
+          setIsScanning(false)
+          setIsNative(false)
+          return
+        }
+
+        // Prepare the scanner (hide background, show camera)
+        await BarcodeScanner.prepare()
+        await BarcodeScanner.hideBackground()
+
+        // Start scanning - this will resolve when a barcode is detected
+        const result = await BarcodeScanner.startScan()
+
+        if (isActive && result.hasContent && result.content) {
+          console.log('Native barcode detected:', result.content, 'Format:', result.format)
+          onScan(result.content)
+          
+          // Clean up
+          await BarcodeScanner.stopScan()
+          await BarcodeScanner.showBackground()
+        } else if (isActive) {
+          // User cancelled or no content
+          await BarcodeScanner.stopScan()
+          await BarcodeScanner.showBackground()
+          onClose()
+        }
+      } catch (err: any) {
+        if (isActive) {
+          console.error('Native barcode scan error:', err)
+          
+          // Handle permission errors
+          if (err.message?.includes('permission') || err.message?.includes('Permission') || err.message?.includes('denied')) {
+            setError('Camera permission denied. Please allow camera access in settings.')
+          } else if (err.message?.includes('cancel') || err.message?.includes('Cancel') || err.message?.includes('User')) {
+            // User cancelled, just close
+            onClose()
+          } else {
+            setError('Failed to start native barcode scanner. Falling back to web scanner.')
+            setIsNative(false) // Fall back to web scanner
+          }
+          setIsScanning(false)
+          
+          // Clean up
+          try {
+            await BarcodeScanner.stopScan()
+            await BarcodeScanner.showBackground()
+          } catch (cleanupErr) {
+            // Ignore cleanup errors
+          }
+        }
+      }
+    }
+
+    startNativeScanning()
+
+    return () => {
+      isActive = false
+      // Cleanup native scanner
+      BarcodeScanner.stopScan().catch(() => {})
+      BarcodeScanner.showBackground().catch(() => {})
+    }
+  }, [isNative, onScan, onClose])
+
+  // Web-based scanning (QuaggaJS) - fallback for web or if native fails
+  useEffect(() => {
+    if (isNative) return // Skip web scanner if native is available
+
     let quagga: any = null
 
     const startScanning = async () => {
@@ -117,7 +224,7 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
         }
       }
     }
-  }, [onScan])
+  }, [isNative, onScan])
 
   // Handle drag and drop
   const handleDragOver = (e: React.DragEvent) => {

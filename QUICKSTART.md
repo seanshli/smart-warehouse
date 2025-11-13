@@ -32,9 +32,12 @@ Get your Smart Warehouse app running in 5 minutes!
 
 ## 📱 Mobile Usage
 
+- **Native Apps**: Full native iOS and Android apps available
 - **Install as PWA**: Click the install button in your mobile browser
-- **Camera access**: Allow camera permissions for photo capture
-- **Offline support**: Basic functionality works offline
+- **Camera access**: Allow camera permissions for photo capture and barcode scanning
+- **Native Barcode Scanning**: iOS and Android use native libraries for better performance
+- **Voice Assistant**: Use the Assistant tab for voice interactions (iOS/Android)
+- **Home Assistant**: Control smart home devices from the app
 
 ## 🔧 Troubleshooting
 

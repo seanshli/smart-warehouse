@@ -129,6 +129,50 @@
     }
   }
 
+  /* 10" tablet (9.11" viewable) - precise sizing for main tablet */
+  @media (min-width: 800px) and (max-width: 900px) {
+    .tablet-10-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    
+    .tablet-10-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    
+    .tablet-10-modal {
+      max-width: 90%;
+      max-height: 90vh;
+    }
+    
+    .tablet-10-padding {
+      padding: 1.25rem;
+    }
+  }
+
+  /* Vertical orientation fixes for phones */
+  @media (max-width: 767px) and (orientation: portrait) {
+    .mobile-portrait-modal {
+      max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .mobile-portrait-content {
+      max-height: calc(100vh - 8rem);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Ensure modals are scrollable in vertical orientation */
+    .mobile-portrait-scroll {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+  }
+
   /* Prevent pull-to-refresh on mobile */
   body {
     overscroll-behavior: none;

@@ -473,8 +473,8 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 iphone-modal">
+    <div className="fixed inset-0 bg-gray-600 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50 mobile-portrait-scroll">
+      <div className="relative top-4 sm:top-10 md:top-20 mx-auto p-4 sm:p-5 border w-11/12 md:w-3/4 lg:w-1/2 tablet-10:w-2/3 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 iphone-modal mobile-portrait-modal tablet-10-modal">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
             {t('addItem')}
@@ -700,7 +700,7 @@ export default function AddItemModal({ onClose }: AddItemModalProps) {
         )}
 
                {step === 'ai-review' && (
-                 <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                 <div className="space-y-4 max-h-[70vh] overflow-y-auto mobile-portrait-scroll md:max-h-[75vh] tablet-10:max-h-[80vh]">
                    <div className="text-center">
                      <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                        AI Recognition Results

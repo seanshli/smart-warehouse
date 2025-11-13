@@ -42,6 +42,9 @@ module.exports = {
         'android-medium': '411px',
         'android-large': '480px',
         'android-tablet': '800px',
+        // 10" tablet (9.11" viewable) - typically 800-900px width
+        'tablet-10': '800px',
+        'tablet-10-max': '900px',
       },
       spacing: {
         'safe-top': 'env(safe-area-inset-top)',

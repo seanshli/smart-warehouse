@@ -24,11 +24,14 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
   const [isNative, setIsNative] = useState(false)
 
   // Check if native scanning is available and check permissions
+  // Note: Capacitor.isNativePlatform() returns true for both phones and tablets on iOS/Android
+  // This ensures tablets also use native barcode scanning for better performance
   useEffect(() => {
     const checkNative = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
           // Check camera permission
+          // Works for both phones and tablets (iOS/Android)
           const permission = await BarcodeScanner.checkPermission({ force: false })
           if (permission.granted) {
             setIsNative(true)

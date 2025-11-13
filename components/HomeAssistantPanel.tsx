@@ -743,7 +743,7 @@ function MedoleDehumidifierCard({
           </h4>
 
           <SegmentedControl
-            label={t('homeAssistantPower') || 'Power'}
+            label={t('homeAssistantPower' as keyof import('@/lib/translations').Translations) || 'Power'}
             options={selectOptions}
             value={powerState?.state || ''}
             onSelect={(option) =>

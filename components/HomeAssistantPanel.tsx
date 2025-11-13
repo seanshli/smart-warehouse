@@ -1,7 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowPathIcon,
   LightBulbIcon,
@@ -97,6 +97,8 @@ export default function HomeAssistantPanel() {
     return Array.from(ids)
   }, [])
 
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     if (entityIdsForStream.length === 0) return
 
@@ -125,6 +127,16 @@ export default function HomeAssistantPanel() {
               map.set(payload.entity_id, payload.new_state)
               return map
             })
+            // Debounced refresh to ensure all states are in sync
+            // Only refresh if this is a Medole entity to avoid excessive API calls
+            if (MEDOLE_ENTITY_ORDER.includes(payload.entity_id)) {
+              if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current)
+              }
+              refreshTimeoutRef.current = setTimeout(() => {
+                mutate()
+              }, 500) // Wait 500ms after last state change
+            }
           }
         } catch (error) {
           console.error('Failed to parse Home Assistant SSE payload:', error)
@@ -148,11 +160,12 @@ export default function HomeAssistantPanel() {
     return () => {
       stopped = true
       if (reconnectTimeout) clearTimeout(reconnectTimeout)
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
       if (source) {
         source.close()
       }
     }
-  }, [entityIdsForStream])
+  }, [entityIdsForStream, mutate])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -162,7 +175,22 @@ export default function HomeAssistantPanel() {
     return () => clearInterval(interval)
   }, [isStreamLive, mutate])
 
-  const statesByEntity = liveStates
+  // Merge initial SWR data with live updates from EventSource
+  // This ensures we always have the latest state, whether from polling or real-time updates
+  const statesByEntity = useMemo(() => {
+    const merged = new Map<string, HomeAssistantState>()
+    // First, add all states from initial SWR fetch
+    if (data?.states) {
+      data.states.forEach((state) => {
+        merged.set(state.entity_id, state)
+      })
+    }
+    // Then, overlay any live updates from EventSource (these are more recent)
+    liveStates.forEach((state, entityId) => {
+      merged.set(entityId, state)
+    })
+    return merged
+  }, [data?.states, liveStates])
 
   const derivedEntities = useMemo<FavoriteEntityConfig[]>(() => {
     if (!data?.states || data.states.length === 0) {
@@ -390,7 +418,8 @@ export default function HomeAssistantPanel() {
 }
 
 const MEDOLE_ENTITIES = {
-  powerSelect: 'select.medole_erv_d9a344_pai_feng_ji_feng_su',
+  power: 'select.medole_erv_d9a344_pai_feng_ji_feng_su',
+  powerSelect: 'select.medole_erv_d9a344_pai_feng_ji_feng_su', // Alias for backward compatibility
   airRecycle: 'switch.medole_dehumidifier_d9a344_huan_qi_yun_zuo_xxx',
   humidity1: 'fan.medole_dehumidifier_d9a344_shi_du_kong_zhi_qi_1',
   humidity2: 'fan.medole_dehumidifier_d9a344_shi_du_kong_zhi_qi_2',
@@ -504,7 +533,8 @@ function MedoleDehumidifierCard({
   t,
   currentLanguage,
 }: MedoleCardProps) {
-  const powerSelectState = states.get(MEDOLE_ENTITIES.powerSelect)
+  // Power entity is select.medole_erv_d9a344_pai_feng_ji_feng_su
+  const powerState = states.get(MEDOLE_ENTITIES.power)
   const airRecycleState = states.get(MEDOLE_ENTITIES.airRecycle)
   const humidity1State = states.get(MEDOLE_ENTITIES.humidity1)
   const humidity2State = states.get(MEDOLE_ENTITIES.humidity2)
@@ -512,12 +542,13 @@ function MedoleDehumidifierCard({
   const filterState = states.get(MEDOLE_ENTITIES.filterDays)
   const humidityTargetState = states.get(MEDOLE_ENTITIES.setHumidity)
 
+  // Check for a separate switch entity (if exists)
   const powerSwitchEntry = MEDOLE_POWER_SWITCH_CANDIDATES.map((entityId) => ({
     entityId,
     state: states.get(entityId),
   })).find((entry) => entry.state)
 
-  const selectOptions = powerSelectState?.attributes?.options ?? ['Off', 'On']
+  const selectOptions = powerState?.attributes?.options ?? ['Off', 'On', '連續']
   const fanOptions = fanSpeedState?.attributes?.options ?? []
   const humidityOptions = humidityTargetState?.attributes?.options ?? []
 
@@ -599,11 +630,15 @@ function MedoleDehumidifierCard({
   const powerOffOption = findMatchingOption(selectOptions, POWER_OFF_KEYWORDS)
   const powerDisplayName =
     powerSwitchEntry?.state?.attributes?.friendly_name ||
-    powerSelectState?.attributes?.friendly_name ||
+    powerState?.attributes?.friendly_name ||
     'Medole Dehumidifier'
+  
+  // Determine if power is on based on current state
   const isPowerOn = powerSwitchEntry
     ? powerSwitchEntry.state?.state === 'on'
-    : (powerSelectState?.state || '').toLowerCase() !== 'off'
+    : powerState?.state && !POWER_OFF_KEYWORDS.some((kw) => 
+        powerState.state.toLowerCase().includes(kw)
+      )
 
   const handlePowerToggle = async (turnOn: boolean) => {
     const targetLabel = turnOn
@@ -611,20 +646,47 @@ function MedoleDehumidifierCard({
       : t('homeAssistantTurnOff') || 'Turned off.'
 
     try {
+      // First try switch entity if available
       if (powerSwitchEntry?.entityId) {
         await handleSwitch(powerSwitchEntry.entityId, turnOn)
         return
       }
 
-      if (powerSelectState) {
+      // Use select entity (power) directly - select.medole_erv_d9a344_pai_feng_ji_feng_su
+      if (powerState && selectOptions.length > 0) {
         const option = turnOn ? powerOnOption : powerOffOption
         if (!option) {
+          // Fallback: try to find any option that matches on/off
+          if (turnOn) {
+            // Find first option that's not 'off' or similar
+            const onOption = selectOptions.find(
+              (opt) => !POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
+            )
+            if (onOption) {
+              await handleSelectOption(MEDOLE_ENTITIES.power, onOption)
+              toast.success(targetLabel)
+              onServiceSuccess()
+              return
+            }
+          } else {
+            // Find first option that matches 'off' or similar
+            const offOption = selectOptions.find((opt) =>
+              POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
+            )
+            if (offOption) {
+              await handleSelectOption(MEDOLE_ENTITIES.power, offOption)
+              toast.success(targetLabel)
+              onServiceSuccess()
+              return
+            }
+          }
           toast.error(
             t('homeAssistantPowerOptionMissing') || 'Power options unavailable.'
           )
           return
         }
-        await handleSelectOption(MEDOLE_ENTITIES.powerSelect, option)
+        // Use the power entity directly
+        await handleSelectOption(MEDOLE_ENTITIES.power, option)
         toast.success(targetLabel)
         onServiceSuccess()
         return
@@ -649,7 +711,7 @@ function MedoleDehumidifierCard({
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {formatRelativeTime(
               powerSwitchEntry?.state?.last_changed ||
-                powerSelectState?.last_changed,
+                powerState?.last_changed,
               currentLanguage
             )}
           </p>
@@ -681,11 +743,11 @@ function MedoleDehumidifierCard({
           </h4>
 
           <SegmentedControl
-            label={t('homeAssistantModes') || 'Mode'}
+            label={t('homeAssistantPower') || 'Power'}
             options={selectOptions}
-            value={powerSelectState?.state || ''}
+            value={powerState?.state || ''}
             onSelect={(option) =>
-              handleSelectOption(MEDOLE_ENTITIES.powerSelect, option)
+              handleSelectOption(MEDOLE_ENTITIES.power, option)
             }
           />
 

@@ -1,53 +1,56 @@
 'use client'
+// 條碼掃描器組件
+// 支援原生掃描（iOS/Android）和網頁掃描（QuaggaJS）兩種模式
 
 import { useEffect, useRef, useState } from 'react'
 import { XMarkIcon, PencilIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { Capacitor } from '@capacitor/core'
 import { BarcodeScanner as CapacitorBarcodeScanner } from '@capacitor-community/barcode-scanner'
 
+// 條碼掃描器屬性介面
 interface BarcodeScannerProps {
-  onScan: (barcode: string) => void
-  onClose: () => void
-  onImageAnalysis?: (result: any) => void // New prop for vision-based analysis
-  userLanguage?: string // User's language for Taiwan e-invoice detection
+  onScan: (barcode: string) => void // 掃描成功回調
+  onClose: () => void // 關閉回調
+  onImageAnalysis?: (result: any) => void // 圖像分析回調（用於視覺識別）
+  userLanguage?: string // 用戶語言（用於台灣電子發票檢測）
 }
 
 export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userLanguage = 'en' }: BarcodeScannerProps) {
-  const scannerRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isScanning, setIsScanning] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [showManualInput, setShowManualInput] = useState(false)
-  const [manualBarcode, setManualBarcode] = useState('')
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [isProcessingImage, setIsProcessingImage] = useState(false)
-  const [isNative, setIsNative] = useState(false)
+  const scannerRef = useRef<HTMLDivElement>(null) // 掃描器容器引用
+  const fileInputRef = useRef<HTMLInputElement>(null) // 檔案輸入引用
+  const [isScanning, setIsScanning] = useState(false) // 是否正在掃描
+  const [error, setError] = useState<string | null>(null) // 錯誤訊息
+  const [showManualInput, setShowManualInput] = useState(false) // 顯示手動輸入
+  const [manualBarcode, setManualBarcode] = useState('') // 手動輸入的條碼
+  const [isDragOver, setIsDragOver] = useState(false) // 拖放狀態
+  const [isProcessingImage, setIsProcessingImage] = useState(false) // 處理圖像中
+  const [isNative, setIsNative] = useState(false) // 是否使用原生掃描
 
-  // Check if native scanning is available and check permissions
-  // Note: Capacitor.isNativePlatform() returns true for both phones and tablets on iOS/Android
-  // This ensures tablets also use native barcode scanning for better performance
+  // 檢查原生掃描是否可用並檢查權限
+  // 注意：Capacitor.isNativePlatform() 在 iOS/Android 的手機和平板上都返回 true
+  // 這確保平板也使用原生條碼掃描以獲得更好的性能
   useEffect(() => {
     const checkNative = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          // Check camera permission (don't force yet, just check)
-          // Works for both phones and tablets (iOS/Android)
+          // 檢查相機權限（先不強制，僅檢查）
+          // 適用於手機和平板（iOS/Android）
           const permission = await CapacitorBarcodeScanner.checkPermission({ force: false })
           if (permission.granted) {
-            setIsNative(true)
+            setIsNative(true) // 已授權，使用原生掃描
           } else if (permission.asked) {
-            // Permission was asked but denied - still try native, it will request again
+            // 已詢問但被拒絕 - 仍嘗試原生，會再次請求
             setIsNative(true)
           } else {
-            // Permission not asked yet - try native, it will request permission
+            // 尚未詢問 - 嘗試原生，會請求權限
             setIsNative(true)
           }
         } catch (err) {
           console.log('Native barcode scanner not available, using web fallback:', err)
-          setIsNative(false)
+          setIsNative(false) // 原生掃描不可用，使用網頁備援
         }
       } else {
-        setIsNative(false)
+        setIsNative(false) // 非原生平台，使用網頁掃描
       }
     }
     checkNative()

@@ -1,4 +1,6 @@
 'use client'
+// Home Assistant 控制面板組件
+// 用於在 Smart Warehouse 中檢視和控制 Home Assistant 智慧家居裝置
 
 import useSWR from 'swr'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -11,22 +13,26 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { FanSpeedOptions, SegmentedControl } from './HomeAssistantSegments'
 
+// Home Assistant 實體狀態類型定義
 type HomeAssistantState = {
-  entity_id: string
-  state: string
-  attributes: Record<string, any>
-  last_changed: string
-  last_updated: string
+  entity_id: string // 實體 ID
+  state: string // 狀態值
+  attributes: Record<string, any> // 屬性字典
+  last_changed: string // 最後變更時間
+  last_updated: string // 最後更新時間
 }
 
+// 常用實體配置類型
 type FavoriteEntityConfig = {
-  entity_id: string
-  name?: string
-  description?: string
+  entity_id: string // 實體 ID
+  name?: string // 顯示名稱（可選）
+  description?: string // 描述（可選）
 }
 
+// 從環境變數讀取常用實體列表
 const rawFavorites = process.env.NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES
 
+// 解析常用實體配置（格式：entity_id|name,entity_id2|name2）
 const favoriteEntities: FavoriteEntityConfig[] = (rawFavorites ?? '')
   .split(',')
   .map((entry) => entry.trim())
@@ -36,9 +42,10 @@ const favoriteEntities: FavoriteEntityConfig[] = (rawFavorites ?? '')
     return { entity_id, name }
   })
 
+// SWR 資料獲取函數
 const fetcher = (url: string) =>
   fetch(url, {
-    credentials: 'include',
+    credentials: 'include', // 包含認證資訊
   }).then((res) => {
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`)
@@ -46,6 +53,7 @@ const fetcher = (url: string) =>
     return res.json()
   })
 
+// 格式化時間戳記為本地時間字串
 function formatTimestamp(timestamp: string, locale: string) {
   try {
     return new Date(timestamp).toLocaleString(locale)

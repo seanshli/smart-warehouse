@@ -1,10 +1,14 @@
+// AI 識別模組
+// 使用 OpenAI GPT-4 Vision 進行圖像識別和條碼/QR 碼識別
+
 import OpenAI from 'openai'
 import { getLanguageSpecificPrompt } from './language'
 import { decodeTaiwanEInvoice, isTaiwanEInvoice, extractItemsFromTaiwanInvoice } from './taiwan-einvoice-decoder'
 
-// Initialize OpenAI client lazily to avoid client-side issues
+// 延遲初始化 OpenAI 客戶端以避免客戶端問題
 let openai: OpenAI | null = null
 
+// 獲取 OpenAI 客戶端實例（單例模式）
 export function getOpenAI(): OpenAI {
   if (!openai) {
     if (!process.env.OPENAI_API_KEY) {
@@ -17,25 +21,26 @@ export function getOpenAI(): OpenAI {
   return openai
 }
 
-// Configuration for different AI models
+// AI 模型配置
 const AI_CONFIG = {
-  // Vision model for image recognition
-  VISION_MODEL: process.env.OPENAI_VISION_MODEL || 'gpt-4o', // Updated to latest model
-  // Text model for barcode/QR recognition
-  TEXT_MODEL: process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini', // Updated to latest model
-  // Maximum tokens for responses
+  // 圖像識別的視覺模型
+  VISION_MODEL: process.env.OPENAI_VISION_MODEL || 'gpt-4o', // 已更新至最新模型
+  // 條碼/QR 碼識別的文字模型
+  TEXT_MODEL: process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini', // 已更新至最新模型
+  // 回應的最大 token 數
   MAX_TOKENS: parseInt(process.env.OPENAI_MAX_TOKENS || '500'),
-  // Temperature for creativity (0-1)
+  // 創造性溫度（0-1）
   TEMPERATURE: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3'),
 }
 
+// 物品識別結果介面
 export interface ItemRecognitionResult {
-  name: string
-  description: string
-  category: string
-  subcategory?: string
-  confidence: number
-  language?: string // Language of the recognized content
+  name: string // 物品名稱
+  description: string // 物品描述
+  category: string // 分類
+  subcategory?: string // 子分類（可選）
+  confidence: number // 信心度（0-100）
+  language?: string // 識別內容的語言
 }
 
 export async function recognizeItemFromImage(imageBase64: string, userLanguage: string = 'en'): Promise<ItemRecognitionResult> {

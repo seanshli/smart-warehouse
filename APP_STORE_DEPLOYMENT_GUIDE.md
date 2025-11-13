@@ -36,17 +36,21 @@
 - **Subtitle**: AI-Powered Inventory Management
 - **Description**: 
 ```
-Smart Warehouse is an AI-powered inventory management system that helps you organize, track, and manage your items with advanced features like barcode scanning, AI recognition, and multi-language support.
+Smart Warehouse is an AI-powered inventory management system that helps you organize, track, and manage your items with advanced features like native barcode scanning, AI recognition, voice assistant, and smart home integration.
 
 Key Features:
-• AI-powered item recognition
-• Barcode and QR code scanning
-• Multi-language support (English, Chinese, Japanese)
-• Smart categorization
+• AI-powered item recognition with OpenAI GPT-4 Vision
+• Native barcode scanning (AVFoundation on iOS, ML Kit on Android)
+• Voice assistant powered by iFLYTEK AIUI with OpenAI fallback
+• Home Assistant integration for smart home control
+• Multi-language support (English, Traditional/Simplified Chinese, Japanese)
+• Smart categorization with 3-level hierarchy
 • Duplicate detection and cleanup
 • Cross-platform sync (Web, iOS, Android)
-• Household management
+• Household management with role-based permissions
 • Advanced search with ChatGPT integration
+• Taiwan e-invoice QR code decoding
+• Real-time notifications and low stock alerts
 ```
 
 ### **Step 5: Screenshots & Metadata**

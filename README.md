@@ -6,9 +6,11 @@ A comprehensive warehouse-like inventory management system that uses AI to recog
 
 ### 🤖 AI-Powered Item Recognition
 - **Photo Recognition**: Upload photos or take pictures with your camera
-- **Barcode Scanning**: Scan 1D/2D barcodes for automatic item identification
+- **Native Barcode Scanning**: iOS uses AVFoundation, Android uses ML Kit for superior performance
+- **Web Barcode Scanning**: Fallback to Quagga.js for browser-based scanning
 - **QR Code Scanning**: Support for QR code-based item identification
 - **OpenAI Integration**: Uses GPT-4 Vision for intelligent item recognition
+- **Taiwan E-Invoice**: Automatic decoding of Taiwan e-invoice QR codes
 
 ### 🏠 Multi-User Household Management
 - **User Authentication**: Secure login with Google OAuth or email/password
@@ -38,19 +40,43 @@ A comprehensive warehouse-like inventory management system that uses AI to recog
 - **Activity Tracking**: Monitor recent additions and changes
 
 ### 📱 Cross-Platform Support
-- **Responsive Design**: Works on web, tablets, and mobile devices
+- **Native iOS App**: Full native app with Capacitor (iOS 14+)
+- **Native Android App**: Full native app with Capacitor (Android 5.0+)
 - **Progressive Web App**: Install as a native app on mobile devices
-- **Touch-Friendly**: Optimized for touch interactions
+- **Responsive Design**: Optimized for phones, tablets (including 10" tablets), and desktops
+- **Touch-Friendly**: Optimized for touch interactions with proper viewport handling
+
+### 🎤 Voice Assistant
+- **AIUI Integration**: Native voice assistant powered by iFLYTEK AIUI
+- **OpenAI Fallback**: Automatic fallback to OpenAI for voice interactions
+- **Multi-Language Support**: English, Traditional Chinese, Simplified Chinese, Japanese
+- **Voice Commands**: Ask questions about inventory, weather, and more
+
+### 🏠 Home Assistant Integration
+- **Smart Home Control**: Control Home Assistant devices directly from the app
+- **Real-Time Sync**: Automatic status updates when devices are controlled elsewhere
+- **HomeKit-Style UI**: Beautiful, intuitive controls for smart home devices
+- **Device Management**: Power controls, mode selection, and status monitoring
 
 ## Technology Stack
 
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Styling**: Tailwind CSS, Headless UI
-- **Database**: SQLite with Prisma ORM
+- **Database**: PostgreSQL (Supabase) / SQLite with Prisma ORM
 - **Authentication**: NextAuth.js
-- **AI Integration**: OpenAI GPT-4 Vision API
+- **AI Integration**: 
+  - OpenAI GPT-4 Vision API (image recognition)
+  - OpenAI GPT-4o-mini (text processing)
+  - OpenAI Whisper (speech-to-text fallback)
+- **Voice**: 
+  - iFLYTEK AIUI (primary - native iOS/Android)
+  - OpenAI Whisper (fallback)
+- **Native Mobile**: Capacitor 7 (iOS & Android)
+- **Barcode Scanning**: 
+  - Native: AVFoundation (iOS), ML Kit (Android)
+  - Web: Quagga.js (fallback)
+- **Home Assistant**: WebSocket API integration
 - **Image Processing**: React Dropzone, Canvas API
-- **Barcode/QR Scanning**: Quagga.js, jsQR
 
 ## Getting Started
 
@@ -59,6 +85,8 @@ A comprehensive warehouse-like inventory management system that uses AI to recog
 - Node.js 18+ 
 - npm or yarn
 - OpenAI API key
+- (Optional) iFLYTEK API credentials for native voice features
+- (Optional) Home Assistant instance for smart home integration
 
 ### Installation
 
@@ -84,6 +112,17 @@ A comprehensive warehouse-like inventory management system that uses AI to recog
    NEXTAUTH_URL="http://localhost:3000"
    NEXTAUTH_SECRET="your-secret-key-here"
    OPENAI_API_KEY="your-openai-api-key"
+   OPENAI_VISION_MODEL="gpt-4o"
+   OPENAI_TEXT_MODEL="gpt-4o-mini"
+   
+   # Optional: iFLYTEK for native voice features
+   IFLYTEK_APP_KEY="your-iflytek-app-key"
+   IFLYTEK_APP_SECRET="your-iflytek-app-secret"
+   AIUI_DEVICE_SERIAL="SMARTPAD000037"
+   
+   # Optional: Home Assistant integration
+   HOME_ASSISTANT_BASE_URL="https://your-home-assistant-instance.com"
+   HOME_ASSISTANT_ACCESS_TOKEN="your-long-lived-access-token"
    ```
 
 4. **Set up the database**
@@ -108,11 +147,26 @@ A comprehensive warehouse-like inventory management system that uses AI to recog
 2. **Choose input method**:
    - Upload a photo
    - Take a photo with camera
-   - Scan a barcode
+   - Scan a barcode (native on iOS/Android, web fallback on browsers)
    - Scan a QR code
+   - Upload Taiwan e-invoice
 3. **Review AI suggestions** for name, description, and category
 4. **Set quantity and location** (room and cabinet)
 5. **Configure low stock alerts** if needed
+
+### Using Voice Assistant
+
+1. **Go to "Assistant" tab** on the dashboard
+2. **Type or speak** your question
+3. **Get AI-powered responses** about your inventory or general questions
+4. **Multi-language support** - works in English, Chinese, and Japanese
+
+### Home Assistant Integration
+
+1. **Configure Home Assistant** in environment variables
+2. **Go to "Home Assistant" tab** on the dashboard
+3. **View and control** your smart home devices
+4. **Real-time updates** when devices are controlled elsewhere
 
 ### Managing Locations
 
@@ -202,15 +256,20 @@ This project is licensed under the MIT License.
 
 For support, please open an issue on GitHub or contact the development team.
 
+## Current Versions
+
+- **Web**: 0.1.2
+- **iOS**: 1.0.5 (Build 24)
+- **Android**: 1.0.15 (Build 15)
+
 ## Roadmap
 
-- [ ] Mobile app (React Native)
 - [ ] Barcode/QR code generation
 - [ ] Advanced analytics and reporting
 - [ ] Integration with shopping lists
-- [ ] Voice commands
-- [ ] Offline support
-- [ ] Multi-language support
+- [ ] Enhanced offline support
+- [ ] Additional language support
+- [ ] Export/Import functionality
 
 
 # Force redeploy Fri Oct 10 18:39:00 CST 2025

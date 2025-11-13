@@ -654,41 +654,34 @@ function MedoleDehumidifierCard({
 
       // Use select entity (power) directly - select.medole_erv_d9a344_pai_feng_ji_feng_su
       if (powerState && selectOptions.length > 0) {
-        const option = turnOn ? powerOnOption : powerOffOption
-        if (!option) {
-          // Fallback: try to find any option that matches on/off
-          if (turnOn) {
-            // Find first option that's not 'off' or similar
-            const onOption = selectOptions.find(
-              (opt: string) => !POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
-            )
-            if (onOption) {
-              await handleSelectOption(MEDOLE_ENTITIES.power, onOption)
-              toast.success(targetLabel)
-              onServiceSuccess()
-              return
-            }
-          } else {
-            // Find first option that matches 'off' or similar
-            const offOption = selectOptions.find((opt: string) =>
-              POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
-            )
-            if (offOption) {
-              await handleSelectOption(MEDOLE_ENTITIES.power, offOption)
-              toast.success(targetLabel)
-              onServiceSuccess()
-              return
-            }
-          }
-          toast.error(
-            t('homeAssistantPowerOptionMissing') || 'Power options unavailable.'
+        let targetOption: string | undefined
+        
+        if (turnOn) {
+          // When turning on, find first option that's not 'off' or similar
+          // Prefer "On" or "連續" (Continuous) over other options
+          targetOption = selectOptions.find((opt: string) => 
+            POWER_ON_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
+          ) || selectOptions.find((opt: string) => 
+            !POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
           )
+        } else {
+          // When turning off, find first option that matches 'off' or similar
+          targetOption = selectOptions.find((opt: string) =>
+            POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
+          )
+        }
+        
+        if (targetOption) {
+          await handleSelectOption(MEDOLE_ENTITIES.power, targetOption)
+          toast.success(targetLabel)
+          onServiceSuccess()
           return
         }
-        // Use the power entity directly
-        await handleSelectOption(MEDOLE_ENTITIES.power, option)
-        toast.success(targetLabel)
-        onServiceSuccess()
+        
+        // If no option found, show error
+        toast.error(
+          t('homeAssistantPowerOptionMissing') || 'Power options unavailable.'
+        )
         return
       }
 

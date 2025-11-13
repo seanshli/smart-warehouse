@@ -30,14 +30,17 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
     const checkNative = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          // Check camera permission
+          // Check camera permission (don't force yet, just check)
           // Works for both phones and tablets (iOS/Android)
           const permission = await CapacitorBarcodeScanner.checkPermission({ force: false })
           if (permission.granted) {
             setIsNative(true)
+          } else if (permission.asked) {
+            // Permission was asked but denied - still try native, it will request again
+            setIsNative(true)
           } else {
-            console.log('Camera permission not granted, using web fallback')
-            setIsNative(false)
+            // Permission not asked yet - try native, it will request permission
+            setIsNative(true)
           }
         } catch (err) {
           console.log('Native barcode scanner not available, using web fallback:', err)

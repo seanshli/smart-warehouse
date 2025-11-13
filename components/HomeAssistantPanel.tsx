@@ -660,7 +660,7 @@ function MedoleDehumidifierCard({
           if (turnOn) {
             // Find first option that's not 'off' or similar
             const onOption = selectOptions.find(
-              (opt) => !POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
+              (opt: string) => !POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
             )
             if (onOption) {
               await handleSelectOption(MEDOLE_ENTITIES.power, onOption)
@@ -670,7 +670,7 @@ function MedoleDehumidifierCard({
             }
           } else {
             // Find first option that matches 'off' or similar
-            const offOption = selectOptions.find((opt) =>
+            const offOption = selectOptions.find((opt: string) =>
               POWER_OFF_KEYWORDS.some((kw) => opt.toLowerCase().includes(kw))
             )
             if (offOption) {

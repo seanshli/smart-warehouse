@@ -1,4 +1,6 @@
 'use client'
+// 語音助理面板組件
+// 提供文字和語音輸入的 AI 對話介面，支援 iFLYTEK AIUI 和 OpenAI 備援
 
 import { useCallback, useMemo, useState } from 'react'
 import { PaperAirplaneIcon, SparklesIcon } from '@heroicons/react/24/outline'
@@ -6,13 +8,15 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import VoiceCommentRecorder from './VoiceCommentRecorder'
 
+// 助理訊息類型定義
 type AssistantMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  source?: string | null
+  id: string // 訊息 ID
+  role: 'user' | 'assistant' // 角色：用戶或助理
+  content: string // 訊息內容
+  source?: string | null // 訊息來源（AIUI 或備援）
 }
 
+// 將 Blob 轉換為 Base64 字串（用於音訊上傳）
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -25,17 +29,18 @@ function blobToBase64(blob: Blob): Promise<string> {
       }
     }
     reader.onerror = reject
-    reader.readAsDataURL(blob)
+    reader.readAsDataURL(blob) // 讀取為 Data URL（Base64）
   })
 }
 
 export default function VoiceAssistantPanel() {
-  const { t, currentLanguage } = useLanguage()
-  const [messages, setMessages] = useState<AssistantMessage[]>([])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null)
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const [messages, setMessages] = useState<AssistantMessage[]>([]) // 對話訊息列表
+  const [input, setInput] = useState('') // 文字輸入框內容
+  const [isLoading, setIsLoading] = useState(false) // 是否正在載入
+  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; url: string } | null>(null) // 待處理的音訊
 
+  // 對話歷史記錄（用於 API 呼叫）
   const conversationHistory = useMemo(
     () =>
       messages.map((message) => ({

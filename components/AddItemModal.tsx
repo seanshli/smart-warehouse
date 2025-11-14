@@ -1,4 +1,6 @@
 'use client'
+// 添加物品模態框組件
+// 支援多種輸入方式：照片、相機、條碼、QR 碼、台灣電子發票
 
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
@@ -9,18 +11,19 @@ import BarcodeScanner from './BarcodeScanner'
 import TaiwanInvoiceUploader from './TaiwanInvoiceUploader'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
-// AI functions are now called via API route
+// AI 功能現在通過 API 路由呼叫
 
+// 添加物品模態框屬性介面
 interface AddItemModalProps {
-  onClose: () => void
+  onClose: () => void // 關閉回調
 }
 
 export default function AddItemModal({ onClose }: AddItemModalProps) {
-  const { data: session } = useSession()
-  const { t, currentLanguage } = useLanguage()
-  const { household } = useHousehold()
+  const { data: session } = useSession() // 用戶會話
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const { household } = useHousehold() // 當前家庭
 
-  // Helper function to call AI recognition API
+  // 呼叫 AI 識別 API 的輔助函數
   const callAIRecognition = async (type: 'image' | 'barcode', data: string) => {
     try {
       console.log('Calling AI recognition:', { type, data: data.substring(0, 50) + '...' })

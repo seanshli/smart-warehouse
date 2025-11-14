@@ -1,9 +1,13 @@
+// 語音轉文字模組
+// 支援 iFLYTEK AIUI（主要）和 OpenAI Whisper（備援）兩種語音識別引擎
+
 import OpenAI from 'openai'
 import crypto from 'crypto'
 
-// Initialize OpenAI client lazily
+// 延遲初始化 OpenAI 客戶端
 let openai: OpenAI | null = null
 
+// 獲取 OpenAI 客戶端實例
 function getOpenAIClient(): OpenAI {
   if (!openai) {
     if (!process.env.OPENAI_API_KEY) {
@@ -16,38 +20,40 @@ function getOpenAIClient(): OpenAI {
   return openai
 }
 
-// iFLYTEK Configuration
+// iFLYTEK（科大訊飛）配置
 const IFLYTEK_CONFIG = {
-  APP_KEY: process.env.IFLYTEK_APP_KEY || '4ba58cf3dc03c31f7262b183a5b1f575',
-  APP_SECRET: process.env.IFLYTEK_APP_SECRET || 'OGE5N2MxYzIzNGY4NzE0MTVhOTNkMmU0',
-  VERIFY_TOKEN: process.env.IFLYTEK_VERIFY_TOKEN || 'e1fd74d5b0f7c9f8',
-  AES_KEY: process.env.IFLYTEK_AES_KEY || '26a6a47e69471bb8',
-  // iFLYTEK API endpoints
-  ASR_API_URL: 'https://iat-api.xfyun.cn/v2/iat', // Speech Recognition API
-  TTS_API_URL: 'https://tts-api.xfyun.cn/v2/tts', // Text-to-Speech API
+  APP_KEY: process.env.IFLYTEK_APP_KEY || '4ba58cf3dc03c31f7262b183a5b1f575', // 應用程式金鑰
+  APP_SECRET: process.env.IFLYTEK_APP_SECRET || 'OGE5N2MxYzIzNGY4NzE0MTVhOTNkMmU0', // 應用程式密鑰
+  VERIFY_TOKEN: process.env.IFLYTEK_VERIFY_TOKEN || 'e1fd74d5b0f7c9f8', // 驗證令牌
+  AES_KEY: process.env.IFLYTEK_AES_KEY || '26a6a47e69471bb8', // AES 加密金鑰
+  // iFLYTEK API 端點
+  ASR_API_URL: 'https://iat-api.xfyun.cn/v2/iat', // 語音識別 API
+  TTS_API_URL: 'https://tts-api.xfyun.cn/v2/tts', // 文字轉語音 API
 }
 
+// AIUI 裝置序號（用於識別裝置）
 const AIUI_DEVICE_SERIAL =
   process.env.AIUI_DEVICE_SERIAL ||
   process.env.NEXT_PUBLIC_AIUI_DEVICE_SERIAL ||
   'SMARTPAD000037'
 
 /**
- * Get iFLYTEK authentication token
- * iFLYTEK typically requires authentication via AppKey and AppSecret
+ * 獲取 iFLYTEK 認證標頭
+ * iFLYTEK 通常需要通過 AppKey 和 AppSecret 進行認證
  */
 function getIFLYTEKAuthHeader(): string {
   const appKey = IFLYTEK_CONFIG.APP_KEY
   const appSecret = IFLYTEK_CONFIG.APP_SECRET
   
-  // Generate auth string (typically Base64 encoded appKey:appSecret)
+  // 生成認證字串（通常是 Base64 編碼的 appKey:appSecret）
   const authString = Buffer.from(`${appKey}:${appSecret}`).toString('base64')
   return `Basic ${authString}`
 }
 
+// 檢測音訊格式（自動識別音訊編碼格式）
 function detectAudioFormat(audioBase64: string): { format: string; encoding: string } {
-  let format = 'audio/L16;rate=16000'
-  let encoding = 'raw'
+  let format = 'audio/L16;rate=16000' // 預設格式：PCM 16-bit，16kHz
+  let encoding = 'raw' // 預設編碼：原始 PCM
 
   try {
     if (audioBase64.startsWith('data:')) {

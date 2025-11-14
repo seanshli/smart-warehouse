@@ -1,51 +1,57 @@
+// AIUI 聊天 API 路由
+// 處理語音助理的文字和語音輸入，支援 iFLYTEK AIUI 和 OpenAI 備援
+
 import { NextRequest, NextResponse } from 'next/server'
 import { queryAIUIAgent } from '@/lib/aiui-agent'
 import { transcribeAudioFormData } from '@/lib/speech-to-text'
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic' // 強制動態路由
 
+// 標準化語言代碼（將 zh-TW, zh-CN 等轉換為標準格式）
 function normalizeLanguageCode(language?: string): string | undefined {
   if (!language) return undefined
   const lower = language.toLowerCase()
 
   if (lower.startsWith('zh')) {
-    return 'zh'
+    return 'zh' // 中文（繁體/簡體）
   }
   if (lower.startsWith('ja')) {
-    return 'ja'
+    return 'ja' // 日語
   }
   if (lower.startsWith('en')) {
-    return 'en'
+    return 'en' // 英語
   }
   if (lower.startsWith('es')) {
-    return 'es'
+    return 'es' // 西班牙語
   }
   if (lower.startsWith('fr')) {
-    return 'fr'
+    return 'fr' // 法語
   }
 
   return undefined
 }
 
+// POST 處理器：處理聊天請求
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     let { query, audioBase64, language, history } = body as {
-      query?: string
-      audioBase64?: string
-      language?: string
-      history?: Array<{ role: 'user' | 'assistant'; content: string }>
+      query?: string // 文字查詢
+      audioBase64?: string // Base64 編碼的音訊
+      language?: string // 語言代碼
+      history?: Array<{ role: 'user' | 'assistant'; content: string }> // 對話歷史
     }
 
-    const normalizedLanguage = normalizeLanguageCode(language)
+    const normalizedLanguage = normalizeLanguageCode(language) // 標準化語言代碼
 
     let prompt = typeof query === 'string' ? query.trim() : ''
 
+    // 如果沒有文字查詢但有音訊，先進行語音轉文字
     if (!prompt && typeof audioBase64 === 'string' && audioBase64.length > 0) {
       try {
         const transcript = await transcribeAudioFormData(audioBase64, normalizedLanguage)
         if (transcript) {
-          prompt = transcript.trim()
+          prompt = transcript.trim() // 使用轉錄的文字作為提示
         }
       } catch (error) {
         console.error('Failed to transcribe audio for AIUI chat:', error)

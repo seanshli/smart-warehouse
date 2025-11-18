@@ -1,11 +1,15 @@
+// 房間 API 路由
+// 處理房間的查詢、創建、更新、刪除等操作
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createPrismaClient } from '@/lib/prisma-factory'
 
-// Force dynamic rendering for this route
+// 強制動態渲染此路由
 export const dynamic = 'force-dynamic'
 
+// GET 處理器：獲取房間列表
 export async function GET(request: NextRequest) {
   let prisma = createPrismaClient()
   
@@ -19,10 +23,10 @@ export async function GET(request: NextRequest) {
     const userId = (session.user as any).id
 
     const { searchParams } = new URL(request.url)
-    const requestedHouseholdId = searchParams.get('householdId')
-    const userLanguage = searchParams.get('language') || (session.user as any)?.language || 'en'
+    const requestedHouseholdId = searchParams.get('householdId') // 請求的家庭 ID
+    const userLanguage = searchParams.get('language') || (session.user as any)?.language || 'en' // 用戶語言
 
-    // If a specific householdId is provided, validate membership and use it
+    // 如果提供了特定的 householdId，驗證成員資格並使用它
     let householdIdToUse: string | null = null
     if (requestedHouseholdId) {
       const membership = await prisma.householdMember.findUnique({
@@ -33,7 +37,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback: use the first household the user belongs to
+    // 備援：使用用戶所屬的第一個家庭
     if (!householdIdToUse) {
       const household = await prisma.household.findFirst({
         where: {
@@ -48,9 +52,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!householdIdToUse) {
-      return NextResponse.json([])
+      return NextResponse.json([]) // 無家庭時返回空陣列
     }
 
+    // 查詢房間列表（包含櫃子和物品資訊）
     const rooms = await prisma.room.findMany({
       where: {
         householdId: householdIdToUse
@@ -60,24 +65,24 @@ export async function GET(request: NextRequest) {
           include: {
             items: {
               include: {
-                category: true
+                category: true // 包含分類資訊
               }
             },
             _count: {
-              select: { items: true }
+              select: { items: true } // 物品數量
             }
           }
         },
         _count: {
-          select: { items: true }
+          select: { items: true } // 房間物品數量
         }
       },
       orderBy: {
-        name: 'asc'
+        name: 'asc' // 按名稱升序排序
       }
     })
 
-    // Translate room names using room-translations
+    // 使用房間翻譯模組翻譯房間名稱
     const { getNormalizedRoomKey, getRoomDisplayName } = await import('@/lib/room-translations')
     const translatedRooms = rooms.map(room => {
       const normalizedKey = getNormalizedRoomKey(room.name)

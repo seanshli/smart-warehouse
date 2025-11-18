@@ -1,4 +1,6 @@
 'use client'
+// 編輯物品模態框組件
+// 用於編輯現有物品的資訊，包括名稱、描述、數量、分類、位置、圖片等
 
 import { useState, useEffect } from 'react'
 import { XMarkIcon, PhotoIcon } from '@heroicons/react/24/outline'
@@ -8,43 +10,45 @@ import { translateCategoryName } from '@/lib/translations'
 import { useHousehold } from './HouseholdProvider'
 import { useActivityTracker } from '@/lib/activity-tracker-client'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id?: string
-    name: string
+    id?: string // 分類 ID（可選）
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id?: string
-    name: string
+    id?: string // 房間 ID（可選）
+    name: string // 房間名稱
   }
   cabinet?: {
-    id?: string
-    name: string
+    id?: string // 櫃子 ID（可選）
+    name: string // 櫃子名稱
   }
 }
 
+// 編輯物品模態框屬性介面
 interface EditItemModalProps {
-  item: Item
-  onClose: () => void
-  onSuccess: () => void
+  item: Item // 要編輯的物品
+  onClose: () => void // 關閉回調
+  onSuccess: () => void // 成功回調
 }
 
 export default function EditItemModal({ item, onClose, onSuccess }: EditItemModalProps) {
-  const { t } = useLanguage()
-  const { household } = useHousehold()
-  const { currentLanguage } = useLanguage()
-  const { trackActivity } = useActivityTracker()
+  const { t } = useLanguage() // 語言設定
+  const { household } = useHousehold() // 當前家庭
+  const { currentLanguage } = useLanguage() // 當前語言
+  const { trackActivity } = useActivityTracker() // 活動追蹤
   
-  // Debug logging for item data
+  // 物品資料的除錯日誌
   console.log('EditItemModal - Item data:', {
     id: item.id,
     name: item.name,
@@ -54,19 +58,19 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
     imageUrl: item.imageUrl ? 'Has image URL' : 'No image URL'
   })
   const [formData, setFormData] = useState({
-    name: item.name,
-    description: item.description || '',
-    quantity: item.quantity,
-    minQuantity: item.minQuantity,
-    imageUrl: item.imageUrl || ''
+    name: item.name, // 物品名稱
+    description: item.description || '', // 物品描述
+    quantity: item.quantity, // 數量
+    minQuantity: item.minQuantity, // 最小數量
+    imageUrl: item.imageUrl || '' // 圖片 URL
   })
-  const [isLoading, setIsLoading] = useState(false)
-  const [categories, setCategories] = useState<Array<{id: string, name: string, level: number, parent?: {name: string}, pathNames?: string[], label?: string}>>([])
-  const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
-  const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
-  const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
+  const [isLoading, setIsLoading] = useState(false) // 載入狀態
+  const [categories, setCategories] = useState<Array<{id: string, name: string, level: number, parent?: {name: string}, pathNames?: string[], label?: string}>>([]) // 分類列表
+  const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([]) // 房間列表
+  const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([]) // 櫃子列表
+  const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '') // 選中的分類 ID
   
-  // Debug logging for selected category
+  // 選中分類的除錯日誌
   useEffect(() => {
     console.log('EditItemModal - Selected category changed:', selectedCategory)
     if (selectedCategory) {
@@ -74,10 +78,10 @@ export default function EditItemModal({ item, onClose, onSuccess }: EditItemModa
       console.log('EditItemModal - Selected category details:', selectedCat)
     }
   }, [selectedCategory, categories])
-  const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
-  const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
-  const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null)
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '') // 選中的房間 ID
+  const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '') // 選中的櫃子 ID
+  const [imagePreview, setImagePreview] = useState<string | null>(item.imageUrl || null) // 圖片預覽
+  const [isUploadingImage, setIsUploadingImage] = useState(false) // 是否正在上傳圖片
 
   // Track item detail view when modal opens
   useEffect(() => {

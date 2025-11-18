@@ -1,4 +1,6 @@
 'use client'
+// 物品卡片組件
+// 顯示單個物品的資訊卡片，支援編輯、移動、取出、查看歷史、調整數量等操作
 
 import { useState, useEffect } from 'react'
 import { PhotoIcon, CubeIcon } from '@heroicons/react/24/outline'
@@ -6,50 +8,52 @@ import { useLanguage } from './LanguageProvider'
 import { translateCategoryName } from '@/lib/translations'
 import { useTranslation } from '@/lib/useTranslation'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id: string
-    name: string
+    id: string // 分類 ID
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id: string
-    name: string
+    id: string // 房間 ID
+    name: string // 房間名稱
   }
   cabinet?: {
-    id: string
-    name: string
+    id: string // 櫃子 ID
+    name: string // 櫃子名稱
   }
-  // Grouped item fields
+  // 群組物品欄位
   locations?: Array<{
-    id: string
-    quantity: number
-    room: { id: string; name: string } | null
-    cabinet: { id: string; name: string } | null
+    id: string // 位置 ID
+    quantity: number // 該位置的數量
+    room: { id: string; name: string } | null // 房間資訊
+    cabinet: { id: string; name: string } | null // 櫃子資訊
   }>
-  totalQuantity?: number
-  isLowStock?: boolean
-  itemIds?: string[]
+  totalQuantity?: number // 總數量（用於群組物品）
+  isLowStock?: boolean // 是否低庫存
+  itemIds?: string[] // 物品 ID 列表（用於群組顯示）
 }
 
+// 物品卡片屬性介面
 interface ItemCardProps {
-  item: Item
-  showCategory?: boolean
-  showLocation?: boolean
-  onEdit?: (item: Item) => void
-  onMove?: (item: Item) => void
-  onCheckout?: (item: Item) => void
-  onHistory?: (item: Item) => void
-  onQuantityAdjust?: (item: Item) => void
-  className?: string
+  item: Item // 物品資料
+  showCategory?: boolean // 是否顯示分類
+  showLocation?: boolean // 是否顯示位置
+  onEdit?: (item: Item) => void // 編輯回調
+  onMove?: (item: Item) => void // 移動回調
+  onCheckout?: (item: Item) => void // 取出回調
+  onHistory?: (item: Item) => void // 查看歷史回調
+  onQuantityAdjust?: (item: Item) => void // 調整數量回調
+  className?: string // 自訂 CSS 類名
 }
 
 export default function ItemCard({
@@ -63,24 +67,24 @@ export default function ItemCard({
   onQuantityAdjust,
   className = ''
 }: ItemCardProps) {
-  // Handle null or invalid items
+  // 處理無效物品
   if (!item || !item.id || !item.name) {
     console.warn('ItemCard received invalid item:', item)
     return null
   }
-  const { t, currentLanguage } = useLanguage()
-  const { translateText } = useTranslation()
-  const [imageError, setImageError] = useState(false)
-  const [translatedName, setTranslatedName] = useState(item.name)
-  const [translatedDescription, setTranslatedDescription] = useState(item.description || '')
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const { translateText } = useTranslation() // 翻譯函數
+  const [imageError, setImageError] = useState(false) // 圖片載入錯誤
+  const [translatedName, setTranslatedName] = useState(item.name) // 翻譯後的名稱
+  const [translatedDescription, setTranslatedDescription] = useState(item.description || '') // 翻譯後的描述
 
-  // Debug logging for language context
+  // 語言上下文的除錯日誌
   console.log('ItemCard - Current language:', currentLanguage)
   console.log('ItemCard - Translation for qty:', t('qty'))
   console.log('ItemCard - Translation for category:', t('category'))
   console.log('ItemCard - Translation for whereIsThisItemStored:', t('whereIsThisItemStored'))
 
-  // Translate item content when language changes
+  // 當語言變更時翻譯物品內容
   useEffect(() => {
     const translateContent = async () => {
       if (item.name) {
@@ -96,7 +100,7 @@ export default function ItemCard({
     translateContent()
   }, [item.name, item.description, currentLanguage, translateText])
 
-  // Function to translate item names and descriptions dynamically
+  // 動態翻譯物品名稱和描述的函數
   const translateItemContent = (content: string) => {
     if (!content) return content
     

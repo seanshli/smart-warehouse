@@ -1,11 +1,15 @@
+// 分類 API 路由
+// 處理分類的查詢、創建、更新、刪除等操作，支援三級分類結構
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createPrismaClient } from '@/lib/prisma-factory'
 
-// Force dynamic rendering for this route
+// 強制動態渲染此路由
 export const dynamic = 'force-dynamic'
 
+// GET 處理器：獲取分類列表（階層結構）
 export async function GET(request: NextRequest) {
   let prisma = createPrismaClient()
   
@@ -18,13 +22,13 @@ export async function GET(request: NextRequest) {
     
     const userId = (session.user as any).id
     const { searchParams } = new URL(request.url)
-    const householdId = searchParams.get('householdId')
-    const userLanguage = searchParams.get('language') || (session.user as any)?.language || 'en'
+    const householdId = searchParams.get('householdId') // 家庭 ID
+    const userLanguage = searchParams.get('language') || (session.user as any)?.language || 'en' // 用戶語言
 
     let household
 
     if (householdId) {
-      // Use provided household ID if user has access
+      // 如果用戶有權限，使用提供的家庭 ID
       household = await prisma.household.findFirst({
         where: {
           id: householdId,
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
         }
       })
     } else {
-      // Get user's first household
+      // 獲取用戶的第一個家庭
       household = await prisma.household.findFirst({
         where: {
           members: {
@@ -49,33 +53,34 @@ export async function GET(request: NextRequest) {
     }
 
     if (!household) {
-      return NextResponse.json([])
+      return NextResponse.json([]) // 無家庭時返回空陣列
     }
 
+    // 查詢分類列表（僅獲取一級分類，子分類通過 include 包含）
     const categories = await prisma.category.findMany({
       where: {
         householdId: household.id,
-        level: 1 // Only get level 1 categories, children will be included via include
+        level: 1 // 僅獲取一級分類，子分類將通過 include 包含
       },
       include: {
         children: {
           include: {
-            children: true,
+            children: true, // 包含第三級分類
             _count: {
-              select: { items: true }
+              select: { items: true } // 物品數量
             }
           }
         },
         _count: {
-          select: { items: true }
+          select: { items: true } // 一級分類的物品數量
         }
       },
       orderBy: [
-        { name: 'asc' }
+        { name: 'asc' } // 按名稱升序排序
       ]
     })
 
-    // Translate category names using category-translations
+    // 使用分類翻譯模組翻譯分類名稱
     const { getNormalizedCategoryKey, getCategoryDisplayName } = await import('@/lib/category-translations')
     
     const ensureCount = (node: any) => ({

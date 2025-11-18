@@ -1,4 +1,6 @@
 'use client'
+// 搜尋模態框組件
+// 提供物品搜尋功能，支援關鍵字搜尋、分類篩選、房間篩選、搜尋建議等
 
 import { useState, useEffect } from 'react'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
@@ -6,65 +8,68 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import ItemCard from './ItemCard'
 
+// 搜尋模態框屬性介面
 interface SearchModalProps {
-  onClose: () => void
+  onClose: () => void // 關閉回調
 }
 
+// 搜尋結果介面定義
 interface SearchResult {
-  id: string
-  name: string
-  description: string
-  quantity: number
-  minQuantity: number
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description: string // 物品描述
+  quantity: number // 數量
+  minQuantity: number // 最小數量
   category?: {
-    id: string
-    name: string
-    level: number
+    id: string // 分類 ID
+    name: string // 分類名稱
+    level: number // 分類層級
     parent?: {
-      name: string
-      level: number
+      name: string // 父分類名稱
+      level: number // 父分類層級
     }
   }
   room?: {
-    id: string
-    name: string
+    id: string // 房間 ID
+    name: string // 房間名稱
   }
   cabinet?: {
-    id: string
-    name: string
+    id: string // 櫃子 ID
+    name: string // 櫃子名稱
   }
-  imageUrl?: string
+  imageUrl?: string // 圖片 URL（可選）
 }
 
 export default function SearchModal({ onClose }: SearchModalProps) {
-  const { t } = useLanguage()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [selectedRoom, setSelectedRoom] = useState('')
-  const [selectedSubcategory, setSelectedSubcategory] = useState('')
-  const [categories, setCategories] = useState<Array<{id: string, name: string, level: number, parent?: {name: string}}>>([])
-  const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
-  const [subcategories, setSubcategories] = useState<Array<{id: string, name: string, level: number, parent: {name: string}}>>([])
-  const [suggestions, setSuggestions] = useState<Array<{type: string, id?: string, name: string, description?: string, category?: string, location?: string}>>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const { t } = useLanguage() // 語言設定
+  const [searchTerm, setSearchTerm] = useState('') // 搜尋關鍵字
+  const [results, setResults] = useState<SearchResult[]>([]) // 搜尋結果列表
+  const [isLoading, setIsLoading] = useState(false) // 載入狀態
+  const [selectedCategory, setSelectedCategory] = useState('') // 選中的分類 ID
+  const [selectedRoom, setSelectedRoom] = useState('') // 選中的房間 ID
+  const [selectedSubcategory, setSelectedSubcategory] = useState('') // 選中的子分類 ID
+  const [categories, setCategories] = useState<Array<{id: string, name: string, level: number, parent?: {name: string}}>>([]) // 分類列表
+  const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([]) // 房間列表
+  const [subcategories, setSubcategories] = useState<Array<{id: string, name: string, level: number, parent: {name: string}}>>([]) // 子分類列表
+  const [suggestions, setSuggestions] = useState<Array<{type: string, id?: string, name: string, description?: string, category?: string, location?: string}>>([]) // 搜尋建議列表
+  const [showSuggestions, setShowSuggestions] = useState(false) // 是否顯示搜尋建議
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false) // 搜尋建議載入狀態
 
+  // 載入分類和房間列表
   useEffect(() => {
     fetchCategoriesAndRooms()
   }, [])
 
-  // Debounced search suggestions
+  // 防抖搜尋建議（當輸入關鍵字時自動獲取建議）
   useEffect(() => {
     const timeoutId = setTimeout(async () => {
       if (searchTerm.trim().length >= 2) {
-        await fetchSearchSuggestions(searchTerm.trim())
+        await fetchSearchSuggestions(searchTerm.trim()) // 關鍵字長度 >= 2 時獲取建議
       } else {
         setSuggestions([])
         setShowSuggestions(false)
       }
-    }, 300) // 300ms debounce
+    }, 300) // 300ms 防抖延遲
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm])

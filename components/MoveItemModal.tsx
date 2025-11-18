@@ -1,4 +1,6 @@
 'use client'
+// 移動物品模態框組件
+// 用於將物品從一個位置移動到另一個位置，支援部分移動和完整移動，可同時更改房間、櫃子和分類
 
 import { useState, useEffect } from 'react'
 import { XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
@@ -6,77 +8,80 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id?: string
-    name: string
+    id?: string // 分類 ID（可選）
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id?: string
-    name: string
+    id?: string // 房間 ID（可選）
+    name: string // 房間名稱
   }
   cabinet?: {
-    id?: string
-    name: string
+    id?: string // 櫃子 ID（可選）
+    name: string // 櫃子名稱
   }
-  // Grouped item fields
+  // 群組物品欄位（同一物品可能存儲在多個位置）
   locations?: Array<{
-    id: string // Actual item ID in database
-    quantity: number
-    room: { id: string; name: string } | null
-    cabinet: { id: string; name: string } | null
+    id: string // 資料庫中的實際物品 ID
+    quantity: number // 該位置的數量
+    room: { id: string; name: string } | null // 房間資訊
+    cabinet: { id: string; name: string } | null // 櫃子資訊
   }>
-  totalQuantity?: number
-  itemIds?: string[]
+  totalQuantity?: number // 總數量（用於群組物品）
+  itemIds?: string[] // 物品 ID 列表（用於群組顯示）
 }
 
+// 分類介面定義
 interface Category {
-  id: string
-  name: string
-  level: number
+  id: string // 分類 ID
+  name: string // 分類名稱
+  level: number // 分類層級
   parent?: {
-    id: string
-    name: string
+    id: string // 父分類 ID
+    name: string // 父分類名稱
   }
-  children?: Category[]
+  children?: Category[] // 子分類列表
 }
 
+// 移動物品模態框屬性介面
 interface MoveItemModalProps {
-  item: Item
-  onClose: () => void
-  onSuccess: () => void
+  item: Item // 要移動的物品
+  onClose: () => void // 關閉回調
+  onSuccess: () => void // 成功回調
 }
 
 export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModalProps) {
-  const { t } = useLanguage()
-  const { activeHouseholdId } = useHousehold()
-  const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '')
-  const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '')
-  const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '')
-  const [moveQuantity, setMoveQuantity] = useState(1)
-  const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([])
-  const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const { t } = useLanguage() // 語言設定
+  const { activeHouseholdId } = useHousehold() // 當前家庭 ID
+  const [selectedRoom, setSelectedRoom] = useState(item.room?.id || '') // 選中的目標房間 ID
+  const [selectedCabinet, setSelectedCabinet] = useState(item.cabinet?.id || '') // 選中的目標櫃子 ID
+  const [selectedCategory, setSelectedCategory] = useState(item.category?.id || '') // 選中的目標分類 ID
+  const [moveQuantity, setMoveQuantity] = useState(1) // 要移動的數量
+  const [rooms, setRooms] = useState<Array<{id: string, name: string}>>([]) // 房間列表
+  const [cabinets, setCabinets] = useState<Array<{id: string, name: string}>>([]) // 櫃子列表
+  const [categories, setCategories] = useState<Category[]>([]) // 分類列表
+  const [isLoading, setIsLoading] = useState(false) // 載入狀態
   
-  // Source selection for grouped items
-  const availableQuantity = item.totalQuantity || item.quantity
-  const hasMultipleLocations = item.locations && item.locations.length > 1
-  const [selectedSources, setSelectedSources] = useState<Array<{itemId: string, locationId: string, quantity: number, available: number}>>([])
+  // 群組物品的來源選擇（當同一物品存儲在多個位置時）
+  const availableQuantity = item.totalQuantity || item.quantity // 可用總數量
+  const hasMultipleLocations = item.locations && item.locations.length > 1 // 是否有多個位置
+  const [selectedSources, setSelectedSources] = useState<Array<{itemId: string, locationId: string, quantity: number, available: number}>>([]) // 選中的來源位置列表
   
-  // Initialize sources when modal opens
+  // 當模態框打開時初始化來源
   useEffect(() => {
     if (hasMultipleLocations && item.locations) {
-      // Auto-select first location if only moving small amount
+      // 如果只移動少量物品，自動選擇第一個位置
       setSelectedSources([{
         itemId: item.locations[0].id,
         locationId: `${item.locations[0].room?.id || ''}_${item.locations[0].cabinet?.id || ''}`,
@@ -86,9 +91,9 @@ export default function MoveItemModal({ item, onClose, onSuccess }: MoveItemModa
     }
   }, [hasMultipleLocations, item.locations])
 
-  // When moving from multiple sources, auto-calculate total to move from selected sources
-  const totalSelectedFromSources = selectedSources.reduce((sum, s) => sum + s.quantity, 0)
-  const effectiveMoveQuantity = hasMultipleLocations ? totalSelectedFromSources : moveQuantity
+  // 當從多個來源移動時，自動計算從選中來源移動的總數量
+  const totalSelectedFromSources = selectedSources.reduce((sum, s) => sum + s.quantity, 0) // 從選中來源移動的總數量
+  const effectiveMoveQuantity = hasMultipleLocations ? totalSelectedFromSources : moveQuantity // 有效移動數量
 
   useEffect(() => {
     fetchRooms()

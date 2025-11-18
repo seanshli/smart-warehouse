@@ -1,16 +1,19 @@
 'use client'
+// 物品歷史模態框組件
+// 顯示物品的所有操作歷史記錄，包括創建、更新、移動、取出等，支援語音備註播放
 
 import { useState, useEffect, useRef } from 'react'
 import { XMarkIcon, ClockIcon, PlusIcon, PencilIcon, ArrowsRightLeftIcon, ShoppingCartIcon, ArrowDownTrayIcon, PlayIcon, PauseIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 
-// Voice Comment Player Component
+// 語音備註播放器組件
 function VoiceCommentPlayer({ audioUrl }: { audioUrl: string }) {
-  const { t } = useLanguage()
-  const [isPlaying, setIsPlaying] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const { t } = useLanguage() // 語言設定
+  const [isPlaying, setIsPlaying] = useState(false) // 是否正在播放
+  const audioRef = useRef<HTMLAudioElement | null>(null) // 音訊元素引用
 
+  // 組件卸載時清理音訊
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -20,22 +23,23 @@ function VoiceCommentPlayer({ audioUrl }: { audioUrl: string }) {
     }
   }, [])
 
+  // 切換播放/暫停
   const togglePlayback = () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl)
+      audioRef.current = new Audio(audioUrl) // 創建音訊元素
       audioRef.current.onended = () => {
-        setIsPlaying(false)
+        setIsPlaying(false) // 播放結束時更新狀態
       }
       audioRef.current.onpause = () => {
-        setIsPlaying(false)
+        setIsPlaying(false) // 暫停時更新狀態
       }
     }
 
     if (isPlaying) {
-      audioRef.current.pause()
+      audioRef.current.pause() // 暫停播放
       setIsPlaying(false)
     } else {
-      audioRef.current.play()
+      audioRef.current.play() // 開始播放
       setIsPlaying(true)
     }
   }
@@ -62,42 +66,44 @@ function VoiceCommentPlayer({ audioUrl }: { audioUrl: string }) {
   )
 }
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id?: string
-    name: string
+    id?: string // 分類 ID（可選）
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id?: string
-    name: string
+    id?: string // 房間 ID（可選）
+    name: string // 房間名稱
   }
   cabinet?: {
-    name: string
+    name: string // 櫃子名稱
   }
 }
 
+// 活動記錄介面定義
 interface Activity {
-  id: string
-  action: string
-  description: string
-  voiceUrl?: string | null
-  voiceTranscript?: string | null
-  createdAt: string
-  performedBy: string
+  id: string // 活動 ID
+  action: string // 操作類型（如 'created', 'updated', 'moved', 'checkout'）
+  description: string // 操作描述
+  voiceUrl?: string | null // 語音備註 URL（可選）
+  voiceTranscript?: string | null // 語音轉文字（可選）
+  createdAt: string // 創建時間
+  performedBy: string // 執行者用戶 ID
   performer?: {
-    name: string
-    email: string
+    name: string // 執行者名稱
+    email: string // 執行者電子郵件
   }
-  metadata?: any
+  metadata?: any // 額外元資料（可選）
 }
 
 interface ItemHistoryModalProps {

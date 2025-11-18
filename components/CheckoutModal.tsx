@@ -1,53 +1,60 @@
 'use client'
+// 取出物品模態框組件
+// 用於從倉庫中取出物品（減少庫存），支援指定取出數量和原因說明
 
 import { useState } from 'react'
 import { XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 當前數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id?: string
-    name: string
+    id?: string // 分類 ID（可選）
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id?: string
-    name: string
+    id?: string // 房間 ID（可選）
+    name: string // 房間名稱
   }
   cabinet?: {
-    name: string
+    name: string // 櫃子名稱
   }
 }
 
+// 取出物品模態框屬性介面
 interface CheckoutModalProps {
-  item: Item
-  onClose: () => void
-  onSuccess: () => void
+  item: Item // 要取出的物品
+  onClose: () => void // 關閉回調
+  onSuccess: () => void // 成功回調
 }
 
 export default function CheckoutModal({ item, onClose, onSuccess }: CheckoutModalProps) {
-  const { t } = useLanguage()
-  const [checkoutQuantity, setCheckoutQuantity] = useState(1)
-  const [reason, setReason] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const { t } = useLanguage() // 語言設定
+  const [checkoutQuantity, setCheckoutQuantity] = useState(1) // 取出數量
+  const [reason, setReason] = useState('') // 取出原因
+  const [isLoading, setIsLoading] = useState(false) // 載入狀態
 
+  // 處理提交取出請求
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // 驗證取出數量
     if (checkoutQuantity <= 0) {
       toast.error('Please enter a valid quantity')
       return
     }
 
+    // 驗證取出數量不超過可用數量
     if (checkoutQuantity > item.quantity) {
       toast.error('Cannot checkout more items than available')
       return
@@ -56,6 +63,7 @@ export default function CheckoutModal({ item, onClose, onSuccess }: CheckoutModa
     setIsLoading(true)
 
     try {
+      // 呼叫取出物品 API
       const response = await fetch(`/api/items/${item.id}/checkout`, {
         method: 'POST',
         headers: {
@@ -63,15 +71,15 @@ export default function CheckoutModal({ item, onClose, onSuccess }: CheckoutModa
         },
         credentials: 'include',
         body: JSON.stringify({
-          quantity: checkoutQuantity,
-          reason: reason.trim() || 'Checked out'
+          quantity: checkoutQuantity, // 取出數量
+          reason: reason.trim() || 'Checked out' // 取出原因
         })
       })
 
       if (response.ok) {
         toast.success(`Successfully checked out ${checkoutQuantity} ${checkoutQuantity === 1 ? 'item' : 'items'}!`)
-        onSuccess()
-        onClose()
+        onSuccess() // 觸發成功回調
+        onClose() // 關閉模態框
       } else {
         const errorData = await response.json()
         toast.error(errorData.error || 'Failed to checkout item')

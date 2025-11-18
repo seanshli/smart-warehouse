@@ -1,4 +1,6 @@
 'use client'
+// 調整數量模態框組件
+// 用於增加或減少物品數量，支援語音備註，減少時使用取出 API，增加時使用更新 API
 
 import { useState } from 'react'
 import { XMarkIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline'
@@ -6,39 +8,45 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import VoiceCommentRecorder from './VoiceCommentRecorder'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  quantity: number
-  minQuantity?: number
-  totalQuantity?: number // For grouped items
+  id: string // 物品 ID
+  name: string // 物品名稱
+  quantity: number // 當前數量
+  minQuantity?: number // 最小數量（可選）
+  totalQuantity?: number // 總數量（用於群組物品）
 }
 
+// 調整數量模態框屬性介面
 interface QuantityAdjustModalProps {
-  item: Item
-  onClose: () => void
-  onSuccess: () => void
+  item: Item // 要調整的物品
+  onClose: () => void // 關閉回調
+  onSuccess: () => void // 成功回調
 }
 
 export default function QuantityAdjustModal({ item, onClose, onSuccess }: QuantityAdjustModalProps) {
-  const { t } = useLanguage()
-  const [adjustment, setAdjustment] = useState(0)
-  const [reason, setReason] = useState('')
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
-  const [voiceBase64, setVoiceBase64] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const availableQuantity = item.totalQuantity || item.quantity
+  const { t } = useLanguage() // 語言設定
+  const [adjustment, setAdjustment] = useState(0) // 調整數量（正數為增加，負數為減少）
+  const [reason, setReason] = useState('') // 調整原因
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null) // 語音備註 Blob
+  const [voiceBase64, setVoiceBase64] = useState<string | null>(null) // 語音備註 Base64
+  const [isLoading, setIsLoading] = useState(false) // 載入狀態
+  const availableQuantity = item.totalQuantity || item.quantity // 可用數量
 
+  // 處理提交調整請求
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // 驗證調整數量不為零
     if (adjustment === 0) {
       toast.error(t('noQuantityChange') || 'No quantity change specified')
       return
     }
 
+    // 計算新數量
     const newQuantity = availableQuantity + adjustment
     
+    // 驗證新數量不能為負數
     if (newQuantity < 0) {
       toast.error(t('invalidQuantity') || 'Quantity cannot be negative')
       return
@@ -47,11 +55,11 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
     setIsLoading(true)
 
     try {
-      // If adjustment is negative (checkout/decrease), use checkout endpoint
+      // 如果調整為負數（取出/減少），使用取出 API
       if (adjustment < 0) {
-        const checkoutQuantity = Math.abs(adjustment)
+        const checkoutQuantity = Math.abs(adjustment) // 取出數量（取絕對值）
         
-        // Convert voice blob to base64 if available
+        // 如果有語音備註，轉換為 Base64
         let voiceBase64Data = null
         if (voiceBlob) {
           try {
@@ -59,7 +67,7 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
               const reader = new FileReader()
               reader.onloadend = () => {
                 const base64String = reader.result as string
-                // Remove data URL prefix if present
+                // 移除 Data URL 前綴（如果存在）
                 const base64Data = base64String.includes(',') 
                   ? base64String.split(',')[1] 
                   : base64String
@@ -74,6 +82,7 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
           }
         }
         
+        // 呼叫取出物品 API
         const response = await fetch(`/api/items/${item.id}/checkout`, {
           method: 'POST',
           headers: {
@@ -81,9 +90,9 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
           },
           credentials: 'include',
           body: JSON.stringify({
-            quantity: checkoutQuantity,
-            reason: reason.trim() || (checkoutQuantity === 1 ? 'Checked out' : `${checkoutQuantity} items checked out`),
-            voiceUrl: voiceBase64Data
+            quantity: checkoutQuantity, // 取出數量
+            reason: reason.trim() || (checkoutQuantity === 1 ? 'Checked out' : `${checkoutQuantity} items checked out`), // 取出原因
+            voiceUrl: voiceBase64Data // 語音備註
           })
         })
 
@@ -96,7 +105,7 @@ export default function QuantityAdjustModal({ item, onClose, onSuccess }: Quanti
           toast.error(errorData.error || 'Failed to checkout item')
         }
       } else {
-        // If adjustment is positive (increase), use PATCH endpoint
+        // 如果調整為正數（增加），使用 PATCH API
         const response = await fetch(`/api/items/${item.id}`, {
           method: 'PATCH',
           headers: {

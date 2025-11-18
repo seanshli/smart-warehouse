@@ -1,4 +1,6 @@
 'use client'
+// 主儀表板組件
+// 整合所有主要功能：物品管理、搜尋、房間、分類、通知、活動、語音助理、Home Assistant 等
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
@@ -41,23 +43,25 @@ import CreateHouseholdModal from './CreateHouseholdModal'
 import VoiceAssistantPanel from './VoiceAssistantPanel'
 import HomeAssistantPanel from './HomeAssistantPanel'
 
-
+// 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
-  const { memberships, activeHouseholdId, setActiveHousehold, switching, error } = useHousehold()
-  const { t } = useLanguage()
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [pendingHouseholdId, setPendingHouseholdId] = useState<string | null>(null)
-  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false)
+  const { memberships, activeHouseholdId, setActiveHousehold, switching, error } = useHousehold() // 家庭相關狀態
+  const { t } = useLanguage() // 語言設定
+  const [showCreateModal, setShowCreateModal] = useState(false) // 是否顯示創建家庭模態框
+  const [pendingHouseholdId, setPendingHouseholdId] = useState<string | null>(null) // 待切換的家庭 ID
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false) // 是否顯示切換確認對話框
 
-  if (!memberships || memberships.length === 0) return null
+  if (!memberships || memberships.length === 0) return null // 無家庭成員資格時不渲染
 
+  // 處理家庭變更
   const handleHouseholdChange = (householdId: string) => {
-    if (householdId === activeHouseholdId) return // No change
+    if (householdId === activeHouseholdId) return // 無變更
     
     setPendingHouseholdId(householdId)
-    setShowSwitchConfirm(true)
+    setShowSwitchConfirm(true) // 顯示確認對話框
   }
 
+  // 確認切換
   const confirmSwitch = () => {
     if (pendingHouseholdId) {
       setActiveHousehold(pendingHouseholdId)
@@ -66,12 +70,13 @@ function HouseholdSwitcher() {
     setPendingHouseholdId(null)
   }
 
+  // 取消切換
   const cancelSwitch = () => {
     setShowSwitchConfirm(false)
     setPendingHouseholdId(null)
   }
 
-  const pendingHousehold = memberships.find(m => m.household.id === pendingHouseholdId)
+  const pendingHousehold = memberships.find(m => m.household.id === pendingHouseholdId) // 待切換的家庭資訊
 
   return (
     <div className="flex items-center space-x-2">

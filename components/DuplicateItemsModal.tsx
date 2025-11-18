@@ -1,4 +1,6 @@
 'use client'
+// 重複物品模態框組件
+// 顯示和管理倉庫中的重複物品，支援合併重複物品到單一位置
 
 import { useState, useEffect } from 'react'
 import { XMarkIcon, ArrowRightIcon, PlusIcon } from '@heroicons/react/24/outline'
@@ -6,53 +8,57 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id?: string
-    name: string
+    id?: string // 分類 ID（可選）
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id?: string
-    name: string
+    id?: string // 房間 ID（可選）
+    name: string // 房間名稱
   }
   cabinet?: {
-    name: string
+    name: string // 櫃子名稱
   }
 }
 
+// 重複群組介面定義
 interface DuplicateGroup {
-  id: string
-  name: string
-  totalQuantity: number
-  items: Item[]
-  location: string
+  id: string // 群組 ID
+  name: string // 物品名稱
+  totalQuantity: number // 總數量
+  items: Item[] // 重複物品列表
+  location: string // 位置描述
 }
 
+// 重複物品模態框屬性介面
 interface DuplicateItemsModalProps {
-  onClose: () => void
-  onSuccess: () => void
+  onClose: () => void // 關閉回調
+  onSuccess: () => void // 成功回調
 }
 
 export default function DuplicateItemsModal({ onClose, onSuccess }: DuplicateItemsModalProps) {
-  const { t } = useLanguage()
-  const { activeHouseholdId } = useHousehold()
-  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [combiningItems, setCombiningItems] = useState<string[]>([])
+  const { t } = useLanguage() // 語言設定
+  const { activeHouseholdId } = useHousehold() // 當前家庭 ID
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]) // 重複物品群組列表
+  const [isLoading, setIsLoading] = useState(true) // 載入狀態
+  const [combiningItems, setCombiningItems] = useState<string[]>([]) // 正在合併的物品 ID 列表
 
   useEffect(() => {
-    fetchDuplicates()
+    fetchDuplicates() // 載入重複物品列表
   }, [activeHouseholdId])
 
+  // 獲取重複物品列表
   const fetchDuplicates = async () => {
     if (!activeHouseholdId) return
 
@@ -63,12 +69,13 @@ export default function DuplicateItemsModal({ onClose, onSuccess }: DuplicateIte
 
       if (response.ok) {
         const data = await response.json()
+        // 將 API 返回的資料轉換為重複群組格式
         const duplicateGroups: DuplicateGroup[] = data.map((group: Item[], index: number) => ({
-          id: `group-${index}`,
-          name: group[0].name,
-          totalQuantity: group.reduce((sum, item) => sum + item.quantity, 0),
-          items: group,
-          location: `${group[0].room?.name || 'No Room'} > ${group[0].cabinet?.name || 'No Cabinet'}`
+          id: `group-${index}`, // 群組 ID
+          name: group[0].name, // 物品名稱（使用第一個物品的名稱）
+          totalQuantity: group.reduce((sum, item) => sum + item.quantity, 0), // 計算總數量
+          items: group, // 重複物品列表
+          location: `${group[0].room?.name || 'No Room'} > ${group[0].cabinet?.name || 'No Cabinet'}` // 位置描述
         }))
         setDuplicates(duplicateGroups)
       } else {
@@ -82,7 +89,9 @@ export default function DuplicateItemsModal({ onClose, onSuccess }: DuplicateIte
     }
   }
 
+  // 合併重複物品到目標物品
   const combineItems = async (group: DuplicateGroup, targetItemId: string) => {
+    // 獲取要合併的來源物品 ID（排除目標物品）
     const sourceItemIds = group.items.filter(item => item.id !== targetItemId).map(item => item.id)
     
     if (sourceItemIds.length === 0) {
@@ -90,7 +99,7 @@ export default function DuplicateItemsModal({ onClose, onSuccess }: DuplicateIte
       return
     }
 
-    setCombiningItems(sourceItemIds)
+    setCombiningItems(sourceItemIds) // 標記正在合併的物品
 
     try {
       const response = await fetch('/api/items/duplicates', {

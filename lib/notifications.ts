@@ -1,26 +1,28 @@
-// Notification system for Smart Warehouse
+// 通知系統 - Smart Warehouse
+// 處理各種倉庫操作的通知，包括低庫存警告、物品變更通知等
 
 export interface NotificationData {
-  type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'QUANTITY_CHANGED' | 'LOCATION_CHANGED' | 'SYSTEM_ALERT'
-  title: string
-  message: string
-  userId: string
-  itemId?: string
-  householdId?: string
-  metadata?: Record<string, any>
+  type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'QUANTITY_CHANGED' | 'LOCATION_CHANGED' | 'SYSTEM_ALERT' // 通知類型
+  title: string // 通知標題
+  message: string // 通知訊息
+  userId: string // 用戶 ID
+  itemId?: string // 物品 ID（可選）
+  householdId?: string // 家庭 ID（可選）
+  metadata?: Record<string, any> // 額外元資料（可選）
 }
 
+// 創建通知
 export async function createNotification(data: NotificationData) {
   try {
     const { prisma } = await import('@/lib/prisma')
     
     const notification = await prisma.notification.create({
       data: {
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        userId: data.userId,
-        itemId: data.itemId
+        type: data.type, // 通知類型
+        title: data.title, // 標題
+        message: data.message, // 訊息
+        userId: data.userId, // 用戶 ID
+        itemId: data.itemId // 物品 ID（可選）
       }
     })
     
@@ -31,72 +33,78 @@ export async function createNotification(data: NotificationData) {
   }
 }
 
+// 創建低庫存通知
 export async function createLowInventoryNotification(item: any, userId: string) {
   return createNotification({
-    type: 'LOW_INVENTORY',
-    title: 'Low Inventory Alert',
-    message: `${item.name} is running low (${item.quantity} remaining)`,
+    type: 'LOW_INVENTORY', // 通知類型：低庫存
+    title: 'Low Inventory Alert', // 標題：低庫存警告
+    message: `${item.name} is running low (${item.quantity} remaining)`, // 訊息：物品名稱 + 剩餘數量
     userId,
     itemId: item.id
   })
 }
 
+// 創建物品添加通知
 export async function createItemAddedNotification(item: any, userId: string) {
   return createNotification({
-    type: 'ITEM_ADDED',
-    title: 'New Item Added',
-    message: `${item.name} has been added to your inventory`,
+    type: 'ITEM_ADDED', // 通知類型：物品已添加
+    title: 'New Item Added', // 標題：新物品已添加
+    message: `${item.name} has been added to your inventory`, // 訊息：物品已添加到庫存
     userId,
     itemId: item.id
   })
 }
 
+// 創建物品更新通知
 export async function createItemUpdatedNotification(item: any, userId: string, changes: string[]) {
   return createNotification({
-    type: 'ITEM_UPDATED',
-    title: 'Item Updated',
-    message: `${item.name} has been updated: ${changes.join(', ')}`,
+    type: 'ITEM_UPDATED', // 通知類型：物品已更新
+    title: 'Item Updated', // 標題：物品已更新
+    message: `${item.name} has been updated: ${changes.join(', ')}`, // 訊息：物品名稱 + 變更列表
     userId,
     itemId: item.id
   })
 }
 
+// 創建數量變更通知
 export async function createQuantityChangedNotification(item: any, userId: string, oldQuantity: number, newQuantity: number) {
-  const change = newQuantity > oldQuantity ? 'increased' : 'decreased'
+  const change = newQuantity > oldQuantity ? 'increased' : 'decreased' // 判斷是增加還是減少
   return createNotification({
-    type: 'QUANTITY_CHANGED',
-    title: 'Quantity Changed',
-    message: `${item.name} quantity ${change} from ${oldQuantity} to ${newQuantity}`,
+    type: 'QUANTITY_CHANGED', // 通知類型：數量已變更
+    title: 'Quantity Changed', // 標題：數量已變更
+    message: `${item.name} quantity ${change} from ${oldQuantity} to ${newQuantity}`, // 訊息：物品名稱 + 數量變更
     userId,
     itemId: item.id
   })
 }
 
+// 創建位置變更通知
 export async function createLocationChangedNotification(item: any, userId: string, oldLocation: string, newLocation: string) {
   return createNotification({
-    type: 'LOCATION_CHANGED',
-    title: 'Location Changed',
-    message: `${item.name} moved from ${oldLocation} to ${newLocation}`,
+    type: 'LOCATION_CHANGED', // 通知類型：位置已變更
+    title: 'Location Changed', // 標題：位置已變更
+    message: `${item.name} moved from ${oldLocation} to ${newLocation}`, // 訊息：物品名稱 + 位置變更
     userId,
     itemId: item.id
   })
 }
 
+// 創建系統警告通知
 export async function createSystemAlertNotification(title: string, message: string, userId: string, householdId?: string) {
   return createNotification({
-    type: 'SYSTEM_ALERT',
-    title,
-    message,
+    type: 'SYSTEM_ALERT', // 通知類型：系統警告
+    title, // 標題
+    message, // 訊息
     userId,
-    householdId
+    householdId // 家庭 ID（可選）
   })
 }
 
-// Auto-create notifications for common scenarios
+// 自動為常見場景創建通知
 export async function checkAndCreateNotifications(item: any, userId: string, action: 'created' | 'updated' | 'deleted', oldData?: any) {
   const notifications = []
   
-  // Low inventory check
+  // 低庫存檢查
   if (item.quantity <= item.minQuantity) {
     notifications.push(await createLowInventoryNotification(item, userId))
   }

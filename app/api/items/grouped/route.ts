@@ -1,13 +1,17 @@
+// 分組物品 API 路由
+// 將相同名稱、分類和位置的物品合併為一組，用於顯示和統計
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createPrismaClient } from '@/lib/prisma-factory'
 
-// Force dynamic rendering for this route
+// 強制動態渲染此路由
 export const dynamic = 'force-dynamic'
 
+// GET 處理器：獲取分組物品列表
 export async function GET(request: NextRequest) {
-  let prisma = createPrismaClient() // Create a fresh client for this request
+  let prisma = createPrismaClient() // 為此請求創建新的客戶端
   
   try {
     const session = await getServerSession(authOptions)
@@ -18,11 +22,11 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const category = searchParams.get('category')
-    const room = searchParams.get('room')
+    const search = searchParams.get('search') // 搜尋關鍵字（條碼/QR 碼）
+    const category = searchParams.get('category') // 分類 ID
+    const room = searchParams.get('room') // 房間 ID
 
-    // Get user's household
+    // 獲取用戶的家庭
     const household = await prisma.household.findFirst({
       where: {
         members: {
@@ -37,63 +41,64 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
     }
 
-    // Build where clause for filtering
+    // 構建篩選條件
     const whereClause: any = {
       householdId: household.id
     }
 
     if (search) {
       whereClause.OR = [
-        { barcode: { contains: search } },
-        { qrCode: { contains: search } }
+        { barcode: { contains: search } }, // 條碼包含搜尋關鍵字
+        { qrCode: { contains: search } } // QR 碼包含搜尋關鍵字
       ]
     }
 
     if (category) {
-      whereClause.categoryId = category
+      whereClause.categoryId = category // 分類篩選
     }
 
     if (room) {
-      whereClause.roomId = room
+      whereClause.roomId = room // 房間篩選
     }
 
-    // Get all items with their relations
+    // 獲取所有物品及其關聯資訊
     const items = await prisma.item.findMany({
       where: whereClause,
       include: {
         category: {
           include: {
-            parent: true
+            parent: true // 包含父分類
           }
         },
-        room: true,
-        cabinet: true
+        room: true, // 包含房間資訊
+        cabinet: true // 包含櫃子資訊
       },
       orderBy: {
-        name: 'asc'
+        name: 'asc' // 按名稱升序排序
       }
     })
 
-    // Group items by name, category, and location
+    // 按名稱、分類和位置分組物品
     const groupedItems = new Map<string, any>()
 
     items.forEach(item => {
-      // Create a unique key for grouping
+      // 創建唯一的分組鍵（名稱、分類、房間、櫃子）
       const groupKey = `${item.name.toLowerCase()}_${item.categoryId || 'no-category'}_${item.roomId || 'no-room'}_${item.cabinetId || 'no-cabinet'}`
       
       if (groupedItems.has(groupKey)) {
+        // 如果已存在此分組，合併數量
         const existingItem = groupedItems.get(groupKey)
-        existingItem.quantity += item.quantity
-        existingItem.itemIds.push(item.id)
+        existingItem.quantity += item.quantity // 累加數量
+        existingItem.itemIds.push(item.id) // 添加物品 ID 到列表
         
-        // Update min quantity to be the minimum of all grouped items
+        // 更新最小數量為所有分組物品中的最小值
         if (item.minQuantity !== null) {
           existingItem.minQuantity = existingItem.minQuantity !== null 
             ? Math.min(existingItem.minQuantity, item.minQuantity)
             : item.minQuantity
         }
         
-        // Keep the most recent image URL if available
+        // 如果有圖片 URL 且現有項目沒有，則保留最新的圖片 URL
         if (item.imageUrl && !existingItem.imageUrl) {
           existingItem.imageUrl = item.imageUrl
         }

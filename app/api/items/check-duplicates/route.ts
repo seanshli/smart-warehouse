@@ -1,3 +1,6 @@
+// 檢查重複物品 API 路由
+// 檢測倉庫中具有相同名稱但存儲在不同位置的物品（重複物品）
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -5,6 +8,7 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+// POST 處理器：檢查重複物品
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +19,7 @@ export async function POST(request: NextRequest) {
     
     const userId = (session.user as any).id
 
-    // Get user's household
+    // 獲取用戶的家庭
     const household = await prisma.household.findFirst({
       where: {
         members: {
@@ -30,58 +34,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Household not found' }, { status: 404 })
     }
 
-    // Get all items for this household
+    // 獲取此家庭的所有物品
     const items = await prisma.item.findMany({
       where: {
         householdId: household.id
       },
       select: {
-        id: true,
-        name: true,
-        quantity: true,
+        id: true, // 物品 ID
+        name: true, // 物品名稱
+        quantity: true, // 數量
         room: {
           select: {
-            name: true
+            name: true // 房間名稱
           }
         },
         cabinet: {
           select: {
-            name: true
+            name: true // 櫃子名稱
           }
         }
       }
     })
 
-    // Group items by normalized name (case-insensitive)
+    // 按標準化名稱分組（不區分大小寫）
     const itemGroups = new Map<string, any[]>()
     
     items.forEach(item => {
-      const normalizedName = item.name.trim().toLowerCase()
+      const normalizedName = item.name.trim().toLowerCase() // 標準化名稱（轉小寫、去空格）
       if (!itemGroups.has(normalizedName)) {
         itemGroups.set(normalizedName, [])
       }
       itemGroups.get(normalizedName)!.push(item)
     })
 
-    // Find duplicates (items with same name that appear in multiple locations)
+    // 查找重複物品（具有相同名稱但出現在多個位置的物品）
     const duplicates = Array.from(itemGroups.entries())
-      .filter(([_name, items]) => items.length > 1)
+      .filter(([_name, items]) => items.length > 1) // 過濾出出現多次的物品
       .map(([name, items]) => ({
-        name: items[0].name, // Original casing
-        normalizedName: name,
-        count: items.length,
+        name: items[0].name, // 原始大小寫
+        normalizedName: name, // 標準化名稱
+        count: items.length, // 重複數量
         locations: items.map(item => ({
-          id: item.id,
-          quantity: item.quantity,
-          room: item.room?.name || null,
-          cabinet: item.cabinet?.name || null
+          id: item.id, // 物品 ID
+          quantity: item.quantity, // 數量
+          room: item.room?.name || null, // 房間名稱
+          cabinet: item.cabinet?.name || null // 櫃子名稱
         }))
       }))
 
     return NextResponse.json({
-      totalItems: items.length,
-      duplicateGroups: duplicates.length,
-      duplicates: duplicates
+      totalItems: items.length, // 總物品數
+      duplicateGroups: duplicates.length, // 重複群組數
+      duplicates: duplicates // 重複物品列表
     })
   } catch (error) {
     console.error('Error checking item duplicates:', error)

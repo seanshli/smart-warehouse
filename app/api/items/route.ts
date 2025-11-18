@@ -301,8 +301,8 @@ export async function POST(request: NextRequest) {
     console.log('Found room record:', roomRecord ? { id: roomRecord.id, name: roomRecord.name, householdId: roomRecord.householdId } : null)
     console.log('Found cabinet record:', cabinetRecord ? { id: cabinetRecord.id, name: cabinetRecord.name, roomId: cabinetRecord.roomId } : null)
     
-    // Check if an item with the same name already exists in the same location
-    // This is the primary matching logic - same name + same location = same item
+    // 檢查相同位置是否已存在相同名稱的物品
+    // 這是主要的匹配邏輯 - 相同名稱 + 相同位置 = 同一物品
     console.log('Searching for existing item with criteria:', {
       name: name.trim(),
       roomId: roomRecord?.id || null,
@@ -312,24 +312,24 @@ export async function POST(request: NextRequest) {
     
     const existingItem = await prisma.item.findFirst({
       where: {
-        name: name.trim(),
-        roomId: roomRecord?.id || null,
-        cabinetId: cabinetRecord?.id || null,
-        householdId: household.id
+        name: name.trim(), // 物品名稱（去除空格）
+        roomId: roomRecord?.id || null, // 房間 ID
+        cabinetId: cabinetRecord?.id || null, // 櫃子 ID
+        householdId: household.id // 家庭 ID
       }
     })
     
-    // Also check for items with the same barcode (for user information)
+    // 同時檢查具有相同條碼的物品（用於用戶資訊）
     let itemsWithSameBarcode: any[] = []
     if (barcode && barcode.trim()) {
       itemsWithSameBarcode = await prisma.item.findMany({
         where: {
-          barcode: barcode.trim(),
+          barcode: barcode.trim(), // 條碼
           householdId: household.id
         },
         include: {
-          room: { select: { name: true } },
-          cabinet: { select: { name: true } }
+          room: { select: { name: true } }, // 包含房間名稱
+          cabinet: { select: { name: true } } // 包含櫃子名稱
         }
       })
       console.log(`Found ${itemsWithSameBarcode.length} items with barcode ${barcode}:`, 
@@ -351,7 +351,7 @@ export async function POST(request: NextRequest) {
     
     let item
     if (existingItem) {
-      // Update existing item by incrementing quantity
+      // 更新現有物品，增加數量
       console.log('Found existing item, incrementing quantity:', {
         existingItem: { id: existingItem.id, name: existingItem.name, currentQuantity: existingItem.quantity },
         newQuantity: existingItem.quantity + quantity
@@ -360,69 +360,69 @@ export async function POST(request: NextRequest) {
       item = await prisma.item.update({
         where: { id: existingItem.id },
         data: { 
-          quantity: existingItem.quantity + quantity,
-          updatedAt: new Date()
+          quantity: existingItem.quantity + quantity, // 增加數量
+          updatedAt: new Date() // 更新時間
         }
       })
       
-      // Log item quantity update
+      // 記錄物品數量更新
       await prisma.itemHistory.create({
         data: {
           itemId: item.id,
-          action: 'quantity_updated',
+          action: 'quantity_updated', // 操作類型：數量已更新
           description: `Quantity increased from ${existingItem.quantity} to ${item.quantity}`,
-          performedBy: userId
+          performedBy: userId // 執行者
         }
       })
 
-      // Create notifications for quantity update
+      // 為數量更新創建通知
       try {
         await checkAndCreateNotifications(item, userId, 'updated', existingItem)
       } catch (error) {
         console.error('Failed to create notifications for quantity update:', error)
       }
     } else {
-      // Create new item
+      // 創建新物品
       console.log('Creating new item')
       item = await prisma.item.create({
         data: {
-          name,
-          description,
-          quantity,
-          minQuantity,
-          barcode: barcode || null,
-          qrCode: qrCode || null,
-          imageUrl,
-          language: language || null,
-          tags: tags || [],
-          // Taiwan invoice fields
-          buyDate: buyDate ? new Date(buyDate) : null,
-          buyCost: buyCost || null,
-          buyLocation: buyLocation || null,
-          invoiceNumber: invoiceNumber || null,
-          sellerName: sellerName || null,
-          categoryId: categoryRecord?.id,
-          roomId: roomRecord?.id,
-          cabinetId: cabinetRecord?.id,
-          householdId: household.id,
-          addedById: userId
+          name, // 物品名稱
+          description, // 物品描述
+          quantity, // 數量
+          minQuantity, // 最小數量
+          barcode: barcode || null, // 條碼
+          qrCode: qrCode || null, // QR 碼
+          imageUrl, // 圖片 URL
+          language: language || null, // 語言
+          tags: tags || [], // 標籤
+          // 台灣發票欄位
+          buyDate: buyDate ? new Date(buyDate) : null, // 購買日期
+          buyCost: buyCost || null, // 購買成本
+          buyLocation: buyLocation || null, // 購買地點
+          invoiceNumber: invoiceNumber || null, // 發票號碼
+          sellerName: sellerName || null, // 賣家名稱
+          categoryId: categoryRecord?.id, // 分類 ID
+          roomId: roomRecord?.id, // 房間 ID
+          cabinetId: cabinetRecord?.id, // 櫃子 ID
+          householdId: household.id, // 家庭 ID
+          addedById: userId // 添加者 ID
         }
       })
       
-      // Log item creation
+      // 記錄物品創建
       await prisma.itemHistory.create({
         data: {
           itemId: item.id,
-          action: 'created',
+          action: 'created', // 操作類型：創建
           description: `Item "${name}" created with quantity ${quantity}`,
-          performedBy: userId,
-          newRoomId: roomRecord?.id,
-          newCabinetId: cabinetRecord?.id
+          performedBy: userId, // 執行者
+          newRoomId: roomRecord?.id, // 新房間 ID
+          newCabinetId: cabinetRecord?.id // 新櫃子 ID
         }
       })
     }
 
-    // Create notifications for the new item
+    // 為新物品創建通知
     try {
       await checkAndCreateNotifications(item, userId, 'created')
     } catch (error) {
@@ -436,7 +436,7 @@ export async function POST(request: NextRequest) {
       cabinetId: item.cabinetId
     })
     
-    // Return item with additional information about same barcode items
+    // 返回物品及相同條碼物品的額外資訊
     const response = {
       ...item,
       itemsWithSameBarcode: itemsWithSameBarcode.length > 0 ? itemsWithSameBarcode.map((item: any) => ({
@@ -444,17 +444,17 @@ export async function POST(request: NextRequest) {
         name: item.name,
         location: `${item.room?.name || 'No Room'} > ${item.cabinet?.name || 'No Cabinet'}`,
         quantity: item.quantity
-      })) : []
+      })) : [] // 相同條碼物品列表
     }
     
-    // Clear cache after successful item creation/update
+    // 成功創建/更新物品後清除快取
     CacheInvalidation.clearItemCache(household.id)
     console.log('Items API: Cleared cache for household:', household.id)
     
-    // Broadcast real-time update to all devices in the household
+    // 向家庭內所有裝置廣播即時更新
     try {
       broadcastToHousehold(household.id, {
-        type: 'item_created',
+        type: 'item_created', // 事件類型：物品已創建
         item: {
           id: item.id,
           name: item.name,
@@ -463,7 +463,7 @@ export async function POST(request: NextRequest) {
           room: roomRecord?.name,
           cabinet: cabinetRecord?.name
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString() // 時間戳
       })
     } catch (error) {
       console.error('Failed to broadcast real-time update:', error)
@@ -494,6 +494,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// GET 處理器：獲取物品列表（支援搜尋、分類篩選、房間篩選等）
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -504,19 +505,19 @@ export async function GET(request: NextRequest) {
 
     const userId = (session?.user as any)?.id
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const category = searchParams.get('category')
-    const room = searchParams.get('room')
-    const categoryId = searchParams.get('categoryId')
-    const roomId = searchParams.get('roomId')
-    const subcategory = searchParams.get('subcategory')
-    const level3 = searchParams.get('level3')
-    const activeHouseholdId = searchParams.get('householdId')
+    const search = searchParams.get('search') // 搜尋關鍵字
+    const category = searchParams.get('category') // 分類名稱
+    const room = searchParams.get('room') // 房間名稱
+    const categoryId = searchParams.get('categoryId') // 分類 ID
+    const roomId = searchParams.get('roomId') // 房間 ID
+    const subcategory = searchParams.get('subcategory') // 子分類名稱
+    const level3 = searchParams.get('level3') // 第三級分類名稱
+    const activeHouseholdId = searchParams.get('householdId') // 家庭 ID
 
-    // Get user's household - use activeHouseholdId if provided, otherwise find first
+    // 獲取用戶的家庭 - 如果提供了 activeHouseholdId 則使用它，否則查找第一個
     let household
     if (activeHouseholdId) {
-      // Verify user has access to this household
+      // 驗證用戶有權限存取此家庭
       household = await prisma.household.findFirst({
         where: {
           id: activeHouseholdId,
@@ -528,7 +529,7 @@ export async function GET(request: NextRequest) {
         }
       })
     } else {
-      // Fallback to first household
+      // 備援：使用第一個家庭
       household = await prisma.household.findFirst({
         where: {
           members: {
@@ -540,11 +541,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // If user has no household, create one automatically
+    // 如果用戶沒有家庭，自動創建一個
     if (!household) {
       console.log('User has no household, creating default household...')
       
-      // Get user info
+      // 獲取用戶資訊
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { name: true, email: true, language: true }
@@ -554,15 +555,15 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
       
-      // Create default household
+      // 創建預設家庭
       household = await prisma.household.create({
         data: {
-          name: `${user.name || 'User'}'s Household`,
-          description: 'Your personal household inventory',
+          name: `${user.name || 'User'}'s Household`, // 家庭名稱
+          description: 'Your personal household inventory', // 家庭描述
           members: {
             create: {
               userId: userId,
-              role: 'OWNER'
+              role: 'OWNER' // 角色：擁有者
             }
           }
         }
@@ -571,36 +572,36 @@ export async function GET(request: NextRequest) {
       console.log('Created default household:', household.id)
     }
 
-    // Build where clause
+    // 構建查詢條件
     const where: any = {
-      householdId: household.id
+      householdId: household.id // 家庭 ID
     }
 
-    // Handle search term (creates OR conditions for text search)
+    // 處理搜尋關鍵字（創建 OR 條件進行文字搜尋）
     const searchConditions = []
     if (search) {
       searchConditions.push(
-        { name: { contains: search } },
-        { description: { contains: search } },
-        { barcode: { contains: search } },
-        { qrCode: { contains: search } },
-        // Search in category names
+        { name: { contains: search } }, // 物品名稱包含
+        { description: { contains: search } }, // 物品描述包含
+        { barcode: { contains: search } }, // 條碼包含
+        { qrCode: { contains: search } }, // QR 碼包含
+        // 在分類名稱中搜尋
         { category: { name: { contains: search } } },
-        // Search in parent category names
+        // 在父分類名稱中搜尋
         { category: { parent: { name: { contains: search } } } },
-        // Search in grandparent category names (level 3)
+        // 在祖父分類名稱中搜尋（第三級）
         { category: { parent: { parent: { name: { contains: search } } } } },
-        // Search in room names
+        // 在房間名稱中搜尋
         { room: { name: { contains: search } } },
-        // Search in cabinet names
+        // 在櫃子名稱中搜尋
         { cabinet: { name: { contains: search } } },
-        // Search in voice transcripts from item history
+        // 在物品歷史的語音轉文字中搜尋
         {
           history: {
             some: {
               voiceTranscript: {
                 contains: search,
-                mode: 'insensitive'
+                mode: 'insensitive' // 不區分大小寫
               } as any
             }
           }
@@ -608,7 +609,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Handle subcategory search
+    // 處理子分類搜尋
     if (subcategory) {
       searchConditions.push({
         category: {
@@ -621,7 +622,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Handle level3 search
+    // 處理第三級分類搜尋
     if (level3) {
       searchConditions.push({
         category: {
@@ -634,40 +635,40 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // If we have search conditions, add them as OR
+    // 如果有搜尋條件，將它們添加為 OR
     if (searchConditions.length > 0) {
       where.OR = searchConditions
     }
 
-    // Filter by category (name-based) - include subcategories and level3
+    // 按分類篩選（基於名稱）- 包含子分類和第三級分類
     if (category) {
       where.category = {
         OR: [
-          { name: category }, // Direct match
-          { parent: { name: category } }, // Match subcategories of this parent
-          { parent: { parent: { name: category } } } // Match level3 categories of this grandparent
+          { name: category }, // 直接匹配
+          { parent: { name: category } }, // 匹配此父分類的子分類
+          { parent: { parent: { name: category } } } // 匹配此祖父分類的第三級分類
         ]
       }
     }
 
-    // Filter by category ID (exact match)
+    // 按分類 ID 篩選（精確匹配）
     if (categoryId) {
       where.categoryId = categoryId
     }
 
-    // Filter by room (name-based) - exact match
+    // 按房間篩選（基於名稱）- 精確匹配
     if (room) {
       where.room = {
-        name: room // Use exact match instead of contains
+        name: room // 使用精確匹配而非包含
       }
     }
 
-    // Filter by room ID (exact match)
+    // 按房間 ID 篩選（精確匹配）
     if (roomId) {
       where.roomId = roomId
     }
 
-    // Debug logging for troubleshooting
+    // 除錯日誌（用於故障排除）
     console.log('🔍 Search API:', {
       search: search || 'none',
       category: category || 'none',
@@ -675,6 +676,7 @@ export async function GET(request: NextRequest) {
       subcategory: subcategory || 'none'
     })
 
+    // 查詢物品列表
     const items = await prisma.item.findMany({
       where,
       include: {
@@ -682,17 +684,17 @@ export async function GET(request: NextRequest) {
           include: {
             parent: {
               include: {
-                parent: true
+                parent: true // 包含祖父分類
               }
             }
           }
         },
-        room: true,
-        cabinet: true,
+        room: true, // 包含房間資訊
+        cabinet: true, // 包含櫃子資訊
         addedBy: {
           select: {
-            name: true,
-            email: true
+            name: true, // 添加者名稱
+            email: true // 添加者電子郵件
           }
         }
       },

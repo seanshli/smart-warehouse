@@ -286,15 +286,25 @@ export function getMQTTClient(config?: MQTTConfig): MQTTClient {
   if (!mqttClientInstance) {
     if (!config) {
       // 從環境變數讀取配置
+      // 自動區分開發和生產環境
+      // Automatically distinguish between development and production environments
+      const isProduction = process.env.NODE_ENV === 'production'
+      const defaultBrokerUrl = isProduction 
+        ? 'mqtts://localhost:8883' // 生產環境預設使用安全連接
+        : 'mqtt://localhost:1883'  // 開發環境預設使用本地連接
+      
       config = {
-        brokerUrl: process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883',
+        brokerUrl: process.env.MQTT_BROKER_URL || defaultBrokerUrl,
         username: process.env.MQTT_USERNAME,
         password: process.env.MQTT_PASSWORD,
-        clientId: process.env.MQTT_CLIENT_ID,
+        clientId: process.env.MQTT_CLIENT_ID || (isProduction ? 'smart-warehouse-production' : 'smart-warehouse-dev'),
         keepalive: parseInt(process.env.MQTT_KEEPALIVE || '60'),
         reconnectPeriod: parseInt(process.env.MQTT_RECONNECT_PERIOD || '1000'),
         connectTimeout: parseInt(process.env.MQTT_CONNECT_TIMEOUT || '30000'),
       }
+      
+      console.log(`MQTT: Using ${isProduction ? 'production' : 'development'} configuration`)
+      console.log(`MQTT: Broker URL: ${config.brokerUrl}`)
     }
     mqttClientInstance = new MQTTClient(config)
   }

@@ -26,15 +26,14 @@
 
 ### 1. 配置 MQTT Broker / Configure MQTT Broker
 
-在 `.env` 或環境變數中設定以下參數：
-<!-- Set the following parameters in `.env` or environment variables: -->
+#### 開發環境 / Development Environment
+
+在 `.env.local` 或環境變數中設定以下參數：
+<!-- Set the following parameters in `.env.local` or environment variables: -->
 
 ```bash
-# MQTT Broker Configuration
+# MQTT Broker Configuration (Development)
 MQTT_BROKER_URL="mqtt://localhost:1883"
-# 安全連接使用：mqtts://broker.example.com:8883
-# For secure connection: mqtts://broker.example.com:8883
-
 MQTT_USERNAME="your-mqtt-username"
 MQTT_PASSWORD="your-mqtt-password"
 MQTT_CLIENT_ID="smart-warehouse-client"
@@ -42,6 +41,35 @@ MQTT_KEEPALIVE="60"
 MQTT_RECONNECT_PERIOD="1000"
 MQTT_CONNECT_TIMEOUT="30000"
 ```
+
+#### 生產環境 / Production Environment
+
+在生產環境（如 Vercel、Railway 等）的環境變數設定中配置：
+<!-- Configure in your production environment variables (e.g., Vercel, Railway): -->
+
+```bash
+# MQTT Broker Configuration (Production)
+# 使用安全的 MQTT over TLS 連接
+# Use secure MQTT over TLS connection
+MQTT_BROKER_URL="mqtts://your-production-broker.com:8883"
+# 或非安全連接：mqtt://your-production-broker.com:1883
+# Or non-secure: mqtt://your-production-broker.com:1883
+
+MQTT_USERNAME="your-production-mqtt-username"
+MQTT_PASSWORD="your-production-mqtt-password"
+MQTT_CLIENT_ID="smart-warehouse-production-client"
+MQTT_KEEPALIVE="60"
+MQTT_RECONNECT_PERIOD="1000"
+MQTT_CONNECT_TIMEOUT="30000"
+```
+
+**注意 / Note:**
+- 開發環境通常使用本地 MQTT Broker (`mqtt://localhost:1883`)
+- 生產環境建議使用安全的 MQTT over TLS (`mqtts://broker.example.com:8883`)
+- 確保生產環境的 MQTT Broker 可以從您的應用程式伺服器訪問
+<!-- - Development typically uses local MQTT Broker (`mqtt://localhost:1883`) -->
+<!-- - Production should use secure MQTT over TLS (`mqtts://broker.example.com:8883`) -->
+<!-- - Ensure production MQTT Broker is accessible from your application server -->
 
 ### 2. 更新資料庫 / Update Database
 

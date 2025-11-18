@@ -2,7 +2,10 @@
 ## Production Deployment Guide
 
 本指南說明如何將 Smart Warehouse 部署到生產環境。
+
+**注意 / Note:** Smart Warehouse 已經在 Vercel 和 Supabase 上運行（`https://smart-warehouse-five.vercel.app`）。如果您只需要添加 MQTT 功能，請參考 [MQTT_PRODUCTION_UPDATE.md](./MQTT_PRODUCTION_UPDATE.md)。
 <!-- This guide explains how to deploy Smart Warehouse to production environment. -->
+<!-- Note: Smart Warehouse is already running on Vercel and Supabase. If you only need to add MQTT functionality, see MQTT_PRODUCTION_UPDATE.md. -->
 
 ## 部署前檢查清單 / Pre-Deployment Checklist
 

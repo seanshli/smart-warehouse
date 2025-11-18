@@ -1,34 +1,38 @@
 'use client'
+// 通知中心組件
+// 顯示和管理倉庫相關的通知，包括低庫存警告、物品變更通知等
 
 import { useState, useEffect } from 'react'
 import { BellIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useHousehold } from './HouseholdProvider'
 
+// 通知介面定義
 interface Notification {
-  id: string
-  type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'SYSTEM'
-  title: string
-  message: string
-  read: boolean
-  createdAt: string
+  id: string // 通知 ID
+  type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'SYSTEM' // 通知類型
+  title: string // 通知標題
+  message: string // 通知訊息
+  read: boolean // 是否已讀
+  createdAt: string // 創建時間
   item?: {
-    name: string
+    name: string // 相關物品名稱
   }
 }
 
 export default function NotificationCenter() {
-  const { household } = useHousehold()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { household } = useHousehold() // 當前家庭
+  const [notifications, setNotifications] = useState<Notification[]>([]) // 通知列表
+  const [isLoading, setIsLoading] = useState(true) // 載入狀態
 
   useEffect(() => {
-    fetchNotifications()
+    fetchNotifications() // 載入通知列表
   }, [household?.id])
 
+  // 獲取通知列表
   const fetchNotifications = async () => {
     try {
-      // CRITICAL: Don't fetch until household is loaded
+      // 重要：等待家庭載入完成後再獲取通知
       if (!household?.id) {
         console.log('NotificationCenter: Waiting for household to load, skipping fetch')
         setNotifications([])
@@ -36,7 +40,7 @@ export default function NotificationCenter() {
       }
       
       const params = new URLSearchParams()
-      params.append('householdId', household.id) // Always include householdId
+      params.append('householdId', household.id) // 始終包含家庭 ID
       
       const url = `/api/notifications${params.toString() ? '?' + params.toString() : ''}`
       console.log('NotificationCenter: Fetching from URL:', url)
@@ -54,6 +58,7 @@ export default function NotificationCenter() {
     }
   }
 
+  // 標記單個通知為已讀
   const markAsRead = async (notificationId: string) => {
     try {
       const response = await fetch(`/api/notifications/${notificationId}`, {
@@ -61,7 +66,7 @@ export default function NotificationCenter() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ read: true }),
+        body: JSON.stringify({ read: true }), // 標記為已讀
       })
 
       if (response.ok) {
@@ -76,6 +81,7 @@ export default function NotificationCenter() {
     }
   }
 
+  // 標記所有通知為已讀
   const markAllAsRead = async () => {
     try {
       const response = await fetch('/api/notifications/mark-all-read', {
@@ -84,7 +90,7 @@ export default function NotificationCenter() {
 
       if (response.ok) {
         setNotifications(prev =>
-          prev.map(notif => ({ ...notif, read: true }))
+          prev.map(notif => ({ ...notif, read: true })) // 將所有通知標記為已讀
         )
         toast.success('All notifications marked as read')
       }
@@ -93,11 +99,12 @@ export default function NotificationCenter() {
     }
   }
 
+  // 根據通知類型獲取對應的圖示
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'LOW_INVENTORY':
+      case 'LOW_INVENTORY': // 低庫存
         return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
-      case 'ITEM_ADDED':
+      case 'ITEM_ADDED': // 物品已添加
       case 'ITEM_UPDATED':
         return <InformationCircleIcon className="h-5 w-5 text-blue-500" />
       default:

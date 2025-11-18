@@ -1,61 +1,66 @@
 'use client'
+// 活動記錄組件
+// 顯示倉庫中的所有操作活動，包括物品創建、移動、更新等
 
 import { useState, useEffect } from 'react'
 import { ClockIcon, UserIcon, ArrowRightIcon, PlusIcon, PencilIcon, ArrowsRightLeftIcon, ShoppingCartIcon, HomeIcon, XMarkIcon, FolderIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 
+// 活動介面定義
 interface Activity {
-  id: string
-  action: string
-  description: string
-  createdAt: string
+  id: string // 活動 ID
+  action: string // 操作類型
+  description: string // 操作描述
+  createdAt: string // 創建時間
   performer: {
-    name: string
-    email: string
+    name: string // 執行者名稱
+    email: string // 執行者電子郵件
   }
   item?: {
-    id: string
-    name: string
+    id: string // 相關物品 ID
+    name: string // 相關物品名稱
   }
   oldRoom?: {
-    name: string
+    name: string // 舊房間名稱
   }
   newRoom?: {
-    name: string
+    name: string // 新房間名稱
   }
   oldCabinet?: {
-    name: string
+    name: string // 舊櫃子名稱
   }
   newCabinet?: {
-    name: string
+    name: string // 新櫃子名稱
   }
 }
 
+// 活動組件屬性介面
 interface ActivitiesProps {
-  timeFilter?: 'today' | 'week' | 'all'
+  timeFilter?: 'today' | 'week' | 'all' // 時間篩選器
 }
 
 export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
-  const { t, currentLanguage } = useLanguage()
-  const { household } = useHousehold()
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [loading, setLoading] = useState(true)
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const { household } = useHousehold() // 當前家庭
+  const [activities, setActivities] = useState<Activity[]>([]) // 活動列表
+  const [loading, setLoading] = useState(true) // 載入狀態
 
   useEffect(() => {
-    fetchActivities()
+    fetchActivities() // 初始載入活動列表
   }, [])
 
-  // Re-fetch activities when language, time filter, or household changes
+  // 當語言、時間篩選器或家庭變更時重新獲取活動
   useEffect(() => {
     fetchActivities()
   }, [currentLanguage, timeFilter, household?.id])
 
+  // 獲取活動列表
   const fetchActivities = async () => {
     try {
       setLoading(true)
       
-      // CRITICAL: Don't fetch until household is loaded
+      // 重要：等待家庭載入完成後再獲取活動
       if (!household?.id) {
         console.log('Activities: Waiting for household to load, skipping fetch')
         setLoading(false)
@@ -64,8 +69,8 @@ export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
       }
       
       const params = new URLSearchParams()
-      params.append('timeFilter', timeFilter)
-      params.append('householdId', household.id) // Always include householdId
+      params.append('timeFilter', timeFilter) // 時間篩選器
+      params.append('householdId', household.id) // 始終包含家庭 ID
       
       const url = `/api/activities?${params.toString()}`
       console.log('Activities: Fetching from URL:', url)
@@ -85,19 +90,20 @@ export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
     }
   }
 
+  // 根據操作類型獲取對應的圖示
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'created':
+      case 'created': // 創建
         return <PlusIcon className="h-4 w-4" />
-      case 'moved':
+      case 'moved': // 移動
         return <ArrowsRightLeftIcon className="h-4 w-4" />
-      case 'quantity_updated':
+      case 'quantity_updated': // 數量更新
         return <PencilIcon className="h-4 w-4" />
-      case 'updated':
+      case 'updated': // 更新
         return <PencilIcon className="h-4 w-4" />
-      case 'room_created':
+      case 'room_created': // 房間創建
         return <HomeIcon className="h-4 w-4" />
-      case 'room_deleted':
+      case 'room_deleted': // 房間刪除
         return <XMarkIcon className="h-4 w-4" />
       case 'category_created':
         return <FolderIcon className="h-4 w-4" />

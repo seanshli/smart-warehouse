@@ -103,65 +103,65 @@ export const CacheKeys = {
   duplicateDetection: (itemName: string, description?: string) => `duplicate:${itemName}:${description || ''}`, // 重複檢測
 }
 
-// Cache invalidation helpers
+// 快取失效輔助函數
 export const CacheInvalidation = {
-  // Clear all item-related cache when items change
+  // 當物品變更時清除所有物品相關快取
   clearItemCache: (householdId: string) => {
-    cache.clearPattern(`grouped-items:${householdId}`)
-    cache.clearPattern(`activities:${householdId}`)
-    cache.clearPattern(`dashboard-stats:${householdId}`)
+    cache.clearPattern(`grouped-items:${householdId}`) // 分組物品
+    cache.clearPattern(`activities:${householdId}`) // 活動記錄
+    cache.clearPattern(`dashboard-stats:${householdId}`) // 儀表板統計
   },
   
-  // Clear room-related cache when rooms change
+  // 當房間變更時清除所有房間相關快取
   clearRoomCache: (householdId: string) => {
-    cache.clearPattern(`rooms:${householdId}`)
-    cache.clearPattern(`cabinets:${householdId}`)
-    cache.clearPattern(`grouped-items:${householdId}`)
-    cache.clearPattern(`dashboard-stats:${householdId}`)
+    cache.clearPattern(`rooms:${householdId}`) // 房間列表
+    cache.clearPattern(`cabinets:${householdId}`) // 櫃子列表
+    cache.clearPattern(`grouped-items:${householdId}`) // 分組物品
+    cache.clearPattern(`dashboard-stats:${householdId}`) // 儀表板統計
   },
   
-  // Clear category-related cache when categories change
+  // 當分類變更時清除所有分類相關快取
   clearCategoryCache: (householdId: string) => {
-    cache.clearPattern(`categories:${householdId}`)
-    cache.clearPattern(`grouped-items:${householdId}`)
+    cache.clearPattern(`categories:${householdId}`) // 分類列表
+    cache.clearPattern(`grouped-items:${householdId}`) // 分組物品
   },
   
-  // Clear admin-related cache when admin data changes
+  // 當管理員資料變更時清除所有管理員相關快取
   clearAdminCache: () => {
-    cache.clearPattern(`admin:`)
+    cache.clearPattern(`admin:`) // 管理員相關快取
   },
   
-  // Clear user-related cache when user data changes
+  // 當用戶資料變更時清除所有用戶相關快取
   clearUserCache: (userId: string) => {
-    cache.clearPattern(`user:${userId}`)
-    cache.clearPattern(`activities:.*:${userId}`)
+    cache.clearPattern(`user:${userId}`) // 用戶快取
+    cache.clearPattern(`activities:.*:${userId}`) // 用戶活動記錄
   },
   
-  // Clear duplicate detection cache when items change
+  // 當物品變更時清除重複檢測快取
   clearDuplicateCache: () => {
-    cache.clearPattern(`duplicate:`)
+    cache.clearPattern(`duplicate:`) // 重複檢測快取
   }
 }
 
-// Utility function to wrap API functions with caching
+// 實用函數：為 API 函數包裝快取功能
 export function withCache<T extends any[], R>(
-  fn: (...args: T) => Promise<R>,
-  keyGenerator: (...args: T) => string,
-  ttl?: number
+  fn: (...args: T) => Promise<R>, // 要包裝的函數
+  keyGenerator: (...args: T) => string, // 快取鍵生成器
+  ttl?: number // 存活時間（可選）
 ) {
   return async (...args: T): Promise<R> => {
-    const key = keyGenerator(...args)
+    const key = keyGenerator(...args) // 生成快取鍵
     
-    // Try to get from cache first
+    // 先嘗試從快取獲取
     const cached = cache.get<R>(key)
     if (cached) {
-      console.log(`Cache HIT for key: ${key}`)
+      console.log(`Cache HIT for key: ${key}`) // 快取命中
       return cached
     }
     
-    console.log(`Cache MISS for key: ${key}`)
+    console.log(`Cache MISS for key: ${key}`) // 快取未命中
     
-    // Execute the function and cache the result
+    // 執行函數並快取結果
     const result = await fn(...args)
     cache.set(key, result, ttl)
     

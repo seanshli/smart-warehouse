@@ -69,6 +69,29 @@ export interface Translations {
   homeAssistantCustomError: string // 自訂錯誤
   homeAssistantSendService: string // 發送服務
   homeAssistantNoEntities: string // 無實體
+  mqttDevices: string // MQTT 設備
+  mqttDeviceName: string // 設備名稱
+  mqttDeviceId: string // 設備 ID
+  mqttVendor: string // 供應商
+  mqttStatus: string // 狀態
+  mqttOnline: string // 在線
+  mqttOffline: string // 離線
+  mqttAddDevice: string // 添加設備
+  mqttDeleteDevice: string // 刪除設備
+  mqttControlDevice: string // 控制設備
+  mqttPowerOn: string // 開啟
+  mqttPowerOff: string // 關閉
+  mqttSetTemperature: string // 設定溫度
+  mqttSetMode: string // 設定模式
+  mqttSetFanSpeed: string // 設定風速
+  mqttCommandSent: string // 命令已發送
+  mqttCommandFailed: string // 命令失敗
+  mqttDeviceAdded: string // 設備已添加
+  mqttDeviceDeleted: string // 設備已刪除
+  mqttNoDevices: string // 無設備
+  mqttVendorTuya: string // Tuya
+  mqttVendorESP: string // ESP
+  mqttVendorMidea: string // Midea
   householdSettings: string // 家庭設定
   
   // Admin
@@ -627,6 +650,29 @@ const en: Translations = {
   homeAssistantCustomError: 'Failed to call service.',
   homeAssistantSendService: 'Send',
   homeAssistantNoEntities: 'No entities configured. Add NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES or use the custom service call below.',
+  mqttDevices: 'MQTT Devices',
+  mqttDeviceName: 'Device Name',
+  mqttDeviceId: 'Device ID',
+  mqttVendor: 'Vendor',
+  mqttStatus: 'Status',
+  mqttOnline: 'Online',
+  mqttOffline: 'Offline',
+  mqttAddDevice: 'Add Device',
+  mqttDeleteDevice: 'Delete Device',
+  mqttControlDevice: 'Control Device',
+  mqttPowerOn: 'Power On',
+  mqttPowerOff: 'Power Off',
+  mqttSetTemperature: 'Set Temperature',
+  mqttSetMode: 'Set Mode',
+  mqttSetFanSpeed: 'Set Fan Speed',
+  mqttCommandSent: 'Command sent successfully',
+  mqttCommandFailed: 'Failed to send command',
+  mqttDeviceAdded: 'Device added successfully',
+  mqttDeviceDeleted: 'Device deleted successfully',
+  mqttNoDevices: 'No MQTT devices found. Add your first device to get started.',
+  mqttVendorTuya: 'Tuya',
+  mqttVendorESP: 'ESP',
+  mqttVendorMidea: 'Midea',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -1188,6 +1234,29 @@ const zhTW: Translations = {
   homeAssistantCustomError: '服務呼叫失敗。',
   homeAssistantSendService: '送出',
   homeAssistantNoEntities: '尚未設定常用實體。可在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 環境變數中加入 entity_id，或直接使用下方自訂服務控制裝置。',
+  mqttDevices: 'MQTT 設備',
+  mqttDeviceName: '設備名稱',
+  mqttDeviceId: '設備 ID',
+  mqttVendor: '供應商',
+  mqttStatus: '狀態',
+  mqttOnline: '在線',
+  mqttOffline: '離線',
+  mqttAddDevice: '添加設備',
+  mqttDeleteDevice: '刪除設備',
+  mqttControlDevice: '控制設備',
+  mqttPowerOn: '開啟',
+  mqttPowerOff: '關閉',
+  mqttSetTemperature: '設定溫度',
+  mqttSetMode: '設定模式',
+  mqttSetFanSpeed: '設定風速',
+  mqttCommandSent: '命令已發送',
+  mqttCommandFailed: '命令發送失敗',
+  mqttDeviceAdded: '設備已添加',
+  mqttDeviceDeleted: '設備已刪除',
+  mqttNoDevices: '未找到 MQTT 設備。添加您的第一個設備以開始使用。',
+  mqttVendorTuya: 'Tuya（塗鴉）',
+  mqttVendorESP: 'ESP',
+  mqttVendorMidea: 'Midea（美的）',
   
   // Admin
   adminPanel: '管理面板',
@@ -1759,6 +1828,29 @@ const zh: Translations = {
   homeAssistantCustomError: '服务调用失败。',
   homeAssistantSendService: '发送',
   homeAssistantNoEntities: '尚未配置常用实体。可以在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 环境变量中添加 entity_id，或直接使用下面的自定义服务调用。',
+  mqttDevices: 'MQTT 设备',
+  mqttDeviceName: '设备名称',
+  mqttDeviceId: '设备 ID',
+  mqttVendor: '供应商',
+  mqttStatus: '状态',
+  mqttOnline: '在线',
+  mqttOffline: '离线',
+  mqttAddDevice: '添加设备',
+  mqttDeleteDevice: '删除设备',
+  mqttControlDevice: '控制设备',
+  mqttPowerOn: '开启',
+  mqttPowerOff: '关闭',
+  mqttSetTemperature: '设置温度',
+  mqttSetMode: '设置模式',
+  mqttSetFanSpeed: '设置风速',
+  mqttCommandSent: '命令已发送',
+  mqttCommandFailed: '命令发送失败',
+  mqttDeviceAdded: '设备已添加',
+  mqttDeviceDeleted: '设备已删除',
+  mqttNoDevices: '未找到 MQTT 设备。添加您的第一个设备以开始使用。',
+  mqttVendorTuya: 'Tuya（涂鸦）',
+  mqttVendorESP: 'ESP',
+  mqttVendorMidea: 'Midea（美的）',
   
   // Admin
   adminPanel: '管理面板',
@@ -2328,6 +2420,29 @@ const ja: Translations = {
   homeAssistantCustomError: 'サービス呼び出しに失敗しました。',
   homeAssistantSendService: '送信',
   homeAssistantNoEntities: '表示するエンティティが設定されていません。NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES に entity_id を設定するか、下のカスタムサービス呼び出しを使用してください。',
+  mqttDevices: 'MQTT デバイス',
+  mqttDeviceName: 'デバイス名',
+  mqttDeviceId: 'デバイス ID',
+  mqttVendor: 'ベンダー',
+  mqttStatus: 'ステータス',
+  mqttOnline: 'オンライン',
+  mqttOffline: 'オフライン',
+  mqttAddDevice: 'デバイスを追加',
+  mqttDeleteDevice: 'デバイスを削除',
+  mqttControlDevice: 'デバイスを制御',
+  mqttPowerOn: '電源オン',
+  mqttPowerOff: '電源オフ',
+  mqttSetTemperature: '温度を設定',
+  mqttSetMode: 'モードを設定',
+  mqttSetFanSpeed: 'ファン速度を設定',
+  mqttCommandSent: 'コマンドが正常に送信されました',
+  mqttCommandFailed: 'コマンドの送信に失敗しました',
+  mqttDeviceAdded: 'デバイスが正常に追加されました',
+  mqttDeviceDeleted: 'デバイスが正常に削除されました',
+  mqttNoDevices: 'MQTT デバイスが見つかりません。最初のデバイスを追加して開始してください。',
+  mqttVendorTuya: 'Tuya',
+  mqttVendorESP: 'ESP',
+  mqttVendorMidea: 'Midea',
   
   // Admin
   adminPanel: '管理パネル',

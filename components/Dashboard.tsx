@@ -19,7 +19,8 @@ import {
   ArchiveBoxIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  WifiIcon
 } from '@heroicons/react/24/outline'
 import AddItemModal from './AddItemModal'
 import SearchModal from './SearchModal'
@@ -42,6 +43,7 @@ import HouseholdSettings from './HouseholdSettings'
 import CreateHouseholdModal from './CreateHouseholdModal'
 import VoiceAssistantPanel from './VoiceAssistantPanel'
 import HomeAssistantPanel from './HomeAssistantPanel'
+import MQTTPanel from './MQTTPanel'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -319,6 +321,7 @@ export default function Dashboard() {
     { id: 'notifications', name: t('notifications'), icon: BellIcon },
     { id: 'members', name: t('members'), icon: UsersIcon, permission: 'canManageMembers' },
     { id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon },
+    { id: 'mqtt', name: t('mqttDevices') || 'MQTT Devices', icon: WifiIcon },
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
     { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
   ]
@@ -491,6 +494,7 @@ export default function Dashboard() {
               {activeTab === 'search' && <SearchPage />}
               {activeTab === 'assistant' && <VoiceAssistantPanel />}
               {activeTab === 'homeassistant' && <HomeAssistantPanel />}
+              {activeTab === 'mqtt' && <MQTTPanel />}
                {activeTab === 'items' && (
                  <div className="px-4 py-6 sm:px-0">
                    <ItemsList 

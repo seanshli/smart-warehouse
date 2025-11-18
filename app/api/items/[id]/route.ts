@@ -1,3 +1,6 @@
+// 物品 API 路由（單個物品操作）
+// 處理單個物品的獲取、更新、部分更新、刪除等操作
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -5,9 +8,10 @@ import { prisma } from '@/lib/prisma'
 import { checkAndCreateNotifications } from '@/lib/notifications'
 import { trackActivity } from '@/lib/activity-tracker'
 
-// Force dynamic rendering for this route
+// 強制動態渲染此路由
 export const dynamic = 'force-dynamic'
 
+// GET 處理器：獲取單個物品詳情
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -20,8 +24,9 @@ export async function GET(
     }
 
     const userId = (session?.user as any)?.id
-    const itemId = params.id
+    const itemId = params.id // 物品 ID
 
+    // 查詢物品（包含分類、房間、櫃子資訊）
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -36,11 +41,11 @@ export async function GET(
       include: {
         category: {
           include: {
-            parent: true
+            parent: true // 包含父分類
           }
         },
-        room: true,
-        cabinet: true
+        room: true, // 包含房間資訊
+        cabinet: true // 包含櫃子資訊
       }
     })
 
@@ -48,7 +53,7 @@ export async function GET(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    // Track item detail view activity (non-blocking)
+    // 追蹤物品詳情查看活動（非阻塞）
     trackActivity({
       userId,
       householdId: item.householdId,
@@ -75,6 +80,7 @@ export async function GET(
   }
 }
 
+// PUT 處理器：完整更新物品
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -87,10 +93,10 @@ export async function PUT(
     }
 
     const userId = (session?.user as any)?.id
-    const itemId = params.id
+    const itemId = params.id // 物品 ID
     const body = await request.json()
 
-    // Verify user has access to this item
+    // 驗證用戶有權限存取此物品
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -108,42 +114,42 @@ export async function PUT(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    // Update the item
+    // 更新物品（完整更新所有欄位）
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
       data: {
-        name: body.name,
-        description: body.description,
-        quantity: body.quantity,
-        minQuantity: body.minQuantity,
-        categoryId: body.categoryId,
-        roomId: body.roomId,
-        cabinetId: body.cabinetId,
-        imageUrl: body.imageUrl,
-        updatedAt: new Date()
+        name: body.name, // 物品名稱
+        description: body.description, // 物品描述
+        quantity: body.quantity, // 數量
+        minQuantity: body.minQuantity, // 最小數量
+        categoryId: body.categoryId, // 分類 ID
+        roomId: body.roomId, // 房間 ID
+        cabinetId: body.cabinetId, // 櫃子 ID
+        imageUrl: body.imageUrl, // 圖片 URL
+        updatedAt: new Date() // 更新時間
       },
       include: {
         category: {
           include: {
-            parent: true
+            parent: true // 包含父分類
           }
         },
-        room: true,
-        cabinet: true
+        room: true, // 包含房間資訊
+        cabinet: true // 包含櫃子資訊
       }
     })
 
-    // Create activity record
+    // 創建活動記錄
     await prisma.itemHistory.create({
       data: {
         itemId: itemId,
-        action: 'updated',
+        action: 'updated', // 操作類型：更新
         description: `Item "${updatedItem.name}" was updated`,
-        performedBy: userId
+        performedBy: userId // 執行者
       }
     })
 
-    // Create notifications for item update
+    // 為物品更新創建通知
     try {
       await checkAndCreateNotifications(updatedItem, userId, 'updated', item)
     } catch (error) {
@@ -157,6 +163,7 @@ export async function PUT(
   }
 }
 
+// PATCH 處理器：部分更新物品（僅更新提供的欄位，如僅更新數量）
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -169,10 +176,10 @@ export async function PATCH(
     }
 
     const userId = (session?.user as any)?.id
-    const itemId = params.id
+    const itemId = params.id // 物品 ID
     const body = await request.json()
 
-    // Verify user has access to this item
+    // 驗證用戶有權限存取此物品
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -190,49 +197,49 @@ export async function PATCH(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    // For PATCH, only update provided fields (e.g., quantity-only updates)
+    // 對於 PATCH，僅更新提供的欄位（例如僅更新數量）
     const updateData: any = {
-      updatedAt: new Date()
+      updatedAt: new Date() // 更新時間
     }
 
     if (body.quantity !== undefined) {
       if (body.quantity < 0) {
         return NextResponse.json({ error: 'Quantity cannot be negative' }, { status: 400 })
       }
-      updateData.quantity = body.quantity
+      updateData.quantity = body.quantity // 更新數量
     }
 
     if (body.minQuantity !== undefined) {
-      updateData.minQuantity = body.minQuantity
+      updateData.minQuantity = body.minQuantity // 更新最小數量
     }
 
-    // Update the item
+    // 更新物品
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
       data: updateData,
       include: {
         category: {
           include: {
-            parent: true
+            parent: true // 包含父分類
           }
         },
-        room: true,
-        cabinet: true
+        room: true, // 包含房間資訊
+        cabinet: true // 包含櫃子資訊
       }
     })
 
-    // Create activity record for quantity change
+    // 如果數量有變更，創建數量變更活動記錄
     if (body.quantity !== undefined && body.quantity !== item.quantity) {
       await prisma.itemHistory.create({
         data: {
           itemId: itemId,
-          action: body.quantity > item.quantity ? 'quantity_increased' : 'quantity_decreased',
+          action: body.quantity > item.quantity ? 'quantity_increased' : 'quantity_decreased', // 操作類型：數量增加或減少
           description: `Quantity ${body.quantity > item.quantity ? 'increased' : 'decreased'} from ${item.quantity} to ${body.quantity}`,
-          performedBy: userId
+          performedBy: userId // 執行者
         }
       })
 
-      // Create notifications for quantity change
+      // 為數量變更創建通知
       try {
         await checkAndCreateNotifications(updatedItem, userId, 'updated', item)
       } catch (error) {
@@ -247,6 +254,7 @@ export async function PATCH(
   }
 }
 
+// DELETE 處理器：刪除物品
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -259,9 +267,9 @@ export async function DELETE(
     }
 
     const userId = (session?.user as any)?.id
-    const itemId = params.id
+    const itemId = params.id // 物品 ID
 
-    // Verify user has access to this item
+    // 驗證用戶有權限存取此物品
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -279,9 +287,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    // Create activity record before deletion
+    // 刪除物品前創建活動記錄（可選，根據需求實現）
 
-    // Delete the item
+    // 刪除物品
     await prisma.item.delete({
       where: { id: itemId }
     })

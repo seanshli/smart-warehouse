@@ -1,11 +1,15 @@
+// 移動物品 API 路由
+// 處理物品移動請求，支援完整移動和部分移動，可同時更改房間、櫃子和分類
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Force dynamic rendering for this route
+// 強制動態渲染此路由
 export const dynamic = 'force-dynamic'
 
+// PUT 處理器：移動物品
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -18,11 +22,11 @@ export async function PUT(
     }
 
     const userId = (session?.user as any)?.id
-    const itemId = params.id
+    const itemId = params.id // 物品 ID
     const body = await request.json()
-    const { roomId, cabinetId, categoryId, quantity = 1 } = body
+    const { roomId, cabinetId, categoryId, quantity = 1 } = body // 目標房間 ID、櫃子 ID、分類 ID、移動數量
 
-    // Verify user has access to this item
+    // 驗證用戶有權限存取此物品
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -35,8 +39,8 @@ export async function PUT(
         }
       },
       include: {
-        room: true,
-        cabinet: true
+        room: true, // 包含當前房間資訊
+        cabinet: true // 包含當前櫃子資訊
       }
     })
 
@@ -44,14 +48,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    // Validate quantity
+    // 驗證移動數量
     if (quantity < 1 || quantity > item.quantity) {
       return NextResponse.json({ 
         error: `Invalid quantity. Available: ${item.quantity}, Requested: ${quantity}` 
       }, { status: 400 })
     }
 
-    // Get new location details with user access validation
+    // 獲取新位置詳情並驗證用戶權限
     const newRoom = await prisma.room.findFirst({
       where: { 
         id: roomId,
@@ -96,6 +100,7 @@ export async function PUT(
     console.log('[move] Location validation - roomId:', roomId, 'cabinetId:', cabinetId, 'categoryId:', categoryId)
     console.log('[move] Room found:', !!newRoom, 'Cabinet found:', !!newCabinet, 'Category found:', !!newCategory)
 
+    // 驗證新位置是否存在且用戶有權限
     if (!newRoom) {
       console.error('[move] Room not found or access denied:', roomId)
       return NextResponse.json({ error: 'Room not found or access denied' }, { status: 404 })
@@ -111,35 +116,35 @@ export async function PUT(
       return NextResponse.json({ error: 'Category not found or access denied' }, { status: 404 })
     }
 
-    // Handle partial move vs full move
+    // 處理部分移動 vs 完整移動
     if (quantity === item.quantity) {
-      // Full move - update the existing item
+      // 完整移動 - 更新現有物品的位置
       const updatedItem = await prisma.item.update({
         where: { id: itemId },
         data: {
-          roomId: roomId,
-          cabinetId: cabinetId,
-          categoryId: categoryId || undefined,
-          updatedAt: new Date()
+          roomId: roomId, // 新房間 ID
+          cabinetId: cabinetId, // 新櫃子 ID
+          categoryId: categoryId || undefined, // 新分類 ID（可選）
+          updatedAt: new Date() // 更新時間
         },
         include: {
           category: {
             include: {
-              parent: true
+              parent: true // 包含父分類
             }
           },
-          room: true,
-          cabinet: true
+          room: true, // 包含房間資訊
+          cabinet: true // 包含櫃子資訊
         }
       })
 
-      // Create activity record for full move
-      const oldLocation = item.room?.name + (item.cabinet?.name ? ` → ${item.cabinet.name}` : '')
-      const newLocation = newRoom.name + (newCabinet?.name ? ` → ${newCabinet.name}` : '')
+      // 為完整移動創建活動記錄
+      const oldLocation = item.room?.name + (item.cabinet?.name ? ` → ${item.cabinet.name}` : '') // 舊位置
+      const newLocation = newRoom.name + (newCabinet?.name ? ` → ${newCabinet.name}` : '') // 新位置
       
       let description = `Item "${updatedItem.name}" moved from ${oldLocation} to ${newLocation}`
       
-      // Add category change info if applicable
+      // 如果分類有變更，添加分類變更資訊
       if (categoryId && newCategory) {
         description += ` and category changed to ${newCategory.name}`
       }
@@ -147,7 +152,7 @@ export async function PUT(
       await prisma.itemHistory.create({
         data: {
           itemId: itemId,
-          action: 'moved',
+          action: 'moved', // 操作類型：移動
           description: description,
           oldRoomId: item.roomId,
           newRoomId: roomId,

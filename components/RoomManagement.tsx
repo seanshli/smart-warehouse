@@ -1,4 +1,6 @@
 'use client'
+// 房間管理組件
+// 管理房間和櫃子，顯示每個房間/櫃子中的物品，支援新增、編輯、刪除操作
 
 import { useState, useEffect } from 'react'
 import { PlusIcon, MapPinIcon, CubeIcon, TrashIcon, PencilIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
@@ -12,53 +14,55 @@ import { useHousehold } from './HouseholdProvider'
 import { useActivityTracker } from '@/lib/activity-tracker-client'
 import ItemCard from './ItemCard'
 
+// 房間介面定義
 interface Room {
-  id: string
-  name: string
-  description?: string
-  cabinets: Cabinet[]
+  id: string // 房間 ID
+  name: string // 房間名稱
+  description?: string // 房間描述（可選）
+  cabinets: Cabinet[] // 櫃子列表
   _count: {
-    items: number
+    items: number // 物品數量
   }
 }
 
+// 櫃子介面定義
 interface Cabinet {
-  id: string
-  name: string
-  description?: string
+  id: string // 櫃子 ID
+  name: string // 櫃子名稱
+  description?: string // 櫃子描述（可選）
   _count: {
-    items: number
+    items: number // 物品數量
   }
 }
 
 export default function RoomManagement() {
-  const { t, currentLanguage } = useLanguage()
-  const { household } = useHousehold()
-  const { trackActivity } = useActivityTracker()
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const { household } = useHousehold() // 當前家庭
+  const { trackActivity } = useActivityTracker() // 活動追蹤
 
-  // Function to translate room names based on their original English names
+  // 根據原始英文名稱翻譯房間名稱的函數
   const translateRoomName = (roomName: string) => {
-    // Use the t function from the language context with correct syntax
-    // Map of original English names to translation keys
+    // 使用語言上下文中的 t 函數，正確語法
+    // 原始英文名稱到翻譯鍵的映射表
     const roomNameMap: Record<string, string> = {
-      'Living Room': t('livingRoom'),
-      'Master Bedroom': t('masterBedroom'),
-      'Kids Room': t('kidRoom'), // Note: English is "Kids Room", not "Kid Room"
-      'Kid Room': t('kidRoom'), // Keep both for compatibility
-      'Kitchen': t('kitchen'),
-      'Garage': t('garage'),
-      // Add any other default room names that might exist
-      '客廳': t('livingRoom'), // If somehow Chinese names are stored
+      'Living Room': t('livingRoom'), // 客廳
+      'Master Bedroom': t('masterBedroom'), // 主臥室
+      'Kids Room': t('kidRoom'), // 注意：英文是 "Kids Room"，不是 "Kid Room"
+      'Kid Room': t('kidRoom'), // 保留兩者以保持相容性
+      'Kitchen': t('kitchen'), // 廚房
+      'Garage': t('garage'), // 車庫
+      // 添加可能存在的其他預設房間名稱
+      '客廳': t('livingRoom'), // 如果存儲了中文名稱
       '主臥室': t('masterBedroom'),
       '小孩房': t('kidRoom'),
-      '兒童房': t('kidRoom'), // Also map the correct Chinese translation
+      '兒童房': t('kidRoom'), // 同時映射正確的中文翻譯
       '廚房': t('kitchen'),
       '車庫': t('garage')
     }
     
     const translatedName = roomNameMap[roomName] || roomName
     
-    // Enhanced debug logging - check for exact match and similar names
+    // 增強的除錯日誌 - 檢查完全匹配和相似名稱
     const similarNames = Object.keys(roomNameMap).filter(key => 
       key.toLowerCase().includes(roomName.toLowerCase()) || 
       roomName.toLowerCase().includes(key.toLowerCase())

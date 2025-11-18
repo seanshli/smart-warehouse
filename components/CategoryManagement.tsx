@@ -1,4 +1,6 @@
 'use client'
+// 分類管理組件
+// 管理三級分類結構（主分類、子分類、第三級分類），支援新增、編輯、刪除、移動操作
 
 import { useState, useEffect } from 'react'
 import { PlusIcon, CubeIcon, ChevronRightIcon, TrashIcon, PencilIcon, ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
@@ -7,55 +9,57 @@ import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 import { getCategoryDisplayName, getNormalizedCategoryKey } from '@/lib/category-translations'
 
+// 分類介面定義
 interface Category {
-  id: string
-  name: string
-  description?: string
-  level: number
-  parentId?: string
-  children: Category[]
+  id: string // 分類 ID
+  name: string // 分類名稱
+  description?: string // 分類描述（可選）
+  level: number // 分類層級（1, 2, 3）
+  parentId?: string // 父分類 ID（可選）
+  children: Category[] // 子分類列表
   _count: {
-    items: number
+    items: number // 物品數量
   }
 }
 
 export default function CategoryManagement() {
-  const { t, currentLanguage } = useLanguage()
-  const { household } = useHousehold()
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const { household } = useHousehold() // 當前家庭
 
-  // Helper function to translate category names
+  // 輔助函數：翻譯分類名稱
   const translateCategoryName = (categoryName: string, language: string) => {
-    const normalizedKey = getNormalizedCategoryKey(categoryName)
-    return getCategoryDisplayName(normalizedKey, language)
+    const normalizedKey = getNormalizedCategoryKey(categoryName) // 標準化分類鍵
+    return getCategoryDisplayName(normalizedKey, language) // 獲取顯示名稱
   }
-  const [categories, setCategories] = useState<Category[]>([])
-  const [showAddCategory, setShowAddCategory] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [newCategoryDescription, setNewCategoryDescription] = useState('')
-  const [newCategoryLevel, setNewCategoryLevel] = useState(1)
-  const [newCategoryParent, setNewCategoryParent] = useState('')
-  const [newCategoryGrandParent, setNewCategoryGrandParent] = useState('')
-  const [showCreateLevel2, setShowCreateLevel2] = useState(false)
-  const [newLevel2CategoryName, setNewLevel2CategoryName] = useState('')
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [debugData, setDebugData] = useState<any>(null)
-  const [showEditCategory, setShowEditCategory] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [editCategoryName, setEditCategoryName] = useState('')
-  const [editCategoryDescription, setEditCategoryDescription] = useState('')
-  const [showMoveCategory, setShowMoveCategory] = useState(false)
-  const [movingCategory, setMovingCategory] = useState<Category | null>(null)
-  const [moveToLevel, setMoveToLevel] = useState(1)
-  const [moveToParent, setMoveToParent] = useState('')
-  const [moveToGrandParent, setMoveToGrandParent] = useState('')
+  const [categories, setCategories] = useState<Category[]>([]) // 分類列表
+  const [showAddCategory, setShowAddCategory] = useState(false) // 是否顯示新增分類表單
+  const [newCategoryName, setNewCategoryName] = useState('') // 新分類名稱
+  const [newCategoryDescription, setNewCategoryDescription] = useState('') // 新分類描述
+  const [newCategoryLevel, setNewCategoryLevel] = useState(1) // 新分類層級
+  const [newCategoryParent, setNewCategoryParent] = useState('') // 新分類父分類 ID
+  const [newCategoryGrandParent, setNewCategoryGrandParent] = useState('') // 新分類祖父分類 ID
+  const [showCreateLevel2, setShowCreateLevel2] = useState(false) // 是否顯示創建二級分類表單
+  const [newLevel2CategoryName, setNewLevel2CategoryName] = useState('') // 新二級分類名稱
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set()) // 展開的分類集合
+  const [debugData, setDebugData] = useState<any>(null) // 除錯資料
+  const [showEditCategory, setShowEditCategory] = useState(false) // 是否顯示編輯分類表單
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null) // 正在編輯的分類
+  const [editCategoryName, setEditCategoryName] = useState('') // 編輯分類名稱
+  const [editCategoryDescription, setEditCategoryDescription] = useState('') // 編輯分類描述
+  const [showMoveCategory, setShowMoveCategory] = useState(false) // 是否顯示移動分類表單
+  const [movingCategory, setMovingCategory] = useState<Category | null>(null) // 正在移動的分類
+  const [moveToLevel, setMoveToLevel] = useState(1) // 移動目標層級
+  const [moveToParent, setMoveToParent] = useState('') // 移動目標父分類 ID
+  const [moveToGrandParent, setMoveToGrandParent] = useState('') // 移動目標祖父分類 ID
 
   useEffect(() => {
-    fetchCategories()
+    fetchCategories() // 載入分類列表
   }, [household?.id])
 
+  // 獲取分類列表
   const fetchCategories = async () => {
     try {
-      // CRITICAL: Don't fetch until household is loaded
+      // 關鍵：等待家庭載入完成後再獲取資料
       if (!household?.id) {
         console.log('CategoryManagement: Waiting for household to load, skipping fetch')
         setCategories([])
@@ -63,7 +67,7 @@ export default function CategoryManagement() {
       }
       
       const params = new URLSearchParams()
-      params.append('householdId', household.id) // Always include householdId
+      params.append('householdId', household.id) // 始終包含家庭 ID
       
       const url = `/api/categories${params.toString() ? '?' + params.toString() : ''}`
       console.log('CategoryManagement: Fetching from URL:', url)
@@ -74,7 +78,7 @@ export default function CategoryManagement() {
         const data = await response.json()
         console.log('Raw categories data from API:', data)
         
-        // API now returns hierarchical structure directly
+        // API 現在直接返回階層結構
         const categories = Array.isArray(data) ? data : data.categories || []
         
         console.log('Categories API response:', categories)

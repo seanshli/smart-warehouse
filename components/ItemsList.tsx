@@ -1,48 +1,52 @@
 'use client'
+// 物品列表組件
+// 顯示和管理物品列表，支援搜尋、分類篩選、房間篩選等功能
 
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 import ItemCard from './ItemCard'
 
+// 物品介面定義
 interface Item {
-  id: string
-  name: string
-  description?: string
-  quantity: number
-  minQuantity: number
-  imageUrl?: string
+  id: string // 物品 ID
+  name: string // 物品名稱
+  description?: string // 物品描述（可選）
+  quantity: number // 數量
+  minQuantity: number // 最小數量
+  imageUrl?: string // 圖片 URL（可選）
   category?: {
-    id: string
-    name: string
+    id: string // 分類 ID
+    name: string // 分類名稱
     parent?: {
-      name: string
+      name: string // 父分類名稱
     }
   }
   room?: {
-    id: string
-    name: string
+    id: string // 房間 ID
+    name: string // 房間名稱
   }
   cabinet?: {
-    id: string
-    name: string
+    id: string // 櫃子 ID
+    name: string // 櫃子名稱
   }
-  itemIds?: string[] // Track all item IDs for this group (optional)
+  itemIds?: string[] // 追蹤此群組的所有物品 ID（可選，用於合併顯示）
 }
 
+// 物品列表屬性介面
 interface ItemsListProps {
-  showCategory?: boolean
-  showLocation?: boolean
-  onItemEdit?: (item: Item) => void
-  onItemMove?: (item: Item) => void
-  onItemCheckout?: (item: Item) => void
-  onItemHistory?: (item: Item) => void
-  onItemQuantityAdjust?: (item: Item) => void
-  className?: string
-  searchTerm?: string
-  selectedCategory?: string
-  selectedRoom?: string
-  onRef?: (refreshFn: () => void) => void
+  showCategory?: boolean // 是否顯示分類
+  showLocation?: boolean // 是否顯示位置
+  onItemEdit?: (item: Item) => void // 編輯物品回調
+  onItemMove?: (item: Item) => void // 移動物品回調
+  onItemCheckout?: (item: Item) => void // 取出物品回調
+  onItemHistory?: (item: Item) => void // 查看歷史回調
+  onItemQuantityAdjust?: (item: Item) => void // 調整數量回調
+  className?: string // 自訂 CSS 類名
+  searchTerm?: string // 搜尋關鍵字
+  selectedCategory?: string // 選中的分類 ID
+  selectedRoom?: string // 選中的房間 ID
+  onRef?: (refreshFn: () => void) => void // 刷新函數引用回調
 }
 
 export default function ItemsList({
@@ -59,18 +63,19 @@ export default function ItemsList({
   selectedRoom = '',
   onRef
 }: ItemsListProps) {
-  const { t } = useLanguage()
-  const { household } = useHousehold()
-  const [items, setItems] = useState<Item[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { t } = useLanguage() // 語言設定
+  const { household } = useHousehold() // 當前家庭
+  const [items, setItems] = useState<Item[]>([]) // 物品列表
+  const [loading, setLoading] = useState(true) // 載入狀態
+  const [error, setError] = useState<string | null>(null) // 錯誤訊息
 
+  // 獲取分組物品（支援搜尋和篩選）
   const fetchGroupedItems = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // CRITICAL: Don't fetch until household is loaded
+      // 關鍵：等待家庭載入完成後再獲取資料
       if (!household?.id) {
         console.log('ItemsList: Waiting for household to load, skipping fetch')
         setLoading(false)
@@ -78,15 +83,15 @@ export default function ItemsList({
         return
       }
       
-      // Add a small delay to prevent rapid-fire requests
+      // 添加小延遲以防止快速連續請求
       await new Promise(resolve => setTimeout(resolve, 100))
       
-      // Build query parameters
+      // 構建查詢參數
       const params = new URLSearchParams()
-      if (searchTerm) params.append('search', searchTerm)
-      if (selectedCategory) params.append('category', selectedCategory)
-      if (selectedRoom) params.append('room', selectedRoom)
-      params.append('householdId', household.id) // Always include householdId
+      if (searchTerm) params.append('search', searchTerm) // 搜尋關鍵字
+      if (selectedCategory) params.append('category', selectedCategory) // 分類篩選
+      if (selectedRoom) params.append('room', selectedRoom) // 房間篩選
+      params.append('householdId', household.id) // 始終包含家庭 ID
       
       const url = `/api/items${params.toString() ? '?' + params.toString() : ''}`
       console.log('ItemsList: Fetching from URL:', url)
@@ -96,7 +101,7 @@ export default function ItemsList({
       if (response.ok) {
         const data = await response.json()
         console.log('ItemsList: Successfully fetched', data.length, 'items')
-        setItems(data)
+        setItems(data) // 設定物品列表
       } else {
         let errorMessage = 'Failed to fetch items'
         try {

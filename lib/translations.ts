@@ -1,74 +1,75 @@
-// Translation system for UI internationalization
+// 翻譯系統 - 用於 UI 國際化
+// 支援多種語言：英語、繁體中文、簡體中文、日語
 
 export interface Translations {
-  // Navigation
-  dashboard: string
-  rooms: string
-  categories: string
-  activities: string
-  notifications: string
-  members: string
-  items: string
-  allItems: string
-  duplicates: string
-  assistant: string
-  assistantDescription: string
-  assistantPlaceholder: string
-  assistantSend: string
-  assistantVoiceHint: string
-  assistantVoiceReady: string
-  assistantSendVoice: string
-  assistantProcessing: string
-  assistantNoResponse: string
-  assistantSourceAIUI: string
-  assistantSourceFallback: string
-  assistantEmptyState: string
-  homeAssistantPanelTitle: string
-  homeAssistantPanelDescription: string
-  homeAssistantStatusLoading: string
-  homeAssistantStatusError: string
-  homeAssistantStatusReady: string
-  homeAssistantRefresh: string
-  homeAssistantUnknown: string
-  homeAssistantTurnOn: string
-  homeAssistantTurnOff: string
-  homeAssistantToggleOn: string
-  homeAssistantToggleOff: string
-  homeAssistantToggleError: string
-  homeAssistantToggleUnsupported: string
-  homeAssistantPower: string
-  homeAssistantPowerOptionMissing: string
-  homeAssistantPowerUnavailable: string
-  homeAssistantLastChanged: string
-  homeAssistantClimateSection: string
-  homeAssistantHumidifierSection: string
-  homeAssistantCurrentTemperature: string
-  homeAssistantTargetTemperature: string
-  homeAssistantCurrentHumidity: string
-  homeAssistantTargetHumidity: string
-  homeAssistantModes: string
-  homeAssistantTemperatureUpdated: string
-  homeAssistantHumidityUpdated: string
-  homeAssistantModeUpdated: string
-  homeAssistantModeHigh: string
-  homeAssistantModeMedium: string
-  homeAssistantModeLow: string
-  homeAssistantModeOffLabel: string
-  homeAssistantModeHeat: string
-  homeAssistantModeCool: string
-  homeAssistantModeAuto: string
-  homeAssistantModeDry: string
-  homeAssistantModeFan: string
-  homeAssistantModeOff: string
-  homeAssistantCustomTitle: string
-  homeAssistantCustomDescription: string
-  homeAssistantCustomEntityRequired: string
-  homeAssistantCustomFormatError: string
-  homeAssistantCustomSuccess: string
-  homeAssistantCustomError: string
-  homeAssistantSendService: string
-  homeAssistantNoEntities: string
-  householdSettings: string
+  // 導航
+  dashboard: string // 儀表板
+  rooms: string // 房間
+  categories: string // 分類
+  activities: string // 活動
+  notifications: string // 通知
+  members: string // 成員
+  items: string // 物品
+  allItems: string // 所有物品
+  duplicates: string // 重複項目
+  assistant: string // 助理
+  assistantDescription: string // 助理描述
+  assistantPlaceholder: string // 助理輸入框佔位符
+  assistantSend: string // 發送
+  assistantVoiceHint: string // 語音提示
+  assistantVoiceReady: string // 語音就緒
+  assistantSendVoice: string // 發送語音
+  assistantProcessing: string // 處理中
+  assistantNoResponse: string // 無回應
+  assistantSourceAIUI: string // 來源：AIUI
+  assistantSourceFallback: string // 來源：備援
+  assistantEmptyState: string // 空狀態
+  homeAssistantPanelTitle: string // Home Assistant 面板標題
+  homeAssistantPanelDescription: string // Home Assistant 面板描述
+  homeAssistantStatusLoading: string // 狀態：載入中
+  homeAssistantStatusError: string // 狀態：錯誤
+  homeAssistantStatusReady: string // 狀態：就緒
+  homeAssistantRefresh: string // 刷新
+  homeAssistantUnknown: string // 未知
+  homeAssistantTurnOn: string // 開啟
+  homeAssistantTurnOff: string // 關閉
+  homeAssistantToggleOn: string // 切換：開啟
+  homeAssistantToggleOff: string // 切換：關閉
+  homeAssistantToggleError: string // 切換錯誤
+  homeAssistantToggleUnsupported: string // 不支援切換
+  homeAssistantPower: string // 電源
+  homeAssistantPowerOptionMissing: string // 電源選項缺失
+  homeAssistantPowerUnavailable: string // 電源不可用
+  homeAssistantLastChanged: string // 最後變更
+  homeAssistantClimateSection: string // 氣候區塊
+  homeAssistantHumidifierSection: string // 除濕機區塊
+  homeAssistantCurrentTemperature: string // 當前溫度
+  homeAssistantTargetTemperature: string // 目標溫度
+  homeAssistantCurrentHumidity: string // 當前濕度
+  homeAssistantTargetHumidity: string // 目標濕度
+  homeAssistantModes: string // 模式
+  homeAssistantTemperatureUpdated: string // 溫度已更新
+  homeAssistantHumidityUpdated: string // 濕度已更新
+  homeAssistantModeUpdated: string // 模式已更新
+  homeAssistantModeHigh: string // 模式：高
+  homeAssistantModeMedium: string // 模式：中
+  homeAssistantModeLow: string // 模式：低
+  homeAssistantModeOffLabel: string // 模式：關閉標籤
+  homeAssistantModeHeat: string // 模式：加熱
+  homeAssistantModeCool: string // 模式：冷卻
+  homeAssistantModeAuto: string // 模式：自動
+  homeAssistantModeDry: string // 模式：除濕
+  homeAssistantModeFan: string // 模式：風扇
+  homeAssistantModeOff: string // 模式：關閉
+  homeAssistantCustomTitle: string // 自訂標題
+  homeAssistantCustomDescription: string // 自訂描述
+  homeAssistantCustomEntityRequired: string // 自訂實體必填
+  homeAssistantCustomFormatError: string // 自訂格式錯誤
+  homeAssistantCustomSuccess: string // 自訂成功
+  homeAssistantCustomError: string // 自訂錯誤
+  homeAssistantSendService: string // 發送服務
+  homeAssistantNoEntities: string // 無實體
+  householdSettings: string // 家庭設定
   
   // Admin
   adminPanel: string

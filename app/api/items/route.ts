@@ -1,3 +1,6 @@
+// 物品 API 路由
+// 處理物品的創建、查詢、更新、刪除等操作
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -7,14 +10,15 @@ import { CacheInvalidation } from '@/lib/cache'
 import { broadcastToHousehold } from '@/lib/realtime'
 import { checkAndCreateNotifications } from '@/lib/notifications'
 
-// Force dynamic rendering for this route
+// 強制動態渲染此路由
 export const dynamic = 'force-dynamic'
 
+// POST 處理器：創建新物品
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    // Require proper authentication
+    // 要求正確的認證
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized - please sign in' }, { status: 401 })
     }
@@ -25,27 +29,27 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json()
     const {
-      name,
-      description,
-      quantity,
-      minQuantity,
-      category,
-      subcategory,
-      level3,
-      room,
-      cabinet,
-      barcode,
-      qrCode,
-      imageUrl,
-      language,
-      tags,
-      householdId,
-      // Taiwan invoice fields
-      buyDate,
-      buyCost,
-      buyLocation,
-      invoiceNumber,
-      sellerName
+      name, // 物品名稱
+      description, // 物品描述
+      quantity, // 數量
+      minQuantity, // 最小數量
+      category, // 主分類 ID
+      subcategory, // 子分類 ID
+      level3, // 第三級分類 ID
+      room, // 房間 ID
+      cabinet, // 櫃子 ID
+      barcode, // 條碼
+      qrCode, // QR 碼
+      imageUrl, // 圖片 URL
+      language, // 語言
+      tags, // 標籤
+      householdId, // 家庭 ID
+      // 台灣發票欄位
+      buyDate, // 購買日期
+      buyCost, // 購買成本
+      buyLocation, // 購買地點
+      invoiceNumber, // 發票號碼
+      sellerName // 賣家名稱
     } = body
     
     console.log('=== ITEM CREATION REQUEST ===')
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
     console.log('Provided Household ID:', householdId)
     console.log('Request body:', body)
 
-    // Validate required fields
+    // 驗證必填欄位
     if (!name || name.trim() === '') {
       return NextResponse.json({ error: 'Item name is required' }, { status: 400 })
     }
@@ -62,13 +66,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Room is required' }, { status: 400 })
     }
     
-    // Note: Cabinet is optional - if not provided, we'll create a default one or use existing
+    // 注意：櫃子是可選的 - 如果未提供，我們將創建預設的或使用現有的
 
-    // Get user's household - use provided householdId or find first
+    // 獲取用戶的家庭 - 使用提供的 householdId 或查找第一個
     let household = null
     
     if (householdId) {
-      // Verify user is a member of this household
+      // 驗證用戶是此家庭的成員
       household = await prisma.household.findFirst({
         where: {
           id: householdId,

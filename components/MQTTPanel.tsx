@@ -1,6 +1,7 @@
 'use client'
-// MQTT 設備控制面板組件
-// 用於在 Smart Warehouse 中檢視和控制 MQTT IoT 設備（Tuya、ESP、Midea）
+// 統一 IoT 設備控制面板組件
+// 用於在 Smart Warehouse 中檢視和控制 IoT 設備（支援 MQTT 和 RESTful API）
+// 支援：Tuya、ESP、Midea（MQTT）、Philips、Panasonic（RESTful API）
 
 import useSWR from 'swr'
 import { useCallback, useEffect, useState } from 'react'
@@ -15,15 +16,19 @@ import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
 
-// MQTT 設備介面
+// IoT 設備介面（統一支援 MQTT 和 RESTful API）
 interface MQTTDevice {
   id: string // 設備 ID
-  deviceId: string // MQTT 設備 ID
+  deviceId: string // 設備 ID
   name: string // 設備名稱
-  vendor: 'tuya' | 'esp' | 'midea' // 供應商
-  topic: string // MQTT 主題
-  commandTopic?: string // 命令主題
-  statusTopic?: string // 狀態主題
+  vendor: 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' // 供應商
+  connectionType?: 'mqtt' | 'restful' | 'websocket' // 連接類型
+  topic?: string // MQTT 主題（MQTT 設備）
+  commandTopic?: string // 命令主題（MQTT 設備）
+  statusTopic?: string // 狀態主題（MQTT 設備）
+  baseUrl?: string // RESTful API 基礎 URL（RESTful 設備）
+  apiKey?: string // API 金鑰（RESTful 設備）
+  accessToken?: string // 訪問令牌（RESTful 設備）
   status: 'online' | 'offline' // 連接狀態
   state?: any // 設備狀態（JSON）
   room?: {
@@ -51,13 +56,16 @@ export default function MQTTPanel() {
   const [newDevice, setNewDevice] = useState({
     deviceId: '',
     name: '',
-    vendor: 'tuya' as 'tuya' | 'esp' | 'midea',
+    vendor: 'tuya' as 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic',
     roomId: '',
+    baseUrl: '', // RESTful API 基礎 URL
+    apiKey: '', // API 金鑰
+    accessToken: '', // 訪問令牌
   })
 
-  // 獲取設備列表
+  // 獲取設備列表（使用統一 IoT API）
   const { data: devices, error, isLoading, mutate } = useSWR<MQTTDevice[]>(
-    household?.id ? `/api/mqtt/devices?householdId=${household.id}` : null,
+    household?.id ? `/api/iot/devices?householdId=${household.id}` : null,
     fetcher,
     {
       refreshInterval: 5000, // 每 5 秒刷新一次
@@ -72,17 +80,30 @@ export default function MQTTPanel() {
       return
     }
 
+    // 驗證 RESTful API 配置
+    if (needsRestfulConfig(newDevice.vendor)) {
+      if (!newDevice.baseUrl || !newDevice.apiKey) {
+        toast.error('RESTful devices require Base URL and API Key')
+        return
+      }
+    }
+
     try {
-      const response = await fetch('/api/mqtt/devices', {
+      const response = await fetch('/api/iot/devices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          ...newDevice,
+          deviceId: newDevice.deviceId,
+          name: newDevice.name,
+          vendor: newDevice.vendor,
           householdId: household.id,
           roomId: newDevice.roomId || null,
+          baseUrl: newDevice.baseUrl || null,
+          apiKey: newDevice.apiKey || null,
+          accessToken: newDevice.accessToken || null,
         }),
       })
 
@@ -94,6 +115,9 @@ export default function MQTTPanel() {
           name: '',
           vendor: 'tuya',
           roomId: '',
+          baseUrl: '',
+          apiKey: '',
+          accessToken: '',
         })
         mutate() // 刷新列表
       } else {
@@ -113,7 +137,7 @@ export default function MQTTPanel() {
     }
 
     try {
-      const response = await fetch(`/api/mqtt/devices/${deviceId}`, {
+      const response = await fetch(`/api/iot/devices/${deviceId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -130,10 +154,10 @@ export default function MQTTPanel() {
     }
   }
 
-  // 發送控制命令
+  // 發送控制命令（使用統一 IoT API）
   const handleControl = async (deviceId: string, action: string, value?: any) => {
     try {
-      const response = await fetch(`/api/mqtt/devices/${deviceId}/control`, {
+      const response = await fetch(`/api/iot/devices/${deviceId}/control`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,9 +188,18 @@ export default function MQTTPanel() {
         return t('mqttVendorESP')
       case 'midea':
         return t('mqttVendorMidea')
+      case 'philips':
+        return 'Philips Hue'
+      case 'panasonic':
+        return 'Panasonic'
       default:
         return vendor
     }
+  }
+
+  // 檢查是否需要 RESTful API 配置
+  const needsRestfulConfig = (vendor: string) => {
+    return vendor === 'philips' || vendor === 'panasonic'
   }
 
   // 獲取狀態顏色
@@ -189,7 +222,8 @@ export default function MQTTPanel() {
         <div>
           <h2 className="text-xl font-semibold">{t('mqttDevices')}</h2>
           <p className="text-sm text-gray-500">
-            {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')} IoT {t('mqttDevices')}
+            MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')} • 
+            RESTful: Philips Hue, Panasonic
           </p>
         </div>
         <div className="flex gap-2">
@@ -221,7 +255,7 @@ export default function MQTTPanel() {
                 type="text"
                 value={newDevice.deviceId}
                 onChange={(e) => setNewDevice({ ...newDevice, deviceId: e.target.value })}
-                placeholder="e.g., tuya_device_001"
+                placeholder={newDevice.vendor === 'philips' ? "e.g., 1 (Hue light ID)" : newDevice.vendor === 'panasonic' ? "e.g., ac_001" : "e.g., tuya_device_001"}
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
@@ -239,12 +273,18 @@ export default function MQTTPanel() {
               <label className="block text-sm font-medium mb-1">{t('mqttVendor')}</label>
               <select
                 value={newDevice.vendor}
-                onChange={(e) => setNewDevice({ ...newDevice, vendor: e.target.value as any })}
+                onChange={(e) => setNewDevice({ ...newDevice, vendor: e.target.value as any, baseUrl: '', apiKey: '', accessToken: '' })}
                 className="w-full px-3 py-2 border rounded-lg"
               >
-                <option value="tuya">{t('mqttVendorTuya')}</option>
-                <option value="esp">{t('mqttVendorESP')}</option>
-                <option value="midea">{t('mqttVendorMidea')}</option>
+                <optgroup label="MQTT">
+                  <option value="tuya">{t('mqttVendorTuya')}</option>
+                  <option value="esp">{t('mqttVendorESP')}</option>
+                  <option value="midea">{t('mqttVendorMidea')}</option>
+                </optgroup>
+                <optgroup label="RESTful API">
+                  <option value="philips">Philips Hue</option>
+                  <option value="panasonic">Panasonic</option>
+                </optgroup>
               </select>
             </div>
             <div>
@@ -257,6 +297,45 @@ export default function MQTTPanel() {
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
+            {/* RESTful API 配置欄位 */}
+            {needsRestfulConfig(newDevice.vendor) && (
+              <>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">API Base URL *</label>
+                  <input
+                    type="text"
+                    value={newDevice.baseUrl}
+                    onChange={(e) => setNewDevice({ ...newDevice, baseUrl: e.target.value })}
+                    placeholder={newDevice.vendor === 'philips' ? "e.g., http://192.168.1.100 (Hue Bridge IP)" : "e.g., https://api.panasonic.com"}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">API Key *</label>
+                  <input
+                    type="text"
+                    value={newDevice.apiKey}
+                    onChange={(e) => setNewDevice({ ...newDevice, apiKey: e.target.value })}
+                    placeholder={newDevice.vendor === 'philips' ? "Hue API Key" : "Panasonic API Key"}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    required
+                  />
+                </div>
+                {newDevice.vendor === 'panasonic' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Access Token ({t('optional')})</label>
+                    <input
+                      type="text"
+                      value={newDevice.accessToken}
+                      onChange={(e) => setNewDevice({ ...newDevice, accessToken: e.target.value })}
+                      placeholder="Panasonic Access Token"
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                )}
+              </>
+            )}
           </div>
           <div className="flex gap-2">
             <button

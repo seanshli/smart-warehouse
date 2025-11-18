@@ -1,0 +1,46 @@
+# EMQX MQTT Broker Docker Compose 配置
+# EMQX MQTT Broker Docker Compose Configuration
+
+version: '3.8'
+
+services:
+  emqx:
+    image: emqx/emqx:latest
+    container_name: smart-warehouse-emqx
+    ports:
+      # MQTT TCP 端口
+      - "1883:1883"
+      # MQTT WebSocket 端口
+      - "8083:8083"
+      # MQTT SSL/TLS 端口
+      - "8883:8883"
+      # Dashboard Web UI 端口
+      - "18083:18083"
+    environment:
+      # EMQX 節點名稱
+      - EMQX_NAME=emqx
+      # EMQX 主機名（生產環境請修改為實際域名）
+      - EMQX_HOST=localhost
+      # 允許匿名連接（開發環境，生產環境應設為 false）
+      - EMQX_ALLOW_ANONYMOUS=true
+    volumes:
+      # 數據持久化
+      - emqx-data:/opt/emqx/data
+      # 日誌持久化
+      - emqx-log:/opt/emqx/log
+      # 配置文件（可選）
+      # - ./emqx.conf:/opt/emqx/etc/emqx.conf
+    restart: unless-stopped
+    networks:
+      - smart-warehouse-network
+
+volumes:
+  emqx-data:
+    driver: local
+  emqx-log:
+    driver: local
+
+networks:
+  smart-warehouse-network:
+    driver: bridge
+

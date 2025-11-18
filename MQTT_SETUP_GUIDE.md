@@ -24,6 +24,19 @@
 
 ## 設定步驟 / Setup Steps
 
+### 0. 選擇 MQTT Broker / Choose MQTT Broker
+
+**推薦使用 EMQX**（已為多品牌 IoT 設備優化）：
+- 開源且功能強大
+- 支援規則引擎和 ACL
+- 易於擴展和管理
+- 詳細設定請參考：`docs/EMQX_SETUP_GUIDE.md`
+
+快速啟動 EMQX（Docker）：
+```bash
+docker-compose -f docker-compose.emqx.yml up -d
+```
+
 ### 1. 配置 MQTT Broker / Configure MQTT Broker
 
 #### 開發環境 / Development Environment

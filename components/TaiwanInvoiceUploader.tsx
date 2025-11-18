@@ -1,23 +1,27 @@
 'use client'
+// 台灣電子發票上傳器組件
+// 支援上傳發票照片或手動輸入 QR 碼，自動解析發票資訊
 
 import { useState, useRef } from 'react'
 import { XMarkIcon, PhotoIcon, DocumentIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
 
+// 台灣電子發票上傳器屬性介面
 interface TaiwanInvoiceUploaderProps {
-  onClose: () => void
-  onInvoiceDecoded: (invoiceData: any) => void
+  onClose: () => void // 關閉回調
+  onInvoiceDecoded: (invoiceData: any) => void // 發票解析成功回調
 }
 
 export default function TaiwanInvoiceUploader({ onClose, onInvoiceDecoded }: TaiwanInvoiceUploaderProps) {
-  const { t, currentLanguage } = useLanguage()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [showManualInput, setShowManualInput] = useState(false)
-  const [qrCodeData, setQrCodeData] = useState('')
+  const { t, currentLanguage } = useLanguage() // 語言設定
+  const fileInputRef = useRef<HTMLInputElement>(null) // 檔案輸入框引用
+  const [isProcessing, setIsProcessing] = useState(false) // 是否正在處理
+  const [error, setError] = useState<string | null>(null) // 錯誤訊息
+  const [isDragOver, setIsDragOver] = useState(false) // 是否拖曳懸停
+  const [showManualInput, setShowManualInput] = useState(false) // 是否顯示手動輸入
+  const [qrCodeData, setQrCodeData] = useState('') // QR 碼資料
 
+  // 處理檔案上傳
   const handleFileUpload = async (file: File) => {
     if (!file) return
 
@@ -25,10 +29,10 @@ export default function TaiwanInvoiceUploader({ onClose, onInvoiceDecoded }: Tai
     setError(null)
 
     try {
-      // Convert image to base64
+      // 將圖片轉換為 Base64
       const base64 = await fileToBase64(file)
       
-      // Send to Taiwan e-invoice decoder API with multiple QR code support
+      // 發送到台灣電子發票解碼 API（支援多個 QR 碼）
       const response = await fetch('/api/test/taiwan-einvoice', {
         method: 'POST',
         headers: {
@@ -37,8 +41,8 @@ export default function TaiwanInvoiceUploader({ onClose, onInvoiceDecoded }: Tai
         credentials: 'include',
         body: JSON.stringify({ 
           imageBase64: base64,
-          analyzeMultipleCodes: true, // Flag to analyze multiple QR codes and barcodes
-          receiptAnalysis: true // Flag for Taiwan receipt analysis
+          analyzeMultipleCodes: true, // 標記：分析多個 QR 碼和條碼
+          receiptAnalysis: true // 標記：台灣發票分析
         })
       })
 

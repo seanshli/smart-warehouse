@@ -25,6 +25,43 @@ import { PanasonicAdapter } from './panasonic-adapter'
 export type ExtendedDeviceVendor = DeviceVendor | 'philips' | 'panasonic' | 'generic'
 
 /**
+ * MQTT 適配器包裝器
+ * 將靜態 MQTT 適配器包裝為實例適配器
+ */
+class MQTTAdapterWrapper implements BaseAdapter {
+  private adapterClass: any
+  readonly connectionType: ConnectionType = 'mqtt'
+  readonly vendor: string
+
+  constructor(adapterClass: any, vendor: string) {
+    this.adapterClass = adapterClass
+    this.vendor = vendor
+  }
+
+  createDevice(deviceId: string, name: string, config?: AdapterConfig): IoTDevice {
+    return this.adapterClass.createDevice(deviceId, name, config)
+  }
+
+  parseState(data: any): any {
+    // MQTT 適配器使用 parseStateMessage，這裡需要適配
+    // data 可能是 MQTTMessage 格式
+    if (this.adapterClass.parseStateMessage && data.topic && data.payload) {
+      return this.adapterClass.parseStateMessage(data)
+    }
+    // 如果 data 已經是解析後的狀態，直接返回
+    return data || null
+  }
+
+  createCommand(action: string, value?: any): any {
+    // MQTT 適配器使用 createCommandMessage，這裡需要適配
+    return {
+      action,
+      value
+    }
+  }
+}
+
+/**
  * 統一適配器工廠
  * 根據供應商類型和連接類型返回對應的適配器
  */
@@ -32,13 +69,13 @@ export class UnifiedAdapterFactory {
   // 獲取適配器
   static getAdapter(vendor: ExtendedDeviceVendor): BaseAdapter {
     switch (vendor) {
-      // MQTT 適配器
+      // MQTT 適配器（使用包裝器）
       case 'tuya':
-        return new TuyaAdapter() as any
+        return new MQTTAdapterWrapper(TuyaAdapter, 'tuya')
       case 'esp':
-        return new ESPAdapter() as any
+        return new MQTTAdapterWrapper(ESPAdapter, 'esp')
       case 'midea':
-        return new MideaAdapter() as any
+        return new MQTTAdapterWrapper(MideaAdapter, 'midea')
       
       // RESTful API 適配器
       case 'philips':

@@ -70,6 +70,33 @@ export class WiFiScanner {
   }
 
   /**
+   * 透過伺服器端掃描（需要 Node.js 環境支援）
+   */
+  static async scanFromServer(): Promise<WiFiNetwork[]> {
+    try {
+      const response = await fetch('/api/wifi/scan', {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData?.error || response.statusText)
+      }
+
+      const data = await response.json()
+      if (data.success && Array.isArray(data.networks)) {
+        return data.networks as WiFiNetwork[]
+      }
+
+      return []
+    } catch (error) {
+      console.error('Server WiFi scan error:', error)
+      throw error
+    }
+  }
+
+  /**
    * 從本地存儲獲取已保存的 WiFi 網絡列表
    */
   static getSavedNetworks(): WiFiNetwork[] {

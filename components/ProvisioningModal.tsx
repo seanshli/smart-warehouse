@@ -61,6 +61,7 @@ export default function ProvisioningModal({
   const [espHotspotPassword, setEspHotspotPassword] = useState<string>('') // ESP 設備熱點密碼（可選）
   const [wifiNetworks, setWifiNetworks] = useState<WiFiNetwork[]>([]) // 掃描到的 WiFi 網絡
   const [isScanningWifi, setIsScanningWifi] = useState(false) // 是否正在掃描 WiFi
+  const [isLoadingSavedWifi, setIsLoadingSavedWifi] = useState(false)
   const [selectedNetwork, setSelectedNetwork] = useState<WiFiNetwork | null>(null) // 選中的 WiFi 網絡
 
   // 清理輪詢
@@ -352,6 +353,50 @@ export default function ProvisioningModal({
     }
   }
 
+  const handleScanServerWifi = async () => {
+    setIsScanningWifi(true)
+    try {
+      const scanned = await WiFiScanner.scanFromServer()
+      const saved = WiFiScanner.getSavedNetworks()
+      const merged = WiFiScanner.mergeNetworks(scanned, saved)
+      setWifiNetworks(merged)
+
+      if (scanned.length > 0) {
+        toast.success(`掃描到 ${scanned.length} 個 WiFi 網絡`)
+      } else if (saved.length > 0) {
+        toast('未掃描到新的 WiFi，已載入保存的網絡', { icon: 'ℹ️' })
+      } else {
+        toast('未掃描到 WiFi 網絡，請手動輸入', { icon: 'ℹ️' })
+      }
+    } catch (error: any) {
+      console.error('Server WiFi scan failed:', error)
+      const saved = WiFiScanner.getSavedNetworks()
+      setWifiNetworks(saved)
+      if (saved.length > 0) {
+        toast('掃描失敗，已載入保存的 WiFi', { icon: 'ℹ️' })
+      } else {
+        toast.error('無法掃描 WiFi 網絡，請在本機環境執行或手動輸入')
+      }
+    } finally {
+      setIsScanningWifi(false)
+    }
+  }
+
+  const handleLoadSavedWifi = () => {
+    setIsLoadingSavedWifi(true)
+    try {
+      const saved = WiFiScanner.getSavedNetworks()
+      setWifiNetworks(saved)
+      if (saved.length > 0) {
+        toast.success(`載入 ${saved.length} 個已保存的 WiFi`)
+      } else {
+        toast('目前沒有已保存的 WiFi，請先手動輸入並勾選記住', { icon: 'ℹ️' })
+      }
+    } finally {
+      setIsLoadingSavedWifi(false)
+    }
+  }
+
   if (!isOpen) return null
 
   const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
@@ -459,38 +504,30 @@ export default function ProvisioningModal({
             {/* MQTT 設備配置（Tuya, Midea） */}
             {isMQTTDevice && vendor !== 'esp' && (
               <>
-                {/* 已保存 WiFi 載入按鈕 */}
-                <div>
+                <div className="space-y-2">
                   <button
-                    onClick={async () => {
-                      setIsScanningWifi(true)
-                      try {
-                        const saved = WiFiScanner.getSavedNetworks()
-                        setWifiNetworks(saved)
-                        if (saved.length > 0) {
-                          toast.success(`載入 ${saved.length} 個已保存的 WiFi`)
-                        } else {
-                          toast('目前沒有已保存的 WiFi，請手動輸入', { icon: 'ℹ️' })
-                        }
-                      } catch (error: any) {
-                        console.error('WiFi scan error:', error)
-                        toast.error('無法載入已保存的 WiFi')
-                      } finally {
-                        setIsScanningWifi(false)
-                      }
-                    }}
+                    onClick={handleScanServerWifi}
                     disabled={isScanningWifi || status !== 'idle'}
-                    className="w-full mb-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <MagnifyingGlassIcon className="h-5 w-5" />
-                    <span>{isScanningWifi ? '載入中…' : '載入已保存的 WiFi'}</span>
+                    <span>{isScanningWifi ? '掃描中…' : '掃描 WiFi 網絡'}</span>
+                  </button>
+                  <button
+                    onClick={handleLoadSavedWifi}
+                    disabled={isLoadingSavedWifi || status !== 'idle'}
+                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <MagnifyingGlassIcon className="h-5 w-5" />
+                    <span>{isLoadingSavedWifi ? '載入中…' : '載入已保存的 WiFi'}</span>
                   </button>
                   <p className="text-xs text-gray-500">
-                    目前瀏覽器無法直接掃描周圍 Wi-Fi，只能選擇先前使用過的網絡或手動輸入。
+                    提示：若要掃描周圍的 Wi-Fi，請在「安裝於本機的 Smart Warehouse App」或具有網卡存取權限的環境執行。
+                    若裝置或瀏覽器不支援掃描，可以載入已保存的 Wi-Fi 或手動輸入。
                   </p>
                 </div>
 
-                {/* 已保存 WiFi 列表 */}
+                {/* 掃描 / 已載入的 WiFi 列表 */}
                 {wifiNetworks.length > 0 && (
                   <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
                     {wifiNetworks.map((network, index) => {
@@ -605,39 +642,16 @@ export default function ProvisioningModal({
               <>
                 <div>
                   <button
-                    onClick={async () => {
-                      setIsScanningWifi(true)
-                      try {
-                        const networks = await WiFiScanner.scanFromESPDevice()
-                        const saved = WiFiScanner.getSavedNetworks()
-                        const merged = WiFiScanner.mergeNetworks(networks, saved)
-                        setWifiNetworks(merged)
-                        if (merged.length > 0) {
-                          toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
-                        } else if (saved.length > 0) {
-                          toast('未掃描到新的 WiFi，已載入保存的網絡', { icon: 'ℹ️' })
-                        } else {
-                          toast('未掃描到 WiFi 網絡，請手動輸入', { icon: 'ℹ️' })
-                        }
-                      } catch (error: any) {
-                        console.error('WiFi scan error:', error)
-                        const saved = WiFiScanner.getSavedNetworks()
-                        setWifiNetworks(saved)
-                        if (saved.length > 0) {
-                          toast('無法掃描網絡，已載入保存的 WiFi', { icon: 'ℹ️' })
-                        } else {
-                          toast.error('無法掃描 WiFi 網絡，請手動輸入')
-                        }
-                      } finally {
-                        setIsScanningWifi(false)
-                      }
-                    }}
+                    onClick={handleScanServerWifi}
                     disabled={isScanningWifi || status !== 'idle'}
                     className="w-full mb-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <MagnifyingGlassIcon className="h-5 w-5" />
                     <span>{isScanningWifi ? '掃描中...' : '掃描 WiFi 網絡'}</span>
                   </button>
+                  <p className="text-xs text-gray-500">
+                    SmartConfig 需要路由器的 Wi-Fi 資訊。請允許應用程式在本機掃描或於無法掃描時手動輸入。
+                  </p>
                 </div>
 
                 {wifiNetworks.length > 0 && (

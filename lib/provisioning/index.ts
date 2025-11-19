@@ -9,6 +9,7 @@ import { TuyaProvisioning } from '../tuya-provisioning'
 import { MideaProvisioningAdapter } from './midea-provisioning'
 import { PhilipsProvisioningAdapter } from './philips-provisioning'
 import { PanasonicProvisioningAdapter } from './panasonic-provisioning'
+import { ESPProvisioningAdapter } from './esp-provisioning'
 
 import { BaseProvisioningAdapter as BaseAdapter } from './base-provisioning'
 import type { ProvisioningConfig, ProvisioningResult } from './base-provisioning'
@@ -21,7 +22,7 @@ export class UnifiedProvisioningFactory {
   /**
    * 獲取配網適配器
    */
-  static getAdapter(vendor: 'tuya' | 'midea' | 'philips' | 'panasonic'): BaseAdapter {
+  static getAdapter(vendor: 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp'): BaseAdapter {
     switch (vendor) {
       case 'tuya':
         // Tuya 使用不同的結構，需要適配
@@ -32,6 +33,8 @@ export class UnifiedProvisioningFactory {
         return new PhilipsProvisioningAdapter()
       case 'panasonic':
         return new PanasonicProvisioningAdapter()
+      case 'esp':
+        return new ESPProvisioningAdapter()
       default:
         throw new Error(`Unsupported vendor: ${vendor}`)
     }
@@ -41,14 +44,14 @@ export class UnifiedProvisioningFactory {
    * 啟動配網流程
    */
   static async startProvisioning(config: ProvisioningConfig): Promise<ProvisioningResult> {
-    const adapter = this.getAdapter(config.vendor)
+    const adapter = this.getAdapter(config.vendor as any)
     return await adapter.startProvisioning(config)
   }
 
   /**
    * 查詢配網狀態
    */
-  static async queryStatus(vendor: 'tuya' | 'midea' | 'philips' | 'panasonic', token: string): Promise<ProvisioningResult> {
+  static async queryStatus(vendor: 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp', token: string): Promise<ProvisioningResult> {
     const adapter = this.getAdapter(vendor)
     return await adapter.queryStatus(token)
   }
@@ -56,7 +59,7 @@ export class UnifiedProvisioningFactory {
   /**
    * 停止配網流程
    */
-  static async stopProvisioning(vendor: 'tuya' | 'midea' | 'philips' | 'panasonic', token: string): Promise<boolean> {
+  static async stopProvisioning(vendor: 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp', token: string): Promise<boolean> {
     const adapter = this.getAdapter(vendor)
     return await adapter.stopProvisioning(token)
   }

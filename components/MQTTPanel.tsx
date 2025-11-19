@@ -55,7 +55,7 @@ export default function MQTTPanel() {
   const { household } = useHousehold() // 當前家庭
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
-  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'philips' | 'panasonic' | undefined>(undefined) // 配網品牌
+  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | undefined>(undefined) // 配網品牌
   const [newDevice, setNewDevice] = useState({
     deviceId: '',
     name: '',
@@ -258,6 +258,17 @@ export default function MQTTPanel() {
           >
             <WifiIcon className="h-4 w-4" />
             Midea 配網
+          </button>
+          <button
+            onClick={() => {
+              setProvisioningVendor('esp')
+              setIsProvisioningModalOpen(true)
+            }}
+            className="px-3 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2"
+            title="ESP 設備配網"
+          >
+            <WifiIcon className="h-4 w-4" />
+            ESP 配網
           </button>
           <button
             onClick={() => {

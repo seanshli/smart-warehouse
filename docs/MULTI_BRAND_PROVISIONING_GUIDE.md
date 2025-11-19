@@ -9,6 +9,7 @@
 ### MQTT 設備
 - **Tuya（塗鴉）**：支持 EZ 模式和 AP 模式配網
 - **Midea（美的）**：支持 AP 模式和藍牙配網（需要美的 SDK）
+- **ESP (ESP32/ESP8266)**：支持 SmartConfig（ESP-TOUCH）和 AP 模式配網
 
 ### RESTful API 設備
 - **Philips Hue**：通過本地網絡發現和配對 Hue Bridge
@@ -28,19 +29,24 @@
 
 ### 步驟 2: 配置配網參數
 
-#### MQTT 設備（Tuya, Midea）
+#### MQTT 設備（Tuya, Midea, ESP）
 
 1. **填寫 Wi-Fi 資訊**
    - **Wi-Fi SSID**：輸入您的 Wi-Fi 網絡名稱
    - **Wi-Fi 密碼**：輸入您的 Wi-Fi 密碼
-   - **配網模式**（僅 Tuya）：
-     - **自動選擇**（推薦）
-     - **EZ 模式**：設備指示燈快速閃爍時使用
-     - **AP 模式**：設備指示燈慢速閃爍時使用
+   - **配網模式**：
+     - **Tuya**：
+       - **自動選擇**（推薦）
+       - **EZ 模式**：設備指示燈快速閃爍時使用
+       - **AP 模式**：設備指示燈慢速閃爍時使用
+     - **ESP**：
+       - **SmartConfig（ESP-TOUCH）**：設備指示燈快速閃爍時使用（需要本地工具或手機 App）
+       - **AP 模式**：連接設備熱點（ESP_XXXXXX）後訪問 192.168.4.1 進行配置
 
 2. **開始配網**
    - 點擊 **開始配網** 按鈕
    - 確保設備已進入配網模式
+   - **ESP 設備**：按照提示進行手動配網操作
 
 #### RESTful API 設備（Philips, Panasonic）
 

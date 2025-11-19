@@ -19,7 +19,7 @@ import { useLanguage } from './LanguageProvider'
 type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'
 
 // 支持的品牌
-type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic'
+type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp'
 
 interface ProvisioningModalProps {
   isOpen: boolean
@@ -107,7 +107,7 @@ export default function ProvisioningModal({
   // 啟動配網流程
   const handleStartProvisioning = async () => {
     // 驗證必填欄位
-    if (vendor === 'tuya' || vendor === 'midea') {
+    if (vendor === 'tuya' || vendor === 'midea' || vendor === 'esp') {
       if (!ssid || !password) {
         toast.error('Wi-Fi SSID 和密碼為必填項')
         return
@@ -133,7 +133,7 @@ export default function ProvisioningModal({
           vendor,
           ssid,
           password,
-          mode,
+          mode: vendor === 'esp' && mode === 'auto' ? 'smartconfig' : mode,
           baseUrl,
           apiKey,
           accessToken,
@@ -156,6 +156,14 @@ export default function ProvisioningModal({
           if (onSuccess && data.deviceId) {
             onSuccess(data.deviceId, data.deviceName || `Device ${data.deviceId}`, vendor, data.deviceInfo)
           }
+        } else if (vendor === 'esp') {
+          // ESP 設備配網需要特殊處理
+          // SmartConfig 和 AP 模式都需要用戶手動操作
+          setStatus('provisioning')
+          toast('請按照設備說明進行配網操作', { icon: 'ℹ️' })
+          
+          // ESP 配網通常需要用戶手動操作，不進行自動輪詢
+          // 用戶完成配網後，可以手動添加設備
         } else {
           // MQTT 設備需要輪詢狀態
           setStatus('provisioning')
@@ -288,7 +296,7 @@ export default function ProvisioningModal({
 
   if (!isOpen) return null
 
-  const isMQTTDevice = vendor === 'tuya' || vendor === 'midea'
+  const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
   const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic'
 
   return (
@@ -299,6 +307,7 @@ export default function ProvisioningModal({
           <h2 className="text-xl font-bold text-gray-900">
             {vendor === 'tuya' && 'Tuya 設備配網'}
             {vendor === 'midea' && 'Midea 設備配網'}
+            {vendor === 'esp' && 'ESP 設備配網'}
             {vendor === 'philips' && 'Philips Hue 配網'}
             {vendor === 'panasonic' && 'Panasonic 設備配網'}
           </h2>
@@ -383,6 +392,7 @@ export default function ProvisioningModal({
                 >
                   <option value="tuya">Tuya（塗鴉）</option>
                   <option value="midea">Midea（美的）</option>
+                  <option value="esp">ESP (ESP32/ESP8266)</option>
                   <option value="philips">Philips Hue</option>
                   <option value="panasonic">Panasonic（松下）</option>
                 </select>
@@ -435,6 +445,27 @@ export default function ProvisioningModal({
                       <option value="ez">EZ 模式（快速配網）</option>
                       <option value="ap">AP 模式（熱點配網）</option>
                     </select>
+                  </div>
+                )}
+                {vendor === 'esp' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      配網模式
+                    </label>
+                    <select
+                      value={mode === 'auto' ? 'smartconfig' : mode}
+                      onChange={(e) => setMode(e.target.value as 'ez' | 'ap' | 'auto')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={status !== 'idle'}
+                    >
+                      <option value="smartconfig">SmartConfig（ESP-TOUCH）</option>
+                      <option value="ap">AP 模式（熱點配網）</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      <strong>SmartConfig：</strong>設備指示燈快速閃爍時使用（需要本地工具或手機 App）
+                      <br />
+                      <strong>AP 模式：</strong>連接設備熱點（ESP_XXXXXX）後訪問 192.168.4.1 進行配置
+                    </p>
                   </div>
                 )}
               </>
@@ -546,14 +577,52 @@ export default function ProvisioningModal({
             <div className="text-center py-4">
               {status === 'provisioning' && isMQTTDevice && (
                 <div>
-                  <p className="text-gray-700 mb-2">
-                    請確保您的設備已進入配網模式：
-                  </p>
-                  <ul className="text-left text-sm text-gray-600 space-y-1 mb-4">
-                    <li>• 設備指示燈閃爍</li>
-                    <li>• 設備距離路由器 1-2 米內</li>
-                    <li>• 使用 2.4 GHz Wi-Fi 網絡</li>
-                  </ul>
+                  {vendor === 'esp' ? (
+                    <div>
+                      <p className="text-gray-700 mb-2 font-medium">
+                        請按照以下步驟進行 ESP 設備配網：
+                      </p>
+                      {mode === 'smartconfig' || mode === 'auto' ? (
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-gray-700 mb-1">SmartConfig 模式：</p>
+                          <ul className="text-sm text-gray-600 space-y-1 mb-3">
+                            <li>• 設備進入 SmartConfig 模式（指示燈快速閃爍）</li>
+                            <li>• 使用 ESP-TOUCH 工具或手機 App 發送配置</li>
+                            <li>• 或使用本地工具通過 UDP 發送配置</li>
+                            <li>• 設備距離路由器 1-2 米內</li>
+                            <li>• 使用 2.4 GHz Wi-Fi 網絡</li>
+                          </ul>
+                        </div>
+                      ) : (
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-gray-700 mb-1">AP 模式：</p>
+                          <ul className="text-sm text-gray-600 space-y-1 mb-3">
+                            <li>• 設備進入 AP 模式（創建熱點 ESP_XXXXXX）</li>
+                            <li>• 連接到設備熱點（Wi-Fi 設置中查找）</li>
+                            <li>• 訪問 192.168.4.1 進行配置</li>
+                            <li>• 輸入 Wi-Fi SSID 和密碼</li>
+                            <li>• 等待設備連接到 Wi-Fi</li>
+                          </ul>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        配網完成後，設備會連接到 Wi-Fi 並通過 MQTT 報告狀態。
+                        <br />
+                        您可以在 MQTT Broker 上查看設備是否已連接，然後手動添加設備。
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-gray-700 mb-2">
+                        請確保您的設備已進入配網模式：
+                      </p>
+                      <ul className="text-left text-sm text-gray-600 space-y-1 mb-4">
+                        <li>• 設備指示燈閃爍</li>
+                        <li>• 設備距離路由器 1-2 米內</li>
+                        <li>• 使用 2.4 GHz Wi-Fi 網絡</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
               {status === 'pairing' && vendor === 'philips' && (

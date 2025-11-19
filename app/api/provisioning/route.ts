@@ -32,12 +32,12 @@ export async function POST(request: NextRequest) {
 
     // 構建配網配置
     const config: ProvisioningConfig = {
-      vendor: vendor as 'tuya' | 'midea' | 'philips' | 'panasonic',
+      vendor: vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
       mode: mode || 'auto',
     }
 
     // 根據品牌添加特定配置
-    if (vendor === 'tuya' || vendor === 'midea') {
+    if (vendor === 'tuya' || vendor === 'midea' || vendor === 'esp') {
       // MQTT 設備需要 Wi-Fi 配置
       if (!ssid || !password) {
         return NextResponse.json(
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     // 發現設備
     if (action === 'discover') {
       const config: ProvisioningConfig = {
-        vendor: vendor as 'tuya' | 'midea' | 'philips' | 'panasonic',
+        vendor: vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
       }
 
       // 添加品牌特定配置
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await UnifiedProvisioningFactory.queryStatus(
-      vendor as 'tuya' | 'midea' | 'philips' | 'panasonic',
+      vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
       token
     )
 
@@ -191,7 +191,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const success = await UnifiedProvisioningFactory.stopProvisioning(
-      vendor as 'tuya' | 'midea' | 'philips' | 'panasonic',
+      vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
       token
     )
 

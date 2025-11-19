@@ -1,7 +1,7 @@
 # Git 同步狀態報告
 ## Git Sync Status Report
 
-**生成時間 / Generated:** 2025-11-19 15:20:00 CST
+**生成時間 / Generated:** 2025-11-19 17:05:00 CST
 
 ## 當前狀態 / Current Status
 
@@ -14,27 +14,27 @@
 ### 版本資訊 / Version Information
 
 #### Web 前端 / Web Frontend
-- **版本 / Version:** `0.1.4` (package.json)
+- **版本 / Version:** `0.1.5` (package.json)
 - **狀態 / Status:** ✅ 已同步
 
 #### iOS 應用 / iOS App
-- **行銷版本 / Marketing Version:** `1.0.17`
-- **建置版本 / Build Version:** `26`
+- **行銷版本 / Marketing Version:** `1.0.18`
+- **建置版本 / Build Version:** `27`
 - **狀態 / Status:** ✅ 已同步
 
 #### Android 應用 / Android App
-- **版本名稱 / Version Name:** `1.0.17`
-- **版本代碼 / Version Code:** `17`
+- **版本名稱 / Version Name:** `1.0.18`
+- **版本代碼 / Version Code:** `18`
 - **狀態 / Status:** ✅ 已同步
 
 ### 最近提交記錄 / Recent Commits
 
 ```
+0db87e5 feat: add real WiFi scanning flow
+57fed3e fix: adjust WiFi scan UX to avoid mock data
+37fa435 fix: resolve provisioning modal build errors
+6ad5dac chore: bump versions for deployment readiness
 991f46f feat: improve ESP provisioning with WiFi scanning and multi-step flow
-00a5006 feat: add support for all Tuya provisioning modes
-701a9b7 feat: add Tuya configuration verification script
-ad751ec docs: add Tuya multi-region configuration guide
-7a382fb docs: add Xcode certificate upgrade guide
 ```
 
 ### 遠端倉庫 / Remote Repository

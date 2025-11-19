@@ -38,7 +38,7 @@ export default function ProvisioningModal({
   const [vendor, setVendor] = useState<SupportedVendor>(initialVendor || 'tuya')
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'ez' | 'ap' | 'auto'>('auto')
+  const [mode, setMode] = useState<'ez' | 'ap' | 'auto' | 'smartconfig'>('auto')
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [accessToken, setAccessToken] = useState('')
@@ -454,7 +454,7 @@ export default function ProvisioningModal({
                     </label>
                     <select
                       value={mode === 'auto' ? 'smartconfig' : mode}
-                      onChange={(e) => setMode(e.target.value as 'ez' | 'ap' | 'auto')}
+                      onChange={(e) => setMode(e.target.value as 'ez' | 'ap' | 'auto' | 'smartconfig')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={status !== 'idle'}
                     >

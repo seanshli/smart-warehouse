@@ -1,7 +1,7 @@
 # Git 同步狀態報告
 ## Git Sync Status Report
 
-**生成時間 / Generated:** 2025-01-27 16:45:00 CST
+**生成時間 / Generated:** 2025-11-19 15:20:00 CST
 
 ## 當前狀態 / Current Status
 
@@ -14,27 +14,27 @@
 ### 版本資訊 / Version Information
 
 #### Web 前端 / Web Frontend
-- **版本 / Version:** `0.1.3` (package.json)
+- **版本 / Version:** `0.1.4` (package.json)
 - **狀態 / Status:** ✅ 已同步
 
 #### iOS 應用 / iOS App
-- **行銷版本 / Marketing Version:** `1.0.6`
-- **建置版本 / Build Version:** `25`
+- **行銷版本 / Marketing Version:** `1.0.17`
+- **建置版本 / Build Version:** `26`
 - **狀態 / Status:** ✅ 已同步
 
 #### Android 應用 / Android App
-- **版本名稱 / Version Name:** `1.0.16`
-- **版本代碼 / Version Code:** `16`
+- **版本名稱 / Version Name:** `1.0.17`
+- **版本代碼 / Version Code:** `17`
 - **狀態 / Status:** ✅ 已同步
 
 ### 最近提交記錄 / Recent Commits
 
 ```
-6ee9733 docs: update multi-brand provisioning guide with ESP details
-ca23612 feat: add ESP device provisioning support
-854ef1c feat: add multi-brand device provisioning (Midea, Philips, Panasonic)
-98ba054 feat: add Tuya device provisioning functionality
-71b65a6 fix: wrap MQTT adapters to fix createDevice error
+991f46f feat: improve ESP provisioning with WiFi scanning and multi-step flow
+00a5006 feat: add support for all Tuya provisioning modes
+701a9b7 feat: add Tuya configuration verification script
+ad751ec docs: add Tuya multi-region configuration guide
+7a382fb docs: add Xcode certificate upgrade guide
 ```
 
 ### 遠端倉庫 / Remote Repository
@@ -55,16 +55,17 @@ ca23612 feat: add ESP device provisioning support
 - 所有組件和 API 路由
 - 繁體中文註解已完整添加
 - ESP 配網功能已整合
+- **版本**：0.1.4
 
 ✅ **iOS 應用 / iOS App:** 已同步
 - Xcode 專案配置
-- 版本號已更新 (1.0.6 / Build 25)
+- 版本號已更新 (1.0.17 / Build 26)
 - Capacitor 整合
 - 所有最新功能已包含
 
 ✅ **Android 應用 / Android App:** 已同步
 - Gradle 建置配置
-- 版本號已更新 (1.0.16 / Code 16)
+- 版本號已更新 (1.0.17 / Code 17)
 - Capacitor 整合
 - 所有最新功能已包含
 

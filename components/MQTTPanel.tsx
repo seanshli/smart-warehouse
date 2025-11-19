@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
+import TuyaProvisioningModal from './TuyaProvisioningModal'
 
 // IoT 設備介面（統一支援 MQTT 和 RESTful API）
 interface MQTTDevice {
@@ -53,6 +54,7 @@ export default function MQTTPanel() {
   const { t } = useLanguage() // 語言設定
   const { household } = useHousehold() // 當前家庭
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
+  const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
   const [newDevice, setNewDevice] = useState({
     deviceId: '',
     name: '',
@@ -226,13 +228,21 @@ export default function MQTTPanel() {
             RESTful: Philips Hue, Panasonic
           </p>
         </div>
-        <div className="flex gap-2">
+            <div className="flex gap-2">
           <button
             onClick={() => mutate()}
             className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-2"
           >
             <ArrowPathIcon className="h-4 w-4" />
             {t('homeAssistantRefresh')}
+          </button>
+          <button
+            onClick={() => setIsProvisioningModalOpen(true)}
+            className="px-3 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2"
+            title="Tuya 設備配網"
+          >
+            <WifiIcon className="h-4 w-4" />
+            Tuya 配網
           </button>
           <button
             onClick={() => setIsAddingDevice(!isAddingDevice)}
@@ -468,6 +478,24 @@ export default function MQTTPanel() {
           ))}
         </div>
       )}
+
+      {/* Tuya 配網模態框 */}
+      <TuyaProvisioningModal
+        isOpen={isProvisioningModalOpen}
+        onClose={() => setIsProvisioningModalOpen(false)}
+        onSuccess={(deviceId, deviceName) => {
+          // 配網成功後，自動填充設備信息
+          setNewDevice({
+            ...newDevice,
+            deviceId,
+            name: deviceName,
+            vendor: 'tuya',
+          })
+          setIsAddingDevice(true)
+          setIsProvisioningModalOpen(false)
+          toast.success('配網成功！請確認設備信息並添加設備。')
+        }}
+      />
     </div>
   )
 }

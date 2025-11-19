@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { useHousehold } from './HouseholdProvider'
-import TuyaProvisioningModal from './TuyaProvisioningModal'
+import ProvisioningModal from './ProvisioningModal'
 
 // IoT 設備介面（統一支援 MQTT 和 RESTful API）
 interface MQTTDevice {
@@ -55,6 +55,7 @@ export default function MQTTPanel() {
   const { household } = useHousehold() // 當前家庭
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
+  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'philips' | 'panasonic' | undefined>(undefined) // 配網品牌
   const [newDevice, setNewDevice] = useState({
     deviceId: '',
     name: '',
@@ -237,12 +238,48 @@ export default function MQTTPanel() {
             {t('homeAssistantRefresh')}
           </button>
           <button
-            onClick={() => setIsProvisioningModalOpen(true)}
+            onClick={() => {
+              setProvisioningVendor('tuya')
+              setIsProvisioningModalOpen(true)
+            }}
             className="px-3 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2"
             title="Tuya 設備配網"
           >
             <WifiIcon className="h-4 w-4" />
             Tuya 配網
+          </button>
+          <button
+            onClick={() => {
+              setProvisioningVendor('midea')
+              setIsProvisioningModalOpen(true)
+            }}
+            className="px-3 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2"
+            title="Midea 設備配網"
+          >
+            <WifiIcon className="h-4 w-4" />
+            Midea 配網
+          </button>
+          <button
+            onClick={() => {
+              setProvisioningVendor('philips')
+              setIsProvisioningModalOpen(true)
+            }}
+            className="px-3 py-2 text-sm bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center gap-2"
+            title="Philips Hue 配網"
+          >
+            <WifiIcon className="h-4 w-4" />
+            Hue 配網
+          </button>
+          <button
+            onClick={() => {
+              setProvisioningVendor('panasonic')
+              setIsProvisioningModalOpen(true)
+            }}
+            className="px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
+            title="Panasonic 設備配網"
+          >
+            <WifiIcon className="h-4 w-4" />
+            Panasonic 配網
           </button>
           <button
             onClick={() => setIsAddingDevice(!isAddingDevice)}
@@ -479,20 +516,31 @@ export default function MQTTPanel() {
         </div>
       )}
 
-      {/* Tuya 配網模態框 */}
-      <TuyaProvisioningModal
+      {/* 統一配網模態框 */}
+      <ProvisioningModal
         isOpen={isProvisioningModalOpen}
-        onClose={() => setIsProvisioningModalOpen(false)}
-        onSuccess={(deviceId, deviceName) => {
+        vendor={provisioningVendor}
+        onClose={() => {
+          setIsProvisioningModalOpen(false)
+          setProvisioningVendor(undefined)
+        }}
+        onSuccess={(deviceId, deviceName, vendor, deviceInfo) => {
           // 配網成功後，自動填充設備信息
           setNewDevice({
             ...newDevice,
             deviceId,
             name: deviceName,
-            vendor: 'tuya',
+            vendor: vendor as any,
+            // 如果是 RESTful 設備，填充 API 配置
+            ...(vendor === 'philips' || vendor === 'panasonic' ? {
+              baseUrl: deviceInfo?.internalIp || deviceInfo?.baseUrl || '',
+              apiKey: deviceInfo?.apiKey || deviceInfo?.accessToken || '',
+              accessToken: deviceInfo?.accessToken || '',
+            } : {}),
           })
           setIsAddingDevice(true)
           setIsProvisioningModalOpen(false)
+          setProvisioningVendor(undefined)
           toast.success('配網成功！請確認設備信息並添加設備。')
         }}
       />

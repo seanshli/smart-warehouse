@@ -38,7 +38,10 @@ export default function ProvisioningModal({
   const [vendor, setVendor] = useState<SupportedVendor>(initialVendor || 'tuya')
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'ez' | 'ap' | 'auto' | 'smartconfig'>('auto')
+  const [mode, setMode] = useState<'wifi' | 'ez' | 'hotspot' | 'ap' | 'wifi/bt' | 'zigbee' | 'bt' | 'manual' | 'auto' | 'smartconfig'>('auto')
+  const [deviceId, setDeviceId] = useState<string>('') // 手動配網時使用
+  const [zigbeeGatewayId, setZigbeeGatewayId] = useState<string>('') // Zigbee 配網時使用
+  const [bluetoothMac, setBluetoothMac] = useState<string>('') // Bluetooth 配網時使用
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [accessToken, setAccessToken] = useState('')
@@ -107,7 +110,36 @@ export default function ProvisioningModal({
   // 啟動配網流程
   const handleStartProvisioning = async () => {
     // 驗證必填欄位
-    if (vendor === 'tuya' || vendor === 'midea' || vendor === 'esp') {
+    if (vendor === 'tuya') {
+      // Tuya 手動配網只需要設備 ID
+      if (mode === 'manual') {
+        if (!deviceId) {
+          toast.error('設備 ID 為必填項')
+          return
+        }
+      }
+      // Tuya Zigbee 配網需要網關 ID
+      else if (mode === 'zigbee') {
+        if (!zigbeeGatewayId) {
+          toast.error('Zigbee 網關 ID 為必填項')
+          return
+        }
+      }
+      // Tuya Bluetooth 配網需要 MAC 地址
+      else if (mode === 'bt') {
+        if (!bluetoothMac) {
+          toast.error('Bluetooth MAC 地址為必填項')
+          return
+        }
+      }
+      // 其他模式需要 Wi-Fi 信息
+      else if (mode !== 'manual' && mode !== 'zigbee' && mode !== 'bt') {
+        if (!ssid || !password) {
+          toast.error('Wi-Fi SSID 和密碼為必填項')
+          return
+        }
+      }
+    } else if (vendor === 'midea' || vendor === 'esp') {
       if (!ssid || !password) {
         toast.error('Wi-Fi SSID 和密碼為必填項')
         return
@@ -137,6 +169,10 @@ export default function ProvisioningModal({
           baseUrl,
           apiKey,
           accessToken,
+          // Tuya 特定參數
+          deviceId: vendor === 'tuya' && mode === 'manual' ? deviceId : undefined,
+          zigbeeGatewayId: vendor === 'tuya' && mode === 'zigbee' ? zigbeeGatewayId : undefined,
+          bluetoothMac: vendor === 'tuya' && (mode === 'bt' || mode === 'wifi/bt') ? bluetoothMac : undefined,
         }),
       })
 
@@ -267,11 +303,13 @@ export default function ProvisioningModal({
     setAccessToken('')
     setStatus('idle')
     setToken(null)
-    setDeviceId(null)
+    setDeviceId('')
     setDeviceName(null)
     setDeviceInfo(null)
     setError(null)
     setDiscoveredDevices([])
+    setZigbeeGatewayId('')
+    setBluetoothMac('')
     handleStopProvisioning()
   }
 
@@ -431,21 +469,103 @@ export default function ProvisioningModal({
                 </div>
 
                 {vendor === 'tuya' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      配網模式
-                    </label>
-                    <select
-                      value={mode}
-                      onChange={(e) => setMode(e.target.value as 'ez' | 'ap' | 'auto')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={status !== 'idle'}
-                    >
-                      <option value="auto">自動選擇（推薦）</option>
-                      <option value="ez">EZ 模式（快速配網）</option>
-                      <option value="ap">AP 模式（熱點配網）</option>
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        配網模式 <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={mode}
+                        onChange={(e) => {
+                          const newMode = e.target.value as typeof mode
+                          setMode(newMode)
+                          // 重置模式相關字段
+                          if (newMode !== 'manual') setDeviceId('')
+                          if (newMode !== 'zigbee') setZigbeeGatewayId('')
+                          if (newMode !== 'bt' && newMode !== 'wifi/bt') setBluetoothMac('')
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      >
+                        <option value="auto">自動選擇（推薦）</option>
+                        <option value="wifi">WiFi 配網（EZ模式）</option>
+                        <option value="hotspot">Hotspot 配網（AP模式）</option>
+                        <option value="wifi/bt">WiFi/BT 混合配網</option>
+                        <option value="zigbee">Zigbee 配網</option>
+                        <option value="bt">Bluetooth 配網</option>
+                        <option value="manual">手動配網</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {mode === 'wifi' || mode === 'ez' ? '設備指示燈快速閃爍時使用' : ''}
+                        {mode === 'hotspot' || mode === 'ap' ? '設備指示燈慢速閃爍時使用，連接設備熱點進行配置' : ''}
+                        {mode === 'wifi/bt' ? '同時使用 WiFi 和 Bluetooth 進行配網' : ''}
+                        {mode === 'zigbee' ? '通過 Zigbee 網關進行配網' : ''}
+                        {mode === 'bt' ? '通過 Bluetooth 進行配網' : ''}
+                        {mode === 'manual' ? '手動輸入設備 ID 進行配網' : ''}
+                        {mode === 'auto' ? '系統自動選擇最佳配網模式' : ''}
+                      </p>
+                    </div>
+
+                    {/* 手動配網：設備 ID */}
+                    {mode === 'manual' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          設備 ID <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={deviceId}
+                          onChange={(e) => setDeviceId(e.target.value)}
+                          placeholder="輸入 Tuya 設備 ID（例如：bf1234567890abcdef）"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={status !== 'idle'}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          設備 ID 可以在 Tuya IoT Platform 或設備標籤上找到
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Zigbee 配網：網關 ID */}
+                    {mode === 'zigbee' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Zigbee 網關 ID <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={zigbeeGatewayId}
+                          onChange={(e) => setZigbeeGatewayId(e.target.value)}
+                          placeholder="輸入 Zigbee 網關設備 ID"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={status !== 'idle'}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          確保 Zigbee 網關已連接到網絡並在線
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Bluetooth 配網：MAC 地址 */}
+                    {(mode === 'bt' || mode === 'wifi/bt') && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Bluetooth MAC 地址 {mode === 'wifi/bt' ? '' : <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          type="text"
+                          value={bluetoothMac}
+                          onChange={(e) => setBluetoothMac(e.target.value)}
+                          placeholder="輸入設備 Bluetooth MAC 地址（例如：AA:BB:CC:DD:EE:FF）"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          disabled={status !== 'idle'}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          {mode === 'wifi/bt' ? '可選：提供 Bluetooth MAC 以啟用混合配網' : '確保設備藍牙已開啟並可被發現'}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
                 {vendor === 'esp' && (
                   <div>

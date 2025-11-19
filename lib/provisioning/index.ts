@@ -89,7 +89,21 @@ class TuyaProvisioningAdapter extends BaseAdapter {
   async startProvisioning(config: ProvisioningConfig): Promise<ProvisioningResult> {
     const { createTuyaProvisioning } = await import('../tuya-provisioning')
     
-    if (!config.ssid || !config.password) {
+    // 手動配網不需要 WiFi 信息
+    if (config.mode === 'manual' && config.deviceId) {
+      // 手動配網直接返回成功
+      return {
+        success: true,
+        deviceId: config.deviceId,
+        deviceName: `Tuya Device ${config.deviceId}`,
+        status: 'success',
+      }
+    }
+
+    // Zigbee 和 Bluetooth 配網可能不需要 WiFi
+    const needsWifi = !['zigbee', 'bt', 'manual'].includes(config.mode || '')
+    
+    if (needsWifi && (!config.ssid || !config.password)) {
       return {
         success: false,
         error: 'Wi-Fi SSID and password are required',
@@ -101,14 +115,24 @@ class TuyaProvisioningAdapter extends BaseAdapter {
       accessId: process.env.TUYA_ACCESS_ID || '',
       accessSecret: process.env.TUYA_ACCESS_SECRET || '',
       region: process.env.TUYA_REGION || 'cn',
-      ssid: config.ssid,
-      password: config.password,
+      ssid: config.ssid || '',
+      password: config.password || '',
       mode: config.mode as any,
     })
 
     try {
       const token = await provisioning.getProvisioningToken()
-      const result = await provisioning.startProvisioning(token, config.ssid!, config.password!, config.mode as any)
+      const result = await provisioning.startProvisioning(
+        token,
+        config.ssid || '',
+        config.password || '',
+        config.mode as any,
+        {
+          deviceId: config.deviceId,
+          zigbeeGatewayId: config.zigbeeGatewayId,
+          bluetoothMac: config.bluetoothMac,
+        }
+      )
       
       return {
         success: result.success,

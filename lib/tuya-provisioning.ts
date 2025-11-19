@@ -5,7 +5,15 @@
 import crypto from 'crypto'
 
 // Tuya 配網模式
-export type TuyaProvisioningMode = 'ez' | 'ap' | 'auto'
+// Tuya Provisioning Modes:
+// - 'wifi' / 'ez': WiFi配網（EZ模式，快速閃爍）
+// - 'hotspot' / 'ap': AP模式（熱點模式，慢速閃爍）
+// - 'wifi/bt': WiFi + Bluetooth 混合配網
+// - 'zigbee': Zigbee 網關配網
+// - 'bt': Bluetooth 配網
+// - 'manual': 手動配網（通過設備ID直接添加）
+// - 'auto': 自動選擇最佳模式
+export type TuyaProvisioningMode = 'wifi' | 'ez' | 'hotspot' | 'ap' | 'wifi/bt' | 'zigbee' | 'bt' | 'manual' | 'auto'
 
 // Tuya 配網狀態
 export type TuyaProvisioningStatus = 'idle' | 'starting' | 'provisioning' | 'success' | 'failed' | 'timeout'
@@ -147,19 +155,65 @@ export class TuyaProvisioning {
     token: string,
     ssid: string,
     password: string,
-    mode: TuyaProvisioningMode = 'auto'
+    mode: TuyaProvisioningMode = 'auto',
+    options?: {
+      deviceId?: string // 手動配網時使用
+      zigbeeGatewayId?: string // Zigbee 配網時使用
+      bluetoothMac?: string // Bluetooth 配網時使用
+    }
   ): Promise<TuyaProvisioningResult> {
     try {
+      // 手動配網：直接返回設備信息，不需要 API 調用
+      if (mode === 'manual' && options?.deviceId) {
+        return {
+          success: true,
+          deviceId: options.deviceId,
+          deviceName: `Tuya Device ${options.deviceId}`,
+          status: 'success',
+        }
+      }
+
+      // 標準化模式名稱（將 'wifi' 映射為 'ez'，'hotspot' 映射為 'ap'）
+      let apiMode = mode
+      if (mode === 'wifi') apiMode = 'ez'
+      if (mode === 'hotspot') apiMode = 'ap'
+      if (mode === 'auto') apiMode = 'ez' // 自動模式默認使用 EZ
+
       const path = '/v1.0/devices/token'
       const method = 'POST'
       
-      // 構建請求體
-      const body = JSON.stringify({
+      // 構建請求體（根據模式添加不同參數）
+      const bodyData: any = {
         token,
-        ssid,
-        password,
-        mode, // 'ez' 或 'ap'
-      })
+        mode: apiMode,
+      }
+
+      // WiFi 相關模式需要 SSID 和密碼
+      if (['ez', 'ap', 'wifi', 'hotspot', 'wifi/bt'].includes(mode)) {
+        bodyData.ssid = ssid
+        bodyData.password = password
+      }
+
+      // WiFi/BT 混合模式
+      if (mode === 'wifi/bt' && options?.bluetoothMac) {
+        bodyData.bluetooth_mac = options.bluetoothMac
+      }
+
+      // Zigbee 配網
+      if (mode === 'zigbee' && options?.zigbeeGatewayId) {
+        bodyData.gateway_id = options.zigbeeGatewayId
+        // Zigbee 設備通常不需要 WiFi 信息
+        if (ssid) bodyData.ssid = ssid
+        if (password) bodyData.password = password
+      }
+
+      // Bluetooth 配網
+      if (mode === 'bt' && options?.bluetoothMac) {
+        bodyData.bluetooth_mac = options.bluetoothMac
+        // BT 配網可能不需要 WiFi 信息
+      }
+
+      const body = JSON.stringify(bodyData)
       
       const headers: Record<string, string> = {
         'client_id': this.config.accessId,

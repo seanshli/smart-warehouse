@@ -20,19 +20,6 @@
       "filters": [
         {
           "filterType": "DENSITY",
-          "value": "mdpi"
-        }
-      ],
-      "attributes": [],
-      "versionCode": 16,
-      "versionName": "1.0.16",
-      "outputFile": "app-mdpi-release.apk"
-    },
-    {
-      "type": "ONE_OF_MANY",
-      "filters": [
-        {
-          "filterType": "DENSITY",
           "value": "ldpi"
         }
       ],
@@ -46,13 +33,13 @@
       "filters": [
         {
           "filterType": "DENSITY",
-          "value": "hdpi"
+          "value": "mdpi"
         }
       ],
       "attributes": [],
       "versionCode": 16,
       "versionName": "1.0.16",
-      "outputFile": "app-hdpi-release.apk"
+      "outputFile": "app-mdpi-release.apk"
     },
     {
       "type": "ONE_OF_MANY",
@@ -85,6 +72,19 @@
       "filters": [
         {
           "filterType": "DENSITY",
+          "value": "hdpi"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 16,
+      "versionName": "1.0.16",
+      "outputFile": "app-hdpi-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "DENSITY",
           "value": "xxhdpi"
         }
       ],
@@ -101,11 +101,11 @@
       "maxApi": 30,
       "baselineProfiles": [
         "baselineProfiles/1/app-universal-release.dm",
-        "baselineProfiles/1/app-mdpi-release.dm",
         "baselineProfiles/1/app-ldpi-release.dm",
-        "baselineProfiles/1/app-hdpi-release.dm",
+        "baselineProfiles/1/app-mdpi-release.dm",
         "baselineProfiles/1/app-xxxhdpi-release.dm",
         "baselineProfiles/1/app-xhdpi-release.dm",
+        "baselineProfiles/1/app-hdpi-release.dm",
         "baselineProfiles/1/app-xxhdpi-release.dm"
       ]
     },
@@ -114,11 +114,11 @@
       "maxApi": 2147483647,
       "baselineProfiles": [
         "baselineProfiles/0/app-universal-release.dm",
-        "baselineProfiles/0/app-mdpi-release.dm",
         "baselineProfiles/0/app-ldpi-release.dm",
-        "baselineProfiles/0/app-hdpi-release.dm",
+        "baselineProfiles/0/app-mdpi-release.dm",
         "baselineProfiles/0/app-xxxhdpi-release.dm",
         "baselineProfiles/0/app-xhdpi-release.dm",
+        "baselineProfiles/0/app-hdpi-release.dm",
         "baselineProfiles/0/app-xxhdpi-release.dm"
       ]
     }

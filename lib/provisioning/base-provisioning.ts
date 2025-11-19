@@ -21,6 +21,11 @@ export interface ProvisioningConfig {
   apiKey?: string // API 金鑰
   accessToken?: string // 訪問令牌
   
+  // Tuya 特定配置
+  deviceId?: string // 手動配網時使用的設備 ID
+  zigbeeGatewayId?: string // Zigbee 配網時使用的網關 ID
+  bluetoothMac?: string // Bluetooth 配網時使用的 MAC 地址
+  
   // 品牌特定配置
   [key: string]: any
 }

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { vendor, ssid, password, mode, baseUrl, apiKey, accessToken } = body
+    const { vendor, ssid, password, mode, baseUrl, apiKey, accessToken, deviceId, zigbeeGatewayId, bluetoothMac } = body
 
     // 驗證必填欄位
     if (!vendor) {
@@ -37,7 +37,56 @@ export async function POST(request: NextRequest) {
     }
 
     // 根據品牌添加特定配置
-    if (vendor === 'tuya' || vendor === 'midea' || vendor === 'esp') {
+    if (vendor === 'tuya') {
+      // Tuya 手動配網只需要設備 ID
+      if (mode === 'manual') {
+        if (!deviceId) {
+          return NextResponse.json(
+            { error: 'Device ID is required for manual provisioning' },
+            { status: 400 }
+          )
+        }
+        config.deviceId = deviceId
+      }
+      // Tuya Zigbee 配網需要網關 ID
+      else if (mode === 'zigbee') {
+        if (!zigbeeGatewayId) {
+          return NextResponse.json(
+            { error: 'Zigbee Gateway ID is required for Zigbee provisioning' },
+            { status: 400 }
+          )
+        }
+        config.zigbeeGatewayId = zigbeeGatewayId
+        // Zigbee 可能也需要 WiFi（可選）
+        if (ssid) config.ssid = ssid
+        if (password) config.password = password
+      }
+      // Tuya Bluetooth 配網需要 MAC 地址
+      else if (mode === 'bt') {
+        if (!bluetoothMac) {
+          return NextResponse.json(
+            { error: 'Bluetooth MAC address is required for Bluetooth provisioning' },
+            { status: 400 }
+          )
+        }
+        config.bluetoothMac = bluetoothMac
+      }
+      // 其他 Tuya 模式需要 Wi-Fi 配置
+      else {
+        if (!ssid || !password) {
+          return NextResponse.json(
+            { error: 'Wi-Fi SSID and password are required for Tuya WiFi provisioning' },
+            { status: 400 }
+          )
+        }
+        config.ssid = ssid
+        config.password = password
+        // WiFi/BT 混合模式
+        if (mode === 'wifi/bt' && bluetoothMac) {
+          config.bluetoothMac = bluetoothMac
+        }
+      }
+    } else if (vendor === 'midea' || vendor === 'esp') {
       // MQTT 設備需要 Wi-Fi 配置
       if (!ssid || !password) {
         return NextResponse.json(

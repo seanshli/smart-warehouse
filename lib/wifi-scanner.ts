@@ -12,6 +12,7 @@ export interface WiFiNetwork {
   frequency?: number // 頻率 (MHz)
   security?: 'none' | 'wpa' | 'wpa2' | 'wpa3' | 'wep' // 安全類型
   isConnected?: boolean // 是否已連接
+  password?: string // 已保存的密碼（僅本地緩存使用）
 }
 
 /**

@@ -147,7 +147,7 @@ export default function ProvisioningModal({
         }
       }
       // 其他模式需要 Wi-Fi 信息
-      else if (mode !== 'manual' && mode !== 'zigbee' && mode !== 'bt') {
+      else {
         if (!ssid || !password) {
           toast.error('Wi-Fi SSID 和密碼為必填項')
           return
@@ -456,7 +456,6 @@ export default function ProvisioningModal({
                 </select>
               </div>
             )}
-
             {/* MQTT 設備配置（Tuya, Midea, ESP SmartConfig） */}
             {isMQTTDevice && vendor !== 'esp' && (
               <>
@@ -602,7 +601,6 @@ export default function ProvisioningModal({
             {/* ESP SmartConfig 模式也需要 WiFi 選擇 */}
             {vendor === 'esp' && mode === 'smartconfig' && (
               <>
-                {/* WiFi 掃描按鈕 */}
                 <div>
                   <button
                     onClick={async () => {
@@ -612,9 +610,7 @@ export default function ProvisioningModal({
                         const mock = WiFiScanner.getMockNetworks()
                         const merged = WiFiScanner.mergeNetworks(mock, saved)
                         setWifiNetworks(merged)
-                        if (merged.length > 0) {
-                          toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
-                        }
+                        toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
                       } catch (error: any) {
                         console.error('WiFi scan error:', error)
                         toast.error('無法掃描 WiFi 網絡')
@@ -630,7 +626,6 @@ export default function ProvisioningModal({
                   </button>
                 </div>
 
-                {/* WiFi 網絡列表 */}
                 {wifiNetworks.length > 0 && (
                   <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
                     {wifiNetworks.map((network, index) => {
@@ -739,7 +734,7 @@ export default function ProvisioningModal({
               </>
             )}
 
-                {vendor === 'tuya' && (
+            {vendor === 'tuya' && (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1076,8 +1071,6 @@ export default function ProvisioningModal({
                     )}
                   </>
                 )}
-              </>
-            )}
 
             {/* RESTful 設備配置（Philips, Panasonic） */}
             {isRESTfulDevice && (

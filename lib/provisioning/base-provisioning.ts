@@ -3,7 +3,19 @@
 // Unified Provisioning Base Interface - Provides unified provisioning interface for different IoT device brands
 
 // 配網模式
-export type ProvisioningMode = 'ez' | 'ap' | 'bluetooth' | 'local' | 'auto' | 'smartconfig'
+export type ProvisioningMode =
+  | 'wifi'
+  | 'ez'
+  | 'hotspot'
+  | 'ap'
+  | 'wifi/bt'
+  | 'zigbee'
+  | 'bt'
+  | 'manual'
+  | 'bluetooth'
+  | 'local'
+  | 'auto'
+  | 'smartconfig'
 
 // 配網狀態
 export type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'

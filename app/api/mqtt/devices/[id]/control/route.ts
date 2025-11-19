@@ -28,7 +28,7 @@ export async function POST(
     const { action, value } = body // 操作和值
 
     // 獲取設備並驗證權限
-    const device = await prisma.mQTTDevice.findUnique({
+    const device = await prisma.ioTDevice.findUnique({
       where: { id: params.id },
       include: {
         household: {
@@ -74,15 +74,33 @@ export async function POST(
         } else if (action === 'set_temperature' && value !== undefined) {
           commandMessage = Adapter.commands.setTemperature(device.deviceId, value)
         } else if (action === 'set_mode' && value) {
-          commandMessage = Adapter.commands.setMode(device.deviceId, value)
+          // 檢查適配器是否支援 setMode
+          if ('setMode' in Adapter.commands) {
+            commandMessage = (Adapter.commands as any).setMode(device.deviceId, value)
+          } else {
+            // 使用通用命令格式
+            commandMessage = Adapter.createCommandMessage(device.deviceId, {
+              action: 'set_mode',
+              value
+            } as any)
+          }
         } else if (action === 'set_fan_speed' && value !== undefined) {
-          commandMessage = Adapter.commands.setFanSpeed(device.deviceId, value)
+          // 檢查適配器是否支援 setFanSpeed
+          if ('setFanSpeed' in Adapter.commands) {
+            commandMessage = (Adapter.commands as any).setFanSpeed(device.deviceId, value)
+          } else {
+            // 使用通用命令格式
+            commandMessage = Adapter.createCommandMessage(device.deviceId, {
+              action: 'set_fan_speed',
+              value
+            } as any)
+          }
         } else {
-          // 通用命令
+          // 通用命令：Tuya 適配器使用 action 字段
           commandMessage = Adapter.createCommandMessage(device.deviceId, {
             action,
             value
-          })
+          } as any)
         }
         break
 
@@ -94,11 +112,11 @@ export async function POST(
         } else if (action === 'set_temperature' && value !== undefined) {
           commandMessage = Adapter.commands.setTemperature(device.deviceId, value)
         } else {
-          // 通用命令
+          // 通用命令：ESP 適配器需要 command 字段
           commandMessage = Adapter.createCommandMessage(device.deviceId, {
             command: action,
             value
-          })
+          } as any)
         }
         break
 
@@ -110,17 +128,41 @@ export async function POST(
         } else if (action === 'set_temperature' && value !== undefined) {
           commandMessage = Adapter.commands.setTemperature(device.deviceId, value)
         } else if (action === 'set_mode' && value) {
-          commandMessage = Adapter.commands.setMode(device.deviceId, value)
+          // 檢查適配器是否支援 setMode
+          if ('setMode' in Adapter.commands) {
+            commandMessage = (Adapter.commands as any).setMode(device.deviceId, value)
+          } else {
+            commandMessage = Adapter.createCommandMessage(device.deviceId, {
+              cmd: 'set_mode',
+              data: { mode: value }
+            } as any)
+          }
         } else if (action === 'set_fan_speed' && value !== undefined) {
-          commandMessage = Adapter.commands.setFanSpeed(device.deviceId, value)
+          // 檢查適配器是否支援 setFanSpeed
+          if ('setFanSpeed' in Adapter.commands) {
+            commandMessage = (Adapter.commands as any).setFanSpeed(device.deviceId, value)
+          } else {
+            commandMessage = Adapter.createCommandMessage(device.deviceId, {
+              cmd: 'set_fan_speed',
+              data: { fanSpeed: value }
+            } as any)
+          }
         } else if (action === 'set_swing' && value !== undefined) {
-          commandMessage = Adapter.commands.setSwing(device.deviceId, value)
+          // 檢查適配器是否支援 setSwing
+          if ('setSwing' in Adapter.commands) {
+            commandMessage = (Adapter.commands as any).setSwing(device.deviceId, value)
+          } else {
+            commandMessage = Adapter.createCommandMessage(device.deviceId, {
+              cmd: 'set_swing',
+              data: { swing: value }
+            } as any)
+          }
         } else {
-          // 通用命令
+          // 通用命令：Midea 適配器使用 cmd 和 data 字段
           commandMessage = Adapter.createCommandMessage(device.deviceId, {
             cmd: action,
             data: value || {}
-          })
+          } as any)
         }
         break
 

@@ -37,7 +37,6 @@ export class PanasonicAdapter extends BaseAdapter {
   createDevice(deviceId: string, name: string, config?: AdapterConfig): IoTDevice {
     return {
       id: deviceId,
-      deviceId: deviceId,
       name,
       vendor: 'panasonic' as any,
       topic: `panasonic/${deviceId}`, // 用於識別的主題格式

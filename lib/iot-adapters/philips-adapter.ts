@@ -42,7 +42,6 @@ export class PhilipsAdapter extends BaseAdapter {
   createDevice(deviceId: string, name: string, config?: AdapterConfig): IoTDevice {
     return {
       id: deviceId,
-      deviceId: deviceId,
       name,
       vendor: 'philips' as any,
       topic: `philips/${deviceId}`, // 用於識別的主題格式

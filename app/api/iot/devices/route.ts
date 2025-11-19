@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 獲取設備列表
-    const devices = await prisma.iOTDevice.findMany({
+    const devices = await prisma.ioTDevice.findMany({
       where,
       include: {
         room: {
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
     })
 
     // 創建設備記錄
-    const iotDevice = await prisma.iOTDevice.create({
+    const iotDevice = await prisma.ioTDevice.create({
       data: {
         deviceId,
         name,
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
             const state = adapter.parseState(message)
             
             if (state) {
-              await prisma.iOTDevice.update({
+              await prisma.ioTDevice.update({
                 where: { id: iotDevice.id },
                 data: {
                   state: state as any,

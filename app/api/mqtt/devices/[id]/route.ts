@@ -24,7 +24,7 @@ export async function GET(
     const userId = (session?.user as any)?.id
 
     // 獲取設備
-    const device = await prisma.mQTTDevice.findUnique({
+    const device = await prisma.ioTDevice.findUnique({
       where: { id: params.id },
       include: {
         household: {
@@ -81,7 +81,7 @@ export async function PATCH(
     const body = await request.json()
 
     // 獲取設備並驗證權限
-    const existingDevice = await prisma.mQTTDevice.findUnique({
+    const existingDevice = await prisma.ioTDevice.findUnique({
       where: { id: params.id },
       include: {
         household: {
@@ -106,7 +106,7 @@ export async function PATCH(
     }
 
     // 更新設備
-    const updatedDevice = await prisma.mQTTDevice.update({
+    const updatedDevice = await prisma.ioTDevice.update({
       where: { id: params.id },
       data: {
         name: body.name, // 設備名稱
@@ -148,7 +148,7 @@ export async function DELETE(
     const userId = (session?.user as any)?.id
 
     // 獲取設備並驗證權限
-    const device = await prisma.mQTTDevice.findUnique({
+    const device = await prisma.ioTDevice.findUnique({
       where: { id: params.id },
       include: {
         household: {
@@ -176,8 +176,11 @@ export async function DELETE(
     try {
       const mqttClient = getMQTTClient()
       if (mqttClient.isConnected()) {
-        await mqttClient.unsubscribe(device.statusTopic || device.topic)
-        mqttClient.offMessage(device.statusTopic || device.topic)
+        const topic = device.statusTopic || device.topic
+        if (topic) {
+          await mqttClient.unsubscribe(topic)
+          mqttClient.offMessage(topic)
+        }
       }
     } catch (mqttError) {
       console.error('MQTT unsubscribe error:', mqttError)
@@ -185,7 +188,7 @@ export async function DELETE(
     }
 
     // 刪除設備
-    await prisma.mQTTDevice.delete({
+    await prisma.ioTDevice.delete({
       where: { id: params.id }
     })
 

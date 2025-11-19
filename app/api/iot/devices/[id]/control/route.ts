@@ -28,7 +28,7 @@ export async function POST(
     const { action, value } = body
 
     // 獲取設備並驗證權限
-    const device = await prisma.iOTDevice.findUnique({
+    const device = await prisma.ioTDevice.findUnique({
       where: { id: params.id },
       include: {
         household: {
@@ -82,11 +82,20 @@ export async function POST(
       } else if (action === 'set_temperature' && value !== undefined) {
         commandMessage = mqttAdapter.commands.setTemperature(device.deviceId, value)
       } else {
-        // 通用命令
-        commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
-          action,
-          value
-        })
+        // 通用命令：根據不同的適配器類型構建正確的命令格式
+        if (device.vendor === 'esp') {
+          // ESP 適配器需要 command 字段
+          commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+            command: action,
+            value
+          } as any)
+        } else {
+          // Tuya 和 Midea 適配器使用 action 字段
+          commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+            action,
+            value
+          } as any)
+        }
       }
 
       await mqttClient.publish(commandMessage)
@@ -125,7 +134,7 @@ export async function POST(
           if (adapter.getDeviceState) {
             const newState = await adapter.getDeviceState(device.deviceId, config)
             if (newState) {
-              await prisma.iOTDevice.update({
+              await prisma.ioTDevice.update({
                 where: { id: device.id },
                 data: {
                   state: newState as any,

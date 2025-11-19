@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 獲取設備列表
-    const devices = await prisma.mQTTDevice.findMany({
+    const devices = await prisma.ioTDevice.findMany({
       where,
       include: {
         room: {
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     const device = Adapter.createDevice(deviceId, name, metadata)
 
     // 創建設備記錄
-    const mqttDevice = await prisma.mQTTDevice.create({
+    const mqttDevice = await prisma.ioTDevice.create({
       data: {
         deviceId, // MQTT 設備 ID
         name, // 設備名稱
@@ -191,25 +191,28 @@ export async function POST(request: NextRequest) {
       }
 
       // 訂閱設備狀態主題
-      await mqttClient.subscribe(mqttDevice.statusTopic || mqttDevice.topic, 1)
+      const topic = mqttDevice.statusTopic || mqttDevice.topic
+      if (topic) {
+        await mqttClient.subscribe(topic, 1)
 
-      // 註冊訊息處理器
-      mqttClient.onMessage(mqttDevice.statusTopic || mqttDevice.topic, async (message) => {
-        // 解析狀態訊息
-        const state = Adapter.parseStateMessage(message)
-        
-        if (state) {
-          // 更新設備狀態
-          await prisma.mQTTDevice.update({
-            where: { id: mqttDevice.id },
-            data: {
-              state: state as any,
-              status: 'online',
-              lastSeen: new Date()
-            }
-          })
-        }
-      })
+        // 註冊訊息處理器
+        mqttClient.onMessage(topic, async (message) => {
+          // 解析狀態訊息
+          const state = Adapter.parseStateMessage(message)
+          
+          if (state) {
+            // 更新設備狀態
+            await prisma.ioTDevice.update({
+              where: { id: mqttDevice.id },
+              data: {
+                state: state as any,
+                status: 'online',
+                lastSeen: new Date()
+              }
+            })
+          }
+        })
+      }
     } catch (mqttError) {
       console.error('MQTT connection error:', mqttError)
       // 不阻止設備創建，僅記錄錯誤

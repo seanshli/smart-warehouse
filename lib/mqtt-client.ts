@@ -149,7 +149,7 @@ export class MQTTClient {
           reject(error)
         } else {
           console.log('MQTT: Subscribed to', topic, granted)
-          resolve(granted)
+          resolve(granted || [])
         }
       })
     })

@@ -456,39 +456,41 @@ export default function ProvisioningModal({
                 </select>
               </div>
             )}
-            {/* MQTT 設備配置（Tuya, Midea, ESP SmartConfig） */}
+            {/* MQTT 設備配置（Tuya, Midea） */}
             {isMQTTDevice && vendor !== 'esp' && (
               <>
-                {/* WiFi 掃描按鈕（適用於所有 MQTT 設備） */}
+                {/* 已保存 WiFi 載入按鈕 */}
                 <div>
                   <button
                     onClick={async () => {
                       setIsScanningWifi(true)
                       try {
-                        // 嘗試從已保存的網絡獲取
                         const saved = WiFiScanner.getSavedNetworks()
-                        const mock = WiFiScanner.getMockNetworks()
-                        const merged = WiFiScanner.mergeNetworks(mock, saved)
-                        setWifiNetworks(merged)
-                        if (merged.length > 0) {
-                          toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
+                        setWifiNetworks(saved)
+                        if (saved.length > 0) {
+                          toast.success(`載入 ${saved.length} 個已保存的 WiFi`)
+                        } else {
+                          toast('目前沒有已保存的 WiFi，請手動輸入', { icon: 'ℹ️' })
                         }
                       } catch (error: any) {
                         console.error('WiFi scan error:', error)
-                        toast.error('無法掃描 WiFi 網絡')
+                        toast.error('無法載入已保存的 WiFi')
                       } finally {
                         setIsScanningWifi(false)
                       }
                     }}
                     disabled={isScanningWifi || status !== 'idle'}
-                    className="w-full mb-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="w-full mb-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <MagnifyingGlassIcon className="h-5 w-5" />
-                    <span>{isScanningWifi ? '掃描中...' : '掃描 WiFi 網絡'}</span>
+                    <span>{isScanningWifi ? '載入中…' : '載入已保存的 WiFi'}</span>
                   </button>
+                  <p className="text-xs text-gray-500">
+                    目前瀏覽器無法直接掃描周圍 Wi-Fi，只能選擇先前使用過的網絡或手動輸入。
+                  </p>
                 </div>
 
-                {/* WiFi 網絡列表（如果已掃描） */}
+                {/* 已保存 WiFi 列表 */}
                 {wifiNetworks.length > 0 && (
                   <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
                     {wifiNetworks.map((network, index) => {
@@ -606,14 +608,26 @@ export default function ProvisioningModal({
                     onClick={async () => {
                       setIsScanningWifi(true)
                       try {
+                        const networks = await WiFiScanner.scanFromESPDevice()
                         const saved = WiFiScanner.getSavedNetworks()
-                        const mock = WiFiScanner.getMockNetworks()
-                        const merged = WiFiScanner.mergeNetworks(mock, saved)
+                        const merged = WiFiScanner.mergeNetworks(networks, saved)
                         setWifiNetworks(merged)
-                        toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
+                        if (merged.length > 0) {
+                          toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
+                        } else if (saved.length > 0) {
+                          toast('未掃描到新的 WiFi，已載入保存的網絡', { icon: 'ℹ️' })
+                        } else {
+                          toast('未掃描到 WiFi 網絡，請手動輸入', { icon: 'ℹ️' })
+                        }
                       } catch (error: any) {
                         console.error('WiFi scan error:', error)
-                        toast.error('無法掃描 WiFi 網絡')
+                        const saved = WiFiScanner.getSavedNetworks()
+                        setWifiNetworks(saved)
+                        if (saved.length > 0) {
+                          toast('無法掃描網絡，已載入保存的 WiFi', { icon: 'ℹ️' })
+                        } else {
+                          toast.error('無法掃描 WiFi 網絡，請手動輸入')
+                        }
                       } finally {
                         setIsScanningWifi(false)
                       }
@@ -902,10 +916,7 @@ export default function ProvisioningModal({
                                 setWifiNetworks(merged)
                                 toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
                               } else {
-                                // 使用模擬網絡作為備選
-                                const mock = WiFiScanner.getMockNetworks()
-                                setWifiNetworks(mock)
-                                toast('未掃描到網絡，顯示示例網絡', { icon: 'ℹ️' })
+                                toast('未掃描到網絡，請手動輸入', { icon: 'ℹ️' })
                               }
                               
                               // 進入配置步驟
@@ -914,10 +925,13 @@ export default function ProvisioningModal({
                               console.error('WiFi scan error:', error)
                               // 即使掃描失敗，也進入配置步驟
                               const saved = WiFiScanner.getSavedNetworks()
-                              const mock = WiFiScanner.getMockNetworks()
-                              setWifiNetworks(WiFiScanner.mergeNetworks([], [...saved, ...mock]))
+                              setWifiNetworks(saved)
                               setEspStep('configure')
-                              toast('無法掃描網絡，請手動輸入', { icon: '⚠️' })
+                              if (saved.length > 0) {
+                                toast('無法掃描網絡，已載入保存的 WiFi', { icon: 'ℹ️' })
+                              } else {
+                                toast('無法掃描網絡，請手動輸入', { icon: '⚠️' })
+                              }
                             } finally {
                               setIsScanningWifi(false)
                             }

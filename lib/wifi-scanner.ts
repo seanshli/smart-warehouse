@@ -150,18 +150,6 @@ export class WiFiScanner {
   }
 
   /**
-   * 模擬掃描（用於測試或當無法掃描時）
-   * 返回一些常見的 WiFi 網絡名稱
-   */
-  static getMockNetworks(): WiFiNetwork[] {
-    return [
-      { ssid: 'Home WiFi', signalStrength: -45, security: 'wpa2', isConnected: false },
-      { ssid: 'Office Network', signalStrength: -60, security: 'wpa2', isConnected: false },
-      { ssid: 'Guest Network', signalStrength: -70, security: 'none', isConnected: false },
-    ]
-  }
-
-  /**
    * 合併掃描結果和已保存的網絡
    */
   static mergeNetworks(scanned: WiFiNetwork[], saved: WiFiNetwork[]): WiFiNetwork[] {

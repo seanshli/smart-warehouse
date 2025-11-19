@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
+import { WiFiScanner, type WiFiNetwork } from '@/lib/wifi-scanner'
 
 // 配網狀態
 type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'
@@ -47,13 +48,20 @@ export default function ProvisioningModal({
   const [accessToken, setAccessToken] = useState('')
   const [status, setStatus] = useState<ProvisioningStatus>('idle')
   const [token, setToken] = useState<string | null>(null)
-  const [deviceId, setDeviceId] = useState<string | null>(null)
+  const [provisionedDeviceId, setProvisionedDeviceId] = useState<string | null>(null)
   const [deviceName, setDeviceName] = useState<string | null>(null)
   const [deviceInfo, setDeviceInfo] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
   const [discoveredDevices, setDiscoveredDevices] = useState<any[]>([])
   const [isDiscovering, setIsDiscovering] = useState(false)
+  
+  // ESP 配網多步驟狀態
+  const [espStep, setEspStep] = useState<'connect' | 'configure'>('connect') // ESP AP 模式步驟
+  const [espHotspotPassword, setEspHotspotPassword] = useState<string>('') // ESP 設備熱點密碼（可選）
+  const [wifiNetworks, setWifiNetworks] = useState<WiFiNetwork[]>([]) // 掃描到的 WiFi 網絡
+  const [isScanningWifi, setIsScanningWifi] = useState(false) // 是否正在掃描 WiFi
+  const [selectedNetwork, setSelectedNetwork] = useState<WiFiNetwork | null>(null) // 選中的 WiFi 網絡
 
   // 清理輪詢
   useEffect(() => {
@@ -109,6 +117,12 @@ export default function ProvisioningModal({
 
   // 啟動配網流程
   const handleStartProvisioning = async () => {
+    // ESP AP 模式需要完成配置步驟
+    if (vendor === 'esp' && mode === 'ap' && espStep === 'connect') {
+      toast.error('請先完成設備熱點連接步驟')
+      return
+    }
+
     // 驗證必填欄位
     if (vendor === 'tuya') {
       // Tuya 手動配網只需要設備 ID
@@ -180,7 +194,7 @@ export default function ProvisioningModal({
 
       if (data.success) {
         setToken(data.token)
-        setDeviceId(data.deviceId)
+        setProvisionedDeviceId(data.deviceId)
         setDeviceName(data.deviceName)
         setDeviceInfo(data.deviceInfo)
         
@@ -243,7 +257,7 @@ export default function ProvisioningModal({
 
       if (data.success && data.deviceId) {
         setStatus('success')
-        setDeviceId(data.deviceId)
+        setProvisionedDeviceId(data.deviceId)
         setDeviceName(data.deviceName || `Device ${data.deviceId}`)
         setDeviceInfo(data.deviceInfo)
         
@@ -304,12 +318,18 @@ export default function ProvisioningModal({
     setStatus('idle')
     setToken(null)
     setDeviceId('')
+    setProvisionedDeviceId(null)
     setDeviceName(null)
     setDeviceInfo(null)
     setError(null)
     setDiscoveredDevices([])
     setZigbeeGatewayId('')
     setBluetoothMac('')
+    // ESP 配網狀態重置
+    setEspStep('connect')
+    setEspHotspotPassword('')
+    setWifiNetworks([])
+    setSelectedNetwork(null)
     handleStopProvisioning()
   }
 
@@ -322,7 +342,7 @@ export default function ProvisioningModal({
 
   // 選擇發現的設備
   const handleSelectDevice = (device: any) => {
-    setDeviceId(device.deviceId)
+    setProvisionedDeviceId(device.deviceId)
     setDeviceName(device.deviceName)
     setDeviceInfo(device.deviceInfo)
     setStatus('success')
@@ -389,7 +409,7 @@ export default function ProvisioningModal({
                 <>
                   <CheckCircleIcon className="h-5 w-5 text-green-500" />
                   <span className="text-sm text-gray-700">
-                    配網成功！設備 ID: {deviceId}
+                    配網成功！設備 ID: {provisionedDeviceId}
                   </span>
                 </>
               )}
@@ -437,9 +457,90 @@ export default function ProvisioningModal({
               </div>
             )}
 
-            {/* MQTT 設備配置（Tuya, Midea） */}
-            {isMQTTDevice && (
+            {/* MQTT 設備配置（Tuya, Midea, ESP SmartConfig） */}
+            {isMQTTDevice && vendor !== 'esp' && (
               <>
+                {/* WiFi 掃描按鈕（適用於所有 MQTT 設備） */}
+                <div>
+                  <button
+                    onClick={async () => {
+                      setIsScanningWifi(true)
+                      try {
+                        // 嘗試從已保存的網絡獲取
+                        const saved = WiFiScanner.getSavedNetworks()
+                        const mock = WiFiScanner.getMockNetworks()
+                        const merged = WiFiScanner.mergeNetworks(mock, saved)
+                        setWifiNetworks(merged)
+                        if (merged.length > 0) {
+                          toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
+                        }
+                      } catch (error: any) {
+                        console.error('WiFi scan error:', error)
+                        toast.error('無法掃描 WiFi 網絡')
+                      } finally {
+                        setIsScanningWifi(false)
+                      }
+                    }}
+                    disabled={isScanningWifi || status !== 'idle'}
+                    className="w-full mb-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <MagnifyingGlassIcon className="h-5 w-5" />
+                    <span>{isScanningWifi ? '掃描中...' : '掃描 WiFi 網絡'}</span>
+                  </button>
+                </div>
+
+                {/* WiFi 網絡列表（如果已掃描） */}
+                {wifiNetworks.length > 0 && (
+                  <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
+                    {wifiNetworks.map((network, index) => {
+                      const savedPassword = WiFiScanner.getSavedPassword(network.ssid)
+                      const isSelected = selectedNetwork?.ssid === network.ssid
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setSelectedNetwork(network)
+                            setSsid(network.ssid)
+                            if (savedPassword) {
+                              setPassword(savedPassword)
+                              toast('已自動填充保存的密碼', { icon: '✓' })
+                            }
+                          }}
+                          className={`w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 ${
+                            isSelected ? 'bg-blue-50 border-blue-300' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <WifiIcon className="h-4 w-4 text-gray-500" />
+                                <span className="font-medium text-sm">{network.ssid}</span>
+                              </div>
+                              <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
+                                {network.signalStrength && (
+                                  <span>信號: {network.signalStrength} dBm</span>
+                                )}
+                                {network.security && network.security !== 'none' && (
+                                  <span className="text-orange-600">
+                                    {network.security.toUpperCase()}
+                                  </span>
+                                )}
+                                {savedPassword && (
+                                  <span className="text-green-600">已保存密碼</span>
+                                )}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <CheckCircleIcon className="h-5 w-5 text-blue-600" />
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Wi-Fi SSID <span className="text-red-500">*</span>
@@ -447,8 +548,16 @@ export default function ProvisioningModal({
                   <input
                     type="text"
                     value={ssid}
-                    onChange={(e) => setSsid(e.target.value)}
-                    placeholder="輸入 Wi-Fi 網絡名稱"
+                    onChange={(e) => {
+                      setSsid(e.target.value)
+                      // 檢查是否有保存的密碼
+                      const saved = WiFiScanner.getSavedPassword(e.target.value)
+                      if (saved) {
+                        setPassword(saved)
+                        toast('已自動填充保存的密碼', { icon: '✓' })
+                      }
+                    }}
+                    placeholder="輸入或選擇 Wi-Fi 網絡名稱"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
@@ -466,7 +575,169 @@ export default function ProvisioningModal({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
+                  <div className="mt-1 flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="remember-wifi-password"
+                      defaultChecked={true}
+                      onChange={(e) => {
+                        if (e.target.checked && ssid && password) {
+                          WiFiScanner.saveNetwork(
+                            { ssid, security: 'wpa2' },
+                            password
+                          )
+                          toast('已保存 WiFi 密碼', { icon: '✓' })
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="remember-wifi-password" className="text-xs text-gray-600">
+                      記住此 WiFi 密碼
+                    </label>
+                  </div>
                 </div>
+              </>
+            )}
+
+            {/* ESP SmartConfig 模式也需要 WiFi 選擇 */}
+            {vendor === 'esp' && mode === 'smartconfig' && (
+              <>
+                {/* WiFi 掃描按鈕 */}
+                <div>
+                  <button
+                    onClick={async () => {
+                      setIsScanningWifi(true)
+                      try {
+                        const saved = WiFiScanner.getSavedNetworks()
+                        const mock = WiFiScanner.getMockNetworks()
+                        const merged = WiFiScanner.mergeNetworks(mock, saved)
+                        setWifiNetworks(merged)
+                        if (merged.length > 0) {
+                          toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
+                        }
+                      } catch (error: any) {
+                        console.error('WiFi scan error:', error)
+                        toast.error('無法掃描 WiFi 網絡')
+                      } finally {
+                        setIsScanningWifi(false)
+                      }
+                    }}
+                    disabled={isScanningWifi || status !== 'idle'}
+                    className="w-full mb-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <MagnifyingGlassIcon className="h-5 w-5" />
+                    <span>{isScanningWifi ? '掃描中...' : '掃描 WiFi 網絡'}</span>
+                  </button>
+                </div>
+
+                {/* WiFi 網絡列表 */}
+                {wifiNetworks.length > 0 && (
+                  <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
+                    {wifiNetworks.map((network, index) => {
+                      const savedPassword = WiFiScanner.getSavedPassword(network.ssid)
+                      const isSelected = selectedNetwork?.ssid === network.ssid
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setSelectedNetwork(network)
+                            setSsid(network.ssid)
+                            if (savedPassword) {
+                              setPassword(savedPassword)
+                              toast('已自動填充保存的密碼', { icon: '✓' })
+                            }
+                          }}
+                          className={`w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 ${
+                            isSelected ? 'bg-blue-50 border-blue-300' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <WifiIcon className="h-4 w-4 text-gray-500" />
+                                <span className="font-medium text-sm">{network.ssid}</span>
+                              </div>
+                              <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
+                                {network.signalStrength && (
+                                  <span>信號: {network.signalStrength} dBm</span>
+                                )}
+                                {network.security && network.security !== 'none' && (
+                                  <span className="text-orange-600">
+                                    {network.security.toUpperCase()}
+                                  </span>
+                                )}
+                                {savedPassword && (
+                                  <span className="text-green-600">已保存密碼</span>
+                                )}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <CheckCircleIcon className="h-5 w-5 text-blue-600" />
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Wi-Fi SSID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={ssid}
+                    onChange={(e) => {
+                      setSsid(e.target.value)
+                      const saved = WiFiScanner.getSavedPassword(e.target.value)
+                      if (saved) {
+                        setPassword(saved)
+                        toast('已自動填充保存的密碼', { icon: '✓' })
+                      }
+                    }}
+                    placeholder="輸入或選擇 Wi-Fi 網絡名稱"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={status !== 'idle'}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Wi-Fi 密碼 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="輸入 Wi-Fi 密碼"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={status !== 'idle'}
+                  />
+                  <div className="mt-1 flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="remember-esp-password"
+                      defaultChecked={true}
+                      onChange={(e) => {
+                        if (e.target.checked && ssid && password) {
+                          WiFiScanner.saveNetwork(
+                            { ssid, security: 'wpa2' },
+                            password
+                          )
+                          toast('已保存 WiFi 密碼', { icon: '✓' })
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="remember-esp-password" className="text-xs text-gray-600">
+                      記住此 WiFi 密碼
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
 
                 {vendor === 'tuya' && (
                   <>
@@ -568,25 +839,242 @@ export default function ProvisioningModal({
                   </>
                 )}
                 {vendor === 'esp' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      配網模式
-                    </label>
-                    <select
-                      value={mode === 'auto' ? 'smartconfig' : mode}
-                      onChange={(e) => setMode(e.target.value as 'ez' | 'ap' | 'auto' | 'smartconfig')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={status !== 'idle'}
-                    >
-                      <option value="smartconfig">SmartConfig（ESP-TOUCH）</option>
-                      <option value="ap">AP 模式（熱點配網）</option>
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500">
-                      <strong>SmartConfig：</strong>設備指示燈快速閃爍時使用（需要本地工具或手機 App）
-                      <br />
-                      <strong>AP 模式：</strong>連接設備熱點（ESP_XXXXXX）後訪問 192.168.4.1 進行配置
-                    </p>
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        配網模式
+                      </label>
+                      <select
+                        value={mode === 'auto' ? 'smartconfig' : mode}
+                        onChange={(e) => {
+                          const newMode = e.target.value as 'ez' | 'ap' | 'auto' | 'smartconfig'
+                          setMode(newMode)
+                          // 重置 ESP 步驟
+                          if (newMode === 'ap') {
+                            setEspStep('connect')
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      >
+                        <option value="smartconfig">SmartConfig（ESP-TOUCH）</option>
+                        <option value="ap">AP 模式（熱點配網）</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        <strong>SmartConfig：</strong>設備指示燈快速閃爍時使用（需要本地工具或手機 App）
+                        <br />
+                        <strong>AP 模式：</strong>連接設備熱點（ESP_XXXXXX）後配置路由器 WiFi
+                      </p>
+                    </div>
+
+                    {/* ESP AP 模式：步驟 1 - 連接設備熱點 */}
+                    {mode === 'ap' && espStep === 'connect' && (
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">步驟 1: 連接設備熱點</h3>
+                        <p className="text-xs text-gray-600 mb-3">
+                          1. 確保 ESP 設備已進入配網模式（指示燈閃爍）
+                          <br />
+                          2. 在手機/電腦的 WiFi 設置中，連接到設備熱點（通常名為 ESP_XXXXXX）
+                          <br />
+                          3. 如果熱點有密碼，請輸入（大多數設備熱點無需密碼）
+                        </p>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            設備熱點密碼（可選）
+                          </label>
+                          <input
+                            type="password"
+                            value={espHotspotPassword}
+                            onChange={(e) => setEspHotspotPassword(e.target.value)}
+                            placeholder="大多數設備熱點無需密碼"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={status !== 'idle'}
+                          />
+                        </div>
+                        <button
+                          onClick={async () => {
+                            // 嘗試掃描 WiFi 網絡
+                            setIsScanningWifi(true)
+                            try {
+                              // 嘗試從 ESP 設備掃描（如果已連接）
+                              const networks = await WiFiScanner.scanFromESPDevice()
+                              
+                              // 如果掃描失敗，使用已保存的網絡
+                              const saved = WiFiScanner.getSavedNetworks()
+                              const merged = WiFiScanner.mergeNetworks(networks, saved)
+                              
+                              if (merged.length > 0) {
+                                setWifiNetworks(merged)
+                                toast.success(`發現 ${merged.length} 個 WiFi 網絡`)
+                              } else {
+                                // 使用模擬網絡作為備選
+                                const mock = WiFiScanner.getMockNetworks()
+                                setWifiNetworks(mock)
+                                toast('未掃描到網絡，顯示示例網絡', { icon: 'ℹ️' })
+                              }
+                              
+                              // 進入配置步驟
+                              setEspStep('configure')
+                            } catch (error: any) {
+                              console.error('WiFi scan error:', error)
+                              // 即使掃描失敗，也進入配置步驟
+                              const saved = WiFiScanner.getSavedNetworks()
+                              const mock = WiFiScanner.getMockNetworks()
+                              setWifiNetworks(WiFiScanner.mergeNetworks([], [...saved, ...mock]))
+                              setEspStep('configure')
+                              toast('無法掃描網絡，請手動輸入', { icon: '⚠️' })
+                            } finally {
+                              setIsScanningWifi(false)
+                            }
+                          }}
+                          disabled={isScanningWifi || status !== 'idle'}
+                          className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          {isScanningWifi ? (
+                            <>
+                              <ClockIcon className="h-5 w-5 animate-spin" />
+                              <span>掃描 WiFi 網絡中...</span>
+                            </>
+                          ) : (
+                            <>
+                              <MagnifyingGlassIcon className="h-5 w-5" />
+                              <span>已連接設備熱點，下一步</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* ESP AP 模式：步驟 2 - 配置路由器 WiFi */}
+                    {mode === 'ap' && espStep === 'configure' && (
+                      <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">步驟 2: 選擇路由器 WiFi</h3>
+                        
+                        {/* WiFi 網絡列表 */}
+                        {wifiNetworks.length > 0 ? (
+                          <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
+                            {wifiNetworks.map((network, index) => {
+                              const savedPassword = WiFiScanner.getSavedPassword(network.ssid)
+                              const isSelected = selectedNetwork?.ssid === network.ssid
+                              
+                              return (
+                                <button
+                                  key={index}
+                                  onClick={() => {
+                                    setSelectedNetwork(network)
+                                    setSsid(network.ssid)
+                                    // 如果有保存的密碼，自動填充
+                                    if (savedPassword) {
+                                      setPassword(savedPassword)
+                                    }
+                                  }}
+                                  className={`w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 ${
+                                    isSelected ? 'bg-blue-50 border-blue-300' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2">
+                                        <WifiIcon className="h-4 w-4 text-gray-500" />
+                                        <span className="font-medium text-sm">{network.ssid}</span>
+                                        {network.isConnected && (
+                                          <span className="text-xs text-green-600">已連接</span>
+                                        )}
+                                      </div>
+                                      <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
+                                        {network.signalStrength && (
+                                          <span>信號: {network.signalStrength} dBm</span>
+                                        )}
+                                        {network.security && network.security !== 'none' && (
+                                          <span className="text-orange-600">
+                                            {network.security.toUpperCase()}
+                                          </span>
+                                        )}
+                                        {savedPassword && (
+                                          <span className="text-green-600">已保存密碼</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {isSelected && (
+                                      <CheckCircleIcon className="h-5 w-5 text-blue-600" />
+                                    )}
+                                  </div>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 mb-3">未發現 WiFi 網絡，請手動輸入</p>
+                        )}
+
+                        {/* 手動輸入 WiFi */}
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              WiFi 網絡名稱 (SSID) <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={ssid}
+                              onChange={(e) => {
+                                setSsid(e.target.value)
+                                // 檢查是否有保存的密碼
+                                const saved = WiFiScanner.getSavedPassword(e.target.value)
+                                if (saved) {
+                                  setPassword(saved)
+                                  toast('已自動填充保存的密碼', { icon: '✓' })
+                                }
+                              }}
+                              placeholder="輸入或選擇 WiFi 網絡名稱"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              disabled={status !== 'idle'}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              WiFi 密碼 <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              placeholder="輸入 WiFi 密碼"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              disabled={status !== 'idle'}
+                            />
+                            <div className="mt-1 flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="remember-password"
+                                checked={true}
+                                onChange={(e) => {
+                                  if (e.target.checked && ssid && password) {
+                                    WiFiScanner.saveNetwork(
+                                      { ssid, security: 'wpa2' },
+                                      password
+                                    )
+                                    toast('已保存 WiFi 密碼', { icon: '✓' })
+                                  }
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <label htmlFor="remember-password" className="text-xs text-gray-600">
+                                記住此 WiFi 密碼
+                              </label>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => setEspStep('connect')}
+                            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                          >
+                            返回上一步
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

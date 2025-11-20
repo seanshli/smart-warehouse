@@ -113,5 +113,13 @@ This document scopes the work required to move Smart Warehouse from a Capacitor 
 3. 📅 Schedule Stage 2 discovery workshops (UI design, navigation).  
 4. 📐 Stage 3 detailed estimates once Stage 2 patterns validated.
 
+---
+
+## Design References
+- **Figma (Main native mockups)**: https://www.figma.com/design/49P7xSPr3TDozrSYc8aZfc/Mock-up--%E5%A4%A7%E9%99%B8-?node-id=0-1&p=f  
+  - Includes iOS/Android flows for provisioning, dashboard, device control.  
+  - Use Page `Mock-up` → Frames labeled by platform (e.g., `iOS - Provisioning`, `Android - Dashboard`).  
+  - Please keep this link updated as new iterations arrive; engineering/documents reference this source for Stage 2+ native work.
+
 Let me know if you’d like Gantt-style timelines or resource estimates added. This doc will evolve as we transition through each stage. 
 

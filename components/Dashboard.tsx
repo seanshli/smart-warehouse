@@ -2,7 +2,7 @@
 // 主儀表板組件
 // 整合所有主要功能：物品管理、搜尋、房間、分類、通知、活動、語音助理、Home Assistant 等
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { 
   HomeIcon, 
@@ -168,6 +168,27 @@ function HouseholdSwitcher() {
       )}
     </div>
   )
+}
+
+type MaintenanceTicketStatus = 'open' | 'inProgress' | 'resolved'
+
+interface MaintenanceTicket {
+  id: string
+  title: string
+  location: string
+  requestedBy: string
+  status: MaintenanceTicketStatus
+  updatedAt: string
+}
+
+interface ReservationItem {
+  id: string
+  title: string
+  location: string
+  owner: string
+  startTime: string
+  endTime: string
+  type: 'cleaning' | 'delivery' | 'visitor' | 'other'
 }
 
 export default function Dashboard() {
@@ -743,6 +764,136 @@ function DashboardContent({
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [householdChangeDetected, setHouseholdChangeDetected] = useState(false)
   const [lastFetchTime, setLastFetchTime] = useState(0)
+  const [maintenanceTickets] = useState<MaintenanceTicket[]>(() => [
+    {
+      id: 'RX-102',
+      title: '浴室漏水維修',
+      location: 'Master Bath',
+      requestedBy: 'Grandma',
+      status: 'open',
+      updatedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+    },
+    {
+      id: 'RX-099',
+      title: '臥室冷氣異常',
+      location: 'Bedroom 2',
+      requestedBy: 'Dad',
+      status: 'inProgress',
+      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    },
+    {
+      id: 'RX-095',
+      title: '車庫門保養',
+      location: 'Garage',
+      requestedBy: 'System',
+      status: 'resolved',
+      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    },
+  ])
+  const [reservations] = useState<ReservationItem[]>(() => [
+    {
+      id: 'EV-301',
+      title: '快遞收件',
+      location: 'Front Gate',
+      owner: 'Mom',
+      startTime: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
+      endTime: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+      type: 'delivery',
+    },
+    {
+      id: 'EV-305',
+      title: '清潔阿姨',
+      location: 'Whole House',
+      owner: 'System',
+      startTime: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
+      endTime: new Date(Date.now() + 1000 * 60 * 60 * 7).toISOString(),
+      type: 'cleaning',
+    },
+    {
+      id: 'EV-322',
+      title: '朋友拜訪',
+      location: 'Living Room',
+      owner: 'Dad',
+      startTime: new Date(Date.now() + 1000 * 60 * 60 * 26).toISOString(),
+      endTime: new Date(Date.now() + 1000 * 60 * 60 * 29).toISOString(),
+      type: 'visitor',
+    },
+  ])
+
+  const maintenanceStats = useMemo(() => ({
+    open: maintenanceTickets.filter((ticket) => ticket.status === 'open').length,
+    inProgress: maintenanceTickets.filter((ticket) => ticket.status === 'inProgress').length,
+    resolved: maintenanceTickets.filter((ticket) => ticket.status === 'resolved').length,
+  }), [maintenanceTickets])
+
+  const upcomingReservations = useMemo(() => reservations.length, [reservations])
+
+  const coreModules = useMemo(() => [
+    {
+      id: 'warehouse',
+      title: t('warehouse') || 'Warehouse',
+      subtitle: t('warehouseOverview') || '家庭倉儲管理',
+      icon: ArchiveBoxIcon,
+      tag: 'LIVE',
+      metrics: [
+        { label: t('totalItems'), value: loading ? '...' : stats.totalItems },
+        { label: t('lowStockItems'), value: loading ? '...' : stats.lowStockItems },
+      ],
+      actions: [
+        { label: t('manageInventory') || '管理物品', onClick: () => onTabChange('items') },
+        { label: t('viewRooms') || '房間配置', onClick: () => onTabChange('rooms') },
+      ],
+    },
+    {
+      id: 'mott',
+      title: 'MOTT',
+      subtitle: t('smartAutomationCenter') || '多品牌設備 + 自動化控管',
+      icon: WifiIcon,
+      tag: 'LIVE',
+      metrics: [
+        { label: t('connectedDevices') || '連線設備', value: 12 },
+        { label: t('activeAutomations') || '自動化流程', value: 5 },
+      ],
+      actions: [
+        { label: t('openMqttPanel') || '裝置控管', onClick: () => onTabChange('mqtt') },
+        { label: t('openAssistant') || '語音助理', onClick: () => onTabChange('assistant') },
+      ],
+    },
+    {
+      id: 'maintenance',
+      title: t('maintenanceTickets') || '報修',
+      subtitle: t('maintenanceSubtitle') || '家庭維修工單中心',
+      icon: ExclamationTriangleIcon,
+      tag: 'NEW',
+      metrics: [
+        { label: t('pendingTickets') || '待處理', value: maintenanceStats.open },
+        { label: t('inProgress') || '處理中', value: maintenanceStats.inProgress },
+      ],
+      actions: [
+        { label: t('createTicket') || '新增報修', onClick: () => console.log('TODO: open maintenance form') },
+        { label: t('viewAll') || '查看全部', onClick: () => console.log('TODO: navigate to maintenance center') },
+      ],
+    },
+    {
+      id: 'reservation',
+      title: t('reservationCenter') || '預定',
+      subtitle: t('reservationSubtitle') || '訪客 / 服務 / 預約管理',
+      icon: ClockIcon,
+      tag: 'BETA',
+      metrics: [
+        { label: t('upcoming') || '即將到來', value: upcomingReservations },
+        { label: t('today') || '今日', value: reservations.filter((reservation) => {
+          const start = new Date(reservation.startTime)
+          const now = new Date()
+          return start.toDateString() === now.toDateString()
+        }).length },
+      ],
+      actions: [
+        { label: t('addReservation') || '新增預定', onClick: () => console.log('TODO: open reservation modal') },
+        { label: t('openCalendar') || '檢視行事曆', onClick: () => console.log('TODO: navigate to reservation center') },
+      ],
+    },
+  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, t, upcomingReservations])
 
   const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {
@@ -949,119 +1100,151 @@ function DashboardContent({
   }
 
   return (
-    <div className={`${
-      deviceInfo.isMobile ? 'px-1 py-2' : 'px-2 sm:px-4 py-4 sm:py-6 sm:px-0'
-    }`}>
-      <div className={`grid gap-3 sm:gap-6 mb-6 sm:mb-8 ${
-        deviceInfo.isMobile 
-          ? 'grid-cols-2' 
-          : deviceInfo.isTablet 
-            ? 'grid-cols-2 md:grid-cols-4' 
-            : 'grid-cols-2 lg:grid-cols-4'
-      }`}>
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CubeIcon className={`text-gray-400 ${
-                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
-                }`} />
+    <div className={`${deviceInfo.isMobile ? 'px-1 py-2' : 'px-2 sm:px-4 py-4 sm:py-6 sm:px-0'} space-y-6 sm:space-y-8`}>
+      <div
+        className={`grid gap-3 sm:gap-5 ${
+          deviceInfo.isMobile ? 'grid-cols-1' : deviceInfo.isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'
+        }`}
+      >
+        {coreModules.map((module) => (
+          <div
+            key={module.id}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 flex flex-col"
+          >
+            <div className="p-4 sm:p-5 flex-1 flex flex-col">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                    <module.icon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{module.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{module.subtitle}</p>
+                  </div>
+                </div>
+                {module.tag && (
+                  <span className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide bg-primary-50 text-primary-600 rounded-full">
+                    {module.tag}
+                  </span>
+                )}
               </div>
-              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
-                <dl>
-                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
-                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
-                  }`}>
-                    {t('totalItems')}
-                  </dt>
-                  <dd className={`font-medium text-gray-900 dark:text-gray-100 ${
-                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
-                  }`}>
-                    {loading ? '...' : stats.totalItems}
-                  </dd>
-                </dl>
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                {module.metrics.map((metric) => (
+                  <div key={metric.label} className="rounded-lg bg-gray-50 dark:bg-gray-900/40 p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {metric.label}
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{metric.value}</p>
+                  </div>
+                ))}
               </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {module.actions.map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={action.onClick}
+                    className="text-xs font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 rounded-full px-3 py-1 transition-colors"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60">
+          <div className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('maintenanceTickets') || '報修中心'}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('maintenanceSubtitle') || '追蹤家庭維修與保養狀態'}</p>
+              </div>
+              <div className="flex space-x-2 text-xs">
+                <span className="px-2 py-1 rounded-full bg-red-50 text-red-600">{t('pendingTickets') || '待處理'} {maintenanceStats.open}</span>
+                <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-600">{t('inProgress') || '處理中'} {maintenanceStats.inProgress}</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {maintenanceTickets.map((ticket) => (
+                <div key={ticket.id} className="border border-gray-100 dark:border-gray-700/60 rounded-xl p-3 sm:p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{ticket.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        #{ticket.id} • {ticket.location} • {t('by')} {ticket.requestedBy}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[11px] font-semibold rounded-full px-3 py-1 ${
+                        ticket.status === 'open'
+                          ? 'bg-red-50 text-red-600'
+                          : ticket.status === 'inProgress'
+                          ? 'bg-amber-50 text-amber-600'
+                          : 'bg-green-50 text-green-600'
+                      }`}
+                    >
+                      {ticket.status === 'open'
+                        ? t('pending') || '待處理'
+                        : ticket.status === 'inProgress'
+                        ? t('inProgress') || '處理中'
+                        : t('resolved') || '已完成'}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {t('lastUpdated') || '最近更新'}：{formatDate(ticket.updatedAt)}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        <button
-          onClick={() => onTabChange('rooms')}
-          className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer w-full text-left"
-        >
-          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <MapPinIcon className={`text-gray-400 ${
-                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
-                }`} />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60">
+          <div className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('reservationCenter') || '預定中心'}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('reservationSubtitle') || '訪客與服務安排'}</p>
               </div>
-              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
-                <dl>
-                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
-                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
-                  }`}>
-                    {t('rooms')}
-                  </dt>
-                  <dd className={`font-medium text-gray-900 dark:text-gray-100 ${
-                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
-                  }`}>
-                    {loading ? '...' : stats.totalRooms}
-                  </dd>
-                </dl>
-              </div>
+              <button
+                onClick={() => console.log('TODO: open reservation center')}
+                className="text-xs font-medium text-primary-600 hover:text-primary-700"
+              >
+                {t('viewAll') || '查看全部'}
+              </button>
             </div>
-          </div>
-        </button>
 
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <BellIcon className={`text-gray-400 ${
-                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
-                }`} />
-              </div>
-              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
-                <dl>
-                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
-                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
-                  }`}>
-                    {t('lowStockItems')}
-                  </dt>
-                  <dd className={`font-medium text-red-600 ${
-                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
-                  }`}>
-                    {loading ? '...' : stats.lowStockItems}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className={`${deviceInfo.isMobile ? 'p-2' : 'p-3 sm:p-5'}`}>
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UserGroupIcon className={`text-gray-400 ${
-                  deviceInfo.isMobile ? 'h-4 w-4' : 'h-5 w-5 sm:h-6 sm:w-6'
-                }`} />
-              </div>
-              <div className={`w-0 flex-1 ${deviceInfo.isMobile ? 'ml-2' : 'ml-3 sm:ml-5'}`}>
-                <dl>
-                  <dt className={`font-medium text-gray-500 dark:text-gray-400 truncate ${
-                    deviceInfo.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
-                  }`}>
-                    {t('householdMembers')}
-                  </dt>
-                  <dd className={`font-medium text-gray-900 dark:text-gray-100 ${
-                    deviceInfo.isMobile ? 'text-sm' : 'text-base sm:text-lg'
-                  }`}>
-                    {loading ? '...' : stats.householdMembers}
-                  </dd>
-                </dl>
-              </div>
+            <div className="space-y-4">
+              {reservations.map((reservation) => (
+                <div key={reservation.id} className="border border-gray-100 dark:border-gray-700/60 rounded-xl p-3 sm:p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{reservation.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {reservation.location} • {reservation.owner}
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-semibold rounded-full px-3 py-1 bg-blue-50 text-blue-600">
+                      {reservation.type === 'delivery'
+                        ? t('delivery') || '快遞'
+                        : reservation.type === 'cleaning'
+                        ? t('cleaning') || '清潔'
+                        : reservation.type === 'visitor'
+                        ? t('visitor') || '訪客'
+                        : t('other') || '其他'}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(reservation.startTime).toLocaleString()} - {new Date(reservation.endTime).toLocaleTimeString()}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

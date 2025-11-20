@@ -29,14 +29,24 @@ TUYA_ANDROID_SDK_SHA256="xx:xx:..."
   - Tuya 智慧場景等原生功能
 - 與伺服器端 `TUYA_ACCESS_ID / SECRET` 不同，後者供雲端 API 使用。
 
-## 3. Capacitor / 原生整合
+## 3. Repo 中可用的 SDK 檔案
+
+- `iOS_SDK-2/ios_core_sdk.tar.gz`：Tuya iOS Core SDK（內含 `ThingSmart*` frameworks & Podfile 範本）  
+- `Android_SDK-3/Android_SDK.tar.gz`：Tuya Android SDK 套件（AAR + demo）  
+- `Android_SDK-3/security-algorithm.tar.gz`：Tuya 安全演算法元件（必要時才需解壓）  
+- `快速集成_Smart App SDK_Smart App SDK.pdf`：官方快速整合指南（iOS/跨平台）  
+- `快速集成安卓 App SDK_Smart App SDK_Smart App SDK.pdf`：官方 Android 快速整合指南
+
+> 這些壓縮檔已納入版本控制，方便離線開發。若 Tuya 發佈新版 SDK，記得更新檔案並重新記錄版本。
+
+## 4. Capacitor / 原生整合
 
 在下一階段將建立 Capacitor Plugin：
 1. iOS (Swift) / Android (Kotlin) 初始化 Tuya SDK，讀取上述環境變數。
 2. 封裝配網、掃描、控制等功能，供 React UI (`ProvisioningModal`) 呼叫。
 3. 若 App 運行在 Web / Vercel 上，則仍透過 `/api/provisioning`（雲端模式）。
 
-## 4. 安全建議
+## 5. 安全建議
 - 在 Vercel Dashboard / Xcode Build Settings / Gradle Properties 安全儲存 AppKey/Secret。
 - Android SHA256 確保與發佈版本一致；若 keystore 改變，需更新 Tuya 後台。
 

@@ -3,7 +3,7 @@
 // 支持所有品牌的 IoT 設備配網
 // Unified Provisioning Modal Component - Supports provisioning for all IoT device brands
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   XMarkIcon,
   WifiIcon,
@@ -15,6 +15,13 @@ import {
 import toast from 'react-hot-toast'
 import { useLanguage } from './LanguageProvider'
 import { WiFiScanner, type WiFiNetwork } from '@/lib/wifi-scanner'
+import {
+  canUseNativeTuyaProvisioning,
+  getNativeTuyaProvisioningStatus,
+  startNativeTuyaProvisioning,
+  stopNativeTuyaProvisioning,
+} from '@/lib/provisioning/native-client'
+import type { TuyaStartProvisioningOptions } from '@/lib/plugins/tuya'
 
 // 配網狀態
 type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'
@@ -63,6 +70,11 @@ export default function ProvisioningModal({
   const [isScanningWifi, setIsScanningWifi] = useState(false) // 是否正在掃描 WiFi
   const [isLoadingSavedWifi, setIsLoadingSavedWifi] = useState(false)
   const [selectedNetwork, setSelectedNetwork] = useState<WiFiNetwork | null>(null) // 選中的 WiFi 網絡
+
+  const useNativeTuyaProvisioning = useMemo(
+    () => vendor === 'tuya' && canUseNativeTuyaProvisioning(),
+    [vendor],
+  )
 
   // 清理輪詢
   useEffect(() => {
@@ -117,6 +129,47 @@ export default function ProvisioningModal({
   }
 
   // 啟動配網流程
+  const handleProvisioningResponse = (data: any) => {
+    if (data.success) {
+      setToken(data.token)
+      setProvisionedDeviceId(data.deviceId)
+      setDeviceName(data.deviceName)
+      setDeviceInfo(data.deviceInfo)
+      
+      if (vendor === 'philips' || vendor === 'panasonic') {
+        setStatus('success')
+        toast.success('配網成功！')
+        
+        if (onSuccess && data.deviceId) {
+          onSuccess(data.deviceId, data.deviceName || `Device ${data.deviceId}`, vendor, data.deviceInfo)
+        }
+      } else if (vendor === 'esp') {
+        setStatus('provisioning')
+        toast('請按照設備說明進行配網操作', { icon: 'ℹ️' })
+      } else {
+        setStatus('provisioning')
+        
+        const interval = setInterval(async () => {
+          await checkProvisioningStatus(data.token)
+        }, 2000)
+        
+        setPollingInterval(interval)
+        
+        setTimeout(() => {
+          if (status === 'provisioning') {
+            handleStopProvisioning()
+            setStatus('timeout')
+            setError('配網超時，請檢查設備是否已進入配網模式')
+          }
+        }, 60000)
+      }
+    } else {
+      setStatus('failed')
+      setError(data.error || '配網啟動失敗')
+      toast.error(data.error || '配網啟動失敗')
+    }
+  }
+
   const handleStartProvisioning = async () => {
     // ESP AP 模式需要完成配置步驟
     if (vendor === 'esp' && mode === 'ap' && espStep === 'connect') {
@@ -169,76 +222,40 @@ export default function ProvisioningModal({
     setStatus('starting')
     setError(null)
 
+    const provisioningPayload = {
+      vendor,
+      ssid,
+      password,
+      mode: vendor === 'esp' && mode === 'auto' ? 'smartconfig' : mode,
+      baseUrl,
+      apiKey,
+      accessToken,
+      deviceId: vendor === 'tuya' && mode === 'manual' ? deviceId : undefined,
+      zigbeeGatewayId: vendor === 'tuya' && mode === 'zigbee' ? zigbeeGatewayId : undefined,
+      bluetoothMac: vendor === 'tuya' && (mode === 'bt' || mode === 'wifi/bt') ? bluetoothMac : undefined,
+    }
+
     try {
-      const response = await fetch('/api/provisioning', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          vendor,
-          ssid,
-          password,
-          mode: vendor === 'esp' && mode === 'auto' ? 'smartconfig' : mode,
-          baseUrl,
-          apiKey,
-          accessToken,
-          // Tuya 特定參數
-          deviceId: vendor === 'tuya' && mode === 'manual' ? deviceId : undefined,
-          zigbeeGatewayId: vendor === 'tuya' && mode === 'zigbee' ? zigbeeGatewayId : undefined,
-          bluetoothMac: vendor === 'tuya' && (mode === 'bt' || mode === 'wifi/bt') ? bluetoothMac : undefined,
-        }),
-      })
+      let data: any
 
-      const data = await response.json()
-
-      if (data.success) {
-        setToken(data.token)
-        setProvisionedDeviceId(data.deviceId)
-        setDeviceName(data.deviceName)
-        setDeviceInfo(data.deviceInfo)
-        
-        if (vendor === 'philips' || vendor === 'panasonic') {
-          // RESTful 設備配網通常是即時的
-          setStatus('success')
-          toast.success('配網成功！')
-          
-          if (onSuccess && data.deviceId) {
-            onSuccess(data.deviceId, data.deviceName || `Device ${data.deviceId}`, vendor, data.deviceInfo)
-          }
-        } else if (vendor === 'esp') {
-          // ESP 設備配網需要特殊處理
-          // SmartConfig 和 AP 模式都需要用戶手動操作
-          setStatus('provisioning')
-          toast('請按照設備說明進行配網操作', { icon: 'ℹ️' })
-          
-          // ESP 配網通常需要用戶手動操作，不進行自動輪詢
-          // 用戶完成配網後，可以手動添加設備
-        } else {
-          // MQTT 設備需要輪詢狀態
-          setStatus('provisioning')
-          
-          const interval = setInterval(async () => {
-            await checkProvisioningStatus(data.token)
-          }, 2000)
-          
-          setPollingInterval(interval)
-
-          // 設定超時（60 秒）
-          setTimeout(() => {
-            if (status === 'provisioning') {
-              handleStopProvisioning()
-              setStatus('timeout')
-              setError('配網超時，請檢查設備是否已進入配網模式')
-            }
-          }, 60000)
-        }
+      if (useNativeTuyaProvisioning) {
+        data = await startNativeTuyaProvisioning(
+          provisioningPayload as TuyaStartProvisioningOptions,
+        )
       } else {
-        setStatus('failed')
-        setError(data.error || '配網啟動失敗')
-        toast.error(data.error || '配網啟動失敗')
+        const response = await fetch('/api/provisioning', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(provisioningPayload),
+        })
+
+        data = await response.json()
       }
+
+      handleProvisioningResponse(data)
     } catch (error: any) {
       setStatus('failed')
       setError(error.message || '配網啟動失敗')
@@ -249,12 +266,21 @@ export default function ProvisioningModal({
   // 查詢配網狀態
   const checkProvisioningStatus = async (provisioningToken: string) => {
     try {
-      const response = await fetch(`/api/provisioning?vendor=${vendor}&token=${provisioningToken}`, {
-        method: 'GET',
-        credentials: 'include',
-      })
+      let data: any
+      
+      if (useNativeTuyaProvisioning) {
+        data = await getNativeTuyaProvisioningStatus({
+          vendor: 'tuya',
+          token: provisioningToken,
+        })
+      } else {
+        const response = await fetch(`/api/provisioning?vendor=${vendor}&token=${provisioningToken}`, {
+          method: 'GET',
+          credentials: 'include',
+        })
 
-      const data = await response.json()
+        data = await response.json()
+      }
 
       if (data.success && data.deviceId) {
         setStatus('success')
@@ -290,10 +316,17 @@ export default function ProvisioningModal({
   const handleStopProvisioning = async () => {
     if (token) {
       try {
-        await fetch(`/api/provisioning?vendor=${vendor}&token=${token}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        })
+        if (useNativeTuyaProvisioning) {
+          await stopNativeTuyaProvisioning({
+            vendor: 'tuya',
+            token,
+          })
+        } else {
+          await fetch(`/api/provisioning?vendor=${vendor}&token=${token}`, {
+            method: 'DELETE',
+            credentials: 'include',
+          })
+        }
       } catch (error) {
         console.error('Failed to stop provisioning:', error)
       }

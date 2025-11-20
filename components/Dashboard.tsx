@@ -747,6 +747,20 @@ function DashboardContent({
 }) {
   const { t } = useLanguage()
   const deviceInfo = useDeviceDetection()
+  const translate = useCallback(
+    (key: string, fallback?: string) => {
+      try {
+        const result = (t as unknown as (k: string) => string)(key as any)
+        if (typeof result === 'string' && result.trim().length > 0 && result !== key) {
+          return result
+        }
+      } catch (error) {
+        console.warn('Missing translation key:', key, error)
+      }
+      return fallback ?? key
+    },
+    [t]
+  )
   const [stats, setStats] = useState<{
     totalItems: number
     totalRooms: number
@@ -831,69 +845,69 @@ function DashboardContent({
   const coreModules = useMemo(() => [
     {
       id: 'warehouse',
-      title: t('warehouse') || 'Warehouse',
-      subtitle: t('warehouseOverview') || '家庭倉儲管理',
+      title: translate('warehouse', 'Warehouse'),
+      subtitle: translate('warehouseOverview', '家庭倉儲管理'),
       icon: ArchiveBoxIcon,
       tag: 'LIVE',
       metrics: [
-        { label: t('totalItems'), value: loading ? '...' : stats.totalItems },
-        { label: t('lowStockItems'), value: loading ? '...' : stats.lowStockItems },
+        { label: translate('totalItems', '總物品數'), value: loading ? '...' : stats.totalItems },
+        { label: translate('lowStockItems', '低庫存物品'), value: loading ? '...' : stats.lowStockItems },
       ],
       actions: [
-        { label: t('manageInventory') || '管理物品', onClick: () => onTabChange('items') },
-        { label: t('viewRooms') || '房間配置', onClick: () => onTabChange('rooms') },
+        { label: translate('manageInventory', '管理物品'), onClick: () => onTabChange('items') },
+        { label: translate('viewRooms', '房間配置'), onClick: () => onTabChange('rooms') },
       ],
     },
     {
       id: 'mott',
       title: 'MOTT',
-      subtitle: t('smartAutomationCenter') || '多品牌設備 + 自動化控管',
+      subtitle: translate('smartAutomationCenter', '多品牌設備 + 自動化控管'),
       icon: WifiIcon,
       tag: 'LIVE',
       metrics: [
-        { label: t('connectedDevices') || '連線設備', value: 12 },
-        { label: t('activeAutomations') || '自動化流程', value: 5 },
+        { label: translate('connectedDevices', '連線設備'), value: 12 },
+        { label: translate('activeAutomations', '自動化流程'), value: 5 },
       ],
       actions: [
-        { label: t('openMqttPanel') || '裝置控管', onClick: () => onTabChange('mqtt') },
-        { label: t('openAssistant') || '語音助理', onClick: () => onTabChange('assistant') },
+        { label: translate('openMqttPanel', '裝置控管'), onClick: () => onTabChange('mqtt') },
+        { label: translate('openAssistant', '語音助理'), onClick: () => onTabChange('assistant') },
       ],
     },
     {
       id: 'maintenance',
-      title: t('maintenanceTickets') || '報修',
-      subtitle: t('maintenanceSubtitle') || '家庭維修工單中心',
+      title: translate('maintenanceTickets', '報修'),
+      subtitle: translate('maintenanceSubtitle', '家庭維修工單中心'),
       icon: ExclamationTriangleIcon,
       tag: 'NEW',
       metrics: [
-        { label: t('pendingTickets') || '待處理', value: maintenanceStats.open },
-        { label: t('inProgress') || '處理中', value: maintenanceStats.inProgress },
+        { label: translate('pendingTickets', '待處理'), value: maintenanceStats.open },
+        { label: translate('inProgress', '處理中'), value: maintenanceStats.inProgress },
       ],
       actions: [
-        { label: t('createTicket') || '新增報修', onClick: () => console.log('TODO: open maintenance form') },
-        { label: t('viewAll') || '查看全部', onClick: () => console.log('TODO: navigate to maintenance center') },
+        { label: translate('createTicket', '新增報修'), onClick: () => console.log('TODO: open maintenance form') },
+        { label: translate('viewAll', '查看全部'), onClick: () => console.log('TODO: navigate to maintenance center') },
       ],
     },
     {
       id: 'reservation',
-      title: t('reservationCenter') || '預定',
-      subtitle: t('reservationSubtitle') || '訪客 / 服務 / 預約管理',
+      title: translate('reservationCenter', '預定'),
+      subtitle: translate('reservationSubtitle', '訪客 / 服務 / 預約管理'),
       icon: ClockIcon,
       tag: 'BETA',
       metrics: [
-        { label: t('upcoming') || '即將到來', value: upcomingReservations },
-        { label: t('today') || '今日', value: reservations.filter((reservation) => {
+        { label: translate('upcoming', '即將到來'), value: upcomingReservations },
+        { label: translate('today', '今日'), value: reservations.filter((reservation) => {
           const start = new Date(reservation.startTime)
           const now = new Date()
           return start.toDateString() === now.toDateString()
         }).length },
       ],
       actions: [
-        { label: t('addReservation') || '新增預定', onClick: () => console.log('TODO: open reservation modal') },
-        { label: t('openCalendar') || '檢視行事曆', onClick: () => console.log('TODO: navigate to reservation center') },
+        { label: translate('addReservation', '新增預定'), onClick: () => console.log('TODO: open reservation modal') },
+        { label: translate('openCalendar', '檢視行事曆'), onClick: () => console.log('TODO: navigate to reservation center') },
       ],
     },
-  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, t, upcomingReservations])
+  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations])
 
   const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {
@@ -1161,12 +1175,20 @@ function DashboardContent({
           <div className="p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('maintenanceTickets') || '報修中心'}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('maintenanceSubtitle') || '追蹤家庭維修與保養狀態'}</p>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  {translate('maintenanceTickets', '報修中心')}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {translate('maintenanceSubtitle', '追蹤家庭維修與保養狀態')}
+                </p>
               </div>
               <div className="flex space-x-2 text-xs">
-                <span className="px-2 py-1 rounded-full bg-red-50 text-red-600">{t('pendingTickets') || '待處理'} {maintenanceStats.open}</span>
-                <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-600">{t('inProgress') || '處理中'} {maintenanceStats.inProgress}</span>
+                <span className="px-2 py-1 rounded-full bg-red-50 text-red-600">
+                  {translate('pendingTickets', '待處理')} {maintenanceStats.open}
+                </span>
+                <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-600">
+                  {translate('inProgress', '處理中')} {maintenanceStats.inProgress}
+                </span>
               </div>
             </div>
 
@@ -1190,14 +1212,14 @@ function DashboardContent({
                       }`}
                     >
                       {ticket.status === 'open'
-                        ? t('pending') || '待處理'
+                        ? translate('pending', '待處理')
                         : ticket.status === 'inProgress'
-                        ? t('inProgress') || '處理中'
-                        : t('resolved') || '已完成'}
+                        ? translate('inProgress', '處理中')
+                        : translate('resolved', '已完成')}
                     </span>
                   </div>
                   <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {t('lastUpdated') || '最近更新'}：{formatDate(ticket.updatedAt)}
+                    {translate('lastUpdated', '最近更新')}：{formatDate(ticket.updatedAt)}
                   </div>
                 </div>
               ))}
@@ -1209,14 +1231,18 @@ function DashboardContent({
           <div className="p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('reservationCenter') || '預定中心'}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('reservationSubtitle') || '訪客與服務安排'}</p>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  {translate('reservationCenter', '預定中心')}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {translate('reservationSubtitle', '訪客與服務安排')}
+                </p>
               </div>
               <button
                 onClick={() => console.log('TODO: open reservation center')}
                 className="text-xs font-medium text-primary-600 hover:text-primary-700"
               >
-                {t('viewAll') || '查看全部'}
+                {translate('viewAll', '查看全部')}
               </button>
             </div>
 
@@ -1232,12 +1258,12 @@ function DashboardContent({
                     </div>
                     <span className="text-[11px] font-semibold rounded-full px-3 py-1 bg-blue-50 text-blue-600">
                       {reservation.type === 'delivery'
-                        ? t('delivery') || '快遞'
+                        ? translate('delivery', '快遞')
                         : reservation.type === 'cleaning'
-                        ? t('cleaning') || '清潔'
+                        ? translate('cleaning', '清潔')
                         : reservation.type === 'visitor'
-                        ? t('visitor') || '訪客'
-                        : t('other') || '其他'}
+                        ? translate('visitor', '訪客')
+                        : translate('other', '其他')}
                     </span>
                   </div>
                   <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">

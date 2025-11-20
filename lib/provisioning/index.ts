@@ -111,9 +111,21 @@ class TuyaProvisioningAdapter extends BaseAdapter {
       }
     }
 
+    // 驗證 Tuya 環境變數
+    const accessId = process.env.TUYA_ACCESS_ID
+    const accessSecret = process.env.TUYA_ACCESS_SECRET
+    
+    if (!accessId || !accessSecret) {
+      return {
+        success: false,
+        error: 'Tuya API credentials not configured. Please set TUYA_ACCESS_ID and TUYA_ACCESS_SECRET environment variables.',
+        status: 'failed',
+      }
+    }
+
     const provisioning = createTuyaProvisioning({
-      accessId: process.env.TUYA_ACCESS_ID || '',
-      accessSecret: process.env.TUYA_ACCESS_SECRET || '',
+      accessId,
+      accessSecret,
       region: process.env.TUYA_REGION || 'cn',
       ssid: config.ssid || '',
       password: config.password || '',

@@ -136,7 +136,17 @@ export class TuyaProvisioning {
       
       const data = await response.json()
       
-      if (data.success && data.result) {
+      // 檢查 Tuya API 錯誤回應
+      if (!data.success) {
+        const errorMsg = data.msg || data.error || 'Failed to get provisioning token'
+        // 檢查是否是 clientId/accessId 相關錯誤
+        if (errorMsg.includes('clientId') || errorMsg.includes('client_id') || errorMsg.includes('invalid')) {
+          throw new Error(`Tuya API credentials invalid: ${errorMsg}. Please check TUYA_ACCESS_ID and TUYA_ACCESS_SECRET environment variables.`)
+        }
+        throw new Error(errorMsg)
+      }
+      
+      if (data.result && data.result.access_token) {
         return data.result.access_token
       }
       

@@ -79,19 +79,28 @@ export class WiFiScanner {
         cache: 'no-store',
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData?.error || response.statusText)
+        // 提供更友好的錯誤訊息
+        const errorMsg = data?.error || response.statusText
+        const isVercel = data?.requiresLocalEnvironment
+        
+        if (isVercel) {
+          throw new Error('WiFi scanning is not available on Vercel. Please use local environment (npm run dev) or mobile app with native WiFi scanning.')
+        }
+        
+        throw new Error(errorMsg)
       }
 
-      const data = await response.json()
       if (data.success && Array.isArray(data.networks)) {
         return data.networks as WiFiNetwork[]
       }
 
       return []
-    } catch (error) {
+    } catch (error: any) {
       console.error('Server WiFi scan error:', error)
+      // 重新拋出錯誤，讓 UI 可以處理
       throw error
     }
   }

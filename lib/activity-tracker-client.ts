@@ -27,7 +27,7 @@ export function useActivityTracker() {
     }
 
     try {
-      await fetch('/api/activities/track', {
+      await fetch('/api/warehouse/activities/track', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

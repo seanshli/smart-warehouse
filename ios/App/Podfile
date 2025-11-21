@@ -1,5 +1,10 @@
 require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
+# Tuya SDK pod sources
+source 'https://github.com/CocoaPods/Specs.git'
+source 'https://github.com/TuyaInc/TuyaPublicSpecs.git'
+source 'https://github.com/tuya/tuya-pod-specs.git'
+
 platform :ios, '14.0'
 use_frameworks!
 
@@ -14,8 +19,18 @@ def capacitor_pods
   pod 'CapacitorCommunityBarcodeScanner', :path => '../../node_modules/@capacitor-community/barcode-scanner'
 end
 
+def tuya_pods
+  # ThingSmartCryption from local extracted SDK (must be first)
+  pod 'ThingSmartCryption', :path => '../../iOS_SDK-2'
+  
+  # Core Tuya SDK pods for provisioning
+  pod 'ThingSmartActivatorBizBundle', '~> 6.11.0'
+  pod 'ThingSmartHomeKit', '~> 6.11.0'
+end
+
 target 'App' do
   capacitor_pods
+  tuya_pods
   # Add your Pods here
 end
 

@@ -136,7 +136,7 @@ Respond in JSON format with fields: name (include brand/color/features), descrip
 // Function to save successful barcode recognition to local database
 async function saveBarcodeToDatabase(barcode: string, result: ItemRecognitionResult): Promise<void> {
   try {
-    const response = await fetch('/api/barcodes', {
+    const response = await fetch('/api/warehouse/barcodes', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -297,7 +297,7 @@ export async function recognizeItemFromBarcodeImage(imageBase64: string): Promis
 // Database barcode lookup - check our own database first
 async function lookupDatabaseBarcode(barcode: string): Promise<ItemRecognitionResult | null> {
   try {
-    const response = await fetch(`/api/barcodes?barcode=${encodeURIComponent(barcode)}`)
+    const response = await fetch(`/api/warehouse/barcodes?barcode=${encodeURIComponent(barcode)}`)
     
     if (response.ok) {
       const result = await response.json()

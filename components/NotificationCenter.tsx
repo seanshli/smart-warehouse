@@ -42,7 +42,7 @@ export default function NotificationCenter() {
       const params = new URLSearchParams()
       params.append('householdId', household.id) // 始終包含家庭 ID
       
-      const url = `/api/notifications${params.toString() ? '?' + params.toString() : ''}`
+      const url = `/api/warehouse/notifications${params.toString() ? '?' + params.toString() : ''}`
       console.log('NotificationCenter: Fetching from URL:', url)
       console.log('NotificationCenter: Active household:', household.id, household.name)
       
@@ -61,7 +61,7 @@ export default function NotificationCenter() {
   // 標記單個通知為已讀
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
+      const response = await fetch(`/api/warehouse/notifications/${notificationId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ export default function NotificationCenter() {
   // 標記所有通知為已讀
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('/api/notifications/mark-all-read', {
+      const response = await fetch('/api/warehouse/notifications/mark-all-read', {
         method: 'PATCH',
       })
 

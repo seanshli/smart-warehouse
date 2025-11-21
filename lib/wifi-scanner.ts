@@ -74,7 +74,7 @@ export class WiFiScanner {
    */
   static async scanFromServer(): Promise<WiFiNetwork[]> {
     try {
-      const response = await fetch('/api/wifi/scan', {
+      const response = await fetch('/api/mqtt/wifi/scan', {
         method: 'GET',
         cache: 'no-store',
       })

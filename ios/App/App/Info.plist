@@ -69,6 +69,16 @@
 	<string>Location is used to set household location and find nearby items</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Location is used to set household location and find nearby items</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Local network access is required for Tuya device provisioning and discovery</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_tuya._tcp</string>
+	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth is required for Tuya device provisioning via Bluetooth mode</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Bluetooth is required for Tuya device provisioning via Bluetooth mode</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

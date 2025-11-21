@@ -15,7 +15,7 @@ export class TuyaProvisioningWeb extends WebPlugin implements TuyaProvisioningPl
   }
 
   async startProvisioning(options: TuyaStartProvisioningOptions): Promise<TuyaProvisioningResult> {
-    const response = await fetch('/api/provisioning', {
+    const response = await fetch('/api/mqtt/provisioning', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ export class TuyaProvisioningWeb extends WebPlugin implements TuyaProvisioningPl
   }
 
   async getStatus(options: TuyaQueryStatusOptions): Promise<TuyaProvisioningResult> {
-    const response = await fetch(`/api/provisioning?vendor=${options.vendor}&token=${options.token}`, {
+    const response = await fetch(`/api/mqtt/provisioning?vendor=${options.vendor}&token=${options.token}`, {
       method: 'GET',
       credentials: 'include',
     })
@@ -40,7 +40,7 @@ export class TuyaProvisioningWeb extends WebPlugin implements TuyaProvisioningPl
   }
 
   async stopProvisioning(options: TuyaStopProvisioningOptions): Promise<{ success: boolean }> {
-    await fetch(`/api/provisioning?vendor=${options.vendor}&token=${options.token}`, {
+    await fetch(`/api/mqtt/provisioning?vendor=${options.vendor}&token=${options.token}`, {
       method: 'DELETE',
       credentials: 'include',
     })

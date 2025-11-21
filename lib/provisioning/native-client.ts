@@ -8,6 +8,58 @@ import {
   type TuyaStopProvisioningOptions,
 } from '@/lib/plugins/tuya'
 
+let tuyaInitialized = false
+
+/**
+ * 獲取當前 Household 對應的 Tuya Home ID
+ */
+async function getHouseholdTuyaHomeId(householdId: string | null): Promise<string | null> {
+  if (!householdId) {
+    return null
+  }
+
+  try {
+    const response = await fetch(`/api/mqtt/tuya/home?householdId=${householdId}`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      return null
+    }
+
+    const data = await response.json()
+    return data.tuyaHomeId || null
+  } catch (error) {
+    console.error('Error fetching Tuya Home ID:', error)
+    return null
+  }
+}
+
+/**
+ * 更新 Household 的 Tuya Home ID 對應關係
+ */
+async function updateHouseholdTuyaHomeMapping(householdId: string, tuyaHomeId: string): Promise<boolean> {
+  try {
+    const response = await fetch('/api/mqtt/tuya/home', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        householdId,
+        tuyaHomeId,
+      }),
+    })
+
+    return response.ok
+  } catch (error) {
+    console.error('Error updating Tuya Home mapping:', error)
+    return false
+  }
+}
+
 export const canUseNativeTuyaProvisioning = (): boolean => {
   try {
     return Capacitor?.isNativePlatform?.() ?? false
@@ -16,9 +68,65 @@ export const canUseNativeTuyaProvisioning = (): boolean => {
   }
 }
 
+export const ensureTuyaInitialized = async (): Promise<boolean> => {
+  if (tuyaInitialized) {
+    return true
+  }
+
+  if (!canUseNativeTuyaProvisioning()) {
+    return false
+  }
+
+  try {
+    // Fetch SDK credentials from API endpoint
+    // These are safe to expose as they're meant for app embedding
+    const response = await fetch('/api/mqtt/tuya/sdk-config', {
+      method: 'GET',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      console.warn('Failed to fetch Tuya SDK credentials. Provisioning may not work.')
+      return false
+    }
+
+    const config = await response.json()
+
+    if (!config.appKey || !config.appSecret) {
+      console.warn('Tuya SDK credentials not found. Provisioning may not work.')
+      return false
+    }
+
+    const result = await TuyaProvisioning.initialize({
+      appKey: config.appKey,
+      appSecret: config.appSecret,
+    })
+
+    if (result.initialized) {
+      tuyaInitialized = true
+      return true
+    }
+
+    return false
+  } catch (error) {
+    console.error('Failed to initialize Tuya SDK:', error)
+    return false
+  }
+}
+
 export const startNativeTuyaProvisioning = async (
   options: TuyaStartProvisioningOptions,
 ): Promise<TuyaProvisioningResult> => {
+  // Ensure SDK is initialized before provisioning
+  const initialized = await ensureTuyaInitialized()
+  if (!initialized) {
+    return {
+      success: false,
+      status: 'failed',
+      error: 'Tuya SDK not initialized. Please check environment variables.',
+    }
+  }
+
   return await TuyaProvisioning.startProvisioning(options)
 }
 

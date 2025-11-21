@@ -84,7 +84,7 @@ export default function AdminItemsPage() {
           const base64 = event.target?.result as string
           
           // Update item with new photo
-          const response = await fetch(`/api/items/${itemId}`, {
+          const response = await fetch(`/api/warehouse/items/${itemId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageUrl: base64 })

@@ -11,7 +11,7 @@ import {
   XCircleIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
-import DuplicateItemsModal from '@/components/DuplicateItemsModal'
+import DuplicateItemsModal from '@/components/warehouse/DuplicateItemsModal'
 
 interface DuplicateItem {
   id: string
@@ -50,7 +50,7 @@ export default function DuplicatesPage() {
         throw new Error('No household found')
       }
       
-      const response = await fetch(`/api/items/duplicates?householdId=${householdId}`)
+      const response = await fetch(`/api/warehouse/items/duplicates?householdId=${householdId}`)
       if (response.ok) {
         const data = await response.json()
         // The API returns an array of duplicate groups, we need to flatten it

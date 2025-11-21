@@ -8,7 +8,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import { useState, useEffect } from 'react'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
-const Dashboard = dynamic(() => import('@/components/Dashboard'), {
+const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen flex items-center justify-center">

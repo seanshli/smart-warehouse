@@ -77,6 +77,8 @@ model Household {
   name            String
   description     String?
   invitationCode  String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  // Tuya Home integration
+  tuyaHomeId      String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
   // Location fields
   country         String?
   city            String?
@@ -205,24 +207,24 @@ model Item {
 }
 
 model ItemHistory {
-  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  itemId       String    @map("item_id")
-  action       String
-  description  String?
-  voiceUrl     String?   @map("voice_url")
-  voiceTranscript String? @map("voice_transcript")
-  performedBy  String    @map("performed_by")
-  oldRoomId    String?   @map("old_room_id")
-  newRoomId    String?   @map("new_room_id")
-  oldCabinetId String?   @map("old_cabinet_id")
-  newCabinetId String?   @map("new_cabinet_id")
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  item         Item      @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  newCabinet   Cabinet?  @relation("ItemHistoryNewCabinet", fields: [newCabinetId], references: [id], onUpdate: NoAction)
-  newRoom      Room?     @relation("ItemHistoryNewRoom", fields: [newRoomId], references: [id], onUpdate: NoAction)
-  oldCabinet   Cabinet?  @relation("ItemHistoryOldCabinet", fields: [oldCabinetId], references: [id], onUpdate: NoAction)
-  oldRoom      Room?     @relation("ItemHistoryOldRoom", fields: [oldRoomId], references: [id], onUpdate: NoAction)
-  performer    User      @relation(fields: [performedBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  itemId          String    @map("item_id")
+  action          String
+  description     String?
+  voiceUrl        String?   @map("voice_url")
+  voiceTranscript String?   @map("voice_transcript")
+  performedBy     String    @map("performed_by")
+  oldRoomId       String?   @map("old_room_id")
+  newRoomId       String?   @map("new_room_id")
+  oldCabinetId    String?   @map("old_cabinet_id")
+  newCabinetId    String?   @map("new_cabinet_id")
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  item            Item      @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  newCabinet      Cabinet?  @relation("ItemHistoryNewCabinet", fields: [newCabinetId], references: [id], onUpdate: NoAction)
+  newRoom         Room?     @relation("ItemHistoryNewRoom", fields: [newRoomId], references: [id], onUpdate: NoAction)
+  oldCabinet      Cabinet?  @relation("ItemHistoryOldCabinet", fields: [oldCabinetId], references: [id], onUpdate: NoAction)
+  oldRoom         Room?     @relation("ItemHistoryOldRoom", fields: [oldRoomId], references: [id], onUpdate: NoAction)
+  performer       User      @relation(fields: [performedBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("item_history")
 }
@@ -293,27 +295,27 @@ model UserCredentials {
 // IoT 設備模型（統一支援 MQTT 和 RESTful API）
 // 儲存 IoT 設備資訊（支援 Tuya、ESP、Midea、Philips、Panasonic 等供應商）
 model IoTDevice {
-  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  deviceId      String    @map("device_id") // 設備 ID（供應商特定）
-  name          String // 設備名稱
-  vendor        String // 供應商類型（tuya, esp, midea, philips, panasonic）
-  connectionType String   @default("mqtt") @map("connection_type") // 連接類型（mqtt, restful, websocket）
-  topic         String? // MQTT 主題（MQTT 設備使用）
-  commandTopic  String?  @map("command_topic") // 命令主題（MQTT 設備使用）
-  statusTopic   String?  @map("status_topic") // 狀態主題（MQTT 設備使用）
-  baseUrl       String?  @map("base_url") // RESTful API 基礎 URL（RESTful 設備使用）
-  apiKey        String?  @map("api_key") // API 金鑰（RESTful 設備使用）
-  accessToken   String?  @map("access_token") // 訪問令牌（RESTful 設備使用）
-  householdId   String    @map("household_id") // 所屬家庭
-  roomId        String?   @map("room_id") // 所屬房間（可選）
-  status        String    @default("offline") // 連接狀態（online/offline）
-  state         Json? // 設備狀態（JSON 格式）
-  metadata      Json? // 額外元資料
-  lastSeen      DateTime? @map("last_seen") @db.Timestamptz(6) // 最後在線時間
-  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  household     Household @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  room          Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  deviceId       String    @map("device_id") // 設備 ID（供應商特定）
+  name           String // 設備名稱
+  vendor         String // 供應商類型（tuya, esp, midea, philips, panasonic）
+  connectionType String    @default("mqtt") @map("connection_type") // 連接類型（mqtt, restful, websocket）
+  topic          String? // MQTT 主題（MQTT 設備使用）
+  commandTopic   String?   @map("command_topic") // 命令主題（MQTT 設備使用）
+  statusTopic    String?   @map("status_topic") // 狀態主題（MQTT 設備使用）
+  baseUrl        String?   @map("base_url") // RESTful API 基礎 URL（RESTful 設備使用）
+  apiKey         String?   @map("api_key") // API 金鑰（RESTful 設備使用）
+  accessToken    String?   @map("access_token") // 訪問令牌（RESTful 設備使用）
+  householdId    String    @map("household_id") // 所屬家庭
+  roomId         String?   @map("room_id") // 所屬房間（可選）
+  status         String    @default("offline") // 連接狀態（online/offline）
+  state          Json? // 設備狀態（JSON 格式）
+  metadata       Json? // 額外元資料
+  lastSeen       DateTime? @map("last_seen") @db.Timestamptz(6) // 最後在線時間
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  household      Household @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  room           Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@unique([householdId, deviceId, vendor]) // 同一家庭內設備 ID 和供應商唯一
   @@index([householdId])

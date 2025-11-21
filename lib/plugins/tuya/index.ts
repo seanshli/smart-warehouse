@@ -29,6 +29,8 @@ export interface TuyaStartProvisioningOptions {
   deviceId?: string
   zigbeeGatewayId?: string
   bluetoothMac?: string
+  householdId?: string // Household ID（用於對應 Tuya Home）
+  householdName?: string // Household 名稱（用於創建 Tuya Home）
 }
 
 export interface TuyaQueryStatusOptions {

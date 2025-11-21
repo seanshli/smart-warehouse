@@ -2,12 +2,12 @@
 
 import { useState, useRef } from 'react'
 import { useLanguage } from '@/components/LanguageProvider'
-import ItemsList from '@/components/ItemsList'
-import AddItemModal from '@/components/AddItemModal'
-import EditItemModal from '@/components/EditItemModal'
-import MoveItemModal from '@/components/MoveItemModal'
-import CheckoutModal from '@/components/CheckoutModal'
-import QuantityAdjustModal from '@/components/QuantityAdjustModal'
+import ItemsList from '@/components/warehouse/ItemsList'
+import AddItemModal from '@/components/warehouse/AddItemModal'
+import EditItemModal from '@/components/warehouse/EditItemModal'
+import MoveItemModal from '@/components/warehouse/MoveItemModal'
+import CheckoutModal from '@/components/warehouse/CheckoutModal'
+import QuantityAdjustModal from '@/components/warehouse/QuantityAdjustModal'
 import { PlusIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
 
 interface Item {
@@ -68,7 +68,7 @@ export default function ItemsPage() {
                   onClick={async () => {
                     try {
                       console.log('Starting item duplicate check...')
-                      const response = await fetch('/api/items/check-duplicates', { method: 'POST' })
+                      const response = await fetch('/api/warehouse/items/check-duplicates', { method: 'POST' })
                       const result = await response.json()
                       
                       if (response.ok) {

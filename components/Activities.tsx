@@ -72,7 +72,7 @@ export default function Activities({ timeFilter = 'all' }: ActivitiesProps) {
       params.append('timeFilter', timeFilter) // 時間篩選器
       params.append('householdId', household.id) // 始終包含家庭 ID
       
-      const url = `/api/activities?${params.toString()}`
+      const url = `/api/warehouse/activities?${params.toString()}`
       console.log('Activities: Fetching from URL:', url)
       console.log('Activities: Active household:', household.id, household.name)
       

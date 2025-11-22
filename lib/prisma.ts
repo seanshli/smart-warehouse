@@ -1,6 +1,21 @@
 // Prisma 資料庫客戶端
 // 提供與資料庫的連線和操作，針對 Supabase 進行了優化設定
 
+// Ensure environment variables are loaded before Prisma initialization
+import { config } from 'dotenv'
+import { resolve } from 'path'
+import { existsSync } from 'fs'
+
+// Load .env.local file if it exists (for local development and scripts)
+const envLocalPath = resolve(process.cwd(), '.env.local')
+const envPath = resolve(process.cwd(), '.env')
+
+if (existsSync(envLocalPath)) {
+  config({ path: envLocalPath, override: true })
+} else if (existsSync(envPath)) {
+  config({ path: envPath, override: true })
+}
+
 import { PrismaClient } from '@prisma/client'
 
 // 全域 Prisma 客戶端（用於開發環境的熱重載）

@@ -29,7 +29,7 @@ function generateTuyaAccount(userEmail: string): {
                    crypto.randomInt(1000, 9999).toString()
   
   // 根据邮箱域名推断国家代码（简化版，默认 Taiwan）
-  let countryCode = '887' // 默认 Taiwan
+  let countryCode = '886' // 默认 Taiwan
   if (account.includes('.cn') || account.includes('@qq.') || account.includes('@163.')) {
     countryCode = '86' // China
   } else if (account.includes('.jp')) {

@@ -50,7 +50,6 @@ const countryCodeMap: Record<string, string> = {
   '65': 'SG (Singapore)',
   '852': 'HK (Hong Kong)',
   '886': 'TW (Taiwan)',
-  '887': 'TW (Taiwan)',
 }
 
 async function checkTuyaCountryCodes() {
@@ -107,7 +106,7 @@ async function checkTuyaCountryCodes() {
     // 显示推断逻辑
     console.log('💡 国家代码推断逻辑:')
     console.log('====================')
-    console.log('   - 默认: 887 (Taiwan)')
+    console.log('   - 默认: 886 (Taiwan)')
     console.log('   - 包含 .cn, @qq., @163.: 86 (China)')
     console.log('   - 包含 .jp: 81 (Japan)')
     console.log('   - 包含 .sg: 65 (Singapore)')

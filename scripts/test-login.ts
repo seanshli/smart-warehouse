@@ -9,7 +9,7 @@
  * npx tsx scripts/test-login.ts sean.li@smtengo.com YourPassword123!
  */
 
-// Load environment variables from .env.local
+// Load environment variables from .env.local FIRST, before any other imports
 import { config } from 'dotenv'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
@@ -32,7 +32,7 @@ if (existsSync(envLocalPath)) {
   console.warn('⚠️  警告: 未找到 .env.local 或 .env 文件')
 }
 
-// Verify DATABASE_URL is loaded
+// Verify DATABASE_URL is loaded BEFORE importing Prisma
 if (!process.env.DATABASE_URL) {
   console.error('❌ 错误: DATABASE_URL 环境变量未设置')
   console.error('   请确保 .env.local 文件存在并包含 DATABASE_URL')
@@ -40,6 +40,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(1)
 }
 
+// Now import Prisma and other modules AFTER environment variables are loaded
 import { PrismaClient } from '@prisma/client'
 import { verifyUserPassword } from '../lib/credentials'
 

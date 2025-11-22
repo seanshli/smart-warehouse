@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       success: true,
       countryCode: credentials.tuyaCountryCode,
       account: credentials.tuyaAccount,
-      hasPassword: credentials.hasPassword,
+      hasPassword: true, // Password exists (we checked earlier)
       message: 'Tuya credentials retrieved. Use these to login via native SDK. Password should be provided separately.',
     })
   } catch (error: any) {

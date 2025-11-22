@@ -343,6 +343,8 @@ export default function Dashboard() {
     { id: 'members', name: t('members'), icon: UsersIcon, permission: 'canManageMembers' },
     { id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon },
     { id: 'mqtt', name: t('mqttDevices') || 'MQTT Devices', icon: WifiIcon },
+    { id: 'maintenance', name: (t as any)('maintenanceTickets') || '報修', icon: ExclamationTriangleIcon },
+    { id: 'reservations', name: (t as any)('reservationCenter') || '預定', icon: ClockIcon },
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
     { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
   ]
@@ -507,6 +509,62 @@ export default function Dashboard() {
                    }}
                    onItemHistory={(item) => {
                      console.log('Dashboard: History handler called for item:', item.name)
+                     setSelectedItem(item)
+                     setShowItemHistory(true)
+                   }}
+                 />
+               )}
+               {activeTab === 'maintenance' && (
+                <DashboardContent
+                  household={household}
+                  refreshTrigger={refreshTrigger}
+                  onTabChange={setActiveTab}
+                  activeTab="maintenance"
+                  onItemEdit={(item) => {
+                     setSelectedItem(item)
+                     setShowEditItem(true)
+                   }}
+                   onItemMove={(item) => {
+                     setSelectedItem(item)
+                     setShowMoveItem(true)
+                   }}
+                   onItemCheckout={(item) => {
+                     setSelectedItem(item)
+                     setShowCheckoutItem(true)
+                   }}
+                   onItemQuantityAdjust={(item) => {
+                     setSelectedItem(item)
+                     setShowQuantityAdjust(true)
+                   }}
+                   onItemHistory={(item) => {
+                     setSelectedItem(item)
+                     setShowItemHistory(true)
+                   }}
+                 />
+               )}
+               {activeTab === 'reservations' && (
+                <DashboardContent
+                  household={household}
+                  refreshTrigger={refreshTrigger}
+                  onTabChange={setActiveTab}
+                  activeTab="reservations"
+                  onItemEdit={(item) => {
+                     setSelectedItem(item)
+                     setShowEditItem(true)
+                   }}
+                   onItemMove={(item) => {
+                     setSelectedItem(item)
+                     setShowMoveItem(true)
+                   }}
+                   onItemCheckout={(item) => {
+                     setSelectedItem(item)
+                     setShowCheckoutItem(true)
+                   }}
+                   onItemQuantityAdjust={(item) => {
+                     setSelectedItem(item)
+                     setShowQuantityAdjust(true)
+                   }}
+                   onItemHistory={(item) => {
                      setSelectedItem(item)
                      setShowItemHistory(true)
                    }}
@@ -730,6 +788,7 @@ function DashboardContent({
   household,
   refreshTrigger,
   onTabChange,
+  activeTab = 'dashboard',
   onItemEdit, 
   onItemMove, 
   onItemCheckout, 
@@ -739,6 +798,7 @@ function DashboardContent({
   household: any
   refreshTrigger: number
   onTabChange: (tab: string) => void
+  activeTab?: string
   onItemEdit: (item: any) => void
   onItemMove: (item: any) => void
   onItemCheckout: (item: any) => void
@@ -857,6 +917,7 @@ function DashboardContent({
         { label: translate('manageInventory', '管理物品'), onClick: () => onTabChange('items') },
         { label: translate('viewRooms', '房間配置'), onClick: () => onTabChange('rooms') },
       ],
+      onClick: () => onTabChange('items'), // Navigate to warehouse items page
     },
     {
       id: 'mott',
@@ -872,6 +933,7 @@ function DashboardContent({
         { label: translate('openMqttPanel', '裝置控管'), onClick: () => onTabChange('mqtt') },
         { label: translate('openAssistant', '語音助理'), onClick: () => onTabChange('assistant') },
       ],
+      onClick: () => onTabChange('mqtt'), // Navigate to MQTT panel
     },
     {
       id: 'maintenance',
@@ -884,9 +946,10 @@ function DashboardContent({
         { label: translate('inProgress', '處理中'), value: maintenanceStats.inProgress },
       ],
       actions: [
-        { label: translate('createTicket', '新增報修'), onClick: () => console.log('TODO: open maintenance form') },
-        { label: translate('viewAll', '查看全部'), onClick: () => console.log('TODO: navigate to maintenance center') },
+        { label: translate('createTicket', '新增報修'), onClick: () => onTabChange('maintenance') },
+        { label: translate('viewAll', '查看全部'), onClick: () => onTabChange('maintenance') },
       ],
+      onClick: () => onTabChange('maintenance'), // Navigate to maintenance page
     },
     {
       id: 'reservation',
@@ -903,9 +966,10 @@ function DashboardContent({
         }).length },
       ],
       actions: [
-        { label: translate('addReservation', '新增預定'), onClick: () => console.log('TODO: open reservation modal') },
-        { label: translate('openCalendar', '檢視行事曆'), onClick: () => console.log('TODO: navigate to reservation center') },
+        { label: translate('addReservation', '新增預定'), onClick: () => onTabChange('reservations') },
+        { label: translate('openCalendar', '檢視行事曆'), onClick: () => onTabChange('reservations') },
       ],
+      onClick: () => onTabChange('reservations'), // Navigate to reservations page
     },
   ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations])
 
@@ -1116,61 +1180,85 @@ function DashboardContent({
   return (
     <div className={`${deviceInfo.isMobile ? 'px-1 py-2' : 'px-2 sm:px-4 py-4 sm:py-6 sm:px-0'} space-y-6 sm:space-y-8`}>
       <div
-        className={`grid gap-3 sm:gap-5 ${
-          deviceInfo.isMobile ? 'grid-cols-1' : deviceInfo.isTablet ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'
+        className={`grid gap-3 sm:gap-4 lg:gap-5 ${
+          deviceInfo.isMobile 
+            ? deviceInfo.orientation === 'landscape' 
+              ? 'grid-cols-2' 
+              : 'grid-cols-1'
+            : deviceInfo.isTablet 
+              ? deviceInfo.orientation === 'landscape'
+                ? 'grid-cols-4'
+                : 'grid-cols-2'
+              : 'grid-cols-2 lg:grid-cols-4'
         }`}
       >
         {coreModules.map((module) => (
           <div
             key={module.id}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 flex flex-col"
+            onClick={module.onClick}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 flex flex-col cursor-pointer hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-200 active:scale-[0.98]"
           >
-            <div className="p-4 sm:p-5 flex-1 flex flex-col">
+            <div className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'p-3' : 'p-4'} sm:p-5 flex-1 flex flex-col`}>
               <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
-                    <module.icon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                <div className={`flex items-center ${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'space-x-2' : 'space-x-3'} min-w-0 flex-1`}>
+                  <div className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'h-8 w-8' : 'h-10 w-10'} rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0`}>
+                    <module.icon className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'h-4 w-4' : 'h-5 w-5'} text-primary-600 dark:text-primary-400`} />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{module.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{module.subtitle}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'text-xs' : 'text-sm'} font-semibold text-gray-900 dark:text-gray-100 truncate`}>{module.title}</p>
+                    <p className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'text-[10px]' : 'text-xs'} text-gray-500 dark:text-gray-400 ${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'line-clamp-1' : ''}`}>{module.subtitle}</p>
                   </div>
                 </div>
                 {module.tag && (
-                  <span className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide bg-primary-50 text-primary-600 rounded-full">
+                  <span className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1 text-[10px]'} font-semibold uppercase tracking-wide bg-primary-50 text-primary-600 rounded-full flex-shrink-0`}>
                     {module.tag}
                   </span>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className={`grid grid-cols-2 gap-2 ${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'mt-2' : 'mt-4'}`}>
                 {module.metrics.map((metric) => (
-                  <div key={metric.label} className="rounded-lg bg-gray-50 dark:bg-gray-900/40 p-2">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <div key={metric.label} className={`rounded-lg bg-gray-50 dark:bg-gray-900/40 ${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'p-1.5' : 'p-2'}`}>
+                    <p className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'text-[9px]' : 'text-[11px]'} uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate`}>
                       {metric.label}
                     </p>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{metric.value}</p>
+                    <p className={`${deviceInfo.isMobile && deviceInfo.orientation === 'landscape' ? 'text-sm' : 'text-lg'} font-semibold text-gray-900 dark:text-gray-100`}>{metric.value}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {module.actions.map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={action.onClick}
-                    className="text-xs font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 rounded-full px-3 py-1 transition-colors"
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
+              {!(deviceInfo.isMobile && deviceInfo.orientation === 'landscape') && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {module.actions.map((action) => (
+                    <button
+                      key={action.label}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        action.onClick()
+                      }}
+                      className="text-xs font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 rounded-full px-3 py-1 transition-colors"
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+      <div className={`grid gap-4 lg:gap-6 ${
+        deviceInfo.isMobile 
+          ? deviceInfo.orientation === 'landscape' 
+            ? 'grid-cols-2' 
+            : 'grid-cols-1'
+          : deviceInfo.isTablet
+            ? deviceInfo.orientation === 'landscape'
+              ? 'grid-cols-2'
+              : 'grid-cols-1'
+            : 'lg:grid-cols-2'
+      }`}>
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60">
           <div className="p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">

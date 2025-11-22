@@ -60,7 +60,6 @@ export async function POST(
           householdId: householdId,
         },
       },
-      },
     })
 
     if (!targetMembership) {

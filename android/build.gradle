@@ -32,9 +32,9 @@ subprojects {
         if (project.hasProperty('android')) {
             project.android {
                 compileOptions {
-                    // Allow Gradle to use Java 17 or 21, whichever is available
-                    // Capacitor's auto-generated file will override this with Java 21
-                    // but this ensures a fallback if needed
+                    // Use Java 17 as fallback if Java 21 is not available
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
                 }
             }
         }

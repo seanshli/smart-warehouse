@@ -2,6 +2,8 @@
 // 用於掃描可用的 WiFi 網絡
 // WiFi Scanner Utility - Scans available WiFi networks
 
+import WiFiPlugin from './plugins/wifi'
+
 /**
  * WiFi 網絡信息
  */
@@ -70,6 +72,42 @@ export class WiFiScanner {
   }
 
   /**
+   * 透過原生插件掃描（iOS/Android）
+   * Scan using native plugin (iOS/Android)
+   */
+  static async scanNative(): Promise<WiFiNetwork[]> {
+    try {
+      // 检查是否有原生插件
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.getPlatform() === 'web') {
+        // Web 环境回退到服务器扫描
+        return this.scanFromServer()
+      }
+
+      // 检查权限
+      const permissionResult = await WiFiPlugin.checkPermission()
+      if (!permissionResult.granted) {
+        const requestResult = await WiFiPlugin.requestPermission()
+        if (!requestResult.granted) {
+          throw new Error('WiFi scan permission denied. Please grant location permission in device settings.')
+        }
+      }
+
+      // 执行原生扫描
+      const result = await WiFiPlugin.scanNetworks()
+      return result.networks || []
+    } catch (error: any) {
+      console.error('Native WiFi scan error:', error)
+      // 如果原生扫描失败，回退到服务器扫描
+      try {
+        return await this.scanFromServer()
+      } catch (serverError) {
+        throw error // 抛出原始错误
+      }
+    }
+  }
+
+  /**
    * 透過伺服器端掃描（需要 Node.js 環境支援）
    */
   static async scanFromServer(): Promise<WiFiNetwork[]> {
@@ -106,10 +144,57 @@ export class WiFiScanner {
   }
 
   /**
+   * 智能扫描：优先使用原生扫描，失败则回退到服务器扫描
+   * Smart scan: prefer native scan, fallback to server scan
+   */
+  static async scan(): Promise<WiFiNetwork[]> {
+    try {
+      // 尝试原生扫描
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.getPlatform() !== 'web') {
+        try {
+          return await this.scanNative()
+        } catch (nativeError) {
+          console.warn('Native scan failed, falling back to server scan:', nativeError)
+        }
+      }
+      
+      // 回退到服务器扫描
+      return await this.scanFromServer()
+    } catch (error: any) {
+      console.error('WiFi scan error:', error)
+      throw error
+    }
+  }
+
+  /**
    * 從本地存儲獲取已保存的 WiFi 網絡列表
    */
-  static getSavedNetworks(): WiFiNetwork[] {
+  static async getSavedNetworks(): Promise<WiFiNetwork[]> {
     try {
+      // 优先从原生 Keychain/Keystore 获取
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.getPlatform() !== 'web') {
+        try {
+          const result = await WiFiPlugin.getSavedSSIDs()
+          const networks: WiFiNetwork[] = []
+          
+          // 获取每个 SSID 的密码
+          for (const ssid of result.ssids) {
+            const passwordResult = await WiFiPlugin.getPassword({ ssid })
+            networks.push({
+              ssid,
+              password: passwordResult.password || undefined,
+            })
+          }
+          
+          return networks
+        } catch (nativeError) {
+          console.warn('Failed to get saved networks from native storage:', nativeError)
+        }
+      }
+      
+      // 回退到 localStorage
       const saved = localStorage.getItem('saved_wifi_networks')
       if (saved) {
         return JSON.parse(saved)
@@ -121,16 +206,28 @@ export class WiFiScanner {
   }
 
   /**
-   * 保存 WiFi 網絡到本地存儲
+   * 保存 WiFi 網絡（优先使用原生 Keychain/Keystore）
    */
-  static saveNetwork(network: WiFiNetwork, password?: string): void {
+  static async saveNetwork(network: WiFiNetwork, password?: string): Promise<void> {
     try {
-      const saved = this.getSavedNetworks()
+      // 优先保存到原生 Keychain/Keystore
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.getPlatform() !== 'web' && password) {
+        try {
+          await WiFiPlugin.savePassword({ ssid: network.ssid, password })
+          console.log('✅ WiFi password saved to native Keychain/Keystore')
+        } catch (nativeError) {
+          console.warn('Failed to save password to native storage:', nativeError)
+        }
+      }
+      
+      // 同时保存到 localStorage（作为备份）
+      const saved = await this.getSavedNetworksFromLocalStorage()
       const existingIndex = saved.findIndex(n => n.ssid === network.ssid)
       
       const networkToSave = {
         ...network,
-        password: password, // 注意：密碼存儲在內存中，不建議長期存儲
+        password: password, // 注意：Web 环境存储在 localStorage
       }
 
       if (existingIndex >= 0) {
@@ -146,17 +243,46 @@ export class WiFiScanner {
   }
 
   /**
-   * 獲取已保存的 WiFi 密碼
+   * 獲取已保存的 WiFi 密碼（优先从原生 Keychain/Keystore）
    */
-  static getSavedPassword(ssid: string): string | null {
+  static async getSavedPassword(ssid: string): Promise<string | null> {
     try {
-      const saved = this.getSavedNetworks()
+      // 优先从原生 Keychain/Keystore 获取
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.getPlatform() !== 'web') {
+        try {
+          const result = await WiFiPlugin.getPassword({ ssid })
+          if (result.password) {
+            return result.password
+          }
+        } catch (nativeError) {
+          console.warn('Failed to get password from native storage:', nativeError)
+        }
+      }
+      
+      // 回退到 localStorage
+      const saved = await this.getSavedNetworksFromLocalStorage()
       const network = saved.find(n => n.ssid === ssid)
       return network?.password || null
     } catch (error) {
       console.error('Failed to get saved password:', error)
       return null
     }
+  }
+
+  /**
+   * 从 localStorage 获取已保存的网络（内部方法）
+   */
+  private static getSavedNetworksFromLocalStorage(): WiFiNetwork[] {
+    try {
+      const saved = localStorage.getItem('saved_wifi_networks')
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    } catch (error) {
+      console.error('Failed to load saved networks from localStorage:', error)
+    }
+    return []
   }
 
   /**

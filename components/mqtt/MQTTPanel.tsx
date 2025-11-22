@@ -761,24 +761,17 @@ export default function MQTTPanel() {
           setIsProvisioningModalOpen(false)
           setProvisioningVendor(undefined)
         }}
-        onSuccess={(deviceId, deviceName, vendor, deviceInfo) => {
-          // 配網成功後，自動填充設備信息
-          setNewDevice({
-            ...newDevice,
-            deviceId,
-            name: deviceName,
-            vendor: vendor as any,
-            // 如果是 RESTful 設備，填充 API 配置
-            ...(vendor === 'philips' || vendor === 'panasonic' ? {
-              baseUrl: deviceInfo?.internalIp || deviceInfo?.baseUrl || '',
-              apiKey: deviceInfo?.apiKey || deviceInfo?.accessToken || '',
-              accessToken: deviceInfo?.accessToken || '',
-            } : {}),
-          })
-          setIsAddingDevice(true)
+        onSuccess={async (deviceId, deviceName, vendor, deviceInfo) => {
+          // 注意：設備已經在 ProvisioningModal 中自動添加了
+          // 這裡只需要刷新設備列表
           setIsProvisioningModalOpen(false)
           setProvisioningVendor(undefined)
-          toast.success('配網成功！請確認設備信息並添加設備。')
+          
+          // 刷新設備列表以顯示新添加的設備
+          mutate()
+          
+          // 提示信息已在 ProvisioningModal 中顯示
+          // 這裡不需要額外的提示
         }}
       />
     </div>

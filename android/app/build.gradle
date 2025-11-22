@@ -3,12 +3,18 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.smartwarehouse.app"
     compileSdk rootProject.ext.compileSdkVersion
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
     defaultConfig {
         applicationId "com.smartwarehouse.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 19
-        versionName "1.0.19"
+        versionCode 21
+        versionName "1.0.21"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"

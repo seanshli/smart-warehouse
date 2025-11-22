@@ -156,7 +156,86 @@ export default function ProvisioningModal({
     }
   }
 
-  const handleProvisioningResponse = (data: any) => {
+  // 自動添加設備到數據庫
+  const autoAddDevice = async (deviceId: string, deviceName: string, deviceInfo?: any) => {
+    if (!household?.id) {
+      console.warn('⚠️ No household found, skipping auto-add device')
+      return false
+    }
+
+    try {
+      // 構建設備添加請求
+      const deviceData: any = {
+        deviceId,
+        name: deviceName || `Device ${deviceId}`,
+        vendor,
+        householdId: household.id,
+      }
+
+      // 根據供應商添加特定配置
+      if (vendor === 'philips' || vendor === 'panasonic') {
+        // RESTful API 設備需要 baseUrl 和 apiKey
+        if (baseUrl) deviceData.baseUrl = baseUrl
+        if (apiKey) deviceData.apiKey = apiKey
+        if (accessToken) deviceData.accessToken = accessToken
+        deviceData.connectionType = 'restful'
+      } else {
+        // MQTT 設備
+        deviceData.connectionType = 'mqtt'
+        
+        // 從 deviceInfo 中提取 MQTT 主題信息
+        if (deviceInfo) {
+          if (deviceInfo.topic) deviceData.topic = deviceInfo.topic
+          if (deviceInfo.commandTopic) deviceData.commandTopic = deviceInfo.commandTopic
+          if (deviceInfo.statusTopic) deviceData.statusTopic = deviceInfo.statusTopic
+        }
+      }
+
+      // 如果有房間選擇，添加房間 ID（目前不強制要求房間）
+      // 注意：roomId 可以通過 UI 選擇，但自動添加時不強制要求
+
+      // 添加設備元數據
+      if (deviceInfo) {
+        deviceData.metadata = deviceInfo
+      }
+
+      console.log('🔄 Auto-adding device:', deviceData)
+
+      const response = await fetch('/api/mqtt/iot/devices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(deviceData),
+      })
+
+      if (response.ok) {
+        const addedDevice = await response.json()
+        console.log('✅ Device auto-added successfully:', addedDevice)
+        toast.success(`設備 "${deviceName || deviceId}" 已自動添加到應用`)
+        return true
+      } else {
+        const error = await response.json()
+        // 如果設備已存在，不顯示錯誤（這是正常情況）
+        if (response.status === 409) {
+          console.log('ℹ️ Device already exists, skipping auto-add')
+          toast('設備已存在於應用中', { icon: 'ℹ️' })
+          return true
+        } else {
+          console.error('❌ Failed to auto-add device:', error)
+          toast.error(`自動添加設備失敗: ${error.error || '未知錯誤'}`)
+          return false
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error auto-adding device:', error)
+      toast.error(`自動添加設備時發生錯誤: ${error.message || '未知錯誤'}`)
+      return false
+    }
+  }
+
+  const handleProvisioningResponse = async (data: any) => {
     if (data.success) {
       setToken(data.token)
       setProvisionedDeviceId(data.deviceId)
@@ -172,12 +251,34 @@ export default function ProvisioningModal({
         setStatus('success')
         toast.success('配網成功！')
         
+        // 自動添加設備到數據庫
+        if (data.deviceId) {
+          await autoAddDevice(
+            data.deviceId,
+            data.deviceName || `Device ${data.deviceId}`,
+            data.deviceInfo
+          )
+        }
+        
         if (onSuccess && data.deviceId) {
           onSuccess(data.deviceId, data.deviceName || `Device ${data.deviceId}`, vendor, data.deviceInfo)
         }
       } else if (vendor === 'esp') {
         setStatus('provisioning')
         toast('請按照設備說明進行配網操作', { icon: 'ℹ️' })
+        
+        // ESP 設備配網完成後，等待設備連接到 MQTT Broker，然後自動添加
+        // 注意：ESP 設備可能需要一些時間才能連接到 MQTT Broker
+        if (data.deviceId) {
+          // 延遲 5 秒後嘗試自動添加（給設備時間連接到 MQTT Broker）
+          setTimeout(async () => {
+            await autoAddDevice(
+              data.deviceId,
+              data.deviceName || `ESP Device ${data.deviceId}`,
+              data.deviceInfo
+            )
+          }, 5000)
+        }
       } else {
         setStatus('provisioning')
         
@@ -335,6 +436,18 @@ export default function ProvisioningModal({
 
         toast.success('配網成功！')
         
+        // 自動添加設備到數據庫（對於 MQTT 設備：Tuya, Midea）
+        if (data.deviceId && (vendor === 'tuya' || vendor === 'midea')) {
+          // 延遲 3 秒後自動添加（給設備時間連接到 MQTT Broker）
+          setTimeout(async () => {
+            await autoAddDevice(
+              data.deviceId,
+              data.deviceName || `Device ${data.deviceId}`,
+              data.deviceInfo
+            )
+          }, 3000)
+        }
+        
         if (onSuccess && data.deviceId) {
           onSuccess(data.deviceId, data.deviceName || `Device ${data.deviceId}`, vendor, data.deviceInfo)
         }
@@ -429,8 +542,9 @@ export default function ProvisioningModal({
   const handleScanServerWifi = async () => {
     setIsScanningWifi(true)
     try {
-      const scanned = await WiFiScanner.scanFromServer()
-      const saved = WiFiScanner.getSavedNetworks()
+      // 使用智能扫描：优先原生，失败则回退到服务器
+      const scanned = await WiFiScanner.scan()
+      const saved = await WiFiScanner.getSavedNetworks()
       const merged = WiFiScanner.mergeNetworks(scanned, saved)
       setWifiNetworks(merged)
 
@@ -442,23 +556,23 @@ export default function ProvisioningModal({
         toast('未掃描到 WiFi 網絡，請手動輸入', { icon: 'ℹ️' })
       }
     } catch (error: any) {
-      console.error('Server WiFi scan failed:', error)
-      const saved = WiFiScanner.getSavedNetworks()
+      console.error('WiFi scan failed:', error)
+      const saved = await WiFiScanner.getSavedNetworks()
       setWifiNetworks(saved)
       if (saved.length > 0) {
         toast('掃描失敗，已載入保存的 WiFi', { icon: 'ℹ️' })
       } else {
-        toast.error('無法掃描 WiFi 網絡，請在本機環境執行或手動輸入')
+        toast.error(error.message || '無法掃描 WiFi 網絡，請在本機環境執行或手動輸入')
       }
     } finally {
       setIsScanningWifi(false)
     }
   }
 
-  const handleLoadSavedWifi = () => {
+  const handleLoadSavedWifi = async () => {
     setIsLoadingSavedWifi(true)
     try {
-      const saved = WiFiScanner.getSavedNetworks()
+      const saved = await WiFiScanner.getSavedNetworks()
       setWifiNetworks(saved)
       if (saved.length > 0) {
         toast.success(`載入 ${saved.length} 個已保存的 WiFi`)
@@ -604,15 +718,17 @@ export default function ProvisioningModal({
                 {wifiNetworks.length > 0 && (
                   <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
                     {wifiNetworks.map((network, index) => {
-                      const savedPassword = WiFiScanner.getSavedPassword(network.ssid)
                       const isSelected = selectedNetwork?.ssid === network.ssid
+                      const hasSavedPassword = network.password !== undefined
                       
                       return (
                         <button
                           key={index}
-                          onClick={() => {
+                          onClick={async () => {
                             setSelectedNetwork(network)
                             setSsid(network.ssid)
+                            // 异步获取保存的密码
+                            const savedPassword = await WiFiScanner.getSavedPassword(network.ssid)
                             if (savedPassword) {
                               setPassword(savedPassword)
                               toast('已自動填充保存的密碼', { icon: '✓' })
@@ -637,7 +753,7 @@ export default function ProvisioningModal({
                                     {network.security.toUpperCase()}
                                   </span>
                                 )}
-                                {savedPassword && (
+                                {hasSavedPassword && (
                                   <span className="text-green-600">已保存密碼</span>
                                 )}
                               </div>
@@ -659,10 +775,10 @@ export default function ProvisioningModal({
                   <input
                     type="text"
                     value={ssid}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       setSsid(e.target.value)
-                      // 檢查是否有保存的密碼
-                      const saved = WiFiScanner.getSavedPassword(e.target.value)
+                      // 檢查是否有保存的密碼（异步）
+                      const saved = await WiFiScanner.getSavedPassword(e.target.value)
                       if (saved) {
                         setPassword(saved)
                         toast('已自動填充保存的密碼', { icon: '✓' })
@@ -691,9 +807,9 @@ export default function ProvisioningModal({
                       type="checkbox"
                       id="remember-wifi-password"
                       defaultChecked={true}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         if (e.target.checked && ssid && password) {
-                          WiFiScanner.saveNetwork(
+                          await WiFiScanner.saveNetwork(
                             { ssid, security: 'wpa2' },
                             password
                           )
@@ -730,15 +846,16 @@ export default function ProvisioningModal({
                 {wifiNetworks.length > 0 && (
                   <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
                     {wifiNetworks.map((network, index) => {
-                      const savedPassword = WiFiScanner.getSavedPassword(network.ssid)
                       const isSelected = selectedNetwork?.ssid === network.ssid
+                      const hasSavedPassword = network.password !== undefined
                       
                       return (
                         <button
                           key={index}
-                          onClick={() => {
+                          onClick={async () => {
                             setSelectedNetwork(network)
                             setSsid(network.ssid)
+                            const savedPassword = await WiFiScanner.getSavedPassword(network.ssid)
                             if (savedPassword) {
                               setPassword(savedPassword)
                               toast('已自動填充保存的密碼', { icon: '✓' })
@@ -763,7 +880,7 @@ export default function ProvisioningModal({
                                     {network.security.toUpperCase()}
                                   </span>
                                 )}
-                                {savedPassword && (
+                                {hasSavedPassword && (
                                   <span className="text-green-600">已保存密碼</span>
                                 )}
                               </div>
@@ -785,9 +902,9 @@ export default function ProvisioningModal({
                   <input
                     type="text"
                     value={ssid}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       setSsid(e.target.value)
-                      const saved = WiFiScanner.getSavedPassword(e.target.value)
+                      const saved = await WiFiScanner.getSavedPassword(e.target.value)
                       if (saved) {
                         setPassword(saved)
                         toast('已自動填充保存的密碼', { icon: '✓' })
@@ -816,9 +933,9 @@ export default function ProvisioningModal({
                       type="checkbox"
                       id="remember-esp-password"
                       defaultChecked={true}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         if (e.target.checked && ssid && password) {
-                          WiFiScanner.saveNetwork(
+                          await WiFiScanner.saveNetwork(
                             { ssid, security: 'wpa2' },
                             password
                           )
@@ -996,7 +1113,7 @@ export default function ProvisioningModal({
                               const networks = await WiFiScanner.scanFromESPDevice()
                               
                               // 如果掃描失敗，使用已保存的網絡
-                              const saved = WiFiScanner.getSavedNetworks()
+                              const saved = await WiFiScanner.getSavedNetworks()
                               const merged = WiFiScanner.mergeNetworks(networks, saved)
                               
                               if (merged.length > 0) {
@@ -1011,7 +1128,7 @@ export default function ProvisioningModal({
                             } catch (error: any) {
                               console.error('WiFi scan error:', error)
                               // 即使掃描失敗，也進入配置步驟
-                              const saved = WiFiScanner.getSavedNetworks()
+                              const saved = await WiFiScanner.getSavedNetworks()
                               setWifiNetworks(saved)
                               setEspStep('configure')
                               if (saved.length > 0) {
@@ -1050,16 +1167,17 @@ export default function ProvisioningModal({
                         {wifiNetworks.length > 0 ? (
                           <div className="mb-3 max-h-48 overflow-y-auto border border-gray-300 rounded-md">
                             {wifiNetworks.map((network, index) => {
-                              const savedPassword = WiFiScanner.getSavedPassword(network.ssid)
                               const isSelected = selectedNetwork?.ssid === network.ssid
+                              const hasSavedPassword = network.password !== undefined
                               
                               return (
                                 <button
                                   key={index}
-                                  onClick={() => {
+                                  onClick={async () => {
                                     setSelectedNetwork(network)
                                     setSsid(network.ssid)
                                     // 如果有保存的密碼，自動填充
+                                    const savedPassword = await WiFiScanner.getSavedPassword(network.ssid)
                                     if (savedPassword) {
                                       setPassword(savedPassword)
                                     }
@@ -1112,10 +1230,10 @@ export default function ProvisioningModal({
                             <input
                               type="text"
                               value={ssid}
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 setSsid(e.target.value)
                                 // 檢查是否有保存的密碼
-                                const saved = WiFiScanner.getSavedPassword(e.target.value)
+                                const saved = await WiFiScanner.getSavedPassword(e.target.value)
                                 if (saved) {
                                   setPassword(saved)
                                   toast('已自動填充保存的密碼', { icon: '✓' })
@@ -1144,9 +1262,9 @@ export default function ProvisioningModal({
                                 type="checkbox"
                                 id="remember-password"
                                 checked={true}
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                   if (e.target.checked && ssid && password) {
-                                    WiFiScanner.saveNetwork(
+                                    await WiFiScanner.saveNetwork(
                                       { ssid, security: 'wpa2' },
                                       password
                                     )

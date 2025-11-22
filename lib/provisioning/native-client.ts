@@ -62,8 +62,25 @@ async function updateHouseholdTuyaHomeMapping(householdId: string, tuyaHomeId: s
 
 export const canUseNativeTuyaProvisioning = (): boolean => {
   try {
-    return Capacitor?.isNativePlatform?.() ?? false
-  } catch {
+    if (typeof window === 'undefined') {
+      return false // Server-side rendering
+    }
+    
+    // Check if Capacitor is available
+    if (!Capacitor) {
+      return false
+    }
+    
+    // Check if we're on a native platform (iOS or Android)
+    const platform = Capacitor.getPlatform()
+    const isNative = platform === 'ios' || platform === 'android'
+    
+    // Also check isNativePlatform for additional verification
+    const isNativePlatform = Capacitor?.isNativePlatform?.() ?? false
+    
+    return isNative && isNativePlatform
+  } catch (error) {
+    console.warn('Error checking native platform:', error)
     return false
   }
 }
@@ -117,7 +134,16 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
 export const startNativeTuyaProvisioning = async (
   options: TuyaStartProvisioningOptions,
 ): Promise<TuyaProvisioningResult> => {
-  // Ensure SDK is initialized before provisioning
+  // Ensure we're on a native platform
+  if (!canUseNativeTuyaProvisioning()) {
+    return {
+      success: false,
+      status: 'failed',
+      error: 'Native provisioning is only available on iOS and Android devices.',
+    }
+  }
+
+  // Ensure SDK is initialized before starting provisioning
   const initialized = await ensureTuyaInitialized()
   if (!initialized) {
     return {
@@ -127,7 +153,16 @@ export const startNativeTuyaProvisioning = async (
     }
   }
 
-  return await TuyaProvisioning.startProvisioning(options)
+  try {
+    return await TuyaProvisioning.startProvisioning(options)
+  } catch (error) {
+    console.error('Native Tuya provisioning error:', error)
+    return {
+      success: false,
+      status: 'failed',
+      error: error instanceof Error ? error.message : 'Native provisioning failed',
+    }
+  }
 }
 
 export const getNativeTuyaProvisioningStatus = async (

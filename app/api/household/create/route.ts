@@ -39,8 +39,7 @@ export async function POST(request: NextRequest) {
               select: {
                 id: true,
                 email: true,
-                name: true,
-                tuyaAccount: true
+                name: true
               }
             }
           }
@@ -177,13 +176,33 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Created ${defaultRooms.length} rooms with cabinets and categories with subcategories for household: ${household.name}`)
 
+    // 重新获取完整的 Household 信息（包括 Tuya 账户）
+    // Re-fetch complete Household info (including Tuya account)
+    const householdWithTuya = await prisma.household.findUnique({
+      where: { id: household.id },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true
+              }
+            }
+          }
+        }
+      }
+    })
+
     return NextResponse.json({
       success: true,
       household: {
-        id: household.id,
-        name: household.name,
-        description: household.description,
-        members: household.members
+        id: householdWithTuya?.id || household.id,
+        name: householdWithTuya?.name || household.name,
+        description: householdWithTuya?.description || household.description,
+        members: householdWithTuya?.members || household.members,
+        tuyaAccount: householdWithTuya?.tuyaAccount || null,
       }
     })
   } catch (error) {

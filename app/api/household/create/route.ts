@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
         name: householdWithTuya?.name || household.name,
         description: householdWithTuya?.description || household.description,
         members: householdWithTuya?.members || household.members,
-        tuyaAccount: householdWithTuya?.tuyaAccount || null,
+        tuyaAccount: (householdWithTuya as any)?.tuyaAccount || null,
       }
     })
   } catch (error) {

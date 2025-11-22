@@ -71,14 +71,15 @@ export const canUseNativeTuyaProvisioning = (): boolean => {
       return false
     }
     
-    // Check if we're on a native platform (iOS or Android)
+    // Check if we're on iOS (Android plugin not yet implemented)
     const platform = Capacitor.getPlatform()
-    const isNative = platform === 'ios' || platform === 'android'
+    const isIOS = platform === 'ios'
     
     // Also check isNativePlatform for additional verification
     const isNativePlatform = Capacitor?.isNativePlatform?.() ?? false
     
-    return isNative && isNativePlatform
+    // Only return true for iOS (Android plugin is not yet implemented)
+    return isIOS && isNativePlatform
   } catch (error) {
     console.warn('Error checking native platform:', error)
     return false
@@ -134,12 +135,12 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
 export const startNativeTuyaProvisioning = async (
   options: TuyaStartProvisioningOptions,
 ): Promise<TuyaProvisioningResult> => {
-  // Ensure we're on a native platform
+  // Ensure we're on iOS (Android plugin not yet implemented)
   if (!canUseNativeTuyaProvisioning()) {
     return {
       success: false,
       status: 'failed',
-      error: 'Native provisioning is only available on iOS and Android devices.',
+      error: 'Native provisioning is only available on iOS devices. Android support is coming soon.',
     }
   }
 

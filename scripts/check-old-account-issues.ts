@@ -30,9 +30,8 @@ async function checkOldAccount(email: string) {
       where: { email: email.toLowerCase() },
       include: {
         credentials: true,
-        households: true, // 作为 owner
-        householdMembers: true, // 作为 member
-        communityMembers: true,
+        householdMemberships: true, // 作为 member (通过 HouseholdMember)
+        communityMemberships: true,
       },
     })
 
@@ -60,23 +59,36 @@ async function checkOldAccount(email: string) {
 
     // 3. 检查 Household
     console.log('\n🏠 Household 状态:')
-    if (user.households && user.households.length > 0) {
-      console.log(`   ✅ 有 ${user.households.length} 个 Household（作为 owner）`)
-      user.households.forEach((h, i) => {
-        console.log(`      ${i + 1}. ${h.name} (ID: ${h.id})`)
+    if (user.householdMemberships && user.householdMemberships.length > 0) {
+      console.log(`   ✅ 有 ${user.householdMemberships.length} 个 Household 成员关系`)
+      
+      // 获取每个 Household 的详细信息
+      const householdIds = user.householdMemberships.map(hm => hm.householdId)
+      const households = await prisma.household.findMany({
+        where: { id: { in: householdIds } },
       })
+      
+      households.forEach((h, i) => {
+        const membership = user.householdMemberships.find(hm => hm.householdId === h.id)
+        const role = membership?.role || 'UNKNOWN'
+        console.log(`      ${i + 1}. ${h.name} (ID: ${h.id}, 角色: ${role})`)
+      })
+      
+      // 检查是否有 OWNER 角色
+      const ownerMemberships = user.householdMemberships.filter(hm => hm.role === 'OWNER')
+      if (ownerMemberships.length > 0) {
+        console.log(`   ✅ 有 ${ownerMemberships.length} 个 Household（作为 owner）`)
+      } else {
+        console.log('   ⚠️  没有作为 owner 的 Household')
+      }
     } else {
-      console.log('   ⚠️  无 Household（作为 owner）')
-    }
-
-    if (user.householdMembers && user.householdMembers.length > 0) {
-      console.log(`   ✅ 有 ${user.householdMembers.length} 个 Household（作为 member）`)
+      console.log('   ⚠️  无 Household 成员关系')
     }
 
     // 4. 检查 Community
     console.log('\n🏘️  Community 状态:')
-    if (user.communityMembers && user.communityMembers.length > 0) {
-      console.log(`   ✅ 有 ${user.communityMembers.length} 个 Community 成员关系`)
+    if (user.communityMemberships && user.communityMemberships.length > 0) {
+      console.log(`   ✅ 有 ${user.communityMemberships.length} 个 Community 成员关系`)
     } else {
       console.log('   ⚠️  无 Community 成员关系（这是正常的，Community 是可选的）')
     }
@@ -98,7 +110,7 @@ async function checkOldAccount(email: string) {
       issues.push('❌ 缺少 UserCredentials（必需）')
     }
 
-    if (!user.households || user.households.length === 0) {
+    if (!user.householdMemberships || user.householdMemberships.length === 0) {
       issues.push('⚠️  没有 Household（可能影响某些功能）')
     }
 
@@ -117,14 +129,16 @@ async function checkOldAccount(email: string) {
       console.log(`      SELECT id, '$2a$12$...', NOW(), NOW()`)
       console.log(`      FROM "User" WHERE email = '${email.toLowerCase()}'`)
       console.log(`      ON CONFLICT ("userId") DO NOTHING;`)
+      console.log('   💡 注意: 需要知道密码才能创建凭证，或使用 bcrypt 生成新密码哈希')
     }
 
-    if (!user.households || user.households.length === 0) {
+    if (!user.householdMemberships || user.householdMemberships.length === 0) {
       console.log('   2. 创建默认 Household:')
-      console.log(`      INSERT INTO "Household" (id, name, "ownerId", "createdAt", "updatedAt")`)
-      console.log(`      SELECT gen_random_uuid(), COALESCE(name, email) || '''s Household', id, NOW(), NOW()`)
-      console.log(`      FROM "User" WHERE email = '${email.toLowerCase()}'`)
-      console.log(`      AND NOT EXISTS (SELECT 1 FROM "Household" WHERE "ownerId" = "User".id);`)
+      console.log('   在 Supabase SQL Editor 中运行:')
+      console.log('   scripts/fix-old-accounts-login.sql')
+      console.log('   或使用以下 SQL:')
+      console.log(`      -- 创建 Household 和 HouseholdMember 关系`)
+      console.log(`      -- 详见 scripts/fix-old-accounts-login.sql`)
     }
 
   } catch (error: any) {

@@ -122,6 +122,18 @@ async function checkOldAccount(email: string) {
     console.error('❌ 检查失败:', error.message)
     if (error.message.includes('DATABASE_URL')) {
       console.log('   💡 提示: 需要设置 DATABASE_URL 环境变量')
+      console.log('')
+      console.log('   解决方法:')
+      console.log('   1. 创建 .env.local 文件（如果不存在）')
+      console.log('   2. 添加 DATABASE_URL 环境变量')
+      console.log('   3. 格式: DATABASE_URL="postgresql://user:password@host:port/database"')
+      console.log('')
+      console.log('   或者直接在命令行设置:')
+      console.log('   export DATABASE_URL="your-database-url"')
+      console.log('   npm run check:old-account sean.li@smtengo.com')
+      console.log('')
+      console.log('   或者使用 Supabase 连接字符串:')
+      console.log('   DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@[PROJECT-REF].supabase.co:5432/postgres"')
     }
   }
 }

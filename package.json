@@ -7,6 +7,8 @@
     "verify:tuya-token": "tsx scripts/verify-tuya-token.ts",
     "verify:vercel-env": "tsx scripts/verify-vercel-tuya-env.ts",
     "check:old-account": "tsx scripts/check-old-account-issues.ts",
+    "reset:password": "tsx scripts/reset-user-password.ts",
+    "test:login": "tsx scripts/test-login.ts",
     "dev": "next dev",
     "dev:external": "next dev --hostname 0.0.0.0",
     "build": "prisma generate && next build",

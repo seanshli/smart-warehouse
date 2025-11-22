@@ -39,9 +39,11 @@ SELECT
     u.id,
     u.email,
     h.id as household_id,
-    h.name as household_name
+    h.name as household_name,
+    hm.role as household_role
 FROM "User" u
-LEFT JOIN "Household" h ON h."ownerId" = u.id
+LEFT JOIN "HouseholdMember" hm ON hm."userId" = u.id
+LEFT JOIN "Household" h ON h.id = hm."householdId"
 WHERE u.email = 'sean.li@smtengo.com';
 
 -- 4. 修复步骤 1: 确保用户有凭证（如果需要）
@@ -79,9 +81,11 @@ SELECT
     u.name,
     h.id as household_id,
     h.name as household_name,
-    uc."userId" as has_credentials
+    hm.role as household_role,
+    CASE WHEN uc."userId" IS NOT NULL THEN '有凭证' ELSE '无凭证' END as credentials_status
 FROM "User" u
-LEFT JOIN "Household" h ON h."ownerId" = u.id
+LEFT JOIN "HouseholdMember" hm ON hm."userId" = u.id AND hm.role = 'OWNER'
+LEFT JOIN "Household" h ON h.id = hm."householdId"
 LEFT JOIN "UserCredentials" uc ON uc."userId" = u.id
 WHERE u.email = 'sean.li@smtengo.com';
 
@@ -136,7 +140,8 @@ SELECT
     CASE WHEN h.id IS NOT NULL THEN '有 Household' ELSE '无 Household' END as household_status,
     CASE WHEN uc."userId" IS NOT NULL THEN '有凭证' ELSE '无凭证' END as credentials_status
 FROM "User" u
-LEFT JOIN "Household" h ON h."ownerId" = u.id
+LEFT JOIN "HouseholdMember" hm ON hm."userId" = u.id AND hm.role = 'OWNER'
+LEFT JOIN "Household" h ON h.id = hm."householdId"
 LEFT JOIN "UserCredentials" uc ON uc."userId" = u.id
 ORDER BY u."createdAt" ASC
 LIMIT 20;

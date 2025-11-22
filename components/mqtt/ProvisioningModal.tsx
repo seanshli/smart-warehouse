@@ -1204,7 +1204,7 @@ export default function ProvisioningModal({
                                             {network.security.toUpperCase()}
                                           </span>
                                         )}
-                                        {savedPassword && (
+                                        {hasSavedPassword && (
                                           <span className="text-green-600">已保存密碼</span>
                                         )}
                                       </div>

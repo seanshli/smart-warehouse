@@ -26,8 +26,9 @@ def tuya_pods
   # Core Tuya SDK pods for provisioning
   pod 'ThingSmartActivatorBizBundle', '~> 6.11.0'
   pod 'ThingSmartHomeKit', '~> 6.11.0'
-  # Note: ThingSmartUserKit may be included in ThingSmartHomeKit
-  # If login fails, we may need to add it separately or use a different approach
+  # Note: ThingSmartUserKit is not available as a separate pod
+  # ThingSmartUser is likely included in ThingSmartHomeKit
+  # If login fails, we may need to check the SDK documentation or use a different approach
 end
 
 target 'App' do

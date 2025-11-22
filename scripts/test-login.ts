@@ -95,18 +95,37 @@ async function testLogin(email: string, password: string) {
 
 async function main() {
   const email = process.argv[2]
-  const password = process.argv[3]
+  let password = process.argv[3]
 
-  if (!email || !password) {
+  if (!email) {
     console.log('❌ 使用方法错误')
     console.log('')
     console.log('使用方法:')
-    console.log('  npx tsx scripts/test-login.ts <email> <password>')
+    console.log('  npm run test:login <email> "<password>"')
+    console.log('  或: npx tsx scripts/test-login.ts <email> "<password>"')
     console.log('')
     console.log('示例:')
-    console.log('  npx tsx scripts/test-login.ts sean.li@smtengo.com YourPassword123!')
+    console.log('  npm run test:login sean.li@smtengo.com "YourPassword123!"')
+    console.log('')
+    console.log('💡 提示: 密码需要用引号包裹，特别是包含特殊字符时')
     console.log('')
     process.exit(1)
+  }
+
+  // 如果没有提供密码，提示用户输入（交互式）
+  if (!password) {
+    const readline = require('readline')
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    })
+
+    password = await new Promise<string>((resolve) => {
+      rl.question('请输入密码: ', (answer: string) => {
+        rl.close()
+        resolve(answer)
+      })
+    })
   }
 
   const success = await testLogin(email, password)

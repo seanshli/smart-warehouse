@@ -6,6 +6,15 @@
  * npx tsx scripts/check-old-account-issues.ts
  */
 
+// Load environment variables from .env.local
+import { config } from 'dotenv'
+import { resolve } from 'path'
+
+// Load .env.local file
+config({ path: resolve(process.cwd(), '.env.local') })
+// Also try .env file as fallback
+config({ path: resolve(process.cwd(), '.env') })
+
 import { PrismaClient } from '@prisma/client'
 import { verifyUserPassword } from '../lib/credentials'
 

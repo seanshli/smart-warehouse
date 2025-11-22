@@ -21,6 +21,14 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Tuya Maven 仓库
+        maven {
+            url "https://maven-other.tuya.com/repository/maven-public/"
+        }
+        // 本地 AAR 文件
+        flatDir {
+            dirs 'libs'
+        }
     }
 }
 

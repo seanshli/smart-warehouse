@@ -13,8 +13,8 @@ android {
         applicationId "com.smartwarehouse.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 21
-        versionName "1.0.21"
+        versionCode 22
+        versionName "1.0.22"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a"
@@ -61,6 +61,16 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    
+    // Tuya Android SDK
+    // Note: 需要根据实际 SDK 版本和集成方式调整
+    // 如果使用 Maven 仓库:
+    // implementation 'com.tuya.smart:tuyasmart:3.34.5'
+    // 如果使用本地 AAR 文件，需要先解压 SDK 并将 AAR 文件复制到 android/app/libs/
+    // implementation(name: 'tuya-sdk-release', ext: 'aar')
+    
+    // 暂时注释，等待 SDK 集成
+    // TODO: 解压 Android_SDK-3/Android_SDK.tar.gz 并添加依赖
 }
 
 apply from: 'capacitor.build.gradle'

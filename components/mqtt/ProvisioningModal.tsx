@@ -539,6 +539,26 @@ export default function ProvisioningModal({
     }
   }
 
+  const handleScanWifi = async () => {
+    setIsScanningWifi(true)
+    try {
+      // 使用 WiFiScanner.scan() 自动选择最佳扫描方式
+      const networks = await WiFiScanner.scan()
+      
+      if (networks.length > 0) {
+        setWifiNetworks(networks)
+        toast.success(`發現 ${networks.length} 個 WiFi 網絡`)
+      } else {
+        toast('未掃描到網絡，請手動輸入或載入已保存的 WiFi', { icon: 'ℹ️' })
+      }
+    } catch (error: any) {
+      console.error('WiFi scan error:', error)
+      toast.error(error.message || 'WiFi 掃描失敗')
+    } finally {
+      setIsScanningWifi(false)
+    }
+  }
+
   const handleScanServerWifi = async () => {
     setIsScanningWifi(true)
     try {
@@ -693,7 +713,7 @@ export default function ProvisioningModal({
               <>
                 <div className="space-y-2">
                   <button
-                    onClick={handleScanServerWifi}
+                    onClick={handleScanWifi}
                     disabled={isScanningWifi || status !== 'idle'}
                     className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
@@ -831,7 +851,7 @@ export default function ProvisioningModal({
               <>
                 <div>
                   <button
-                    onClick={handleScanServerWifi}
+                    onClick={handleScanWifi}
                     disabled={isScanningWifi || status !== 'idle'}
                     className="w-full mb-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >

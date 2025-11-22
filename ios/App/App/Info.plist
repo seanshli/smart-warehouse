@@ -66,9 +66,9 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save images if needed</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Location is used to set household location and find nearby items</string>
+	<string>Location permission is required to scan WiFi networks and set household location</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Location is used to set household location and find nearby items</string>
+	<string>Location permission is required to scan WiFi networks and set household location</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Local network access is required for Tuya device provisioning and discovery</string>
 	<key>NSBonjourServices</key>

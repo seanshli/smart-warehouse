@@ -71,15 +71,17 @@ export const canUseNativeTuyaProvisioning = (): boolean => {
       return false
     }
     
-    // Check if we're on iOS (Android plugin not yet implemented)
+    // Check platform
     const platform = Capacitor.getPlatform()
     const isIOS = platform === 'ios'
+    const isAndroid = platform === 'android'
     
     // Also check isNativePlatform for additional verification
     const isNativePlatform = Capacitor?.isNativePlatform?.() ?? false
     
-    // Only return true for iOS (Android plugin is not yet implemented)
-    return isIOS && isNativePlatform
+    // Return true for iOS and Android native platforms
+    // Note: Android implementation is in progress, but framework is ready
+    return (isIOS || isAndroid) && isNativePlatform
   } catch (error) {
     console.warn('Error checking native platform:', error)
     return false
@@ -98,7 +100,11 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
   try {
     // Fetch SDK credentials from API endpoint
     // These are safe to expose as they're meant for app embedding
-    const response = await fetch('/api/mqtt/tuya/sdk-config', {
+    const { Capacitor } = await import('@capacitor/core')
+    const platform = Capacitor.getPlatform()
+    const platformParam = platform === 'android' ? '?platform=android' : '?platform=ios'
+    
+    const response = await fetch(`/api/mqtt/tuya/sdk-config${platformParam}`, {
       method: 'GET',
       credentials: 'include',
     })
@@ -115,10 +121,17 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
       return false
     }
 
-    const result = await TuyaProvisioning.initialize({
+    const initOptions: any = {
       appKey: config.appKey,
       appSecret: config.appSecret,
-    })
+    }
+
+    // Android may have SHA256 signature
+    if (config.sha256) {
+      initOptions.sha256 = config.sha256
+    }
+
+    const result = await TuyaProvisioning.initialize(initOptions)
 
     if (result.initialized) {
       tuyaInitialized = true
@@ -135,12 +148,17 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
 export const startNativeTuyaProvisioning = async (
   options: TuyaStartProvisioningOptions,
 ): Promise<TuyaProvisioningResult> => {
-  // Ensure we're on iOS (Android plugin not yet implemented)
+  // Check if native provisioning is available
   if (!canUseNativeTuyaProvisioning()) {
+    const { Capacitor } = await import('@capacitor/core')
+    const platform = Capacitor.getPlatform()
+    
     return {
       success: false,
       status: 'failed',
-      error: 'Native provisioning is only available on iOS devices. Android support is coming soon.',
+      error: platform === 'android' 
+        ? 'Android Tuya provisioning is in progress. SDK integration required.'
+        : 'Native provisioning is only available on iOS and Android native platforms.',
     }
   }
 

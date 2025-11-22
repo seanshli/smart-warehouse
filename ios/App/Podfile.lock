@@ -869,7 +869,6 @@ PODS:
   - ThingSmartUtil (5.19.0):
     - ThingMbedtls (= 3.5.2)
     - ThingOpenSSLSDK (~> 1.1.1-t.0)
-    - ThingSmartCryption (~> 5.0)
   - ThingSocialAPI (1.0.5)
   - ThingSocketPing (1.2.0):
     - ThingSmartBaseKit
@@ -1242,7 +1241,7 @@ SPEC CHECKSUMS:
   ThingSmartShareKit: 5d97cf5e650ba28484c114c871e292a53aa7030f
   ThingSmartSocketChannelKit: 3251b177c2cb6bb4ec51754ea7e21f2c302ab0da
   ThingSmartTimerKit: 092435bef111dc7f2086e015643641e7e984bdcd
-  ThingSmartUtil: ce2c80a9192f0d3741c701b4e0c41a68d90bb8d0
+  ThingSmartUtil: d0ad7bef1ec517a4be33a853a1c9ee61608c0929
   ThingSocialAPI: 6cf49d58c345439d2348ad6ae173404c7e310f95
   ThingSocketPing: 73e9554b082fe0b714f2155a024576810aee20cf
   ThingSpaceInfoSktAPI: 33eead9c770d02ba8a110cff60c09a021b9564e7
@@ -1259,6 +1258,6 @@ SPEC CHECKSUMS:
   TRCTResourceManager: 8dbe838bb252de23f84c62c3838f6fd6c2f39cf0
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: da848b931fa6988d7da2a55172a866583ffe3ef1
+PODFILE CHECKSUM: 5d0ab831b78d25eaa85f805148f268c752d7d73a
 
 COCOAPODS: 1.16.2

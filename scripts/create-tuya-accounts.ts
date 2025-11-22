@@ -48,26 +48,35 @@ import crypto from 'crypto'
 const prisma = new PrismaClient()
 
 /**
- * 生成随机密码
+ * 生成 Tuya 账户和密码（与 auto-create API 保持一致）
  */
-function generateRandomPassword(length: number = 16): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
-  const randomBytes = crypto.randomBytes(length)
-  let password = ''
-  for (let i = 0; i < length; i++) {
-    password += charset[randomBytes[i] % charset.length]
+function generateTuyaAccount(userEmail: string): {
+  account: string
+  password: string
+  countryCode: string
+} {
+  // 使用用户邮箱作为 Tuya 账户（与 auto-create API 保持一致）
+  const account = userEmail.toLowerCase().trim()
+  
+  // 生成强随机密码（与 auto-create API 保持一致）
+  const password = crypto.randomBytes(12).toString('base64').replace(/[^a-zA-Z0-9]/g, '') + 
+                   crypto.randomInt(1000, 9999).toString()
+  
+  // 根据邮箱域名推断国家代码（与 auto-create API 保持一致）
+  let countryCode = '1' // 默认 US
+  if (account.includes('.cn') || account.includes('@qq.') || account.includes('@163.')) {
+    countryCode = '86' // China
+  } else if (account.includes('.jp')) {
+    countryCode = '81' // Japan
+  } else if (account.includes('.sg')) {
+    countryCode = '65' // Singapore
   }
-  return password
-}
-
-/**
- * 生成 Tuya 账户名（基于用户邮箱）
- */
-function generateTuyaAccount(email: string): string {
-  // 使用邮箱前缀 + 随机后缀
-  const emailPrefix = email.split('@')[0]
-  const randomSuffix = Math.random().toString(36).substring(2, 8)
-  return `${emailPrefix}_${randomSuffix}`
+  
+  return {
+    account,
+    password,
+    countryCode,
+  }
 }
 
 async function createTuyaAccounts() {
@@ -102,9 +111,12 @@ async function createTuyaAccounts() {
         // 生成 Tuya 账户和密码（与 auto-create API 保持一致）
         const { account, password, countryCode } = generateTuyaAccount(user.email)
 
+        if (!account || !password || !countryCode) {
+          throw new Error('Failed to generate Tuya account information')
+        }
+
         // 加密密码（与 auto-create API 保持一致）
-        const salt = await bcrypt.genSalt(12)
-        const encryptedPassword = await bcrypt.hash(password, salt)
+        const encryptedPassword = await bcrypt.hash(password, 12)
 
         // 更新用户记录
         await prisma.user.update({

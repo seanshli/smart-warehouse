@@ -17,7 +17,8 @@ SELECT
     COUNT(DISTINCT cm.id) as community_member_count,
     COUNT(DISTINCT uc.id) as credentials_count
 FROM "User" u
-LEFT JOIN "Household" h ON h."ownerId" = u.id
+LEFT JOIN "HouseholdMember" hm ON hm."userId" = u.id
+LEFT JOIN "Household" h ON h.id = hm."householdId"
 LEFT JOIN "CommunityMember" cm ON cm."userId" = u.id
 LEFT JOIN "UserCredentials" uc ON uc."userId" = u.id
 WHERE u.email = 'sean.li@smtengo.com'

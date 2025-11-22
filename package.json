@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "verify:wifi-tuya": "tsx scripts/verify-wifi-tuya-connection.ts",
+    "verify:tuya-token": "tsx scripts/verify-tuya-token.ts",
     "dev": "next dev",
     "dev:external": "next dev --hostname 0.0.0.0",
     "build": "prisma generate && next build",

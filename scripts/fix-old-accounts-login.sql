@@ -88,24 +88,45 @@ WHERE u.email = 'sean.li@smtengo.com';
 -- 7. 批量修复所有旧账户（可选）
 -- Batch fix all old accounts (optional)
 -- 为所有没有 Household 的用户创建默认 Household
-INSERT INTO "Household" (
-    id,
-    name,
-    "ownerId",
-    "createdAt",
-    "updatedAt"
-)
-SELECT 
-    gen_random_uuid(),
-    COALESCE(u.name, u.email) || '''s Household',
-    u.id,
-    NOW(),
-    NOW()
-FROM "User" u
-WHERE NOT EXISTS (
-    SELECT 1 FROM "Household" h WHERE h."ownerId" = u.id
-)
-ON CONFLICT DO NOTHING;
+DO $$
+DECLARE
+    v_user RECORD;
+    v_household_id TEXT;
+    v_household_exists BOOLEAN;
+BEGIN
+    FOR v_user IN 
+        SELECT id, COALESCE(name, email) as name, email
+        FROM "User" u
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM "HouseholdMember" hm 
+            WHERE hm."userId" = u.id AND hm.role = 'OWNER'
+        )
+    LOOP
+        v_household_id := gen_random_uuid()::text;
+        
+        INSERT INTO "Household" (id, name, "createdAt", "updatedAt")
+        VALUES (
+            v_household_id,
+            v_user.name || '''s Household',
+            NOW(),
+            NOW()
+        )
+        ON CONFLICT (id) DO NOTHING;
+        
+        INSERT INTO "HouseholdMember" (id, "userId", "householdId", role, "joinedAt")
+        VALUES (
+            gen_random_uuid()::text,
+            v_user.id,
+            v_household_id,
+            'OWNER',
+            NOW()
+        )
+        ON CONFLICT ("userId", "householdId") DO NOTHING;
+        
+        RAISE NOTICE 'Created Household % for user % (%)', v_household_id, v_user.email, v_user.id;
+    END LOOP;
+END $$;
 
 -- 8. 检查所有旧账户状态
 -- Check all old account status

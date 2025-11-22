@@ -677,7 +677,7 @@ extension TuyaProvisioningPlugin: ThingSmartActivatorDelegate {
         
         // 获取角色（可选，默认为 member）
         // Get role (optional, default to member)
-        let role = call.getString("role") ?? "member
+        let role = call.getString("role") ?? "member"
         
         // 获取国家代码（可选，默认为 886）
         // Get country code (optional, default to 886)

@@ -42,6 +42,7 @@ if (!process.env.DATABASE_URL) {
 
 // Now import Prisma and other modules AFTER environment variables are loaded
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
 const prisma = new PrismaClient()

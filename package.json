@@ -11,6 +11,8 @@
     "test:login": "tsx scripts/test-login.ts",
     "check:all-accounts": "tsx scripts/check-all-old-accounts.ts",
     "fix:all-accounts": "tsx scripts/fix-all-old-accounts.ts",
+    "check:tuya-accounts": "tsx scripts/check-tuya-accounts.ts",
+    "create:tuya-accounts": "tsx scripts/create-tuya-accounts.ts",
     "dev": "next dev",
     "dev:external": "next dev --hostname 0.0.0.0",
     "build": "prisma generate && next build",

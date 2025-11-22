@@ -12,11 +12,33 @@
 // Load environment variables from .env.local
 import { config } from 'dotenv'
 import { resolve } from 'path'
+import { existsSync } from 'fs'
 
-// Load .env.local file
-config({ path: resolve(process.cwd(), '.env.local') })
-// Also try .env file as fallback
-config({ path: resolve(process.cwd(), '.env') })
+// Load .env.local file first (highest priority)
+const envLocalPath = resolve(process.cwd(), '.env.local')
+const envPath = resolve(process.cwd(), '.env')
+
+if (existsSync(envLocalPath)) {
+  const result = config({ path: envLocalPath, override: true })
+  if (result.error) {
+    console.warn('⚠️  警告: 无法加载 .env.local:', result.error.message)
+  }
+} else if (existsSync(envPath)) {
+  const result = config({ path: envPath, override: true })
+  if (result.error) {
+    console.warn('⚠️  警告: 无法加载 .env:', result.error.message)
+  }
+} else {
+  console.warn('⚠️  警告: 未找到 .env.local 或 .env 文件')
+}
+
+// Verify DATABASE_URL is loaded
+if (!process.env.DATABASE_URL) {
+  console.error('❌ 错误: DATABASE_URL 环境变量未设置')
+  console.error('   请确保 .env.local 文件存在并包含 DATABASE_URL')
+  console.error('   格式: DATABASE_URL="postgresql://user:password@host:port/database"')
+  process.exit(1)
+}
 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'

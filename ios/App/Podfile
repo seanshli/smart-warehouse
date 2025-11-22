@@ -39,4 +39,18 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+  
+  # Fix CocoaPods "[CP] Copy XCFrameworks" warnings
+  # Add output dependencies to script phases to prevent running on every build
+  installer.pods_project.targets.each do |target|
+    target.build_phases.each do |phase|
+      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase) && phase.name == '[CP] Copy XCFrameworks'
+        # Add output files to the script phase to fix warnings
+        # This tells Xcode when the script actually needs to run
+        phase.output_paths = [
+          "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/#{target.name}.framework"
+        ].compact
+      end
+    end
+  end
 end

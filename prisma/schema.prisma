@@ -8,22 +8,30 @@ datasource db {
 }
 
 model User {
-  id                   String            @id @default(dbgenerated("(gen_random_uuid())::text"))
-  email                String            @unique
+  id                   String               @id @default(dbgenerated("(gen_random_uuid())::text"))
+  email                String               @unique
   name                 String?
   image                String?
   phone                String?
   contact              String?
-  language             String?           @default("en")
-  isAdmin              Boolean           @default(false)
-  adminRole            String?           @default("SUPERUSER") @map("admin_role") // SUPERUSER, USER_MANAGEMENT, ITEM_MANAGEMENT, HOUSEHOLD_MODIFICATION
+  language             String?              @default("en")
+  isAdmin              Boolean              @default(false)
+  adminRole            String?              @default("SUPERUSER") @map("admin_role") // SUPERUSER, USER_MANAGEMENT, ITEM_MANAGEMENT, HOUSEHOLD_MODIFICATION
   preferences          Json? // User preferences: theme, fontSize, language
-  forcePasswordChange  Boolean?          @default(false) @map("force_password_change")
-  createdAt            DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  forcePasswordChange  Boolean?             @default(false) @map("force_password_change")
+  // Tuya account integration (per member)
+  tuyaAccount          String?               @map("tuya_account") // Tuya account (email or phone number)
+  tuyaPassword         String?               @map("tuya_password") // Encrypted Tuya password
+  tuyaCountryCode      String?               @default("1") @map("tuya_country_code") // Country code for Tuya login (e.g., "1" for US, "86" for China)
+  tuyaAccessToken      String?               @map("tuya_access_token") // Tuya access token (encrypted, temporary)
+  tuyaTokenExpiresAt   DateTime?             @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time
+  createdAt            DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime?            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   accounts             Account[]
   barcodes             Barcode[]
   householdMemberships HouseholdMember[]
+  communityMemberships CommunityMember[]
+  workingGroupMembers  WorkingGroupMember[]
   itemHistory          ItemHistory[]
   items                Item[]
   notifications        Notification[]
@@ -72,6 +80,104 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+model Community {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name           String
+  description    String?
+  address        String?
+  city           String?
+  district       String?
+  country        String?
+  latitude       Float?
+  longitude      Float?
+  invitationCode String?   @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  buildings     Building[]
+  members       CommunityMember[]
+  workingGroups WorkingGroup[]
+
+  @@map("communities")
+}
+
+model Building {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId String    @map("community_id")
+  name        String
+  description String?
+  address     String?
+  floorCount  Int?      @map("floor_count")
+  unitCount   Int?      @map("unit_count")
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  community  Community   @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  households Household[]
+
+  @@map("buildings")
+}
+
+model CommunityMember {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId      String    @map("user_id")
+  communityId String    @map("community_id")
+  role        String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
+  joinedAt    DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, communityId])
+  @@map("community_members")
+}
+
+model WorkingGroup {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId String    @map("community_id")
+  name        String
+  description String?
+  type        String // BUILDING_MANAGER, SECURITY, MAINTENANCE, ADMINISTRATION, etc.
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  community   Community                @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  members     WorkingGroupMember[]
+  permissions WorkingGroupPermission[]
+
+  @@map("working_groups")
+}
+
+model WorkingGroupMember {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workingGroupId String    @map("working_group_id")
+  userId         String    @map("user_id")
+  role           String?   @default("MEMBER") // LEADER, MEMBER
+  assignedAt     DateTime? @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  workingGroup WorkingGroup @relation(fields: [workingGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([workingGroupId, userId])
+  @@map("working_group_members")
+}
+
+model WorkingGroupPermission {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workingGroupId String    @map("working_group_id")
+  permission     String // VIEW, EDIT, ADD, REMOVE, ADD_MEMBER, REVOKE_MEMBER, MANAGE_BUILDING, etc.
+  scope          String? // ALL_BUILDINGS, SPECIFIC_BUILDING, SPECIFIC_HOUSEHOLD
+  scopeId        String?   @map("scope_id") // Building ID or Household ID if scope is specific
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workingGroup WorkingGroup @relation(fields: [workingGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([workingGroupId, permission, scope, scopeId])
+  @@map("working_group_permissions")
+}
+
 model Household {
   id              String            @id @default(dbgenerated("(gen_random_uuid())::text"))
   name            String
@@ -79,11 +185,13 @@ model Household {
   invitationCode  String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
   // Tuya Home integration
   tuyaHomeId      String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
+  // Building relationship (new)
+  buildingId      String?           @map("building_id")
   // Location fields
   country         String?
   city            String?
   district        String?
-  community       String?
+  community       String? // Legacy field, kept for backward compatibility
   apartmentNo     String?           @map("apartment_no")
   latitude        Float?
   longitude       Float?
@@ -99,6 +207,7 @@ model Household {
   rooms           Room[]
   activities      UserActivity[]
   iotDevices      IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
+  building        Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@map("households")
 }

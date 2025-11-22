@@ -6,6 +6,40 @@
 
 export type UserRole = 'OWNER' | 'USER' | 'VISITOR'
 
+/**
+ * Community roles
+ */
+export type CommunityRole = 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER'
+
+/**
+ * Working Group roles
+ */
+export type WorkingGroupRole = 'LEADER' | 'MEMBER'
+
+/**
+ * Working Group permission types
+ */
+export type WorkingGroupPermissionType = 
+  | 'VIEW'
+  | 'EDIT'
+  | 'ADD'
+  | 'REMOVE'
+  | 'ADD_MEMBER'
+  | 'REVOKE_MEMBER'
+  | 'MANAGE_BUILDING'
+  | 'MANAGE_HOUSEHOLD'
+  | 'VIEW_REPORTS'
+  | 'MANAGE_SECURITY'
+
+/**
+ * Working Group permission scopes
+ */
+export type WorkingGroupScope = 
+  | 'ALL_BUILDINGS'
+  | 'SPECIFIC_BUILDING'
+  | 'SPECIFIC_HOUSEHOLD'
+  | 'ALL_HOUSEHOLDS'
+
 export interface Permissions {
   // Household management
   canManageHousehold: boolean
@@ -123,6 +157,195 @@ export function getAssignableRoles(managerRole: UserRole): UserRole[] {
       return ['OWNER', 'USER', 'VISITOR'] // OWNERs can assign all roles including OWNER
     case 'USER':
     case 'VISITOR':
+    default:
+      return []
+  }
+}
+
+/**
+ * Community permissions interface
+ */
+export interface CommunityPermissions {
+  // Community management
+  canManageCommunity: boolean
+  canManageBuildings: boolean
+  canManageMembers: boolean
+  canManageWorkingGroups: boolean
+  
+  // Building management
+  canViewBuildings: boolean
+  canCreateBuildings: boolean
+  canEditBuildings: boolean
+  canDeleteBuildings: boolean
+  
+  // Member management
+  canViewMembers: boolean
+  canAddMembers: boolean
+  canRemoveMembers: boolean
+  canManageRoles: boolean
+  
+  // Working group management
+  canViewWorkingGroups: boolean
+  canCreateWorkingGroups: boolean
+  canEditWorkingGroups: boolean
+  canDeleteWorkingGroups: boolean
+  canAssignWorkingGroupMembers: boolean
+}
+
+/**
+ * Get permissions for a community role
+ */
+export function getCommunityPermissions(role: CommunityRole): CommunityPermissions {
+  switch (role) {
+    case 'ADMIN':
+      return {
+        canManageCommunity: true,
+        canManageBuildings: true,
+        canManageMembers: true,
+        canManageWorkingGroups: true,
+        canViewBuildings: true,
+        canCreateBuildings: true,
+        canEditBuildings: true,
+        canDeleteBuildings: true,
+        canViewMembers: true,
+        canAddMembers: true,
+        canRemoveMembers: true,
+        canManageRoles: true,
+        canViewWorkingGroups: true,
+        canCreateWorkingGroups: true,
+        canEditWorkingGroups: true,
+        canDeleteWorkingGroups: true,
+        canAssignWorkingGroupMembers: true,
+      }
+    
+    case 'MANAGER':
+      return {
+        canManageCommunity: false,
+        canManageBuildings: true,
+        canManageMembers: true,
+        canManageWorkingGroups: true,
+        canViewBuildings: true,
+        canCreateBuildings: true,
+        canEditBuildings: true,
+        canDeleteBuildings: false,
+        canViewMembers: true,
+        canAddMembers: true,
+        canRemoveMembers: true,
+        canManageRoles: true,
+        canViewWorkingGroups: true,
+        canCreateWorkingGroups: true,
+        canEditWorkingGroups: true,
+        canDeleteWorkingGroups: false,
+        canAssignWorkingGroupMembers: true,
+      }
+    
+    case 'MEMBER':
+      return {
+        canManageCommunity: false,
+        canManageBuildings: false,
+        canManageMembers: false,
+        canManageWorkingGroups: false,
+        canViewBuildings: true,
+        canCreateBuildings: false,
+        canEditBuildings: false,
+        canDeleteBuildings: false,
+        canViewMembers: true,
+        canAddMembers: false,
+        canRemoveMembers: false,
+        canManageRoles: false,
+        canViewWorkingGroups: true,
+        canCreateWorkingGroups: false,
+        canEditWorkingGroups: false,
+        canDeleteWorkingGroups: false,
+        canAssignWorkingGroupMembers: false,
+      }
+    
+    case 'VIEWER':
+      return {
+        canManageCommunity: false,
+        canManageBuildings: false,
+        canManageMembers: false,
+        canManageWorkingGroups: false,
+        canViewBuildings: true,
+        canCreateBuildings: false,
+        canEditBuildings: false,
+        canDeleteBuildings: false,
+        canViewMembers: true,
+        canAddMembers: false,
+        canRemoveMembers: false,
+        canManageRoles: false,
+        canViewWorkingGroups: true,
+        canCreateWorkingGroups: false,
+        canEditWorkingGroups: false,
+        canDeleteWorkingGroups: false,
+        canAssignWorkingGroupMembers: false,
+      }
+    
+    default:
+      return {
+        canManageCommunity: false,
+        canManageBuildings: false,
+        canManageMembers: false,
+        canManageWorkingGroups: false,
+        canViewBuildings: false,
+        canCreateBuildings: false,
+        canEditBuildings: false,
+        canDeleteBuildings: false,
+        canViewMembers: false,
+        canAddMembers: false,
+        canRemoveMembers: false,
+        canManageRoles: false,
+        canViewWorkingGroups: false,
+        canCreateWorkingGroups: false,
+        canEditWorkingGroups: false,
+        canDeleteWorkingGroups: false,
+        canAssignWorkingGroupMembers: false,
+      }
+  }
+}
+
+/**
+ * Get role hierarchy for community roles (higher number = more permissions)
+ */
+export function getCommunityRoleLevel(role: CommunityRole): number {
+  switch (role) {
+    case 'ADMIN': return 4
+    case 'MANAGER': return 3
+    case 'MEMBER': return 2
+    case 'VIEWER': return 1
+    default: return 0
+  }
+}
+
+/**
+ * Check if one community role can manage another role
+ */
+export function canManageCommunityRole(managerRole: CommunityRole, targetRole: CommunityRole): boolean {
+  // Only ADMIN and MANAGER can manage roles
+  if (managerRole !== 'ADMIN' && managerRole !== 'MANAGER') return false
+  
+  // ADMIN can manage all roles
+  if (managerRole === 'ADMIN') return true
+  
+  // MANAGER can manage MEMBER and VIEWER
+  if (managerRole === 'MANAGER') {
+    return getCommunityRoleLevel(targetRole) < getCommunityRoleLevel(managerRole)
+  }
+  
+  return false
+}
+
+/**
+ * Get available community roles that can be assigned by a manager
+ */
+export function getAssignableCommunityRoles(managerRole: CommunityRole): CommunityRole[] {
+  switch (managerRole) {
+    case 'ADMIN':
+      return ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
+    case 'MANAGER':
+      return ['MEMBER', 'VIEWER']
+    case 'MEMBER':
+    case 'VIEWER':
     default:
       return []
   }

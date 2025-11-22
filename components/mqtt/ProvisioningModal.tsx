@@ -87,6 +87,44 @@ export default function ProvisioningModal({
     }
   }, [pollingInterval])
 
+  // 當模態框打開時，自動獲取當前連接的 WiFi SSID
+  useEffect(() => {
+    // 檢查是否為 MQTT 設備（Tuya, Midea, ESP）
+    const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
+    
+    if (isOpen && isMQTTDevice && vendor !== 'esp') {
+      const getCurrentWiFi = async () => {
+        try {
+          const { Capacitor } = await import('@capacitor/core')
+          if (Capacitor.getPlatform() !== 'web') {
+            // 嘗試獲取當前連接的 WiFi SSID
+            const WiFiPlugin = (await import('@/lib/plugins/wifi')).default
+            const currentSSID = await WiFiPlugin.getCurrentSSID()
+            
+            if (currentSSID.ssid && !ssid) {
+              // 自動填充當前 SSID
+              setSsid(currentSSID.ssid)
+              
+              // 嘗試獲取已保存的密碼
+              const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
+              if (savedPassword) {
+                setPassword(savedPassword)
+                toast('已自動填充當前 WiFi 和保存的密碼', { icon: '✓' })
+              } else {
+                toast('已自動填充當前 WiFi，請輸入密碼', { icon: 'ℹ️' })
+              }
+            }
+          }
+        } catch (error) {
+          // 靜默失敗，不影響用戶體驗
+          console.log('Could not get current WiFi SSID:', error)
+        }
+      }
+      
+      getCurrentWiFi()
+    }
+  }, [isOpen, vendor, ssid])
+
   // 發現設備（Philips 和 Panasonic）
   const handleDiscoverDevices = async () => {
     if (vendor !== 'philips' && vendor !== 'panasonic') {
@@ -604,10 +642,10 @@ export default function ProvisioningModal({
     }
   }
 
-  if (!isOpen) return null
-
   const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
   const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic'
+
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

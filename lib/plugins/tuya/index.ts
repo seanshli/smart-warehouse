@@ -53,8 +53,23 @@ export interface TuyaProvisioningResult {
   error?: string
 }
 
+export interface TuyaLoginOptions {
+  countryCode: string
+  account: string // Email or phone number
+  password: string
+}
+
+export interface TuyaLoginResult {
+  success: boolean
+  loggedIn: boolean
+  error?: string
+}
+
 export interface TuyaProvisioningPlugin {
-  initialize(options?: TuyaInitializeOptions): Promise<{ initialized: boolean }>
+  initialize(options?: TuyaInitializeOptions): Promise<{ initialized: boolean; loggedIn?: boolean }>
+  login(options: TuyaLoginOptions): Promise<TuyaLoginResult>
+  logout(): Promise<{ success: boolean }>
+  isLoggedIn(): Promise<{ loggedIn: boolean }>
   startProvisioning(options: TuyaStartProvisioningOptions): Promise<TuyaProvisioningResult>
   getStatus(options: TuyaQueryStatusOptions): Promise<TuyaProvisioningResult>
   stopProvisioning(options: TuyaStopProvisioningOptions): Promise<{ success: boolean }>

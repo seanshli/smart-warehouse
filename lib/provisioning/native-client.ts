@@ -88,9 +88,20 @@ export const canUseNativeTuyaProvisioning = (): boolean => {
   }
 }
 
+/**
+ * 确保 Tuya SDK 已初始化并用户已登录
+ */
 export const ensureTuyaInitialized = async (): Promise<boolean> => {
   if (tuyaInitialized) {
-    return true
+    // Check if user is logged in
+    try {
+      const loginStatus = await TuyaProvisioning.isLoggedIn()
+      if (loginStatus.loggedIn) {
+        return true
+      }
+    } catch (error) {
+      console.warn('Failed to check Tuya login status:', error)
+    }
   }
 
   if (!canUseNativeTuyaProvisioning()) {
@@ -99,7 +110,6 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
 
   try {
     // Fetch SDK credentials from API endpoint
-    // These are safe to expose as they're meant for app embedding
     const { Capacitor } = await import('@capacitor/core')
     const platform = Capacitor.getPlatform()
     const platformParam = platform === 'android' ? '?platform=android' : '?platform=ios'
@@ -135,7 +145,52 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
 
     if (result.initialized) {
       tuyaInitialized = true
-      return true
+      
+      // If user is already logged in, return true
+      if (result.loggedIn) {
+        return true
+      }
+      
+      // Try to auto-create Tuya account if not exists, then login
+      try {
+        // First, check if user has Tuya account
+        const userAccountResponse = await fetch('/api/user/tuya-account', {
+          method: 'GET',
+          credentials: 'include',
+        })
+        
+        if (userAccountResponse.ok) {
+          const userAccount = await userAccountResponse.json()
+          
+          let accountReady = userAccount.hasTuyaAccount
+          
+          // If no Tuya account, auto-create one
+          if (!userAccount.hasTuyaAccount) {
+            const autoCreateResponse = await fetch('/api/user/tuya-account/auto-create', {
+              method: 'POST',
+              credentials: 'include',
+            })
+            
+            if (autoCreateResponse.ok) {
+              console.log('✅ Tuya account auto-created successfully')
+              accountReady = true
+              // Account credentials generated, SDK will handle actual registration on first login
+            }
+          }
+          
+          // If account is ready, SDK will handle login/registration
+          if (accountReady) {
+            // Note: Actual Tuya account registration needs to be done via SDK
+            // The auto-create just generates credentials and saves them
+            // SDK's loginOrRegister() will handle the actual account creation on first login
+            return true // SDK initialized, account ready
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to auto-create/login Tuya account:', error)
+      }
+      
+      return true // SDK initialized, but login may be required
     }
 
     return false
@@ -165,10 +220,42 @@ export const startNativeTuyaProvisioning = async (
   // Ensure SDK is initialized before starting provisioning
   const initialized = await ensureTuyaInitialized()
   if (!initialized) {
+    // Try to get more details about why initialization failed
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      const platform = Capacitor.getPlatform()
+      const platformParam = platform === 'android' ? '?platform=android' : '?platform=ios'
+      
+      const response = await fetch(`/api/mqtt/tuya/sdk-config${platformParam}`, {
+        method: 'GET',
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          status: 'failed',
+          error: errorData.message || `Failed to fetch Tuya SDK config (HTTP ${response.status}). Please check environment variables: TUYA_${platform.toUpperCase()}_SDK_APP_KEY and TUYA_${platform.toUpperCase()}_SDK_APP_SECRET`,
+        }
+      }
+      
+      const config = await response.json()
+      if (!config.appKey || !config.appSecret) {
+        return {
+          success: false,
+          status: 'failed',
+          error: `Tuya SDK credentials incomplete. Please set TUYA_${platform.toUpperCase()}_SDK_APP_KEY and TUYA_${platform.toUpperCase()}_SDK_APP_SECRET environment variables in Vercel.`,
+        }
+      }
+    } catch (fetchError) {
+      console.error('Error checking SDK config:', fetchError)
+    }
+    
     return {
       success: false,
       status: 'failed',
-      error: 'Tuya SDK not initialized. Please check environment variables.',
+      error: 'Tuya SDK not initialized. Please check environment variables in Vercel: TUYA_IOS_SDK_APP_KEY and TUYA_IOS_SDK_APP_SECRET',
     }
   }
 

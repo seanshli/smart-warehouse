@@ -32,8 +32,22 @@ public class WiFiPlugin: CAPPlugin {
     @available(iOS 14.0, *)
     private func getCurrentSSIDiOS14() -> String? {
         // iOS 14+ requires location permission and NEHotspotConfiguration
-        // This is a simplified version - full implementation may require additional setup
-        return nil
+        // Try to get SSID using NEHotspotConfigurationManager
+        // Note: This requires the app to have configured the network before
+        // For getting current SSID, we still need to use CNCopyCurrentNetworkInfo
+        // but it requires special entitlements and location permission
+        
+        // First, check if we have location permission
+        let locationManager = CLLocationManager()
+        let authStatus = locationManager.authorizationStatus
+        
+        if authStatus != .authorizedWhenInUse && authStatus != .authorizedAlways {
+            // No location permission, can't get SSID on iOS 14+
+            return nil
+        }
+        
+        // Try legacy method (may still work if app has proper entitlements)
+        return getCurrentSSIDLegacy()
     }
     
     private func getCurrentSSIDLegacy() -> String? {

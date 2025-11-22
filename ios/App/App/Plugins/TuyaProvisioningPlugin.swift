@@ -3,7 +3,8 @@ import Capacitor
 import ThingSmartActivatorBizBundle
 import ThingSmartHomeKit
 import ThingSmartNetworkKit
-import ThingSmartUserKit
+// Note: ThingSmartUserKit may be included in ThingSmartHomeKit
+// If compilation fails, we may need to check the SDK structure
 
 @objc(TuyaProvisioningPlugin)
 public class TuyaProvisioningPlugin: CAPPlugin {

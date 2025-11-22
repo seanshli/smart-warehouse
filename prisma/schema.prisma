@@ -22,7 +22,7 @@ model User {
   // Tuya account integration (per member)
   tuyaAccount          String?               @map("tuya_account") // Tuya account (email or phone number)
   tuyaPassword         String?               @map("tuya_password") // Encrypted Tuya password
-  tuyaCountryCode      String?               @default("1") @map("tuya_country_code") // Country code for Tuya login (e.g., "1" for US, "86" for China)
+  tuyaCountryCode      String?               @default("887") @map("tuya_country_code") // Country code for Tuya login (e.g., "887" for Taiwan, "86" for China)
   tuyaAccessToken      String?               @map("tuya_access_token") // Tuya access token (encrypted, temporary)
   tuyaTokenExpiresAt   DateTime?             @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time
   createdAt            DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)

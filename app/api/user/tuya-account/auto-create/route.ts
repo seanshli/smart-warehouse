@@ -28,8 +28,8 @@ function generateTuyaAccount(userEmail: string): {
   const password = crypto.randomBytes(12).toString('base64').replace(/[^a-zA-Z0-9]/g, '') + 
                    crypto.randomInt(1000, 9999).toString()
   
-  // 根据邮箱域名推断国家代码（简化版，默认 US）
-  let countryCode = '1' // 默认 US
+  // 根据邮箱域名推断国家代码（简化版，默认 Taiwan）
+  let countryCode = '887' // 默认 Taiwan
   if (account.includes('.cn') || account.includes('@qq.') || account.includes('@163.')) {
     countryCode = '86' // China
   } else if (account.includes('.jp')) {

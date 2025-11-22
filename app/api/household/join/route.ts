@@ -77,10 +77,38 @@ export async function POST(request: NextRequest) {
         role: role,
       },
       include: {
-        household: true,
-        user: true,
+        household: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            tuyaHomeId: true,
+            tuyaAccount: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            tuyaAccount: true,
+          },
+        },
       },
     })
+
+    // 如果 Household 有 Tuya Home，并且用户有 Tuya 账户，尝试添加到 Tuya Home
+    // If Household has Tuya Home and user has Tuya account, try to add to Tuya Home
+    if (newMembership.household.tuyaHomeId && newMembership.user.tuyaAccount) {
+      // 注意：实际添加到 Tuya Home 需要在客户端（iOS/Android）使用 Tuya SDK 进行
+      // Note: Actual addition to Tuya Home needs to be done on client (iOS/Android) using Tuya SDK
+      console.log('User joined household. Should be added to Tuya Home:', {
+        householdId: newMembership.household.id,
+        tuyaHomeId: newMembership.household.tuyaHomeId,
+        userId: newMembership.user.id,
+        tuyaAccount: newMembership.user.tuyaAccount,
+      })
+    }
 
     return NextResponse.json({
       message: 'Successfully joined household',
@@ -93,6 +121,10 @@ export async function POST(request: NextRequest) {
         id: newMembership.id,
         role: newMembership.role,
       },
+      // 提示客户端需要添加到 Tuya Home
+      // Hint to client that Tuya Home addition is needed
+      needsTuyaHomeAddition: newMembership.household.tuyaHomeId && !!newMembership.user.tuyaAccount,
+      tuyaHomeId: newMembership.household.tuyaHomeId,
     })
   } catch (error) {
     console.error('Error joining household:', error)

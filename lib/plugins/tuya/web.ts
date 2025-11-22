@@ -8,6 +8,7 @@ import type {
   TuyaStopProvisioningOptions,
   TuyaLoginOptions,
   TuyaLoginResult,
+  TuyaAddMemberToHomeOptions,
 } from './index'
 
 export class TuyaProvisioningWeb extends WebPlugin implements TuyaProvisioningPlugin {
@@ -80,6 +81,23 @@ export class TuyaProvisioningWeb extends WebPlugin implements TuyaProvisioningPl
     })
 
     return { success: true }
+  }
+
+  async addMemberToHome(options: TuyaAddMemberToHomeOptions): Promise<{ success: boolean; message?: string }> {
+    // Web fallback: 通过 API 添加成员
+    // Web fallback: Add member via API
+    const response = await fetch(`/api/household/${options.homeId}/tuya-home/add-member`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        targetUserId: options.userTuyaAccount, // 这里需要传递实际的 userId，但 API 会查找对应的 Tuya 账户
+      }),
+    })
+
+    return await response.json()
   }
 }
 

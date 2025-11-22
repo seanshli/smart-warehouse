@@ -65,6 +65,11 @@ export interface TuyaLoginResult {
   error?: string
 }
 
+export interface TuyaAddMemberToHomeOptions {
+  homeId: string
+  userTuyaAccount: string // User's Tuya account (email or phone)
+}
+
 export interface TuyaProvisioningPlugin {
   initialize(options?: TuyaInitializeOptions): Promise<{ initialized: boolean; loggedIn?: boolean }>
   login(options: TuyaLoginOptions): Promise<TuyaLoginResult>
@@ -73,6 +78,7 @@ export interface TuyaProvisioningPlugin {
   startProvisioning(options: TuyaStartProvisioningOptions): Promise<TuyaProvisioningResult>
   getStatus(options: TuyaQueryStatusOptions): Promise<TuyaProvisioningResult>
   stopProvisioning(options: TuyaStopProvisioningOptions): Promise<{ success: boolean }>
+  addMemberToHome(options: TuyaAddMemberToHomeOptions): Promise<{ success: boolean; message?: string }>
 }
 
 export const TuyaProvisioning = registerPlugin<TuyaProvisioningPlugin>('TuyaProvisioning', {

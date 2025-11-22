@@ -39,13 +39,24 @@ export async function POST(request: NextRequest) {
               select: {
                 id: true,
                 email: true,
-                name: true
+                name: true,
+                tuyaAccount: true
               }
             }
           }
         }
       }
     })
+
+    // 创建 Household 后，自动创建 Tuya 账户
+    // After creating Household, automatically create Tuya account
+    const { getOrCreateHouseholdTuyaAccount } = await import('@/lib/tuya-household-manager')
+    const tuyaAccountInfo = await getOrCreateHouseholdTuyaAccount(household.id)
+
+    // 注意：Tuya Home 的创建需要在客户端（iOS/Android）使用 SDK 进行
+    // 这里只是创建了账户信息，实际的 Home 创建会在首次配网时进行
+    // Note: Tuya Home creation needs to be done on client (iOS/Android) using SDK
+    // This only creates account info, actual Home creation will happen during first provisioning
 
     // Preload 4 default rooms for the new household (using translation keys)
     const defaultRooms = [

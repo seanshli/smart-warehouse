@@ -175,17 +175,44 @@ export async function POST(request: NextRequest) {
             id: true,
             email: true,
             name: true,
-            image: true
+            image: true,
+            tuyaAccount: true
+          }
+        },
+        household: {
+          select: {
+            id: true,
+            tuyaHomeId: true,
+            tuyaAccount: true
           }
         }
       }
     })
 
+    // 如果 Household 有 Tuya Home，并且用户有 Tuya 账户，尝试添加到 Tuya Home
+    // If Household has Tuya Home and user has Tuya account, try to add to Tuya Home
+    if (membership.household.tuyaHomeId && membership.user.tuyaAccount) {
+      // 注意：实际添加到 Tuya Home 需要在客户端（iOS/Android）使用 Tuya SDK 进行
+      // Note: Actual addition to Tuya Home needs to be done on client (iOS/Android) using Tuya SDK
+      // 这里只是记录日志，客户端应该监听成员添加事件并调用 Tuya SDK
+      // This is just logging, client should listen to member addition events and call Tuya SDK
+      console.log('User added to household. Should be added to Tuya Home:', {
+        householdId: membership.household.id,
+        tuyaHomeId: membership.household.tuyaHomeId,
+        userId: membership.user.id,
+        tuyaAccount: membership.user.tuyaAccount,
+      })
+    }
+
     return NextResponse.json({
       id: membership.id,
       role: membership.role,
       joinedAt: membership.joinedAt,
-      user: membership.user
+      user: membership.user,
+      // 提示客户端需要添加到 Tuya Home
+      // Hint to client that Tuya Home addition is needed
+      needsTuyaHomeAddition: membership.household.tuyaHomeId && !!membership.user.tuyaAccount,
+      tuyaHomeId: membership.household.tuyaHomeId,
     })
 
   } catch (error) {

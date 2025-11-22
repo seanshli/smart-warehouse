@@ -185,6 +185,9 @@ model Household {
   invitationCode  String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
   // Tuya Home integration
   tuyaHomeId      String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
+  tuyaAccount     String?           @map("tuya_account") // Tuya account for this household (email or phone)
+  tuyaPassword     String?           @map("tuya_password") // Encrypted Tuya password for household
+  tuyaCountryCode String?           @default("886") @map("tuya_country_code") // Country code for Tuya household account
   // Building relationship (new)
   buildingId      String?           @map("building_id")
   // Location fields

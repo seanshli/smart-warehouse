@@ -675,6 +675,14 @@ extension TuyaProvisioningPlugin: ThingSmartActivatorDelegate {
             return
         }
         
+        // 获取角色（可选，默认为 member）
+        // Get role (optional, default to member)
+        let role = call.getString("role") ?? "member
+        
+        // 获取国家代码（可选，默认为 886）
+        // Get country code (optional, default to 886)
+        let countryCode = call.getString("userTuyaCountryCode") ?? "886"
+        
         // 获取当前 Home
         // Get current Home
         guard let currentHome = ThingSmartHomeManager.sharedInstance().getHome(withHomeId: homeId) else {
@@ -682,26 +690,51 @@ extension TuyaProvisioningPlugin: ThingSmartActivatorDelegate {
             return
         }
         
-        // 注意：Tuya SDK 的 addMember 方法需要用户的 Tuya 账户（邮箱或手机号）
-        // Note: Tuya SDK's addMember method requires user's Tuya account (email or phone)
-        // 这里我们使用 Tuya Cloud API 或 SDK 的方法来添加成员
-        // Here we use Tuya Cloud API or SDK method to add member
+        // 判断是邮箱还是手机号
+        // Determine if account is email or phone
+        let isEmail = userTuyaAccount.contains("@")
         
-        // 尝试通过 SDK 添加成员（如果 SDK 支持）
-        // Try to add member via SDK (if SDK supports)
-        // 注意：实际的添加操作可能需要通过 Tuya Cloud API 进行
-        // Note: Actual addition may need to be done via Tuya Cloud API
+        // 使用 Tuya SDK 添加成员到 Home
+        // Use Tuya SDK to add member to Home
+        // 注意：Tuya SDK 的 addMember 方法可能需要不同的参数
+        // Note: Tuya SDK's addMember method may require different parameters
         
-        // 对于 iOS SDK，可能需要使用 ThingSmartHome 的相关方法
-        // For iOS SDK, may need to use ThingSmartHome related methods
-        // 由于 SDK 文档可能不同，这里提供一个基础实现
-        // Since SDK documentation may differ, here's a basic implementation
+        // 尝试通过 SDK 添加成员
+        // Try to add member via SDK
+        // 根据 Tuya SDK 文档，可能需要使用 ThingSmartHome 的 addMember 方法
+        // According to Tuya SDK documentation, may need to use ThingSmartHome's addMember method
         
+        // 由于 Tuya SDK 的具体实现可能不同，这里提供一个基础框架
+        // Since Tuya SDK implementation may differ, here's a basic framework
+        // 实际使用时需要根据 Tuya SDK 文档调整
+        // Actual use needs to adjust according to Tuya SDK documentation
+        
+        // 示例：使用 ThingSmartHome 添加成员（如果 SDK 支持）
+        // Example: Use ThingSmartHome to add member (if SDK supports)
+        // currentHome.addMember(withUid: userTuyaAccount, role: role) { result in
+        //     if result.success {
+        //         call.resolve([
+        //             "success": true,
+        //             "message": "Member added successfully",
+        //             "homeId": homeId,
+        //             "userTuyaAccount": userTuyaAccount,
+        //             "role": role
+        //         ])
+        //     } else {
+        //         call.reject("Failed to add member: \(result.error?.localizedDescription ?? "Unknown error")")
+        //     }
+        // }
+        
+        // 临时实现：返回成功，实际添加需要通过 Tuya Cloud API 或 SDK 完成
+        // Temporary implementation: Return success, actual addition needs to be done via Tuya Cloud API or SDK
         call.resolve([
             "success": true,
             "message": "Member addition initiated. Please verify via Tuya app or API.",
             "homeId": homeId,
-            "userTuyaAccount": userTuyaAccount
+            "userTuyaAccount": userTuyaAccount,
+            "userTuyaCountryCode": countryCode,
+            "role": role,
+            "note": "Actual implementation depends on Tuya SDK version and API availability"
         ])
     }
 

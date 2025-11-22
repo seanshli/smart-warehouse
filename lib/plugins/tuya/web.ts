@@ -94,6 +94,8 @@ export class TuyaProvisioningWeb extends WebPlugin implements TuyaProvisioningPl
       credentials: 'include',
       body: JSON.stringify({
         targetUserId: options.userTuyaAccount, // 这里需要传递实际的 userId，但 API 会查找对应的 Tuya 账户
+        role: options.role, // 传递角色信息
+        userTuyaCountryCode: options.userTuyaCountryCode,
       }),
     })
 

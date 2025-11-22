@@ -60,13 +60,27 @@ export async function POST(
           householdId: householdId,
         },
       },
-      include: {
-        user: true,
       },
     })
 
     if (!targetMembership) {
       return NextResponse.json({ error: 'Target user is not a member of this household' }, { status: 403 })
+    }
+
+    // 获取目标用户的完整信息（包括 Tuya 账户）
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetMembership.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        tuyaAccount: true,
+        tuyaCountryCode: true,
+      },
+    })
+
+    if (!targetUser) {
+      return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
     }
 
     // 确保 Household 有 Tuya Home
@@ -77,8 +91,7 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // 获取目标用户的 Tuya 账户信息
-    const targetUser = targetMembership.user
+    // 检查目标用户是否有 Tuya 账户
     if (!targetUser.tuyaAccount) {
       return NextResponse.json({
         error: 'Target user does not have a Tuya account. Please create one first.',
@@ -86,17 +99,25 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // 返回信息，实际添加操作需要在客户端（iOS/Android）使用 Tuya SDK 进行
-    // Return information, actual addition needs to be done on client (iOS/Android) using Tuya SDK
+    // 返回信息，包括角色信息，实际添加操作需要在客户端（iOS/Android）使用 Tuya SDK 进行
+    // Return information including role, actual addition needs to be done on client (iOS/Android) using Tuya SDK
     return NextResponse.json({
       success: true,
-      message: 'User should be added to Tuya Home via native SDK',
+      message: 'User should be added to Tuya Home via native SDK with role',
       householdId: householdId,
       tuyaHomeId: membership.household.tuyaHomeId,
       targetUserId: targetUser.id,
       targetUserTuyaAccount: targetUser.tuyaAccount,
-      // 注意：实际添加需要在客户端调用 Tuya SDK 的 addMemberToHome 方法
-      // Note: Actual addition needs to call Tuya SDK's addMemberToHome method on client
+      targetUserTuyaCountryCode: targetUser.tuyaCountryCode || '886',
+      // Household 角色（用于映射到 Tuya Home 角色）
+      // Household role (for mapping to Tuya Home role)
+      householdRole: targetMembership.role || 'USER',
+      // 角色映射：OWNER -> admin, USER -> member, VISITOR -> guest
+      // Role mapping: OWNER -> admin, USER -> member, VISITOR -> guest
+      tuyaRole: targetMembership.role === 'OWNER' ? 'admin' : 
+                targetMembership.role === 'VISITOR' ? 'guest' : 'member',
+      // 注意：实际添加需要在客户端调用 Tuya SDK 的 addMemberToHome 方法，并传递角色
+      // Note: Actual addition needs to call Tuya SDK's addMemberToHome method on client with role
     })
   } catch (error: any) {
     console.error('Error adding user to Tuya Home:', error)

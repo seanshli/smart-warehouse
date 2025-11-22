@@ -194,13 +194,17 @@ export async function POST(request: NextRequest) {
     if (membership.household.tuyaHomeId && membership.user.tuyaAccount) {
       // 注意：实际添加到 Tuya Home 需要在客户端（iOS/Android）使用 Tuya SDK 进行
       // Note: Actual addition to Tuya Home needs to be done on client (iOS/Android) using Tuya SDK
-      // 这里只是记录日志，客户端应该监听成员添加事件并调用 Tuya SDK
-      // This is just logging, client should listen to member addition events and call Tuya SDK
+      // 这里记录日志，包括角色信息，客户端应该监听成员添加事件并调用 Tuya SDK
+      // This logs including role info, client should listen to member addition events and call Tuya SDK
+      const tuyaRole = membership.role === 'OWNER' ? 'admin' : 
+                      membership.role === 'VISITOR' ? 'guest' : 'member'
       console.log('User added to household. Should be added to Tuya Home:', {
         householdId: membership.household.id,
         tuyaHomeId: membership.household.tuyaHomeId,
         userId: membership.user.id,
         tuyaAccount: membership.user.tuyaAccount,
+        householdRole: membership.role,
+        tuyaRole: tuyaRole,
       })
     }
 

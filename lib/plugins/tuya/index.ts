@@ -68,6 +68,8 @@ export interface TuyaLoginResult {
 export interface TuyaAddMemberToHomeOptions {
   homeId: string
   userTuyaAccount: string // User's Tuya account (email or phone)
+  userTuyaCountryCode?: string // User's Tuya country code (default: '886')
+  role?: 'admin' | 'member' | 'guest' // Role in Tuya Home (mapped from Household role: OWNER->admin, USER->member, VISITOR->guest)
 }
 
 export interface TuyaProvisioningPlugin {

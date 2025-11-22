@@ -9,7 +9,15 @@
 import { PrismaClient } from '@prisma/client'
 import { getUserTuyaAccount, getUserTuyaCredentials, isTuyaTokenValid, saveTuyaAccessToken } from '../lib/tuya-user-manager'
 
-const prisma = new PrismaClient()
+// Only initialize Prisma if DATABASE_URL is available
+let prisma: PrismaClient | null = null
+try {
+  if (process.env.DATABASE_URL) {
+    prisma = new PrismaClient()
+  }
+} catch (error) {
+  console.warn('⚠️  DATABASE_URL not found, skipping database checks')
+}
 
 async function verifyTuyaTokenSystem() {
   console.log('\n🔐 验证 Tuya Token 系统')
@@ -18,8 +26,12 @@ async function verifyTuyaTokenSystem() {
   try {
     // 1. 检查数据库结构
     console.log('1. 检查数据库结构...')
-    try {
-      const sampleUser = await prisma.user.findFirst({
+    if (!prisma) {
+      console.log('   ⚠️  DATABASE_URL 未设置，跳过数据库检查')
+      console.log('   提示: 创建 .env.local 文件并添加 DATABASE_URL')
+    } else {
+      try {
+        const sampleUser = await prisma.user.findFirst({
         select: {
           id: true,
           email: true,
@@ -55,12 +67,16 @@ async function verifyTuyaTokenSystem() {
       } else {
         console.error('   ❌ 数据库检查失败:', error.message)
       }
+      }
     }
 
     // 2. 测试 Token 管理函数
     console.log('\n2. 测试 Token 管理函数...')
-    try {
-      const testUser = await prisma.user.findFirst()
+    if (!prisma) {
+      console.log('   ⚠️  DATABASE_URL 未设置，跳过 Token 管理函数测试')
+    } else {
+      try {
+        const testUser = await prisma.user.findFirst()
       if (testUser) {
         // 测试保存 token
         const testToken = 'test_token_' + Date.now()
@@ -103,11 +119,18 @@ async function verifyTuyaTokenSystem() {
       }
     } catch (error: any) {
       console.error('   ❌ Token 管理函数测试失败:', error.message)
+      }
     }
 
     // 3. 测试 API 端点
     console.log('\n3. 测试 API 端点...')
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    
+    console.log(`   测试服务器: ${baseUrl}`)
+    console.log('   ⚠️  注意: 如果服务器未运行，API 测试会失败')
+    console.log('   提示: 运行 "npm run dev" 启动开发服务器')
     
     // 测试获取 Tuya 账户 API
     try {
@@ -288,7 +311,9 @@ async function main() {
   console.log('3. 测试 token 过期检查')
   console.log('4. 测试配网功能')
   
-  await prisma.$disconnect()
+  if (prisma) {
+    await prisma.$disconnect()
+  }
 }
 
 main().catch((error) => {

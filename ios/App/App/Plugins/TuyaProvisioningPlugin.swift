@@ -3,6 +3,7 @@ import Capacitor
 import ThingSmartActivatorBizBundle
 import ThingSmartHomeKit
 import ThingSmartNetworkKit
+import ThingSmartUserKit
 
 @objc(TuyaProvisioningPlugin)
 public class TuyaProvisioningPlugin: CAPPlugin {
@@ -25,12 +26,107 @@ public class TuyaProvisioningPlugin: CAPPlugin {
         // Initialize Tuya SDK
         ThingSmartSDK.sharedInstance().start(withAppKey: appKey, secretKey: appSecret)
         
+        // Check if user is already logged in
+        if ThingSmartUser.sharedInstance().isLogin {
+            // User is already logged in
+            isInitialized = true
+            call.resolve([
+                "initialized": true,
+                "native": true,
+                "loggedIn": true,
+                "message": "Tuya SDK initialized successfully. User already logged in."
+            ])
+            return
+        }
+        
+        // Try guest/anonymous login (if supported by SDK version)
+        // Note: Some Tuya SDK versions support guest login, others require explicit user login
+        // For now, we'll attempt to use the SDK without explicit login
+        // If provisioning fails, we'll need to implement user login
+        
         isInitialized = true
         
         call.resolve([
             "initialized": true,
             "native": true,
-            "message": "Tuya SDK initialized successfully"
+            "loggedIn": false,
+            "message": "Tuya SDK initialized successfully. User login may be required for provisioning."
+        ])
+    }
+    
+    // MARK: - User Login
+    
+    @objc func login(_ call: CAPPluginCall) {
+        guard isInitialized else {
+            call.reject("Tuya SDK not initialized. Call initialize() first.")
+            return
+        }
+        
+        guard let countryCode = call.getString("countryCode"),
+              let account = call.getString("account"),
+              let password = call.getString("password") else {
+            call.reject("countryCode, account, and password are required")
+            return
+        }
+        
+        // Check if account exists, if not, register first
+        let isEmail = account.contains("@")
+        
+        // Try login first (account might already exist)
+        ThingSmartUser.sharedInstance().login(
+            withCountryCode: countryCode,
+            phoneNumber: isEmail ? nil : account,
+            email: isEmail ? account : nil,
+            password: password
+        ) { [weak self] result in
+            guard let self = self else { return }
+            
+            if result.success {
+                // Login successful
+                call.resolve([
+                    "success": true,
+                    "loggedIn": true,
+                    "message": "Tuya login successful"
+                ])
+            } else {
+                // Login failed, try to register (auto-create account)
+                // Tuya SDK's loginOrRegister can handle both login and registration
+                ThingSmartUser.sharedInstance().loginOrRegister(
+                    withCountryCode: countryCode,
+                    phoneNumber: isEmail ? nil : account,
+                    email: isEmail ? account : nil,
+                    password: password
+                ) { registerResult in
+                    if registerResult.success {
+                        // Account created and logged in
+                        call.resolve([
+                            "success": true,
+                            "loggedIn": true,
+                            "accountCreated": true,
+                            "message": "Tuya account created and logged in successfully"
+                        ])
+                    } else {
+                        // Registration also failed
+                        call.reject("Tuya login/registration failed: \(registerResult.errorMsg ?? "Unknown error")")
+                    }
+                }
+            }
+        }
+    }
+    
+    @objc func logout(_ call: CAPPluginCall) {
+        ThingSmartUser.sharedInstance().logout {
+            call.resolve([
+                "success": true,
+                "message": "Tuya logout successful"
+            ])
+        }
+    }
+    
+    @objc func isLoggedIn(_ call: CAPPluginCall) {
+        let loggedIn = ThingSmartUser.sharedInstance().isLogin
+        call.resolve([
+            "loggedIn": loggedIn
         ])
     }
     

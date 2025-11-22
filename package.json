@@ -13,6 +13,7 @@
     "fix:all-accounts": "tsx scripts/fix-all-old-accounts.ts",
     "check:tuya-accounts": "tsx scripts/check-tuya-accounts.ts",
     "create:tuya-accounts": "tsx scripts/create-tuya-accounts.ts",
+    "check:tuya-country": "tsx scripts/check-tuya-country-codes.ts",
     "dev": "next dev",
     "dev:external": "next dev --hostname 0.0.0.0",
     "build": "prisma generate && next build",

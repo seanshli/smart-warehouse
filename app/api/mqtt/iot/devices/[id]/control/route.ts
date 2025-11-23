@@ -34,6 +34,7 @@ export async function POST(
         household: {
           select: {
             id: true,
+            tuyaHomeId: true,
             members: {
               where: {
                 userId: userId
@@ -50,6 +51,34 @@ export async function POST(
 
     if (device.household.members.length === 0) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    // 如果是 Tuya 設備，驗證 Member 的 Tuya token 和 Home 訪問權限
+    if (device.vendor === 'tuya') {
+      const { verifyMemberAccessToTuyaHome } = await import('@/lib/tuya-token-manager')
+      const access = await verifyMemberAccessToTuyaHome(userId, device.household.id)
+      
+      if (!access.canAccess) {
+        return NextResponse.json(
+          { 
+            error: access.error || 'Cannot access Tuya Home',
+            needsTokenRefresh: !access.memberTokenValid,
+          },
+          { status: 403 }
+        )
+      }
+
+      // 如果 token 無效，提示需要刷新
+      if (!access.memberTokenValid) {
+        return NextResponse.json(
+          {
+            error: 'Tuya token is invalid or expired. Please refresh your Tuya login.',
+            needsTokenRefresh: true,
+            tuyaHomeId: access.tuyaHomeId,
+          },
+          { status: 401 }
+        )
+      }
     }
 
     if (!action) {

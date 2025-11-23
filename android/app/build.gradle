@@ -63,14 +63,13 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
     
     // Tuya Android SDK
-    // Note: 需要根据实际 SDK 版本和集成方式调整
-    // 如果使用 Maven 仓库:
-    // implementation 'com.tuya.smart:tuyasmart:3.34.5'
-    // 如果使用本地 AAR 文件，需要先解压 SDK 并将 AAR 文件复制到 android/app/libs/
-    // implementation(name: 'tuya-sdk-release', ext: 'aar')
+    // 使用 Maven 仓库集成 Tuya SDK
+    api enforcedPlatform("com.thingclips.smart:thingsmart-BizBundlesBom:6.11.0")
+    implementation 'com.thingclips.smart:thingsmart:6.11.1'
+    implementation 'com.thingclips.smart:thingsmart-bizbundle-device_activator'
     
-    // 暂时注释，等待 SDK 集成
-    // TODO: 解压 Android_SDK-3/Android_SDK.tar.gz 并添加依赖
+    // 可选：如果需要扫一扫功能
+    // implementation 'com.thingclips.smart:thingsmart-bizbundle-qrcode_mlkit'
 }
 
 apply from: 'capacitor.build.gradle'

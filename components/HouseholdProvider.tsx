@@ -167,7 +167,7 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
           joinedAt: m.joinedAt,
           household: m.household
         }
-      }).filter((m): m is Membership => m !== null)
+      }).filter((m: Membership | null): m is Membership => m !== null)
       
       setMemberships(apiMemberships)
 

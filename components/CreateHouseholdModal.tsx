@@ -3,10 +3,27 @@
 import { useState } from 'react'
 import { useHousehold } from './HouseholdProvider'
 import { useLanguage } from './LanguageProvider'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, BuildingOfficeIcon, UserGroupIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import JoinRequestModal from './community/JoinRequestModal'
+import toast from 'react-hot-toast'
 
 interface CreateHouseholdModalProps {
   onClose: () => void
+}
+
+interface ExistingSuggestion {
+  hasExisting: boolean
+  building: {
+    id: string
+    name: string
+    invitationCode: string
+  } | null
+  community: {
+    id: string
+    name: string
+    invitationCode: string
+  } | null
+  message: string
 }
 
 export default function CreateHouseholdModal({ onClose }: CreateHouseholdModalProps) {
@@ -16,13 +33,23 @@ export default function CreateHouseholdModal({ onClose }: CreateHouseholdModalPr
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   })
+  const [suggestion, setSuggestion] = useState<ExistingSuggestion | null>(null)
+  const [showJoinRequestModal, setShowJoinRequestModal] = useState(false)
+  const [joinRequestTarget, setJoinRequestTarget] = useState<{
+    type: 'community' | 'building'
+    id: string
+    name: string
+  } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSuggestion(null)
 
     try {
       const response = await fetch('/api/household/create', {
@@ -33,17 +60,78 @@ export default function CreateHouseholdModal({ onClose }: CreateHouseholdModalPr
         body: JSON.stringify(formData),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create household')
+        throw new Error(data.error || 'Failed to create household')
       }
 
-      const data = await response.json()
+      // 如果返回建议信息，显示给用户
+      // If suggestion is returned, show it to user
+      if (data.suggestion && data.suggestion.hasExisting) {
+        setSuggestion(data.suggestion)
+        setLoading(false)
+        return
+      }
+
+      // 成功创建
+      // Successfully created
+      toast.success('家庭创建成功')
       
       // Refresh household data to include the new household
       await refetch()
       
       // Close modal
+      onClose()
+    } catch (err: any) {
+      setError(err.message || 'Failed to create household')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSendJoinRequest = (type: 'community' | 'building', id: string, name: string) => {
+    setJoinRequestTarget({ type, id, name })
+    setShowJoinRequestModal(true)
+  }
+
+  const handleJoinRequestSuccess = () => {
+    setShowJoinRequestModal(false)
+    setJoinRequestTarget(null)
+    setSuggestion(null)
+    toast.success('加入请求已发送，等待管理员审核')
+    onClose()
+  }
+
+  const handleCreateAnyway = async () => {
+    // 用户选择无论如何都要创建
+    // User chooses to create anyway
+    setSuggestion(null)
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/household/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          // 不包含位置信息，强制创建新的
+          // Don't include location info, force create new
+          latitude: null,
+          longitude: null,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create household')
+      }
+
+      toast.success('家庭创建成功')
+      await refetch()
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to create household')

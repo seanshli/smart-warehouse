@@ -64,8 +64,10 @@ dependencies {
     
     // Tuya Android SDK
     // 使用 Maven 仓库集成 Tuya SDK
+    // 注意：版本号需要与 BOM 版本一致，或使用实际可用的版本
     api enforcedPlatform("com.thingclips.smart:thingsmart-BizBundlesBom:6.11.0")
-    implementation 'com.thingclips.smart:thingsmart:6.11.1'
+    // 使用 6.11.0 版本（与 BOM 版本一致），如果 Maven 仓库中没有 6.11.1
+    implementation 'com.thingclips.smart:thingsmart:6.11.0'
     implementation 'com.thingclips.smart:thingsmart-bizbundle-device_activator'
     
     // 可选：如果需要扫一扫功能

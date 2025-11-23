@@ -12,6 +12,7 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 interface Community {
   id: string
@@ -176,10 +177,26 @@ function OverviewTab({ community }: { community: Community }) {
             </dd>
           </div>
           {community.invitationCode && (
-            <div>
-              <dt className="text-sm font-medium text-gray-500">邀请码</dt>
-              <dd className="mt-1 text-sm text-gray-900 font-mono">
-                {community.invitationCode}
+            <div className="sm:col-span-2">
+              <dt className="text-sm font-medium text-gray-500 mb-1">邀请码</dt>
+              <dd className="mt-1">
+                <div className="flex items-center space-x-2">
+                  <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
+                    {community.invitationCode}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(community.invitationCode!)
+                      toast.success('邀请码已复制')
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    复制
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  分享此邀请码给其他人，让他们可以加入此社区
+                </p>
               </dd>
             </div>
           )}

@@ -70,6 +70,7 @@ export async function GET(
       unitCount: building.unitCount,
       latitude: building.latitude,
       longitude: building.longitude,
+      invitationCode: building.invitationCode,
       community: building.community,
       householdCount: building._count.households,
       createdAt: building.createdAt,

@@ -20,17 +20,18 @@ model User {
   preferences          Json? // User preferences: theme, fontSize, language
   forcePasswordChange  Boolean?             @default(false) @map("force_password_change")
   // Tuya account integration (per member)
-  tuyaAccount          String?               @map("tuya_account") // Tuya account (email or phone number)
-  tuyaPassword         String?               @map("tuya_password") // Encrypted Tuya password
-  tuyaCountryCode      String?               @default("886") @map("tuya_country_code") // Country code for Tuya login (e.g., "886" for Taiwan, "86" for China)
-  tuyaAccessToken      String?               @map("tuya_access_token") // Tuya access token (encrypted, temporary)
-  tuyaTokenExpiresAt   DateTime?             @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time
+  tuyaAccount          String?              @map("tuya_account") // Tuya account (email or phone number)
+  tuyaPassword         String?              @map("tuya_password") // Encrypted Tuya password
+  tuyaCountryCode      String?              @default("886") @map("tuya_country_code") // Country code for Tuya login (e.g., "886" for Taiwan, "86" for China)
+  tuyaAccessToken      String?              @map("tuya_access_token") // Tuya access token (encrypted, temporary)
+  tuyaTokenExpiresAt   DateTime?            @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time
   createdAt            DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime?            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   accounts             Account[]
   barcodes             Barcode[]
   householdMemberships HouseholdMember[]
   communityMemberships CommunityMember[]
+  buildingMemberships  BuildingMember[]
   workingGroupMembers  WorkingGroupMember[]
   itemHistory          ItemHistory[]
   items                Item[]
@@ -102,36 +103,56 @@ model Community {
 }
 
 model Building {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  communityId String    @map("community_id")
-  name        String
-  description String?
-  address     String?
-  floorCount  Int?      @map("floor_count")
-  unitCount   Int?      @map("unit_count")
-  latitude    Float?
-  longitude   Float?
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId    String    @map("community_id")
+  name           String
+  description    String?
+  address        String?
+  floorCount     Int?      @map("floor_count")
+  unitCount      Int?      @map("unit_count")
+  latitude       Float?
+  longitude      Float?
+  invitationCode String?   @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  community  Community   @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  community  Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   households Household[]
+  members    BuildingMember[]
 
   @@map("buildings")
 }
 
 model CommunityMember {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  userId      String    @map("user_id")
-  communityId String    @map("community_id")
-  role        String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
-  joinedAt    DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId       String    @map("user_id")
+  communityId  String    @map("community_id")
+  role         String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
+  joinedAt     DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+  // Auto-joined members (from Building/Household) have limited permissions
+  isAutoJoined Boolean?  @default(false) @map("is_auto_joined")
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([userId, communityId])
   @@map("community_members")
+}
+
+model BuildingMember {
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId       String    @map("user_id")
+  buildingId   String    @map("building_id")
+  role         String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
+  joinedAt     DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+  // Auto-joined members (from Household) have limited permissions
+  isAutoJoined Boolean?  @default(false) @map("is_auto_joined")
+
+  building Building @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, buildingId])
+  @@map("building_members")
 }
 
 model WorkingGroup {
@@ -186,7 +207,7 @@ model Household {
   // Tuya Home integration
   tuyaHomeId      String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
   tuyaAccount     String?           @map("tuya_account") // Tuya account for this household (email or phone)
-  tuyaPassword     String?           @map("tuya_password") // Encrypted Tuya password for household
+  tuyaPassword    String?           @map("tuya_password") // Encrypted Tuya password for household
   tuyaCountryCode String?           @default("886") @map("tuya_country_code") // Country code for Tuya household account
   // Building relationship (new)
   buildingId      String?           @map("building_id")

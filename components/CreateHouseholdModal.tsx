@@ -167,7 +167,88 @@ export default function CreateHouseholdModal({ onClose }: CreateHouseholdModalPr
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* 显示现有 Building/Community 建议 */}
+        {suggestion && suggestion.hasExisting && (
+          <div className="mb-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+            <div className="flex items-start">
+              <MapPinIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  发现附近的 {suggestion.building ? '建筑' : '社区'}
+                </h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                  {suggestion.message}
+                </p>
+                
+                {suggestion.building && (
+                  <div className="mb-3 p-3 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-700">
+                    <div className="flex items-center mb-2">
+                      <BuildingOfficeIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {suggestion.building.name}
+                      </span>
+                    </div>
+                    {suggestion.community && (
+                      <div className="flex items-center">
+                        <UserGroupIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {suggestion.community.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-col space-y-2">
+                  {suggestion.building && (
+                    <button
+                      type="button"
+                      onClick={() => handleSendJoinRequest('building', suggestion.building!.id, suggestion.building!.name)}
+                      className="w-full px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800 border border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700"
+                    >
+                      发送加入请求到建筑
+                    </button>
+                  )}
+                  {suggestion.community && !suggestion.building && (
+                    <button
+                      type="button"
+                      onClick={() => handleSendJoinRequest('community', suggestion.community!.id, suggestion.community!.name)}
+                      className="w-full px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800 border border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700"
+                    >
+                      发送加入请求到社区
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCreateAnyway}
+                    disabled={loading}
+                    className="w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+                  >
+                    仍然创建新家庭
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Join Request Modal */}
+        {showJoinRequestModal && joinRequestTarget && (
+          <JoinRequestModal
+            isOpen={showJoinRequestModal}
+            onClose={() => {
+              setShowJoinRequestModal(false)
+              setJoinRequestTarget(null)
+            }}
+            onSuccess={handleJoinRequestSuccess}
+            type={joinRequestTarget.type}
+            targetId={joinRequestTarget.id}
+            targetName={joinRequestTarget.name}
+          />
+        )}
+
+        {!suggestion && (
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Household Name
@@ -223,6 +304,7 @@ export default function CreateHouseholdModal({ onClose }: CreateHouseholdModalPr
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )

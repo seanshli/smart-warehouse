@@ -271,6 +271,14 @@ public class TuyaProvisioningPlugin extends Plugin {
             return;
         }
 
+        // 检查用户是否已登录（配网需要登录）
+        User user = ThingHomeSdk.getUserInstance().getUser();
+        if (user == null) {
+            Log.e(TAG, "User not logged in, provisioning requires login");
+            call.reject("Tuya user login required for provisioning. Please login first.");
+            return;
+        }
+
         String mode = call.getString("mode");
         if (mode == null) {
             call.reject("Provisioning mode is required");
@@ -323,6 +331,14 @@ public class TuyaProvisioningPlugin extends Plugin {
 
         if (ssid == null || password == null) {
             call.reject("SSID and password are required for EZ mode");
+            return;
+        }
+
+        // 再次检查登录状态
+        User user = ThingHomeSdk.getUserInstance().getUser();
+        if (user == null) {
+            Log.e(TAG, "User not logged in for EZ mode provisioning");
+            call.reject("Tuya user login required. Please login first.");
             return;
         }
 
@@ -416,6 +432,14 @@ public class TuyaProvisioningPlugin extends Plugin {
 
         if (ssid == null || password == null) {
             call.reject("SSID and password are required for AP mode");
+            return;
+        }
+
+        // 再次检查登录状态
+        User user = ThingHomeSdk.getUserInstance().getUser();
+        if (user == null) {
+            Log.e(TAG, "User not logged in for AP mode provisioning");
+            call.reject("Tuya user login required. Please login first.");
             return;
         }
 
@@ -760,10 +784,19 @@ public class TuyaProvisioningPlugin extends Plugin {
 
     // Helper method to ensure Tuya Home exists
     private void ensureHomeExists(String householdName, PluginCall call, Runnable onSuccess) {
+        // 检查用户是否已登录（创建 Home 需要登录）
+        User user = ThingHomeSdk.getUserInstance().getUser();
+        if (user == null) {
+            Log.e(TAG, "User not logged in, cannot create/access Home");
+            call.reject("Tuya user login required. Cannot create or access Home.");
+            return;
+        }
+
         // 检查是否有当前 Home
         HomeBean currentHome = ThingHomeSdk.getHomeManagerInstance().getCurrentHome();
         if (currentHome != null) {
             currentTuyaHomeId = currentHome.getHomeId();
+            Log.d(TAG, "Using existing Home: " + currentTuyaHomeId);
             mainHandler.post(onSuccess);
             return;
         }
@@ -777,12 +810,15 @@ public class TuyaProvisioningPlugin extends Plugin {
                     HomeBean firstHome = homes.get(0);
                     ThingHomeSdk.getHomeManagerInstance().setCurrentHome(firstHome);
                     currentTuyaHomeId = firstHome.getHomeId();
+                    Log.d(TAG, "Using existing Home from list: " + currentTuyaHomeId);
                     mainHandler.post(onSuccess);
                     return;
                 }
 
                 // 如果没有 Home，创建新的 Home
                 String homeName = householdName != null ? householdName : "Smart Warehouse Home";
+                Log.d(TAG, "Creating new Tuya Home: " + homeName);
+                
                 ThingHomeSdk.getHomeManagerInstance().createHome(
                     homeName,
                     0, // latitude
@@ -792,11 +828,13 @@ public class TuyaProvisioningPlugin extends Plugin {
                         public void onSuccess(HomeBean home) {
                             ThingHomeSdk.getHomeManagerInstance().setCurrentHome(home);
                             currentTuyaHomeId = home.getHomeId();
+                            Log.d(TAG, "Tuya Home created successfully: " + currentTuyaHomeId);
                             mainHandler.post(onSuccess);
                         }
 
                         @Override
                         public void onError(String code, String error) {
+                            Log.e(TAG, "Failed to create Tuya Home: " + error);
                             call.reject("Failed to create Tuya Home: " + error);
                         }
                     }
@@ -805,6 +843,7 @@ public class TuyaProvisioningPlugin extends Plugin {
 
             @Override
             public void onError(String code, String error) {
+                Log.e(TAG, "Failed to query Tuya Home list: " + error);
                 call.reject("Failed to query Tuya Home list: " + error);
             }
         });

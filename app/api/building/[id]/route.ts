@@ -31,7 +31,18 @@ export async function GET(
 
     const building = await prisma.building.findUnique({
       where: { id: buildingId },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        address: true,
+        floorCount: true,
+        unitCount: true,
+        latitude: true,
+        longitude: true,
+        invitationCode: true,
+        createdAt: true,
+        updatedAt: true,
         community: {
           select: {
             id: true,

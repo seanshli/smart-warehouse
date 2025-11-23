@@ -189,6 +189,30 @@ function OverviewTab({ building }: { building: Building }) {
               {new Date(building.createdAt).toLocaleDateString('zh-CN')}
             </dd>
           </div>
+          {building.invitationCode && (
+            <div>
+              <dt className="text-sm font-medium text-gray-500">邀请码</dt>
+              <dd className="mt-1">
+                <div className="flex items-center space-x-2">
+                  <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
+                    {building.invitationCode}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(building.invitationCode!)
+                      // You may want to add toast notification here
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    复制
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  分享此邀请码给其他人，让他们可以加入此建筑
+                </p>
+              </dd>
+            </div>
+          )}
         </dl>
       </div>
     </div>

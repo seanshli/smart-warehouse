@@ -13,6 +13,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import JoinCommunityModal from '@/components/community/JoinCommunityModal'
 
 interface Community {
   id: string
@@ -39,6 +40,7 @@ export default function CommunityPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showJoinModal, setShowJoinModal] = useState(false)
 
   useEffect(() => {
     fetchCommunities()
@@ -89,13 +91,31 @@ export default function CommunityPage() {
                 管理和查看您所属的社区
               </p>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              创建社区
-            </button>
+            <div className="flex space-x-3">
+              <JoinCommunityModal
+                isOpen={showJoinModal}
+                onClose={() => setShowJoinModal(false)}
+                onSuccess={() => {
+                  setShowJoinModal(false)
+                  fetchCommunities()
+                }}
+                type="community"
+              />
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <UserGroupIcon className="h-5 w-5 mr-2" />
+                加入社区
+              </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                创建社区
+              </button>
+            </div>
           </div>
         </div>
 

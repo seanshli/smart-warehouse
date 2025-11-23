@@ -1,5 +1,8 @@
 'use client'
 
+// For static export compatibility
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'

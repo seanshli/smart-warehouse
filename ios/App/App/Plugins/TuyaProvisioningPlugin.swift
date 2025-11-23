@@ -12,6 +12,8 @@ public class TuyaProvisioningPlugin: CAPPlugin {
     private var currentToken: String?
     private var provisioningTimer: Timer?
     private var currentProvisioningCall: CAPPluginCall?
+    private var currentHouseholdId: String?
+    private var currentTuyaHomeId: String?
     
     // MARK: - Initialize
     
@@ -131,7 +133,7 @@ public class TuyaProvisioningPlugin: CAPPlugin {
         ])
     }
     
-    // MARK: - Start Provisioning
+    // MARK: - Start Provisioning (Using Tuya SDK Native UI)
     
     @objc func startProvisioning(_ call: CAPPluginCall) {
         guard isInitialized else {
@@ -170,7 +172,7 @@ public class TuyaProvisioningPlugin: CAPPlugin {
         }
     }
     
-    // MARK: - EZ Mode (WiFi Quick Flash)
+    // MARK: - EZ Mode (WiFi Quick Flash) - Using Tuya SDK Native UI
     
     private func startEZMode(_ call: CAPPluginCall, householdId: String?, householdName: String?) {
         guard let ssid = call.getString("ssid"),
@@ -192,8 +194,16 @@ public class TuyaProvisioningPlugin: CAPPlugin {
                 self.currentTuyaHomeId = homeId
             }
             
-            // Start EZ mode provisioning
+            // 使用 Tuya SDK 的原生配網流程
+            // 注意：Tuya SDK 的 ThingSmartActivator 會自動處理配網 UI 和流程
+            // Use Tuya SDK's native provisioning flow
+            // Note: ThingSmartActivator will automatically handle provisioning UI and flow
+            
+            // 設置 delegate 以接收配網結果
             ThingSmartActivator.sharedInstance().delegate = self
+            
+            // 啟動 EZ 模式配網（Tuya SDK 會顯示原生配網 UI）
+            // Start EZ mode provisioning (Tuya SDK will show native provisioning UI)
             ThingSmartActivator.sharedInstance().startConfigWiFi(
                 withMode: .EZ,
                 ssid: ssid,
@@ -204,14 +214,28 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             // Store call for later response
             self.currentProvisioningCall = call
             
+            // 生成配網 token
+            self.currentToken = "ez_\(Date().timeIntervalSince1970)"
+            
             // Set timeout
             self.provisioningTimer = Timer.scheduledTimer(withTimeInterval: 100, repeats: false) { [weak self] _ in
                 self?.handleProvisioningTimeout()
             }
+            
+            // 立即返回，配網結果會通過 delegate 回調
+            // Return immediately, provisioning result will be returned via delegate callback
+            call.resolve([
+                "success": true,
+                "token": self.currentToken ?? "",
+                "status": "provisioning",
+                "message": "Tuya SDK native provisioning started. Please follow the on-screen instructions.",
+                "tuyaHomeId": homeId,
+                "mode": "ez"
+            ])
         }
     }
     
-    // MARK: - AP Mode (Hotspot)
+    // MARK: - AP Mode (Hotspot) - Using Tuya SDK Native UI
     
     private func startAPMode(_ call: CAPPluginCall, householdId: String?, householdName: String?) {
         guard let ssid = call.getString("ssid"),
@@ -233,6 +257,7 @@ public class TuyaProvisioningPlugin: CAPPlugin {
                 self.currentTuyaHomeId = homeId
             }
             
+            // 使用 Tuya SDK 的原生配網流程
             ThingSmartActivator.sharedInstance().delegate = self
             ThingSmartActivator.sharedInstance().startConfigWiFi(
                 withMode: .AP,
@@ -242,10 +267,20 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             )
             
             self.currentProvisioningCall = call
+            self.currentToken = "ap_\(Date().timeIntervalSince1970)"
             
             self.provisioningTimer = Timer.scheduledTimer(withTimeInterval: 100, repeats: false) { [weak self] _ in
                 self?.handleProvisioningTimeout()
             }
+            
+            call.resolve([
+                "success": true,
+                "token": self.currentToken ?? "",
+                "status": "provisioning",
+                "message": "Tuya SDK native AP mode provisioning started. Please connect to device hotspot and follow instructions.",
+                "tuyaHomeId": homeId,
+                "mode": "ap"
+            ])
         }
     }
     
@@ -300,62 +335,58 @@ public class TuyaProvisioningPlugin: CAPPlugin {
                 return
             }
             
-            // 檢查網關是否在線
+            // 驗證網關是否在線
             guard gateway.isOnline else {
-                call.reject("Zigbee gateway is offline. Please ensure the gateway is connected and online.")
+                call.reject("Zigbee gateway is offline. Please ensure the gateway is online and try again.")
                 return
             }
             
-            // Zigbee 配網流程說明：
-            // 1. Zigbee 子設備通過網關連接，不需要 WiFi 配網
-            // 2. 網關需要先配網（通過 WiFi），然後通過網關添加 Zigbee 子設備
-            // 3. 子設備配網時，需要：
-            //    - 網關在線
-            //    - 子設備進入配網模式（通常長按配網按鈕）
-            //    - 網關自動掃描並添加子設備
+            // Zigbee 配網：網關會自動掃描並添加 Zigbee 設備
+            // 用戶需要在設備上按下配對按鈕
+            // Zigbee provisioning: Gateway will automatically scan and add Zigbee devices
+            // User needs to press the pairing button on the device
             
-            // 注意：Tuya SDK 的 Zigbee 配網是通過網關自動完成的
-            // 我們這裡主要是驗證網關存在並在線，然後返回配網已啟動的狀態
-            // 實際的設備發現和配網由網關自動完成
-            
-            // 存儲配網信息
             self.currentProvisioningCall = call
-            self.currentToken = "zigbee_\(gatewayId)_\(Date().timeIntervalSince1970)"
+            self.currentToken = "zigbee_\(Date().timeIntervalSince1970)"
             
-            // 返回配網已啟動的狀態
-            // 實際的 Zigbee 設備發現和配網由網關自動完成
-            call.resolve([
-                "success": true,
-                "token": self.currentToken ?? "",
-                "status": "provisioning",
-                "message": "Zigbee provisioning started. Please put your Zigbee device in pairing mode. The gateway will automatically discover and add the device.",
-                "gatewayId": gatewayId,
-                "gatewayName": gateway.name ?? "",
-                "tuyaHomeId": homeId
-            ])
-            
-            // 設置超時（Zigbee 配網通常需要更長時間，設置為 120 秒）
+            // Zigbee 配網通常需要更長的時間（60-120 秒）
             self.provisioningTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: false) { [weak self] _ in
                 self?.handleProvisioningTimeout()
             }
             
-            // 注意：Zigbee 配網的實際流程是：
-            // 1. 用戶將 Zigbee 子設備進入配網模式
-            // 2. 網關自動掃描並發現設備
-            // 3. 網關自動將設備添加到 Home
-            // 4. 設備會通過 ThingSmartActivatorDelegate 回調返回
-            // 但由於 Zigbee 配網是通過網關進行的，可能不會觸發標準的配網回調
-            // 因此我們需要監聽設備列表變化，或者提供手動刷新設備列表的功能
+            call.resolve([
+                "success": true,
+                "token": self.currentToken ?? "",
+                "status": "pairing",
+                "message": "Zigbee provisioning started. Please press the pairing button on your Zigbee device. The gateway will automatically discover and add the device.",
+                "gatewayId": gatewayId,
+                "gatewayName": gateway.name ?? "",
+                "tuyaHomeId": homeId,
+                "mode": "zigbee"
+            ])
+            
+            // 注意：Zigbee 配網的實際流程：
+            // 1. 網關進入配對模式
+            // 2. 用戶在設備上按下配對按鈕
+            // 3. 網關自動發現並添加設備
+            // 4. 設備會通過 ThingSmartActivatorDelegate 回調返回（如果 SDK 支持）
+            // 或者需要手動查詢網關的設備列表
+            
+            // Note: Actual Zigbee provisioning flow:
+            // 1. Gateway enters pairing mode
+            // 2. User presses pairing button on device
+            // 3. Gateway automatically discovers and adds device
+            // 4. Device will be returned via ThingSmartActivatorDelegate callback (if SDK supports)
+            // Or need to manually query gateway's device list
         }
     }
     
     // MARK: - BT Mode
     
     private func startBTMode(_ call: CAPPluginCall, householdId: String?, householdName: String?) {
-        // Bluetooth MAC 地址是可選的（取決於配網方式）
         let bluetoothMac = call.getString("bluetoothMac")
+        let btGatewayId = call.getString("btGatewayId")
         
-        // 獲取 Household 信息（用於創建對應的 Tuya Home）
         // Ensure Home exists before provisioning
         ensureHomeExists(householdName: householdName) { [weak self] homeId in
             guard let self = self, let homeId = homeId else {
@@ -369,34 +400,25 @@ public class TuyaProvisioningPlugin: CAPPlugin {
                 self.currentTuyaHomeId = homeId
             }
             
-            // 獲取當前 Home 下的設備列表，查找 BT 網關（如果使用網關模式）
-            guard let currentHome = ThingSmartHomeManager.sharedInstance().getCurrentHome() else {
-                call.reject("No Tuya Home available. Please ensure a Home exists.")
-                return
-            }
-            
-            // BT 配網有兩種方式：
-            // 1. 直接 BT 配網：設備直接通過藍牙連接
-            // 2. BT Gateway 配網：通過 BT 網關進行配網
-            
-            // 檢查是否有 BT 網關（可選）
+            // 如果有 BT 網關，獲取網關設備
             var btGateway: ThingSmartDeviceModel? = nil
-            if let gatewayId = call.getString("btGatewayId") {
+            if let gatewayId = btGatewayId {
+                guard let currentHome = ThingSmartHomeManager.sharedInstance().getCurrentHome() else {
+                    call.reject("No Tuya Home available. Please ensure a Home exists.")
+                    return
+                }
+                
                 btGateway = currentHome.deviceList?.first { device in
                     device.devId == gatewayId
                 }
                 
-                guard let gateway = btGateway, gateway.isOnline else {
-                    call.reject("BT gateway not found or offline. Please ensure the gateway device ID is correct and the gateway is online.")
+                if btGateway == nil {
+                    call.reject("BT gateway not found. Please ensure the gateway device ID is correct.")
                     return
                 }
             }
             
-            // Tuya SDK 的藍牙配網流程：
-            // 1. 對於直接 BT 配網：使用 ThingSmartActivator 的藍牙配網模式
-            // 2. 對於 BT Gateway 配網：通過網關進行配網
-            
-            // 注意：Tuya SDK 的藍牙配網可能需要：
+            // 藍牙配網需要：
             // - CoreBluetooth 框架支持
             // - 藍牙權限（已在 Info.plist 中配置）
             // - 設備進入配網模式
@@ -599,13 +621,14 @@ public class TuyaProvisioningPlugin: CAPPlugin {
         ThingSmartActivator.sharedInstance().stopConfigWiFi()
         ThingSmartActivator.sharedInstance().delegate = nil
         
-        provisioningTimer?.invalidate()
-        provisioningTimer = nil
-        
         if let call = currentProvisioningCall {
-            call.reject("Provisioning timeout after 100 seconds")
+            call.reject("Provisioning timeout. Please ensure the device is in provisioning mode and try again.")
             currentProvisioningCall = nil
         }
+        
+        currentToken = nil
+        currentHouseholdId = nil
+        currentTuyaHomeId = nil
     }
 }
 
@@ -634,7 +657,8 @@ extension TuyaProvisioningPlugin: ThingSmartActivatorDelegate {
             return
         }
         
-        // Success
+        // Success - 配網成功，設備已添加到 Tuya Home
+        // Success - Provisioning successful, device added to Tuya Home
         var result: [String: Any] = [
             "success": true,
             "deviceId": deviceModel.devId ?? "",
@@ -649,7 +673,9 @@ extension TuyaProvisioningPlugin: ThingSmartActivatorDelegate {
         ]
         
         // 如果提供了 householdId 和 tuyaHomeId，添加到結果中
-        // 前端會使用這些信息更新對應關係
+        // 前端會使用這些信息更新對應關係並自動添加到 MQTT
+        // If householdId and tuyaHomeId are provided, add to result
+        // Frontend will use this info to update mapping and auto-add to MQTT
         if let householdId = householdId, let homeId = tuyaHomeId {
             result["householdId"] = householdId
             result["tuyaHomeId"] = homeId

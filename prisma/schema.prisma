@@ -235,6 +235,8 @@ model Household {
   activities         UserActivity[]
   iotDevices         IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
   building           Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  automationRules    AutomationRule[] // 跨生态链控制规则
+  scenes             Scene[] // 场景管理
 
   @@map("households")
 }
@@ -480,3 +482,93 @@ model IoTDevice {
 
 // 保留舊的 mQTTDevice 模型名稱以向後兼容（已重命名為 IoTDevice）
 // Keep old mQTTDevice model name for backward compatibility (renamed to IoTDevice)
+
+// 跨生态链控制 - 自动化规则
+// Cross-ecosystem Control - Automation Rules
+
+model AutomationRule {
+  id          String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  description String?
+  householdId String  @map("household_id")
+  enabled     Boolean @default(true)
+
+  // 源设备/传感器配置
+  // Source device/sensor configuration
+  sourceType     String  @map("source_type") // 'device', 'time', 'manual'
+  sourceDeviceId String? @map("source_device_id") // 源设备 ID（如果是设备触发）
+  sourceProperty String? @map("source_property") // 源设备属性（如 'temperature', 'motion', 'light'）
+
+  // 触发条件
+  // Trigger condition
+  condition Json // { operator: '>', value: 25, unit: 'celsius' } 或 { operator: '==', value: true } 等
+
+  // 目标动作
+  // Target actions
+  actions Json // [{ deviceId: '...', vendor: 'panasonic', action: 'power_on', value: {...} }, ...]
+
+  // 防抖/节流配置
+  // Debounce/throttle configuration
+  debounceMs Int? @default(1000) @map("debounce_ms") // 防抖时间（毫秒）
+  throttleMs Int? @map("throttle_ms") // 节流时间（毫秒）
+
+  // 执行统计
+  // Execution statistics
+  executionCount Int?      @default(0) @map("execution_count")
+  lastExecutedAt DateTime? @map("last_executed_at") @db.Timestamptz(6)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([householdId])
+  @@index([enabled])
+  @@index([sourceDeviceId])
+  @@map("automation_rules")
+}
+
+// 场景管理
+// Scene Management
+
+model Scene {
+  id          String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  description String?
+  householdId String  @map("household_id")
+  enabled     Boolean @default(true)
+
+  // 场景动作
+  // Scene actions
+  actions SceneAction[]
+
+  // 场景图标/颜色（可选）
+  // Scene icon/color (optional)
+  icon  String?
+  color String?
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([householdId])
+  @@index([enabled])
+  @@map("scenes")
+}
+
+model SceneAction {
+  id       String @id @default(dbgenerated("(gen_random_uuid())::text"))
+  sceneId  String @map("scene_id")
+  deviceId String @map("device_id") // IoTDevice ID
+  action   String // 'power_on', 'power_off', 'set_temperature', 'set_brightness', etc.
+  value    Json? // 动作值（如温度值、亮度值等）
+  delayMs  Int?   @default(0) @map("delay_ms") // 延迟执行时间（毫秒）
+  order    Int    @default(0) // 执行顺序
+
+  scene Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sceneId])
+  @@index([deviceId])
+  @@map("scene_actions")
+}

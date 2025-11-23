@@ -62,9 +62,10 @@ const nextConfig = {
   // Configure for static export (for Capacitor)
   // Note: API routes are not exported, they run on the server (Vercel)
   trailingSlash: false,
-  // For Capacitor builds, use export mode (static pages only)
+  // For Capacitor builds, we use standalone mode
+  // Dynamic routes will be handled client-side via API calls
   // API routes will be called from the server URL configured in capacitor.config.ts
-  output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : 'standalone',
+  output: 'standalone',
   // PWA and mobile optimizations
   // experimental: {
   //   optimizeCss: true,

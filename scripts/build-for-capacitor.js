@@ -36,9 +36,15 @@ if (fs.existsSync(apiRoutesDir)) {
 // 2. 构建
 console.log('🔨 Step 2: Building Next.js app...');
 try {
-  execSync('NODE_ENV=production CAPACITOR_BUILD=true next build', {
+  // 使用 standalone 模式而不是 export，因为动态路由需要客户端渲染
+  // Use standalone mode instead of export, as dynamic routes need client-side rendering
+  execSync('NODE_ENV=production next build', {
     stdio: 'inherit',
     cwd: process.cwd(),
+    env: {
+      ...process.env,
+      CAPACITOR_BUILD: 'true',
+    },
   });
   console.log('✅ Build complete\n');
 } catch (error) {

@@ -16,7 +16,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!(session?.user as any)?.id) {
+    if (!session || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -79,7 +79,7 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!(session?.user as any)?.id) {
+    if (!session || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -200,7 +200,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!(session?.user as any)?.id) {
+    if (!session || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

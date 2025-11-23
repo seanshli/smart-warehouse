@@ -467,10 +467,11 @@ model IoTDevice {
   state          Json? // 設備狀態（JSON 格式）
   metadata       Json? // 額外元資料
   lastSeen       DateTime? @map("last_seen") @db.Timestamptz(6) // 最後在線時間
-  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  household      Household @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  room           Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  createdAt      DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  room           Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  sceneActions   SceneAction[]
 
   @@unique([householdId, deviceId, vendor]) // 同一家庭內設備 ID 和供應商唯一
   @@index([householdId])
@@ -566,7 +567,8 @@ model SceneAction {
   delayMs  Int?   @default(0) @map("delay_ms") // 延迟执行时间（毫秒）
   order    Int    @default(0) // 执行顺序
 
-  scene Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  scene  Scene     @relation(fields: [sceneId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  device IoTDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([sceneId])
   @@index([deviceId])

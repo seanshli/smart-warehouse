@@ -16,7 +16,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!(session?.user as any)?.id) {
+    if (!session || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -68,7 +68,7 @@ export async function POST(
     for (const action of scene.actions) {
       // 延迟执行
       if (action.delayMs && action.delayMs > 0) {
-        await new Promise(resolve => setTimeout(resolve, action.delayMs))
+        await new Promise(resolve => setTimeout(resolve, action.delayMs || 0))
       }
 
       try {

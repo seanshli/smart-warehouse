@@ -11,11 +11,14 @@ import {
   TrashIcon,
   PowerIcon,
   WifiIcon,
+  SparklesIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from '../LanguageProvider'
 import { useHousehold } from '../HouseholdProvider'
 import ProvisioningModal from './ProvisioningModal'
+import SceneManager from './SceneManager'
 
 // IoT 設備介面（統一支援 MQTT 和 RESTful API）
 interface MQTTDevice {
@@ -53,6 +56,7 @@ const fetcher = (url: string) =>
 export default function MQTTPanel() {
   const { t } = useLanguage() // 語言設定
   const { household } = useHousehold() // 當前家庭
+  const [activeTab, setActiveTab] = useState<'devices' | 'scenes' | 'automation'>('devices') // 當前標籤
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
   const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | undefined>(undefined) // 配網品牌
@@ -374,15 +378,47 @@ export default function MQTTPanel() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* 標題和操作按鈕 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">{t('mqttDevices')}</h2>
-          <p className="text-sm text-gray-500">
-            MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')} • 
-            RESTful: Philips Hue, Panasonic
-          </p>
-        </div>
+      {/* 標題 */}
+      <div>
+        <h2 className="text-xl font-semibold">MQTT 設備管理</h2>
+        <p className="text-sm text-gray-500">
+          MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')} • 
+          RESTful: Philips Hue, Panasonic
+        </p>
+      </div>
+
+      {/* 標籤頁 */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {[
+            { id: 'devices', name: '設備', icon: WifiIcon },
+            { id: 'scenes', name: '場景', icon: SparklesIcon },
+            { id: 'automation', name: '自動化', icon: Cog6ToothIcon },
+          ].map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`${
+                  activeTab === tab.id
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+              >
+                <Icon className="h-5 w-5" />
+                <span>{tab.name}</span>
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* 標籤內容 */}
+      {activeTab === 'devices' && (
+        <>
+          {/* 操作按鈕 */}
+          <div className="flex items-center justify-end">
             <div className="flex gap-2">
           <button
             onClick={() => mutate()}
@@ -753,27 +789,45 @@ export default function MQTTPanel() {
         </div>
       )}
 
-      {/* 統一配網模態框 */}
-      <ProvisioningModal
-        isOpen={isProvisioningModalOpen}
-        vendor={provisioningVendor}
-        onClose={() => {
-          setIsProvisioningModalOpen(false)
-          setProvisioningVendor(undefined)
-        }}
-        onSuccess={async (deviceId, deviceName, vendor, deviceInfo) => {
-          // 注意：設備已經在 ProvisioningModal 中自動添加了
-          // 這裡只需要刷新設備列表
-          setIsProvisioningModalOpen(false)
-          setProvisioningVendor(undefined)
-          
-          // 刷新設備列表以顯示新添加的設備
-          mutate()
-          
-          // 提示信息已在 ProvisioningModal 中顯示
-          // 這裡不需要額外的提示
-        }}
-      />
+          {/* 統一配網模態框 */}
+          <ProvisioningModal
+            isOpen={isProvisioningModalOpen}
+            vendor={provisioningVendor}
+            onClose={() => {
+              setIsProvisioningModalOpen(false)
+              setProvisioningVendor(undefined)
+            }}
+            onSuccess={async (deviceId, deviceName, vendor, deviceInfo) => {
+              // 注意：設備已經在 ProvisioningModal 中自動添加了
+              // 這裡只需要刷新設備列表
+              setIsProvisioningModalOpen(false)
+              setProvisioningVendor(undefined)
+              
+              // 刷新設備列表以顯示新添加的設備
+              mutate()
+              
+              // 提示信息已在 ProvisioningModal 中顯示
+              // 這裡不需要額外的提示
+            }}
+          />
+        </>
+      )}
+
+      {activeTab === 'scenes' && (
+        <SceneManager
+          onSceneActivated={(sceneId) => {
+            toast.success('場景已激活')
+          }}
+        />
+      )}
+
+      {activeTab === 'automation' && (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <Cog6ToothIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500 mb-2">自動化規則管理</p>
+          <p className="text-sm text-gray-400">功能開發中...</p>
+        </div>
+      )}
     </div>
   )
 }

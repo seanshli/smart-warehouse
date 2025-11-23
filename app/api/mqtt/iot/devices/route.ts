@@ -9,6 +9,7 @@ import { getMQTTClient } from '@/lib/mqtt-client'
 import { UnifiedAdapterFactory } from '@/lib/iot-adapters'
 import type { ExtendedDeviceVendor } from '@/lib/iot-adapters'
 import type { ConnectionType } from '@/lib/iot-adapters/base-adapter'
+import { subscribeDeviceStatus } from '@/lib/mqtt-device-status-sync'
 
 export const dynamic = 'force-dynamic'
 
@@ -216,35 +217,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 如果是 MQTT 設備，連接到 MQTT Broker 並訂閱
-    if (detectedConnectionType === 'mqtt') {
+    // 如果是 MQTT 設備，連接到 MQTT Broker 並訂閱狀態主題
+    if (detectedConnectionType === 'mqtt' && iotDevice.statusTopic) {
       try {
-        const mqttClient = getMQTTClient()
-        if (!mqttClient.isConnected()) {
-          await mqttClient.connect()
-        }
-
-        // 訂閱設備狀態主題
-        const topicToSubscribe = iotDevice.statusTopic || iotDevice.topic
-        if (topicToSubscribe) {
-          await mqttClient.subscribe(topicToSubscribe, 1)
-
-          // 註冊訊息處理器
-          mqttClient.onMessage(topicToSubscribe, async (message) => {
-            const state = adapter.parseState(message)
-            
-            if (state) {
-              await prisma.ioTDevice.update({
-                where: { id: iotDevice.id },
-                data: {
-                  state: state as any,
-                  status: 'online',
-                  lastSeen: new Date()
-                }
-              })
-            }
-          })
-        }
+        // 使用設備狀態同步服務訂閱
+        await subscribeDeviceStatus(iotDevice.id, householdId)
       } catch (mqttError) {
         console.error('MQTT connection error:', mqttError)
       }

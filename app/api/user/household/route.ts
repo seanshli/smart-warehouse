@@ -48,10 +48,20 @@ export async function GET() {
         household: m.household
       }))
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching household ID:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      name: error?.name
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch household ID' },
+      { 
+        error: 'Failed to fetch household ID',
+        details: error?.message || 'Unknown error',
+        code: error?.code
+      },
       { status: 500 }
     )
   }

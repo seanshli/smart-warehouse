@@ -49,8 +49,14 @@ export async function GET(request: NextRequest) {
       hasChanges: recentChanges > 0,
       changeCount: recentChanges
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error checking for household changes:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      name: error?.name
+    })
     return NextResponse.json({ hasChanges: false })
   }
 }

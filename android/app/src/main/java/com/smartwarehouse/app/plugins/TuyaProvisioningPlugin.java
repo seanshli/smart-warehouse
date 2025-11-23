@@ -23,7 +23,15 @@ import com.thingclips.smart.user.api.ILoginCallback;
 import com.thingclips.smart.user.api.ILogoutCallback;
 import com.thingclips.smart.user.api.IUserCallback;
 
+// Tuya BizBundle UI imports
+import com.thingclips.smart.bizbundle.activator.core.ThingActivatorManager;
+import com.thingclips.smart.bizbundle.activator.core.bean.ActivatorRequest;
+import com.thingclips.smart.bizbundle.activator.core.bean.ActivatorTypeEnum;
+import com.thingclips.smart.bizbundle.activator.core.callback.IActivatorCallback;
+
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -32,6 +40,7 @@ import android.util.Log;
 public class TuyaProvisioningPlugin extends Plugin {
 
     private static final String TAG = "TuyaProvisioningPlugin";
+    private static final int REQUEST_CODE_ACTIVATOR = 1001;
     private boolean isInitialized = false;
     private String currentToken = null;
     private String currentHouseholdId = null;
@@ -39,6 +48,7 @@ public class TuyaProvisioningPlugin extends Plugin {
     private PluginCall currentProvisioningCall = null;
     private Handler mainHandler = new Handler(Looper.getMainLooper());
     private IThingActivator currentActivator = null;
+    private ActivatorRequest currentActivatorRequest = null;
 
     private JSObject pendingImplementationResponse(String message) {
         JSObject result = new JSObject();
@@ -306,7 +316,7 @@ public class TuyaProvisioningPlugin extends Plugin {
         }
     }
 
-    // EZ Mode (WiFi Quick Flash)
+    // EZ Mode (WiFi Quick Flash) - Using BizBundle UI
     private void startEZMode(PluginCall call, String householdId, String householdName) {
         String ssid = call.getString("ssid");
         String password = call.getString("password");
@@ -331,53 +341,75 @@ public class TuyaProvisioningPlugin extends Plugin {
                 currentTuyaHomeId = currentHome.getHomeId();
             }
 
-            // 启动 EZ 模式配网
+            // 启动 EZ 模式配网 - 使用 BizBundle UI
             currentProvisioningCall = call;
             currentToken = "ez_" + System.currentTimeMillis();
 
-            // 创建配网参数
-            ActivatorBean activatorBean = new ActivatorBean();
-            activatorBean.setSsid(ssid);
-            activatorBean.setPassword(password);
-            activatorBean.setActivatorModel(ActivatorModelEnum.TY_EZ);
-            activatorBean.setTimeOut(100);
+            try {
+                // 创建 BizBundle 配网请求
+                ActivatorRequest request = new ActivatorRequest.Builder()
+                    .setSsid(ssid)
+                    .setPassword(password)
+                    .setActivatorType(ActivatorTypeEnum.TY_EZ)
+                    .setTimeOut(100)
+                    .setHomeId(currentHome.getHomeId())
+                    .build();
 
-            // 启动配网
-            currentActivator = ThingHomeSdk.getActivatorInstance().newActivator();
-            currentActivator.startActivator(activatorBean, new IThingDataCallback<DeviceBean>() {
-                @Override
-                public void onSuccess(DeviceBean deviceBean) {
-                    JSObject result = new JSObject();
-                    result.put("success", true);
-                    result.put("deviceId", deviceBean.getDevId());
-                    result.put("deviceName", deviceBean.getName());
-                    result.put("status", "success");
-                    result.put("tuyaHomeId", currentTuyaHomeId);
-                    result.put("token", currentToken);
-                    call.resolve(result);
-                    currentProvisioningCall = null;
+                currentActivatorRequest = request;
+
+                // 启动 BizBundle UI Activity
+                Activity activity = getActivity();
+                if (activity == null) {
+                    call.reject("Failed to get Android Activity");
+                    return;
                 }
 
-                @Override
-                public void onError(String code, String error) {
-                    call.reject("EZ mode provisioning failed: " + error);
-                    currentProvisioningCall = null;
-                }
-            });
+                // 使用 BizBundle 启动配网 UI
+                ThingActivatorManager.getInstance().startActivator(
+                    activity,
+                    request,
+                    REQUEST_CODE_ACTIVATOR,
+                    new IActivatorCallback() {
+                        @Override
+                        public void onSuccess(DeviceBean deviceBean) {
+                            JSObject result = new JSObject();
+                            result.put("success", true);
+                            result.put("deviceId", deviceBean.getDevId());
+                            result.put("deviceName", deviceBean.getName());
+                            result.put("status", "success");
+                            result.put("tuyaHomeId", currentTuyaHomeId);
+                            result.put("token", currentToken);
+                            call.resolve(result);
+                            currentProvisioningCall = null;
+                            currentActivatorRequest = null;
+                        }
 
-            // 立即返回，配网结果通过回调返回
-            JSObject result = new JSObject();
-            result.put("success", true);
-            result.put("token", currentToken);
-            result.put("status", "provisioning");
-            result.put("message", "Tuya SDK native EZ mode provisioning started. Please follow the on-screen instructions.");
-            result.put("tuyaHomeId", currentTuyaHomeId);
-            result.put("mode", "ez");
-            call.resolve(result);
+                        @Override
+                        public void onError(String code, String error) {
+                            call.reject("EZ mode provisioning failed: " + error);
+                            currentProvisioningCall = null;
+                            currentActivatorRequest = null;
+                        }
+                    }
+                );
+
+                // 立即返回，配网结果通过回调返回
+                JSObject result = new JSObject();
+                result.put("success", true);
+                result.put("token", currentToken);
+                result.put("status", "provisioning");
+                result.put("message", "Tuya SDK native EZ mode provisioning UI started. Please follow the on-screen instructions.");
+                result.put("tuyaHomeId", currentTuyaHomeId);
+                result.put("mode", "ez");
+                call.resolve(result);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start EZ mode provisioning", e);
+                call.reject("Failed to start EZ mode provisioning: " + e.getMessage());
+            }
         });
     }
 
-    // AP Mode (Hotspot)
+    // AP Mode (Hotspot) - Using BizBundle UI
     private void startAPMode(PluginCall call, String householdId, String householdName) {
         String ssid = call.getString("ssid");
         String password = call.getString("password");
@@ -403,42 +435,65 @@ public class TuyaProvisioningPlugin extends Plugin {
             currentProvisioningCall = call;
             currentToken = "ap_" + System.currentTimeMillis();
 
-            ActivatorBean activatorBean = new ActivatorBean();
-            activatorBean.setSsid(ssid);
-            activatorBean.setPassword(password);
-            activatorBean.setActivatorModel(ActivatorModelEnum.TY_AP);
-            activatorBean.setTimeOut(100);
+            try {
+                // 创建 BizBundle 配网请求
+                ActivatorRequest request = new ActivatorRequest.Builder()
+                    .setSsid(ssid)
+                    .setPassword(password)
+                    .setActivatorType(ActivatorTypeEnum.TY_AP)
+                    .setTimeOut(100)
+                    .setHomeId(currentHome.getHomeId())
+                    .build();
 
-            currentActivator = ThingHomeSdk.getActivatorInstance().newActivator();
-            currentActivator.startActivator(activatorBean, new IThingDataCallback<DeviceBean>() {
-                @Override
-                public void onSuccess(DeviceBean deviceBean) {
-                    JSObject result = new JSObject();
-                    result.put("success", true);
-                    result.put("deviceId", deviceBean.getDevId());
-                    result.put("deviceName", deviceBean.getName());
-                    result.put("status", "success");
-                    result.put("tuyaHomeId", currentTuyaHomeId);
-                    result.put("token", currentToken);
-                    call.resolve(result);
-                    currentProvisioningCall = null;
+                currentActivatorRequest = request;
+
+                Activity activity = getActivity();
+                if (activity == null) {
+                    call.reject("Failed to get Android Activity");
+                    return;
                 }
 
-                @Override
-                public void onError(String code, String error) {
-                    call.reject("AP mode provisioning failed: " + error);
-                    currentProvisioningCall = null;
-                }
-            });
+                // 使用 BizBundle 启动配网 UI
+                ThingActivatorManager.getInstance().startActivator(
+                    activity,
+                    request,
+                    REQUEST_CODE_ACTIVATOR,
+                    new IActivatorCallback() {
+                        @Override
+                        public void onSuccess(DeviceBean deviceBean) {
+                            JSObject result = new JSObject();
+                            result.put("success", true);
+                            result.put("deviceId", deviceBean.getDevId());
+                            result.put("deviceName", deviceBean.getName());
+                            result.put("status", "success");
+                            result.put("tuyaHomeId", currentTuyaHomeId);
+                            result.put("token", currentToken);
+                            call.resolve(result);
+                            currentProvisioningCall = null;
+                            currentActivatorRequest = null;
+                        }
 
-            JSObject result = new JSObject();
-            result.put("success", true);
-            result.put("token", currentToken);
-            result.put("status", "provisioning");
-            result.put("message", "Tuya SDK native AP mode provisioning started. Please connect to device hotspot and follow instructions.");
-            result.put("tuyaHomeId", currentTuyaHomeId);
-            result.put("mode", "ap");
-            call.resolve(result);
+                        @Override
+                        public void onError(String code, String error) {
+                            call.reject("AP mode provisioning failed: " + error);
+                            currentProvisioningCall = null;
+                            currentActivatorRequest = null;
+                        }
+                    }
+                );
+
+                JSObject result = new JSObject();
+                result.put("success", true);
+                result.put("token", currentToken);
+                result.put("status", "provisioning");
+                result.put("message", "Tuya SDK native AP mode provisioning UI started. Please connect to device hotspot and follow instructions.");
+                result.put("tuyaHomeId", currentTuyaHomeId);
+                result.put("mode", "ap");
+                call.resolve(result);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to start AP mode provisioning", e);
+                call.reject("Failed to start AP mode provisioning: " + e.getMessage());
+            }
         });
     }
 
@@ -634,7 +689,13 @@ public class TuyaProvisioningPlugin extends Plugin {
     @PluginMethod
     public void stopProvisioning(PluginCall call) {
         try {
-            // 停止配网
+            // 停止配网 - 使用 BizBundle
+            if (currentActivatorRequest != null) {
+                ThingActivatorManager.getInstance().stopActivator();
+                currentActivatorRequest = null;
+            }
+
+            // 也停止底层配网（如果正在使用）
             if (currentActivator != null) {
                 currentActivator.stopActivator();
                 currentActivator = null;

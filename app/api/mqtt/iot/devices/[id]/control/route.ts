@@ -34,7 +34,6 @@ export async function POST(
         household: {
           select: {
             id: true,
-            tuyaHomeId: true,
             members: {
               where: {
                 userId: userId
@@ -56,7 +55,7 @@ export async function POST(
     // 如果是 Tuya 設備，驗證 Member 的 Tuya token 和 Home 訪問權限
     if (device.vendor === 'tuya') {
       const { verifyMemberAccessToTuyaHome } = await import('@/lib/tuya-token-manager')
-      const access = await verifyMemberAccessToTuyaHome(userId, device.household.id)
+      const access = await verifyMemberAccessToTuyaHome(userId, device.householdId)
       
       if (!access.canAccess) {
         return NextResponse.json(

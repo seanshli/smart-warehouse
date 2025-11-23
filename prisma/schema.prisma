@@ -209,6 +209,8 @@ model Household {
   tuyaAccount     String?           @map("tuya_account") // Tuya account for this household (email or phone)
   tuyaPassword    String?           @map("tuya_password") // Encrypted Tuya password for household
   tuyaCountryCode String?           @default("886") @map("tuya_country_code") // Country code for Tuya household account
+  tuyaAccessToken String?           @map("tuya_access_token") // Tuya access token for household (temporary, encrypted)
+  tuyaTokenExpiresAt DateTime?      @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time for household
   // Building relationship (new)
   buildingId      String?           @map("building_id")
   // Location fields

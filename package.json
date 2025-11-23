@@ -6,6 +6,7 @@
     "verify:wifi-tuya": "tsx scripts/verify-wifi-tuya-connection.ts",
     "verify:tuya-token": "tsx scripts/verify-tuya-token.ts",
     "verify:vercel-env": "tsx scripts/verify-vercel-tuya-env.ts",
+    "diagnose:db-crash": "tsx scripts/diagnose-db-crash.ts",
     "check:old-account": "tsx scripts/check-old-account-issues.ts",
     "reset:password": "tsx scripts/reset-user-password.ts",
     "test:login": "tsx scripts/test-login.ts",

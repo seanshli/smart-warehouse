@@ -1,5 +1,5 @@
--- Add Tuya token fields to Household table
--- 为 Household 表添加 Tuya token 字段
+-- Add missing Tuya token fields to Household table
+-- 为 Household 表添加缺失的 Tuya token 字段
 -- 
 -- 使用方法: 在 Supabase SQL Editor 中运行此脚本
 -- 
@@ -25,4 +25,3 @@ FROM information_schema.columns
 WHERE table_name = 'households'
   AND column_name IN ('tuya_access_token', 'tuya_token_expires_at')
 ORDER BY column_name;
-

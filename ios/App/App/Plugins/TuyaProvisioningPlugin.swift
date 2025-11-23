@@ -598,8 +598,16 @@ public class TuyaProvisioningPlugin: CAPPlugin {
     /// 確保 Tuya Home 存在，如果不存在則自動創建
     /// 使用 Household 名稱作為 Home 名稱
     private func ensureHomeExists(householdName: String?, completion: @escaping (String?) -> Void) {
+        // 檢查用戶是否已登錄（創建 Home 需要登錄）
+        guard ThingSmartUser.sharedInstance().isLogin else {
+            print("❌ [TuyaProvisioningPlugin] User not logged in, cannot create/access Home")
+            completion(nil)
+            return
+        }
+        
         // 檢查是否有當前 Home
         if let currentHome = ThingSmartHomeManager.sharedInstance().getCurrentHome() {
+            print("✅ [TuyaProvisioningPlugin] Using existing Home: \(currentHome.homeId ?? "unknown")")
             completion(currentHome.homeId)
             return
         }
@@ -609,6 +617,7 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             // 如果有現有 Home，使用第一個（用戶可以後續切換）
             let firstHome = homes[0]
             ThingSmartHomeManager.sharedInstance().setCurrentHome(firstHome)
+            print("✅ [TuyaProvisioningPlugin] Using existing Home from list: \(firstHome.homeId ?? "unknown")")
             completion(firstHome.homeId)
             return
         }
@@ -619,16 +628,21 @@ public class TuyaProvisioningPlugin: CAPPlugin {
         let homeModel = ThingSmartHomeModel()
         homeModel.name = homeName
         
-        // 創建 Home
-        ThingSmartHomeManager.sharedInstance().addHome(withHomeModel: homeModel, success: { home in
-            // Home 創建成功，設置為當前 Home
-            ThingSmartHomeManager.sharedInstance().setCurrentHome(home)
-            completion(home.homeId)
-        }, failure: { error in
-            // Home 創建失敗
-            print("Failed to create Tuya Home: \(error?.localizedDescription ?? "Unknown error")")
-            completion(nil)
-        })
+        print("📝 [TuyaProvisioningPlugin] Creating new Tuya Home: \(homeName)")
+        
+        // 創建 Home（必须在主线程）
+        DispatchQueue.main.async {
+            ThingSmartHomeManager.sharedInstance().addHome(withHomeModel: homeModel, success: { home in
+                // Home 創建成功，設置為當前 Home
+                ThingSmartHomeManager.sharedInstance().setCurrentHome(home)
+                print("✅ [TuyaProvisioningPlugin] Tuya Home created successfully: \(home.homeId ?? "unknown")")
+                completion(home.homeId)
+            }, failure: { error in
+                // Home 創建失敗
+                print("❌ [TuyaProvisioningPlugin] Failed to create Tuya Home: \(error?.localizedDescription ?? "Unknown error")")
+                completion(nil)
+            })
+        }
     }
     
     /// 同步版本：确保 Home 存在（用于需要立即返回的场景）

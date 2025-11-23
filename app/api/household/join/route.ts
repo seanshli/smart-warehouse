@@ -97,6 +97,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // 级联自动加入 Building 和 Community
+    // Cascade auto-join Building and Community
+    const { cascadeAutoJoin } = await import('@/lib/hierarchy-join-manager')
+    const autoJoinResult = await cascadeAutoJoin(userId, household.id)
+
     // 如果 Household 有 Tuya Home，并且用户有 Tuya 账户，尝试添加到 Tuya Home
     // If Household has Tuya Home and user has Tuya account, try to add to Tuya Home
     if (newMembership.household.tuyaHomeId && newMembership.user.tuyaAccount) {
@@ -129,6 +134,22 @@ export async function POST(request: NextRequest) {
       // Hint to client that Tuya Home addition is needed
       needsTuyaHomeAddition: newMembership.household.tuyaHomeId && !!newMembership.user.tuyaAccount,
       tuyaHomeId: newMembership.household.tuyaHomeId,
+      // 自动加入的 Building 和 Community
+      // Auto-joined Building and Community
+      autoJoined: {
+        building: autoJoinResult.building.success
+          ? {
+              id: autoJoinResult.building.buildingId,
+              membershipId: autoJoinResult.building.membershipId,
+            }
+          : null,
+        community: autoJoinResult.community.success
+          ? {
+              id: autoJoinResult.community.communityId,
+              membershipId: autoJoinResult.community.membershipId,
+            }
+          : null,
+      },
     })
   } catch (error) {
     console.error('Error joining household:', error)

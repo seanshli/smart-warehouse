@@ -33,6 +33,7 @@ model User {
   communityMemberships CommunityMember[]
   buildingMemberships  BuildingMember[]
   workingGroupMembers  WorkingGroupMember[]
+  joinRequests         JoinRequest[]
   itemHistory          ItemHistory[]
   items                Item[]
   notifications        Notification[]
@@ -200,40 +201,40 @@ model WorkingGroupPermission {
 }
 
 model Household {
-  id              String            @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name            String
-  description     String?
-  invitationCode  String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  id                 String            @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name               String
+  description        String?
+  invitationCode     String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
   // Tuya Home integration
-  tuyaHomeId      String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
-  tuyaAccount     String?           @map("tuya_account") // Tuya account for this household (email or phone)
-  tuyaPassword    String?           @map("tuya_password") // Encrypted Tuya password for household
-  tuyaCountryCode String?           @default("886") @map("tuya_country_code") // Country code for Tuya household account
-  tuyaAccessToken String?           @map("tuya_access_token") // Tuya access token for household (temporary, encrypted)
-  tuyaTokenExpiresAt DateTime?      @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time for household
+  tuyaHomeId         String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
+  tuyaAccount        String?           @map("tuya_account") // Tuya account for this household (email or phone)
+  tuyaPassword       String?           @map("tuya_password") // Encrypted Tuya password for household
+  tuyaCountryCode    String?           @default("886") @map("tuya_country_code") // Country code for Tuya household account
+  tuyaAccessToken    String?           @map("tuya_access_token") // Tuya access token for household (temporary, encrypted)
+  tuyaTokenExpiresAt DateTime?         @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time for household
   // Building relationship (new)
-  buildingId      String?           @map("building_id")
+  buildingId         String?           @map("building_id")
   // Location fields
-  country         String?
-  city            String?
-  district        String?
-  community       String? // Legacy field, kept for backward compatibility
-  apartmentNo     String?           @map("apartment_no")
-  latitude        Float?
-  longitude       Float?
-  address         String?
-  streetAddress   String?           @map("street_address")
-  buildingAddress String?           @map("building_address")
-  telephone       String?
-  createdAt       DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  categories      Category[]
-  members         HouseholdMember[]
-  items           Item[]
-  rooms           Room[]
-  activities      UserActivity[]
-  iotDevices      IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
-  building        Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  country            String?
+  city               String?
+  district           String?
+  community          String? // Legacy field, kept for backward compatibility
+  apartmentNo        String?           @map("apartment_no")
+  latitude           Float?
+  longitude          Float?
+  address            String?
+  streetAddress      String?           @map("street_address")
+  buildingAddress    String?           @map("building_address")
+  telephone          String?
+  createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  categories         Category[]
+  members            HouseholdMember[]
+  items              Item[]
+  rooms              Room[]
+  activities         UserActivity[]
+  iotDevices         IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
+  building           Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@map("households")
 }
@@ -249,6 +250,23 @@ model HouseholdMember {
 
   @@unique([userId, householdId])
   @@map("household_members")
+}
+
+model JoinRequest {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId      String    @map("user_id")
+  type        String // 'community' | 'building' | 'household'
+  targetId    String    @map("target_id") // Community/Building/Household ID
+  status      String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  message     String? // Optional message from requester
+  requestedAt DateTime? @default(now()) @map("requested_at") @db.Timestamptz(6)
+  reviewedAt  DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy  String?   @map("reviewed_by") // User ID who reviewed the request
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, type, targetId, status])
+  @@index([type, targetId, status])
+  @@map("join_requests")
 }
 
 model Room {

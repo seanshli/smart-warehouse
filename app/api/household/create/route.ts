@@ -14,10 +14,94 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = (session.user as any).id
-    const { name, description } = await request.json()
+    const { name, description, latitude, longitude, buildingId } = await request.json()
 
     if (!name || name.trim().length === 0) {
       return NextResponse.json({ error: 'Household name is required' }, { status: 400 })
+    }
+
+    // 如果提供了位置信息，检查是否有现有的 Community/Building
+    // If location info is provided, check for existing Community/Building
+    let existingCommunity: any = null
+    let existingBuilding: any = null
+
+    if (latitude && longitude) {
+      // 检查附近是否有 Building（在 100 米范围内）
+      // Check for nearby Buildings (within 100 meters)
+      const nearbyBuildings = await prisma.building.findMany({
+        where: {
+          latitude: {
+            gte: latitude - 0.001, // ~100 meters
+            lte: latitude + 0.001,
+          },
+          longitude: {
+            gte: longitude - 0.001,
+            lte: longitude + 0.001,
+          },
+        },
+        include: {
+          community: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        take: 5,
+      })
+
+      if (nearbyBuildings.length > 0) {
+        existingBuilding = nearbyBuildings[0]
+        existingCommunity = existingBuilding.community
+      }
+    }
+
+    // 如果提供了 buildingId，验证它是否存在
+    // If buildingId is provided, verify it exists
+    if (buildingId) {
+      const building = await prisma.building.findUnique({
+        where: { id: buildingId },
+        include: {
+          community: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      })
+
+      if (building) {
+        existingBuilding = building
+        existingCommunity = building.community
+      }
+    }
+
+    // 如果找到现有的 Community/Building，返回提示信息
+    // If existing Community/Building found, return suggestion
+    if (existingBuilding || existingCommunity) {
+      return NextResponse.json({
+        success: false,
+        suggestion: {
+          hasExisting: true,
+          building: existingBuilding
+            ? {
+                id: existingBuilding.id,
+                name: existingBuilding.name,
+                invitationCode: existingBuilding.invitationCode,
+              }
+            : null,
+          community: existingCommunity
+            ? {
+                id: existingCommunity.id,
+                name: existingCommunity.name,
+                invitationCode: (existingCommunity as any).invitationCode,
+              }
+            : null,
+          message:
+            'Found existing building/community at this location. Would you like to send a join request?',
+        },
+      })
     }
 
     // Create the household with the user as the owner
@@ -25,6 +109,9 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
+        latitude: latitude || null,
+        longitude: longitude || null,
+        buildingId: buildingId || null,
         members: {
           create: {
             userId: userId,

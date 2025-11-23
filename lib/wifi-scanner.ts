@@ -79,31 +79,38 @@ export class WiFiScanner {
     try {
       // 检查是否有原生插件
       const { Capacitor } = await import('@capacitor/core')
-      if (Capacitor.getPlatform() === 'web') {
-        // Web 环境回退到服务器扫描
-        return this.scanFromServer()
+      const platform = Capacitor.getPlatform()
+      
+      if (platform === 'web') {
+        // Web 环境不应该调用这个方法
+        throw new Error('Native scan is not available on web platform')
       }
 
+      console.log(`[WiFiScanner] Checking permissions for ${platform}`)
+      
       // 检查权限
       const permissionResult = await WiFiPlugin.checkPermission()
       if (!permissionResult.granted) {
+        console.log('[WiFiScanner] Permission not granted, requesting...')
         const requestResult = await WiFiPlugin.requestPermission()
         if (!requestResult.granted) {
-          throw new Error('WiFi scan permission denied. Please grant location permission in device settings.')
+          throw new Error('WiFi 掃描需要位置權限。請在設備設置中授予位置權限。')
         }
       }
 
+      console.log('[WiFiScanner] Permission granted, starting native scan...')
+      
       // 执行原生扫描
       const result = await WiFiPlugin.scanNetworks()
-      return result.networks || []
+      const networks = result.networks || []
+      
+      console.log(`[WiFiScanner] Native scan completed: found ${networks.length} networks`)
+      
+      return networks
     } catch (error: any) {
-      console.error('Native WiFi scan error:', error)
-      // 如果原生扫描失败，回退到服务器扫描
-      try {
-        return await this.scanFromServer()
-      } catch (serverError) {
-        throw error // 抛出原始错误
-      }
+      console.error('[WiFiScanner] Native WiFi scan error:', error)
+      // 重新抛出错误，让调用者决定如何处理
+      throw error
     }
   }
 
@@ -149,20 +156,47 @@ export class WiFiScanner {
    */
   static async scan(): Promise<WiFiNetwork[]> {
     try {
-      // 尝试原生扫描
+      // 检查平台
       const { Capacitor } = await import('@capacitor/core')
-      if (Capacitor.getPlatform() !== 'web') {
+      const platform = Capacitor.getPlatform()
+      
+      // 移动端优先使用原生扫描
+      if (platform === 'ios' || platform === 'android') {
         try {
-          return await this.scanNative()
-        } catch (nativeError) {
-          console.warn('Native scan failed, falling back to server scan:', nativeError)
+          console.log('[WiFiScanner] Attempting native scan on', platform)
+          const networks = await this.scanNative()
+          if (networks && networks.length > 0) {
+            console.log(`[WiFiScanner] Native scan successful: found ${networks.length} networks`)
+            return networks
+          }
+          console.warn('[WiFiScanner] Native scan returned empty, falling back to server scan')
+        } catch (nativeError: any) {
+          console.warn('[WiFiScanner] Native scan failed:', nativeError.message)
+          // 如果是权限错误，直接抛出，不要回退到服务器
+          if (nativeError.message?.includes('permission') || nativeError.message?.includes('denied')) {
+            throw new Error('WiFi 掃描需要位置權限。請在設備設置中授予位置權限。')
+          }
+          // 其他错误，尝试服务器扫描
         }
       }
       
-      // 回退到服务器扫描
-      return await this.scanFromServer()
+      // Web 环境或原生扫描失败时，回退到服务器扫描
+      console.log('[WiFiScanner] Attempting server scan')
+      try {
+        return await this.scanFromServer()
+      } catch (serverError: any) {
+        // 如果服务器扫描也失败，尝试加载已保存的网络
+        console.warn('[WiFiScanner] Server scan failed, loading saved networks')
+        const saved = await this.getSavedNetworks()
+        if (saved.length > 0) {
+          console.log(`[WiFiScanner] Loaded ${saved.length} saved networks`)
+          return saved
+        }
+        // 如果都没有，抛出错误
+        throw serverError
+      }
     } catch (error: any) {
-      console.error('WiFi scan error:', error)
+      console.error('[WiFiScanner] All scan methods failed:', error)
       throw error
     }
   }

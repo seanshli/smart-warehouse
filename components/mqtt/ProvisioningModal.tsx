@@ -579,6 +579,7 @@ export default function ProvisioningModal({
 
   const handleScanWifi = async () => {
     setIsScanningWifi(true)
+    setError(null)
     try {
       // 使用 WiFiScanner.scan() 自动选择最佳扫描方式
       const networks = await WiFiScanner.scan()

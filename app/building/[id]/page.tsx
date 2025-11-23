@@ -20,6 +20,7 @@ interface Building {
   unitCount?: number
   latitude?: number
   longitude?: number
+  invitationCode?: string
   community: {
     id: string
     name: string

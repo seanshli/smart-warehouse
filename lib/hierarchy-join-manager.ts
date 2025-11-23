@@ -21,9 +21,7 @@ export async function autoJoinBuilding(
     // 1. 获取 Household 信息
     const household = await prisma.household.findUnique({
       where: { id: householdId },
-      select: {
-        id: true,
-        buildingId: true,
+      include: {
         building: {
           select: {
             id: true,

@@ -141,6 +141,12 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             return
         }
         
+        // 检查用户是否已登录（配网需要登录）
+        if !ThingSmartUser.sharedInstance().isLogin {
+            call.reject("Tuya user login required for provisioning. Please login first.")
+            return
+        }
+        
         guard let mode = call.getString("mode") else {
             call.reject("Provisioning mode is required")
             return
@@ -181,6 +187,12 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             return
         }
         
+        // 再次检查登录状态
+        guard ThingSmartUser.sharedInstance().isLogin else {
+            call.reject("Tuya user login required. Please login first.")
+            return
+        }
+        
         // Ensure Home exists before provisioning (使用 Household 名稱)
         ensureHomeExists(householdName: householdName) { [weak self] homeId in
             guard let self = self, let homeId = homeId else {
@@ -204,12 +216,15 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             
             // 啟動 EZ 模式配網（Tuya SDK 會顯示原生配網 UI）
             // Start EZ mode provisioning (Tuya SDK will show native provisioning UI)
-            ThingSmartActivator.sharedInstance().startConfigWiFi(
-                withMode: .EZ,
-                ssid: ssid,
-                password: password,
-                timeout: 100
-            )
+            // 注意：必须在主线程调用
+            DispatchQueue.main.async {
+                ThingSmartActivator.sharedInstance().startConfigWiFi(
+                    withMode: .EZ,
+                    ssid: ssid,
+                    password: password,
+                    timeout: 100
+                )
+            }
             
             // Store call for later response
             self.currentProvisioningCall = call
@@ -244,6 +259,12 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             return
         }
         
+        // 再次检查登录状态
+        guard ThingSmartUser.sharedInstance().isLogin else {
+            call.reject("Tuya user login required. Please login first.")
+            return
+        }
+        
         // Ensure Home exists before provisioning (使用 Household 名稱)
         ensureHomeExists(householdName: householdName) { [weak self] homeId in
             guard let self = self, let homeId = homeId else {
@@ -259,12 +280,16 @@ public class TuyaProvisioningPlugin: CAPPlugin {
             
             // 使用 Tuya SDK 的原生配網流程
             ThingSmartActivator.sharedInstance().delegate = self
-            ThingSmartActivator.sharedInstance().startConfigWiFi(
-                withMode: .AP,
-                ssid: ssid,
-                password: password,
-                timeout: 100
-            )
+            
+            // 注意：必须在主线程调用
+            DispatchQueue.main.async {
+                ThingSmartActivator.sharedInstance().startConfigWiFi(
+                    withMode: .AP,
+                    ssid: ssid,
+                    password: password,
+                    timeout: 100
+                )
+            }
             
             self.currentProvisioningCall = call
             self.currentToken = "ap_\(Date().timeIntervalSince1970)"
@@ -527,9 +552,16 @@ public class TuyaProvisioningPlugin: CAPPlugin {
         
         // Status is handled via delegate callbacks
         // Return current status if available
+        let status: String
+        if currentProvisioningCall != nil {
+            status = "provisioning"
+        } else {
+            status = "idle"
+        }
+        
         call.resolve([
             "success": true,
-            "status": "provisioning",
+            "status": status,
             "token": token
         ])
     }

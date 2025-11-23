@@ -196,7 +196,7 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
             }
           }
           
-          // If account is ready, try to login
+          // If account is ready, try to login (required for provisioning)
           if (accountReady) {
             try {
               const loginResponse = await fetch('/api/mqtt/tuya/login', {
@@ -218,16 +218,26 @@ export const ensureTuyaInitialized = async (): Promise<boolean> => {
                     console.log('✅ Tuya login successful')
                     return true
                   } else {
-                    console.warn('⚠️ Tuya login failed:', loginResult.error)
+                    console.error('❌ Tuya login failed:', loginResult.error)
+                    // 登录失败，但仍然返回 true（SDK 已初始化）
+                    // 配网时会再次检查登录状态
+                    return true
                   }
+                } else {
+                  console.warn('⚠️ Login data incomplete:', loginData)
                 }
+              } else {
+                console.warn('⚠️ Failed to fetch login credentials:', loginResponse.status)
               }
             } catch (loginError) {
-              console.warn('⚠️ Failed to login to Tuya:', loginError)
+              console.error('❌ Failed to login to Tuya:', loginError)
             }
+          } else {
+            console.warn('⚠️ Tuya account not ready, provisioning may fail')
           }
           
-          // SDK initialized, account ready (login may happen during provisioning)
+          // SDK initialized, but login may be required
+          // 注意：配网需要登录，如果未登录，配网会失败
           return true
         }
       } catch (error) {

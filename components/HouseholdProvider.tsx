@@ -137,17 +137,38 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch household information')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.details || 'Failed to fetch household information'
+        console.error('Household API error:', errorMessage, errorData)
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
 
-      const apiMemberships: Membership[] = (data.memberships || []).map((m: any) => ({
-        id: m.id,
-        role: m.role,
-        joinedAt: m.joinedAt,
-        household: m.household
-      }))
+      // Safely handle response data
+      if (!data || typeof data !== 'object') {
+        console.warn('Invalid household API response:', data)
+        setMemberships([])
+        setActiveHouseholdId(null)
+        setHousehold(null)
+        setRole(null)
+        setPermissions(null)
+        return
+      }
+
+      const apiMemberships: Membership[] = (data.memberships || []).map((m: any) => {
+        if (!m || !m.household) {
+          console.warn('Invalid membership data:', m)
+          return null
+        }
+        return {
+          id: m.id,
+          role: m.role,
+          joinedAt: m.joinedAt,
+          household: m.household
+        }
+      }).filter((m): m is Membership => m !== null)
+      
       setMemberships(apiMemberships)
 
       // Get preferred household ID from localStorage first, then current state

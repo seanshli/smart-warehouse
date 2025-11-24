@@ -198,10 +198,10 @@ export default function CommunityDetailPage() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && <OverviewTab community={community} />}
-          {activeTab === 'buildings' && <BuildingsTab communityId={communityId} />}
-          {activeTab === 'members' && <MembersTab communityId={communityId} />}
-          {activeTab === 'working-groups' && <WorkingGroupsTab communityId={communityId} />}
+          {activeTab === 'overview' && community && <OverviewTab community={community} />}
+          {activeTab === 'buildings' && communityId && <BuildingsTab communityId={communityId} />}
+          {activeTab === 'members' && communityId && <MembersTab communityId={communityId} />}
+          {activeTab === 'working-groups' && communityId && <WorkingGroupsTab communityId={communityId} />}
         </div>
       </div>
     </div>

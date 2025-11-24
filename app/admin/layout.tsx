@@ -24,6 +24,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navigation = [
     { name: t('adminDashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
+    { name: '社区管理', href: '/admin/communities', icon: BuildingOfficeIcon, current: pathname === '/admin/communities' },
+    { name: '建筑管理', href: '/admin/buildings', icon: BuildingOfficeIcon, current: pathname === '/admin/buildings' },
     { name: t('adminHouseholds'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
     { name: t('adminItems'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
     { name: 'Duplicates', href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },

@@ -15,7 +15,8 @@ import {
   ClockIcon,
   ShieldCheckIcon,
   BellIcon,
-  CogIcon
+  CogIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminStats {

@@ -99,7 +99,20 @@ export interface Translations {
   adminManagement: string
   adminDashboard: string
   adminCommunities: string
+  adminCommunitiesDescription: string
+  adminTotalCommunities: string
+  adminTotalBuildings: string
+  adminTotalMembers: string
+  adminTotalWorkgroups: string
+  adminCommunityList: string
+  adminViewDetails: string
+  adminNoCommunities: string
   adminBuildings: string
+  adminBuildingsDescription: string
+  adminFilterByCommunity: string
+  adminBuildingsCount: string
+  adminMembersCount: string
+  adminWorkgroupsCount: string
   adminHouseholds: string
   adminItems: string
   adminUsers: string
@@ -681,7 +694,22 @@ const en: Translations = {
   adminManagement: 'Smart Warehouse Management',
   adminDashboard: 'Dashboard',
   adminCommunities: 'Communities',
+  adminCommunitiesDescription: 'View and manage all communities, buildings, and residents',
+  adminTotalCommunities: 'Total Communities',
+  adminTotalBuildings: 'Total Buildings',
+  adminTotalMembers: 'Total Members',
+  adminTotalWorkgroups: 'Total Workgroups',
+  adminCommunityList: 'Community List',
+  adminViewDetails: 'View Details',
+  adminNoCommunities: 'No communities yet',
   adminBuildings: 'Buildings',
+  adminBuildingsDescription: 'View and manage all buildings and residents',
+  adminFilterByCommunity: 'Filter by Community',
+  adminBuildingsCount: 'Buildings',
+  adminMembersCount: 'Members',
+  adminWorkgroupsCount: 'Workgroups',
+  adminTotalHouseholds: 'Total Households',
+  adminAllCommunities: 'All Communities',
   adminHouseholds: 'Households',
   adminItems: 'Items',
   adminUsers: 'Admin Users',
@@ -1267,7 +1295,22 @@ const zhTW: Translations = {
   adminManagement: '智能倉庫管理',
   adminDashboard: '儀表板',
   adminCommunities: '社區',
+  adminCommunitiesDescription: '查看和管理所有社區、建築和住戶',
+  adminTotalCommunities: '總社區數',
+  adminTotalBuildings: '總建築數',
+  adminTotalMembers: '總成員數',
+  adminTotalWorkgroups: '總工作組數',
+  adminCommunityList: '社區列表',
+  adminViewDetails: '查看詳情',
+  adminNoCommunities: '暫無社區',
   adminBuildings: '建築',
+  adminBuildingsDescription: '查看和管理所有建築和住戶',
+  adminFilterByCommunity: '篩選社區',
+  adminBuildingsCount: '建築',
+  adminMembersCount: '成員',
+  adminWorkgroupsCount: '工作組',
+  adminTotalHouseholds: '總住戶數',
+  adminAllCommunities: '所有社區',
   adminHouseholds: '家庭',
   adminItems: '物品',
   adminUsers: '管理員用戶',
@@ -1863,7 +1906,22 @@ const zh: Translations = {
   adminManagement: '智能仓库管理',
   adminDashboard: '仪表板',
   adminCommunities: '社区',
+  adminCommunitiesDescription: '查看和管理所有社区、建筑和住户',
+  adminTotalCommunities: '总社区数',
+  adminTotalBuildings: '总建筑数',
+  adminTotalMembers: '总成员数',
+  adminTotalWorkgroups: '总工作组数',
+  adminCommunityList: '社区列表',
+  adminViewDetails: '查看详情',
+  adminNoCommunities: '暂无社区',
   adminBuildings: '建筑',
+  adminBuildingsDescription: '查看和管理所有建筑和住户',
+  adminFilterByCommunity: '筛选社区',
+  adminBuildingsCount: '建筑',
+  adminMembersCount: '成员',
+  adminWorkgroupsCount: '工作组',
+  adminTotalHouseholds: '总住户数',
+  adminAllCommunities: '所有社区',
   adminHouseholds: '家庭',
   adminItems: '物品',
   adminUsers: '管理员用户',
@@ -2457,7 +2515,22 @@ const ja: Translations = {
   adminManagement: 'スマート倉庫管理',
   adminDashboard: 'ダッシュボード',
   adminCommunities: 'コミュニティ',
+  adminCommunitiesDescription: 'すべてのコミュニティ、建物、住民を表示および管理',
+  adminTotalCommunities: '総コミュニティ数',
+  adminTotalBuildings: '総建物数',
+  adminTotalMembers: '総メンバー数',
+  adminTotalWorkgroups: '総作業グループ数',
+  adminCommunityList: 'コミュニティリスト',
+  adminViewDetails: '詳細を表示',
+  adminNoCommunities: 'コミュニティがありません',
   adminBuildings: '建物',
+  adminBuildingsDescription: 'すべての建物と住民を表示および管理',
+  adminFilterByCommunity: 'コミュニティでフィルター',
+  adminBuildingsCount: '建物',
+  adminMembersCount: 'メンバー',
+  adminWorkgroupsCount: '作業グループ',
+  adminTotalHouseholds: '総世帯数',
+  adminAllCommunities: 'すべてのコミュニティ',
   adminHouseholds: '世帯',
   adminItems: 'アイテム',
   adminUsers: '管理者ユーザー',

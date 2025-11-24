@@ -242,6 +242,7 @@ function OverviewTab({ community }: { community: Community }) {
 function BuildingsTab({ communityId }: { communityId: string }) {
   const [buildings, setBuildings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchBuildings()
@@ -249,35 +250,62 @@ function BuildingsTab({ communityId }: { communityId: string }) {
 
   const fetchBuildings = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await fetch(`/api/community/${communityId}/buildings`)
-      if (response.ok) {
-        const data = await response.json()
-        setBuildings(data.buildings || [])
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.message || `Failed to fetch buildings (${response.status})`
+        throw new Error(errorMessage)
       }
+      
+      const data = await response.json()
+      
+      if (!data || !data.buildings) {
+        throw new Error('Invalid buildings data received')
+      }
+      
+      setBuildings(data.buildings || [])
     } catch (err) {
-      console.error('Failed to fetch buildings:', err)
+      console.error('[Community] Error fetching buildings:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load buildings')
     } finally {
       setLoading(false)
     }
   }
 
   if (loading) {
-    return <div className="text-center py-8">加载中...</div>
+    return <div className="text-center py-8">Loading...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchBuildings}
+          className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+        >
+          Retry
+        </button>
+      </div>
+    )
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900">建筑列表</h3>
+        <h3 className="text-lg font-medium text-gray-900">Buildings</h3>
         <Link
           href={`/community/${communityId}/buildings/new`}
           className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
         >
-          添加建筑
+          Add Building
         </Link>
       </div>
       {buildings.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">暂无建筑</div>
+        <div className="text-center py-8 text-gray-500">No buildings yet</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {buildings.map((building) => (
@@ -291,7 +319,7 @@ function BuildingsTab({ communityId }: { communityId: string }) {
                 <p className="text-sm text-gray-600 mt-1">{building.description}</p>
               )}
               <p className="text-xs text-gray-500 mt-2">
-                {building.householdCount || 0} 个住户
+                {building.householdCount || 0} households
               </p>
             </Link>
           ))}

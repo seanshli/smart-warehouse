@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   BuildingOfficeIcon,
   UserGroupIcon,
@@ -30,6 +31,7 @@ interface Community {
 
 export default function AdminCommunitiesPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [communities, setCommunities] = useState<Community[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +61,7 @@ export default function AdminCommunitiesPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
+          <p className="mt-4 text-gray-600">{t('adminLoading')}</p>
         </div>
       </div>
     )
@@ -74,7 +76,7 @@ export default function AdminCommunitiesPage() {
             onClick={() => window.location.reload()}
             className="mt-4 inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
-            重试
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -86,9 +88,9 @@ export default function AdminCommunitiesPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">社区管理</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('adminCommunities')}</h1>
             <p className="mt-2 text-gray-600">
-              查看和管理所有社区、建筑和住户
+              {t('adminCommunitiesDescription')}
             </p>
           </div>
         </div>
@@ -104,7 +106,7 @@ export default function AdminCommunitiesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">总社区数</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalCommunities')}</dt>
                   <dd className="text-2xl font-bold text-gray-900">{communities.length}</dd>
                 </dl>
               </div>
@@ -120,7 +122,7 @@ export default function AdminCommunitiesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">总建筑数</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalBuildings')}</dt>
                   <dd className="text-2xl font-bold text-gray-900">
                     {communities.reduce((sum, c) => sum + c.stats.buildings, 0)}
                   </dd>
@@ -138,7 +140,7 @@ export default function AdminCommunitiesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">总成员数</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalMembers')}</dt>
                   <dd className="text-2xl font-bold text-gray-900">
                     {communities.reduce((sum, c) => sum + c.stats.members, 0)}
                   </dd>
@@ -156,7 +158,7 @@ export default function AdminCommunitiesPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">总工作组数</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalWorkgroups')}</dt>
                   <dd className="text-2xl font-bold text-gray-900">
                     {communities.reduce((sum, c) => sum + c.stats.workingGroups, 0)}
                   </dd>
@@ -170,12 +172,12 @@ export default function AdminCommunitiesPage() {
       {/* Communities List */}
       <div className="bg-white shadow rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">社区列表</h2>
+          <h2 className="text-lg font-medium text-gray-900">{t('adminCommunityList')}</h2>
         </div>
         <div className="divide-y divide-gray-200">
           {communities.length === 0 ? (
             <div className="px-6 py-12 text-center text-gray-500">
-              暂无社区
+              {t('adminNoCommunities')}
             </div>
           ) : (
             communities.map((community) => (
@@ -199,15 +201,15 @@ export default function AdminCommunitiesPage() {
                         <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
                           <span className="flex items-center">
                             <BuildingOfficeIcon className="h-4 w-4 mr-1" />
-                            {community.stats.buildings} 建筑
+                            {community.stats.buildings} {t('adminBuildingsCount')}
                           </span>
                           <span className="flex items-center">
                             <UserGroupIcon className="h-4 w-4 mr-1" />
-                            {community.stats.members} 成员
+                            {community.stats.members} {t('adminMembersCount')}
                           </span>
                           <span className="flex items-center">
                             <CogIcon className="h-4 w-4 mr-1" />
-                            {community.stats.workingGroups} 工作组
+                            {community.stats.workingGroups} {t('adminWorkgroupsCount')}
                           </span>
                         </div>
                         {community.address && (
@@ -225,7 +227,7 @@ export default function AdminCommunitiesPage() {
                       href={`/community/${community.id}`}
                       className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
                     >
-                      查看详情
+                      {t('adminViewDetails')}
                       <ArrowRightIcon className="ml-2 h-4 w-4" />
                     </Link>
                   </div>

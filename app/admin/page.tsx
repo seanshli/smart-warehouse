@@ -180,7 +180,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <BuildingOfficeIcon className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-900">社区管理</span>
+                <span className="text-sm font-medium text-gray-900">{t('adminCommunities')}</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center space-x-3">
                 <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-900">建筑管理</span>
+                <span className="text-sm font-medium text-gray-900">{t('adminBuildings')}</span>
               </div>
               <ArrowRightIcon className="h-4 w-4 text-gray-400" />
             </Link>

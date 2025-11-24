@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useLanguage } from '@/components/LanguageProvider'
 import { 
   BuildingOfficeIcon,
   HomeIcon,
@@ -27,6 +28,7 @@ interface Building {
 
 export default function AdminBuildingsPage() {
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const [buildings, setBuildings] = useState<Building[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -105,9 +107,9 @@ export default function AdminBuildingsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">建筑管理</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('adminBuildings')}</h1>
             <p className="mt-2 text-gray-600">
-              查看和管理所有建筑和住户
+              {t('adminBuildingsDescription')}
             </p>
           </div>
         </div>
@@ -143,7 +145,7 @@ export default function AdminBuildingsPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">总建筑数</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalBuildings')}</dt>
                   <dd className="text-2xl font-bold text-gray-900">{buildings.length}</dd>
                 </dl>
               </div>

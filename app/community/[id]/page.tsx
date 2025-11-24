@@ -282,30 +282,62 @@ function BuildingsTab({ communityId }: { communityId: string }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchBuildings()
+    if (communityId) {
+      fetchBuildings()
+    } else {
+      setError('Community ID is required')
+      setLoading(false)
+    }
   }, [communityId])
 
   const fetchBuildings = async () => {
+    if (!communityId) {
+      setError('Community ID is required')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`/api/community/${communityId}/buildings`)
+      console.log('[BuildingsTab] Fetching buildings for community:', communityId)
+      
+      const response = await fetch(`/api/community/${communityId}/buildings`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      console.log('[BuildingsTab] Response status:', response.status, response.statusText)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        console.error('[BuildingsTab] Error response:', errorData)
         const errorMessage = errorData.error || errorData.message || `Failed to fetch buildings (${response.status})`
         throw new Error(errorMessage)
       }
       
       const data = await response.json()
+      console.log('[BuildingsTab] Received data:', data)
       
-      if (!data || !data.buildings) {
-        throw new Error('Invalid buildings data received')
+      if (!data) {
+        throw new Error('No data received from server')
       }
       
-      setBuildings(data.buildings || [])
+      // Handle both { buildings: [...] } and direct array response
+      const buildingsList = data.buildings || (Array.isArray(data) ? data : [])
+      
+      if (!Array.isArray(buildingsList)) {
+        console.error('[BuildingsTab] Invalid data format:', data)
+        throw new Error('Invalid buildings data format')
+      }
+      
+      console.log('[BuildingsTab] Setting buildings:', buildingsList.length, buildingsList)
+      setBuildings(buildingsList)
     } catch (err) {
-      console.error('[Community] Error fetching buildings:', err)
+      console.error('[BuildingsTab] Error fetching buildings:', err)
       setError(err instanceof Error ? err.message : 'Failed to load buildings')
     } finally {
       setLoading(false)

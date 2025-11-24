@@ -98,6 +98,8 @@ export interface Translations {
   adminPanel: string
   adminManagement: string
   adminDashboard: string
+  adminCommunities: string
+  adminBuildings: string
   adminHouseholds: string
   adminItems: string
   adminUsers: string
@@ -678,6 +680,8 @@ const en: Translations = {
   adminPanel: 'Admin Panel',
   adminManagement: 'Smart Warehouse Management',
   adminDashboard: 'Dashboard',
+  adminCommunities: 'Communities',
+  adminBuildings: 'Buildings',
   adminHouseholds: 'Households',
   adminItems: 'Items',
   adminUsers: 'Admin Users',
@@ -1262,6 +1266,8 @@ const zhTW: Translations = {
   adminPanel: '管理面板',
   adminManagement: '智能倉庫管理',
   adminDashboard: '儀表板',
+  adminCommunities: '社區',
+  adminBuildings: '建築',
   adminHouseholds: '家庭',
   adminItems: '物品',
   adminUsers: '管理員用戶',
@@ -1856,6 +1862,8 @@ const zh: Translations = {
   adminPanel: '管理面板',
   adminManagement: '智能仓库管理',
   adminDashboard: '仪表板',
+  adminCommunities: '社区',
+  adminBuildings: '建筑',
   adminHouseholds: '家庭',
   adminItems: '物品',
   adminUsers: '管理员用户',
@@ -2448,6 +2456,8 @@ const ja: Translations = {
   adminPanel: '管理パネル',
   adminManagement: 'スマート倉庫管理',
   adminDashboard: 'ダッシュボード',
+  adminCommunities: 'コミュニティ',
+  adminBuildings: '建物',
   adminHouseholds: '世帯',
   adminItems: 'アイテム',
   adminUsers: '管理者ユーザー',

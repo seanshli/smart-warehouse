@@ -19,26 +19,7 @@ export default function AdminSignIn() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if already logged in as admin
-    const checkExistingSession = async () => {
-      try {
-        // Wait a bit for session clearing to complete
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        const session = await getSession()
-        console.log('[Admin] Session check result:', { hasSession: !!session, user: session?.user, isAdmin: (session?.user as any)?.isAdmin })
-        
-        if (session?.user && (session.user as any).isAdmin) {
-          console.log('[Admin] Already logged in as admin, redirecting to admin dashboard')
-          router.push('/admin')
-          return
-        }
-      } catch (error) {
-        console.log('[Admin] Session check error:', error)
-      }
-    }
-
-    // Clear any existing sessions on page load
+    // Clear any existing sessions on page load (only once)
     const clearExistingSession = async () => {
       try {
         console.log('[Admin] Clearing existing sessions...')
@@ -90,14 +71,9 @@ export default function AdminSignIn() {
       }
     }
     
-    // Clear sessions first, then check if already logged in
-    clearExistingSession().then(() => {
-      // Wait a bit for session clearing to complete
-      setTimeout(() => {
-        checkExistingSession()
-      }, 500)
-    })
-  }, [router])
+    // Only clear sessions on initial mount, don't auto-redirect
+    clearExistingSession()
+  }, []) // Empty dependency array - only run once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

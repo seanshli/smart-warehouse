@@ -55,13 +55,24 @@ export default function CommunityDetailPage() {
   const fetchCommunity = async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch(`/api/community/${communityId}`)
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch community')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.message || `Failed to fetch community (${response.status})`
+        throw new Error(errorMessage)
       }
+      
       const data = await response.json()
+      
+      if (!data || !data.id) {
+        throw new Error('Invalid community data received')
+      }
+      
       setCommunity(data)
     } catch (err) {
+      console.error('[Community] Error fetching community:', err)
       setError(err instanceof Error ? err.message : 'Failed to load community')
     } finally {
       setLoading(false)

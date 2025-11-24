@@ -39,7 +39,7 @@ export default function CommunityDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session } = useSession()
-  const communityId = params.id as string
+  const communityId = params?.id as string
 
   const [community, setCommunity] = useState<Community | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,26 +53,63 @@ export default function CommunityDetailPage() {
   }, [communityId])
 
   const fetchCommunity = async () => {
+    if (!communityId) {
+      setError('Community ID is required')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`/api/community/${communityId}`)
+      console.log('[CommunityDetailPage] Fetching community:', communityId)
+      
+      const response = await fetch(`/api/community/${communityId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      console.log('[CommunityDetailPage] Response status:', response.status)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        console.error('[CommunityDetailPage] Error response:', errorData)
         const errorMessage = errorData.error || errorData.message || `Failed to fetch community (${response.status})`
         throw new Error(errorMessage)
       }
       
       const data = await response.json()
+      console.log('[CommunityDetailPage] Received data:', data)
       
       if (!data || !data.id) {
         throw new Error('Invalid community data received')
       }
       
-      setCommunity(data)
+      // Ensure stats object exists with default values
+      const communityData: Community = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        address: data.address,
+        city: data.city,
+        district: data.district,
+        country: data.country,
+        invitationCode: data.invitationCode,
+        createdAt: data.createdAt,
+        stats: data.stats || {
+          buildings: data._count?.buildings || 0,
+          members: data._count?.members || 0,
+          workingGroups: data._count?.workingGroups || 0,
+        },
+      }
+      
+      console.log('[CommunityDetailPage] Setting community:', communityData)
+      setCommunity(communityData)
     } catch (err) {
-      console.error('[Community] Error fetching community:', err)
+      console.error('[CommunityDetailPage] Error fetching community:', err)
       setError(err instanceof Error ? err.message : 'Failed to load community')
     } finally {
       setLoading(false)

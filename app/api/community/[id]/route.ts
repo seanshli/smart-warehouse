@@ -46,10 +46,23 @@ export async function GET(
       return NextResponse.json({ error: 'Community not found' }, { status: 404 })
     }
 
-    // Return community with invitationCode
+    // Return community with stats and invitationCode
     return NextResponse.json({
-      ...community,
+      id: community.id,
+      name: community.name,
+      description: community.description,
+      address: community.address,
+      city: community.city,
+      district: community.district,
+      country: community.country,
       invitationCode: community.invitationCode || null,
+      createdAt: community.createdAt,
+      updatedAt: community.updatedAt,
+      stats: {
+        buildings: community._count.buildings || 0,
+        members: community._count.members || 0,
+        workingGroups: community._count.workingGroups || 0,
+      },
     })
   } catch (error) {
     console.error('Error fetching community:', error)

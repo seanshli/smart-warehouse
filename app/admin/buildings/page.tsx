@@ -118,7 +118,7 @@ export default function AdminBuildingsPage() {
       {/* Filter */}
       <div className="mb-6">
         <label htmlFor="community-filter" className="block text-sm font-medium text-gray-700 mb-2">
-          筛选社区
+          {t('adminFilterByCommunity')}
         </label>
         <select
           id="community-filter"
@@ -126,7 +126,7 @@ export default function AdminBuildingsPage() {
           onChange={(e) => setSelectedCommunity(e.target.value)}
           className="block w-full max-w-xs rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         >
-          <option value="all">所有社区</option>
+          <option value="all">{t('adminAllCommunities')}</option>
           {communities.map((community) => (
             <option key={community.id} value={community.id}>
               {community.name}
@@ -161,7 +161,7 @@ export default function AdminBuildingsPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">总住户数</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalHouseholds')}</dt>
                   <dd className="text-2xl font-bold text-gray-900">
                     {buildings.reduce((sum, b) => sum + b.householdCount, 0)}
                   </dd>

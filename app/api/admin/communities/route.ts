@@ -7,41 +7,77 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/admin/communities
- * Get all communities (admin only)
+ * Get communities where user is admin or super admin
+ * - Super admin (isAdmin=true): can see all communities
+ * - Community admin (ADMIN role): can only see their own communities
  */
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin
+    const userId = (session.user as any).id
+
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { isAdmin: true }
+      select: { isAdmin: true, id: true }
     })
 
-    if (!user?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get all communities
-    const communities = await prisma.community.findMany({
-      include: {
-        _count: {
-          select: {
-            buildings: true,
-            members: true,
-            workingGroups: true,
+    let communities
+
+    if (user.isAdmin) {
+      // Super admin: can see all communities
+      communities = await prisma.community.findMany({
+        include: {
+          _count: {
+            select: {
+              buildings: true,
+              members: true,
+              workingGroups: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+    } else {
+      // Community admin: only see communities where they are ADMIN or MANAGER
+      const memberships = await prisma.communityMember.findMany({
+        where: {
+          userId,
+          role: {
+            in: ['ADMIN', 'MANAGER']
+          }
+        },
+        include: {
+          community: {
+            include: {
+              _count: {
+                select: {
+                  buildings: true,
+                  members: true,
+                  workingGroups: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          joinedAt: 'desc',
+        },
+      })
+
+      communities = memberships.map(m => m.community)
+    }
 
     return NextResponse.json({
       communities: communities.map(c => ({

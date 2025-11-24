@@ -26,9 +26,17 @@ export async function DELETE(
     const groupId = params.groupId
     const memberId = params.memberId
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canAssignWorkingGroupMembers'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can manage working group members, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canAssignWorkingGroupMembers'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     // Get the member to delete

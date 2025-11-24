@@ -95,9 +95,17 @@ export async function POST(
       return NextResponse.json({ error: 'Working group type is required' }, { status: 400 })
     }
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canCreateWorkingGroups'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can create working groups, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canCreateWorkingGroups'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     const workingGroup = await prisma.workingGroup.create({

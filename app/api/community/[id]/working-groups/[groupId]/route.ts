@@ -118,9 +118,17 @@ export async function PATCH(
     const groupId = params.groupId
     const body = await request.json()
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canEditWorkingGroups'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can edit working groups, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canEditWorkingGroups'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     const { name, description, type } = body
@@ -163,9 +171,17 @@ export async function DELETE(
     const communityId = params.id
     const groupId = params.groupId
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canDeleteWorkingGroups'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can delete working groups, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canDeleteWorkingGroups'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     await prisma.workingGroup.delete({

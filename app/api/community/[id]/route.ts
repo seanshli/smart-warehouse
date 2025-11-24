@@ -75,9 +75,17 @@ export async function PATCH(
     const communityId = params.id
     const body = await request.json()
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canManageCommunity'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can manage all communities, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canManageCommunity'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     const { name, description, address, city, district, country, latitude, longitude } = body
@@ -124,23 +132,31 @@ export async function DELETE(
     const userId = (session.user as any).id
     const communityId = params.id
 
-    // Check permission (only ADMIN can delete)
-    if (!(await checkCommunityPermission(userId, communityId, 'canManageCommunity'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
-
-    // Check if user is ADMIN
-    const membership = await prisma.communityMember.findUnique({
-      where: {
-        userId_communityId: {
-          userId,
-          communityId,
-        },
-      },
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
     })
 
-    if (membership?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Only ADMIN can delete community' }, { status: 403 })
+    // Super admins can delete any community, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canManageCommunity'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
+
+      // Check if user is ADMIN in the community
+      const membership = await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId,
+            communityId,
+          },
+        },
+      })
+
+      if (membership?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Only ADMIN can delete community' }, { status: 403 })
+      }
     }
 
     await prisma.community.delete({

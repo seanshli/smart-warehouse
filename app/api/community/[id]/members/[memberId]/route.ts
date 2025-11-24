@@ -62,25 +62,33 @@ export async function PUT(
       return NextResponse.json({ error: 'Member does not belong to this community' }, { status: 400 })
     }
 
-    // Get user's role
-    const userRole = await getUserCommunityRole(userId, communityId)
-    if (!userRole) {
-      return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
-    }
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canManageRoles'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+    // Super admins can manage all roles, otherwise check permission
+    if (!user?.isAdmin) {
+      const userRole = await getUserCommunityRole(userId, communityId)
+      if (!userRole) {
+        return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
+      }
 
-    // Check if user can manage this role
-    if (!canManageCommunityRole(userRole, role as CommunityRole)) {
-      return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
-    }
+      // Check permission
+      if (!(await checkCommunityPermission(userId, communityId, 'canManageRoles'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
 
-    // Check if trying to change ADMIN role (only ADMIN can change ADMIN)
-    if (memberToUpdate.role === 'ADMIN' && userRole !== 'ADMIN') {
-      return NextResponse.json({ error: 'Only ADMIN can modify ADMIN role' }, { status: 403 })
+      // Check if user can manage this role
+      if (!canManageCommunityRole(userRole, role as CommunityRole)) {
+        return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
+      }
+
+      // Check if trying to change ADMIN role (only ADMIN can change ADMIN)
+      if (memberToUpdate.role === 'ADMIN' && userRole !== 'ADMIN') {
+        return NextResponse.json({ error: 'Only ADMIN can modify ADMIN role' }, { status: 403 })
+      }
     }
 
     // Prevent removing the last ADMIN
@@ -160,9 +168,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Member does not belong to this community' }, { status: 400 })
     }
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canRemoveMembers'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can remove members, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canRemoveMembers'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     // Prevent removing the last ADMIN

@@ -82,9 +82,17 @@ export async function POST(
     const body = await request.json()
     const { permission, scope, scopeId } = body
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canEditWorkingGroups'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can edit working groups, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canEditWorkingGroups'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     // Verify working group belongs to community

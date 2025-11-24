@@ -91,9 +91,17 @@ export async function POST(
       return NextResponse.json({ error: 'Building name is required' }, { status: 400 })
     }
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canCreateBuildings'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Super admins can create buildings, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canCreateBuildings'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     const building = await prisma.building.create({

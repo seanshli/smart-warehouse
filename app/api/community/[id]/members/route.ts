@@ -30,14 +30,22 @@ export async function GET(
     const userId = (session.user as any).id
     const communityId = params.id
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canViewMembers'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
 
-    const userRole = await getUserCommunityRole(userId, communityId)
-    if (!userRole) {
-      return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
+    // Super admins can view all members, otherwise check permission
+    if (!user?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canViewMembers'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
+
+      const userRole = await getUserCommunityRole(userId, communityId)
+      if (!userRole) {
+        return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
+      }
     }
 
     const members = await prisma.communityMember.findMany({
@@ -58,15 +66,19 @@ export async function GET(
       },
     })
 
+    // Get user role for permission checks (super admin has all permissions)
+    const effectiveRole = user?.isAdmin ? 'ADMIN' : await getUserCommunityRole(userId, communityId)
+    const userRole = (effectiveRole || 'MEMBER') as CommunityRole
+
     return NextResponse.json({
       members: members.map(member => ({
         id: member.id,
         role: member.role,
         joinedAt: member.joinedAt,
         user: member.user,
-        canManage: canManageCommunityRole(userRole, (member.role || 'MEMBER') as CommunityRole),
+        canManage: user?.isAdmin || canManageCommunityRole(userRole, (member.role || 'MEMBER') as CommunityRole),
       })),
-      assignableRoles: getAssignableCommunityRoles(userRole),
+      assignableRoles: user?.isAdmin ? ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER'] : getAssignableCommunityRoles(userRole),
     })
   } catch (error) {
     console.error('Error fetching community members:', error)
@@ -97,15 +109,11 @@ export async function POST(
     const body = await request.json()
     const { targetUserId, targetUserEmail, role = 'MEMBER' } = body
 
-    // Check permission
-    if (!(await checkCommunityPermission(userId, communityId, 'canAddMembers'))) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
-
-    const userRole = await getUserCommunityRole(userId, communityId)
-    if (!userRole) {
-      return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
-    }
+    // Check if user is super admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
 
     // Validate role
     const validRoles: CommunityRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
@@ -113,9 +121,21 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
-    // Check if user can assign this role
-    if (!canManageCommunityRole(userRole, role as CommunityRole)) {
-      return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
+    // Super admins can add members, otherwise check permission
+    if (!currentUser?.isAdmin) {
+      if (!(await checkCommunityPermission(userId, communityId, 'canAddMembers'))) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
+
+      const userRole = await getUserCommunityRole(userId, communityId)
+      if (!userRole) {
+        return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
+      }
+
+      // Check if user can assign this role
+      if (!canManageCommunityRole(userRole, role as CommunityRole)) {
+        return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
+      }
     }
 
     // Find target user

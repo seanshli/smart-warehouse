@@ -101,6 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={false}
                   className={`${
                     item.current
                       ? 'border-red-500 text-red-600'

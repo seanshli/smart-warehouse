@@ -255,7 +255,7 @@ export default function AdminBuildingsPage() {
                       href={`/building/${building.id}`}
                       className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
                     >
-                      查看详情
+                      {t('adminViewDetails')}
                       <ArrowRightIcon className="ml-2 h-4 w-4" />
                     </Link>
                   </div>

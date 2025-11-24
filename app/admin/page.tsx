@@ -175,6 +175,28 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">{t('adminQuickActions')}</h3>
           <div className="space-y-3">
             <Link
+              href="/admin/communities"
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <BuildingOfficeIcon className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-gray-900">社区管理</span>
+              </div>
+              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+            </Link>
+            
+            <Link
+              href="/admin/buildings"
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-gray-900">建筑管理</span>
+              </div>
+              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+            </Link>
+            
+            <Link
               href="/admin/households"
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >

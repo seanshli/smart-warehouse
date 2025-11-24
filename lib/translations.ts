@@ -113,6 +113,8 @@ export interface Translations {
   adminBuildingsCount: string
   adminMembersCount: string
   adminWorkgroupsCount: string
+  adminTotalHouseholds: string
+  adminAllCommunities: string
   adminHouseholds: string
   adminItems: string
   adminUsers: string

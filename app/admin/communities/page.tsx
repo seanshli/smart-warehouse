@@ -41,7 +41,7 @@ export default function AdminCommunitiesPage() {
   const fetchCommunities = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/community')
+      const response = await fetch('/api/admin/communities')
       if (!response.ok) {
         throw new Error('Failed to fetch communities')
       }

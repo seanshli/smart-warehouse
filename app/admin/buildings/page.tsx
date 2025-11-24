@@ -43,7 +43,7 @@ export default function AdminBuildingsPage() {
 
   const fetchCommunities = async () => {
     try {
-      const response = await fetch('/api/community')
+      const response = await fetch('/api/admin/communities')
       if (response.ok) {
         const data = await response.json()
         setCommunities(data.communities || [])
@@ -56,32 +56,16 @@ export default function AdminBuildingsPage() {
   const fetchBuildings = async () => {
     try {
       setLoading(true)
-      let url = '/api/building'
-      if (selectedCommunity !== 'all') {
-        // Fetch buildings for specific community
-        const response = await fetch(`/api/community/${selectedCommunity}/buildings`)
-        if (response.ok) {
-          const data = await response.json()
-          setBuildings(data.buildings || [])
-          setLoading(false)
-          return
-        }
-      } else {
-        // Fetch all buildings from all communities
-        const allBuildings: Building[] = []
-        for (const community of communities) {
-          try {
-            const response = await fetch(`/api/community/${community.id}/buildings`)
-            if (response.ok) {
-              const data = await response.json()
-              allBuildings.push(...(data.buildings || []))
-            }
-          } catch (err) {
-            console.error(`Failed to fetch buildings for community ${community.id}:`, err)
-          }
-        }
-        setBuildings(allBuildings)
+      const url = selectedCommunity !== 'all' 
+        ? `/api/admin/buildings?communityId=${selectedCommunity}`
+        : '/api/admin/buildings'
+      
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('Failed to fetch buildings')
       }
+      const data = await response.json()
+      setBuildings(data.buildings || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load buildings')
     } finally {

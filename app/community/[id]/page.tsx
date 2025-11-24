@@ -259,15 +259,15 @@ function OverviewTab({ community }: { community: Community }) {
         <h3 className="text-lg font-medium text-gray-900 mb-4">统计信息</h3>
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-gray-900">{community.stats.buildings}</div>
+            <div className="text-3xl font-bold text-gray-900">{community.stats?.buildings ?? 0}</div>
             <div className="text-sm text-gray-500 mt-1">建筑</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-gray-900">{community.stats.members}</div>
+            <div className="text-3xl font-bold text-gray-900">{community.stats?.members ?? 0}</div>
             <div className="text-sm text-gray-500 mt-1">成员</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-gray-900">{community.stats.workingGroups}</div>
+            <div className="text-3xl font-bold text-gray-900">{community.stats?.workingGroups ?? 0}</div>
             <div className="text-sm text-gray-500 mt-1">工作组</div>
           </div>
         </div>

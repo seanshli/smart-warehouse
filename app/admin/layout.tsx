@@ -13,7 +13,8 @@ import {
   CogIcon,
   ArrowRightOnRectangleIcon,
   ShieldCheckIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

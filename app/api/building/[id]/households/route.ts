@@ -32,6 +32,14 @@ export async function GET(
     const households = await prisma.household.findMany({
       where: { buildingId },
       include: {
+        floor: {
+          select: {
+            id: true,
+            floorNumber: true,
+            name: true,
+            isResidential: true,
+          },
+        },
         _count: {
           select: {
             members: true,
@@ -40,10 +48,46 @@ export async function GET(
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: [
+        { floorNumber: 'asc' },
+        { unit: 'asc' },
+        { name: 'asc' },
+      ],
     })
+
+    // Group households by floor
+    const floorsMap = new Map<number, any[]>()
+    households.forEach(h => {
+      const floorNum = h.floorNumber || 0
+      if (!floorsMap.has(floorNum)) {
+        floorsMap.set(floorNum, [])
+      }
+      floorsMap.get(floorNum)!.push({
+        id: h.id,
+        name: h.name,
+        description: h.description,
+        apartmentNo: h.apartmentNo,
+        unit: h.unit,
+        address: h.address,
+        floorNumber: h.floorNumber,
+        floor: h.floor,
+        stats: {
+          members: h._count.members,
+          items: h._count.items,
+          rooms: h._count.rooms,
+        },
+        createdAt: h.createdAt,
+      })
+    })
+
+    // Convert to array and sort by floor number
+    const floors = Array.from(floorsMap.entries())
+      .map(([floorNumber, households]) => ({
+        floorNumber,
+        households,
+        floor: households[0]?.floor,
+      }))
+      .sort((a, b) => b.floorNumber - a.floorNumber) // Descending order (top floor first)
 
     return NextResponse.json({
       households: households.map(h => ({
@@ -51,7 +95,10 @@ export async function GET(
         name: h.name,
         description: h.description,
         apartmentNo: h.apartmentNo,
+        unit: h.unit,
         address: h.address,
+        floorNumber: h.floorNumber,
+        floor: h.floor,
         stats: {
           members: h._count.members,
           items: h._count.items,
@@ -59,6 +106,7 @@ export async function GET(
         },
         createdAt: h.createdAt,
       })),
+      floors,
     })
   } catch (error) {
     console.error('Error fetching building households:', error)

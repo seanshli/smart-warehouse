@@ -595,6 +595,48 @@ export interface Translations {
   noItemsCreatedYet: string
   min: string
   photo: string
+  
+  // Building
+  buildingOverview: string
+  buildingHouseholds: string
+  buildingMailboxes: string
+  buildingSettings: string
+  buildingBasicInfo: string
+  buildingCommunity: string
+  buildingFloorCount: string
+  buildingUnitCount: string
+  buildingHouseholdCount: string
+  buildingCreatedAt: string
+  buildingInvitationCode: string
+  buildingCopyCode: string
+  buildingShareCode: string
+  buildingFloorsSetup: string
+  buildingUnitsSetup: string
+  buildingSetupComplete: string
+  buildingSetupInProgress: string
+  buildingSetupFloorsUnits: string
+  buildingResetFloorsUnits: string
+  buildingResetWarning: string
+  buildingViewHouseholds: string
+  buildingManageMailboxes: string
+  buildingFloor: string
+  buildingUnit: string
+  buildingMailbox: string
+  buildingNoHouseholds: string
+  buildingLoading: string
+  buildingMembers: string
+  buildingItems: string
+  buildingRooms: string
+  buildingBackToCommunity: string
+  buildingNotFound: string
+  
+  // Household Actions
+  householdReservation: string
+  householdMaintenance: string
+  householdProperty: string
+  householdMail: string
+  householdPackage: string
+  householdVisitorTag: string
 }
 
 // English translations (default)
@@ -1147,6 +1189,48 @@ const en: Translations = {
   taxAmount: 'Tax Amount',
   invoiceItems: 'Invoice Items',
   processingTaiwanInvoice: 'Processing Taiwan invoice...',
+  
+  // Building
+  buildingOverview: 'Overview',
+  buildingHouseholds: 'Households',
+  buildingMailboxes: 'Mailboxes',
+  buildingSettings: 'Building Settings',
+  buildingBasicInfo: 'Basic Information',
+  buildingCommunity: 'Community',
+  buildingFloorCount: 'Floors',
+  buildingUnitCount: 'Units',
+  buildingHouseholdCount: 'Households',
+  buildingCreatedAt: 'Created',
+  buildingInvitationCode: 'Invitation Code',
+  buildingCopyCode: 'Copy',
+  buildingShareCode: 'Share this code with others to join this building',
+  buildingFloorsSetup: 'Floors and units set up',
+  buildingUnitsSetup: 'Residential units',
+  buildingSetupComplete: 'Floors and units set up',
+  buildingSetupInProgress: 'Setting up...',
+  buildingSetupFloorsUnits: 'Set up Floors and Units',
+  buildingResetFloorsUnits: 'Reset Floors and Units',
+  buildingResetWarning: 'Resetting will update existing floors and units (will not delete existing data)',
+  buildingViewHouseholds: 'View Households',
+  buildingManageMailboxes: 'Manage Mailboxes',
+  buildingFloor: 'Floor',
+  buildingUnit: 'Unit',
+  buildingMailbox: 'Mailbox',
+  buildingNoHouseholds: 'No households yet',
+  buildingLoading: 'Loading...',
+  buildingMembers: 'Members',
+  buildingItems: 'Items',
+  buildingRooms: 'Rooms',
+  buildingBackToCommunity: 'Back to Community',
+  buildingNotFound: 'Building not found',
+  
+  // Household Actions
+  householdReservation: 'Reservation',
+  householdMaintenance: 'Maintenance',
+  householdProperty: 'Property',
+  householdMail: 'Mail',
+  householdPackage: 'Package',
+  householdVisitorTag: 'Visitor Tag',
   
   // Invitation Codes
   invitationCode: 'Invitation Code',
@@ -1807,6 +1891,48 @@ const zhTW: Translations = {
   noItemsCreatedYet: '尚未建立任何物品。',
   min: '最小',
   photo: '照片',
+  
+  // Building
+  buildingOverview: '概覽',
+  buildingHouseholds: '住戶',
+  buildingMailboxes: '郵箱',
+  buildingSettings: '建築設置',
+  buildingBasicInfo: '基本信息',
+  buildingCommunity: '所屬社區',
+  buildingFloorCount: '樓層數',
+  buildingUnitCount: '單元數',
+  buildingHouseholdCount: '住戶數量',
+  buildingCreatedAt: '創建時間',
+  buildingInvitationCode: '邀請碼',
+  buildingCopyCode: '複製',
+  buildingShareCode: '分享此邀請碼給其他人，讓他們可以加入此建築',
+  buildingFloorsSetup: '樓層和單元已設置',
+  buildingUnitsSetup: '住戶單元',
+  buildingSetupComplete: '樓層和單元已設置',
+  buildingSetupInProgress: '設置中...',
+  buildingSetupFloorsUnits: '設置樓層和單元',
+  buildingResetFloorsUnits: '重新設置樓層和單元',
+  buildingResetWarning: '重新設置將更新現有樓層和單元（不會刪除已有數據）',
+  buildingViewHouseholds: '查看住戶',
+  buildingManageMailboxes: '管理郵箱',
+  buildingFloor: '樓層',
+  buildingUnit: '單元',
+  buildingMailbox: '郵箱',
+  buildingNoHouseholds: '暫無住戶',
+  buildingLoading: '載入中...',
+  buildingMembers: '成員',
+  buildingItems: '物品',
+  buildingRooms: '房間',
+  buildingBackToCommunity: '返回社區',
+  buildingNotFound: '找不到建築',
+  
+  // Household Actions
+  householdReservation: '預定',
+  householdMaintenance: '報修',
+  householdProperty: '物業',
+  householdMail: '郵件',
+  householdPackage: '包裹',
+  householdVisitorTag: '訪客標籤',
 }
 
 // Simplified Chinese translations (zh)
@@ -2416,6 +2542,48 @@ const zh: Translations = {
   noItemsCreatedYet: '尚未创建任何物品。',
   min: '最小',
   photo: '照片',
+  
+  // Building
+  buildingOverview: '概览',
+  buildingHouseholds: '住户',
+  buildingMailboxes: '邮箱',
+  buildingSettings: '建筑设置',
+  buildingBasicInfo: '基本信息',
+  buildingCommunity: '所属社区',
+  buildingFloorCount: '楼层数',
+  buildingUnitCount: '单元数',
+  buildingHouseholdCount: '住户数量',
+  buildingCreatedAt: '创建时间',
+  buildingInvitationCode: '邀请码',
+  buildingCopyCode: '复制',
+  buildingShareCode: '分享此邀请码给其他人，让他们可以加入此建筑',
+  buildingFloorsSetup: '楼层和单元已设置',
+  buildingUnitsSetup: '住户单元',
+  buildingSetupComplete: '楼层和单元已设置',
+  buildingSetupInProgress: '设置中...',
+  buildingSetupFloorsUnits: '设置楼层和单元',
+  buildingResetFloorsUnits: '重新设置楼层和单元',
+  buildingResetWarning: '重新设置将更新现有楼层和单元（不会删除已有数据）',
+  buildingViewHouseholds: '查看住户',
+  buildingManageMailboxes: '管理邮箱',
+  buildingFloor: '楼层',
+  buildingUnit: '单元',
+  buildingMailbox: '邮箱',
+  buildingNoHouseholds: '暂无住户',
+  buildingLoading: '加载中...',
+  buildingMembers: '成员',
+  buildingItems: '物品',
+  buildingRooms: '房间',
+  buildingBackToCommunity: '返回社区',
+  buildingNotFound: '找不到建筑',
+  
+  // Household Actions
+  householdReservation: '预定',
+  householdMaintenance: '报修',
+  householdProperty: '物业',
+  householdMail: '邮件',
+  householdPackage: '包裹',
+  householdVisitorTag: '访客标签',
 }
 
 // Japanese translations (ja)
@@ -3025,6 +3193,48 @@ const ja: Translations = {
   noItemsCreatedYet: 'まだアイテムが作成されていません。',
   min: '最小',
   photo: '写真',
+  
+  // Building
+  buildingOverview: '概要',
+  buildingHouseholds: '世帯',
+  buildingMailboxes: 'メールボックス',
+  buildingSettings: '建物設定',
+  buildingBasicInfo: '基本情報',
+  buildingCommunity: 'コミュニティ',
+  buildingFloorCount: '階数',
+  buildingUnitCount: 'ユニット数',
+  buildingHouseholdCount: '世帯数',
+  buildingCreatedAt: '作成日',
+  buildingInvitationCode: '招待コード',
+  buildingCopyCode: 'コピー',
+  buildingShareCode: 'このコードを他の人と共有して、この建物に参加させることができます',
+  buildingFloorsSetup: '階とユニットが設定されました',
+  buildingUnitsSetup: '居住ユニット',
+  buildingSetupComplete: '階とユニットが設定されました',
+  buildingSetupInProgress: '設定中...',
+  buildingSetupFloorsUnits: '階とユニットを設定',
+  buildingResetFloorsUnits: '階とユニットをリセット',
+  buildingResetWarning: 'リセットすると既存の階とユニットが更新されます（既存のデータは削除されません）',
+  buildingViewHouseholds: '世帯を表示',
+  buildingManageMailboxes: 'メールボックスを管理',
+  buildingFloor: '階',
+  buildingUnit: 'ユニット',
+  buildingMailbox: 'メールボックス',
+  buildingNoHouseholds: '世帯がありません',
+  buildingLoading: '読み込み中...',
+  buildingMembers: 'メンバー',
+  buildingItems: 'アイテム',
+  buildingRooms: '部屋',
+  buildingBackToCommunity: 'コミュニティに戻る',
+  buildingNotFound: '建物が見つかりません',
+  
+  // Household Actions
+  householdReservation: '予約',
+  householdMaintenance: '修理',
+  householdProperty: '物件',
+  householdMail: 'メール',
+  householdPackage: 'パッケージ',
+  householdVisitorTag: '訪問者タグ',
 }
 
 // Translation registry

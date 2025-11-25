@@ -11,11 +11,17 @@ import {
   HomeIcon,
   ArrowLeftIcon,
   PlusIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  CalendarIcon,
+  WrenchScrewdriverIcon,
+  BuildingStorefrontIcon,
+  CubeIcon,
+  IdentificationIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { useLanguage } from '@/components/LanguageProvider'
 
 interface Building {
   id: string
@@ -42,6 +48,7 @@ export default function BuildingDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session } = useSession()
+  const { t } = useLanguage()
   const buildingId = params.id as string
 
   const [building, setBuilding] = useState<Building | null>(null)
@@ -93,7 +100,7 @@ export default function BuildingDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
+          <p className="mt-4 text-gray-600">{t('buildingLoading')}</p>
         </div>
       </div>
     )
@@ -103,9 +110,9 @@ export default function BuildingDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600">{error || 'Building not found'}</p>
+          <p className="text-red-600">{error || t('buildingNotFound')}</p>
           <Link href="/community" className="mt-4 text-primary-600 hover:text-primary-700">
-            返回社区
+            {t('buildingBackToCommunity')}
           </Link>
         </div>
       </div>
@@ -122,7 +129,7 @@ export default function BuildingDetailPage() {
               {building.community.name}
             </Link>
             <span>/</span>
-            <span>建筑</span>
+            <span>{t('adminBuildings')}</span>
           </div>
           <div className="flex items-center justify-between">
             <div>
@@ -138,9 +145,9 @@ export default function BuildingDetailPage() {
         <div className="border-b border-gray-200 mb-6">
           <nav className="-mb-px flex space-x-8">
             {[
-              { id: 'overview', name: '概览', icon: BuildingOfficeIcon },
-              { id: 'households', name: '住户', icon: HomeIcon },
-              { id: 'mailboxes', name: '邮箱', icon: EnvelopeIcon },
+              { id: 'overview', name: t('buildingOverview'), icon: BuildingOfficeIcon },
+              { id: 'households', name: t('buildingHouseholds'), icon: HomeIcon },
+              { id: 'mailboxes', name: t('buildingMailboxes'), icon: EnvelopeIcon },
             ].map((tab) => {
               const Icon = tab.icon
               return (
@@ -173,6 +180,7 @@ export default function BuildingDetailPage() {
 }
 
 function OverviewTab({ building, buildingId, onNavigateTab }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes') => void }) {
+  const { t } = useLanguage()
   const [settingUp, setSettingUp] = useState(false)
   const [setupStatus, setSetupStatus] = useState<{
     floors: number
@@ -382,7 +390,8 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
 }
 
 function HouseholdsTab({ buildingId }: { buildingId: string }) {
-  const [households, setHouseholds] = useState<any[]>([])
+  const { t } = useLanguage()
+  const [floors, setFloors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -394,7 +403,7 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
       const response = await fetch(`/api/building/${buildingId}/households`)
       if (response.ok) {
         const data = await response.json()
-        setHouseholds(data.households || [])
+        setFloors(data.floors || [])
       }
     } catch (err) {
       console.error('Failed to fetch households:', err)
@@ -404,53 +413,134 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
   }
 
   if (loading) {
-    return <div className="text-center py-8">加载中...</div>
+    return <div className="text-center py-8">{t('buildingLoading')}</div>
+  }
+
+  if (floors.length === 0) {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('buildingHouseholds')}</h3>
+        </div>
+        <div className="text-center py-8 text-gray-500">{t('buildingNoHouseholds')}</div>
+      </div>
+    )
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900">住户列表</h3>
+        <h3 className="text-lg font-medium text-gray-900">{t('buildingHouseholds')}</h3>
       </div>
-      {households.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">暂无住户</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {households.map((household) => (
-            <Link
-              key={household.id}
-              href={`/household/${household.id}`}
-              className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{household.name}</h4>
-                  {household.apartmentNo && (
-                    <p className="text-sm text-gray-600 mt-1">单元: {household.apartmentNo}</p>
-                  )}
-                  {household.address && (
-                    <p className="text-xs text-gray-500 mt-1">{household.address}</p>
-                  )}
+      <div className="space-y-4">
+        {floors.map((floor) => (
+          <div key={floor.floorNumber} className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center mb-3">
+              <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <h4 className="font-semibold text-gray-900">
+                {t('buildingFloor')} {floor.floorNumber}
+                {floor.floor?.name && ` - ${floor.floor.name}`}
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {floor.households.map((household: any) => (
+                <div
+                  key={household.id}
+                  className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <Link
+                        href={`/household/${household.id}`}
+                        className="font-medium text-gray-900 hover:text-primary-600"
+                      >
+                        {household.name}
+                      </Link>
+                      {household.apartmentNo && (
+                        <p className="text-xs text-gray-500 mt-1">{household.apartmentNo}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Stats with icons */}
+                  <div className="grid grid-cols-3 gap-2 mb-3 pt-2 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <HomeIcon className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="text-sm font-semibold text-gray-900">{household.stats.members}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <CubeIcon className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="text-sm font-semibold text-gray-900">{household.stats.items}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center mb-1">
+                        <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="text-sm font-semibold text-gray-900">{household.stats.rooms}</div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons with icons */}
+                  <div className="grid grid-cols-3 gap-1 pt-2 border-t border-gray-100">
+                    <Link
+                      href={`/household/${household.id}/reservation`}
+                      className="flex flex-col items-center p-2 text-xs text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                      title={t('householdReservation')}
+                    >
+                      <CalendarIcon className="h-4 w-4 mb-1" />
+                      <span className="hidden sm:inline">{t('householdReservation')}</span>
+                    </Link>
+                    <Link
+                      href={`/household/${household.id}/maintenance`}
+                      className="flex flex-col items-center p-2 text-xs text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                      title={t('householdMaintenance')}
+                    >
+                      <WrenchScrewdriverIcon className="h-4 w-4 mb-1" />
+                      <span className="hidden sm:inline">{t('householdMaintenance')}</span>
+                    </Link>
+                    <div className="relative group">
+                      <button
+                        className="flex flex-col items-center p-2 text-xs text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors w-full"
+                        title={t('householdProperty')}
+                      >
+                        <BuildingStorefrontIcon className="h-4 w-4 mb-1" />
+                        <span className="hidden sm:inline">{t('householdProperty')}</span>
+                      </button>
+                      <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[120px]">
+                        <Link
+                          href={`/household/${household.id}/property/mail`}
+                          className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
+                        >
+                          <EnvelopeIcon className="h-4 w-4 mr-2" />
+                          {t('householdMail')}
+                        </Link>
+                        <Link
+                          href={`/household/${household.id}/property/package`}
+                          className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
+                        >
+                          <CubeIcon className="h-4 w-4 mr-2" />
+                          {t('householdPackage')}
+                        </Link>
+                        <Link
+                          href={`/household/${household.id}/property/visitor`}
+                          className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
+                        >
+                          <IdentificationIcon className="h-4 w-4 mr-2" />
+                          {t('householdVisitorTag')}
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="text-lg font-semibold text-gray-900">{household.stats.members}</div>
-                  <div className="text-xs text-gray-500">成员</div>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-gray-900">{household.stats.items}</div>
-                  <div className="text-xs text-gray-500">物品</div>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-gray-900">{household.stats.rooms}</div>
-                  <div className="text-xs text-gray-500">房间</div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * API endpoint to provide Tuya SDK credentials to native clients
  * 
@@ -10,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const platform = searchParams.get('platform') || 'ios' // 'ios' or 'android'
 
     let appKey: string | undefined

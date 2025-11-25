@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 interface Building {
   id: string

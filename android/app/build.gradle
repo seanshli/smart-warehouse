@@ -54,6 +54,7 @@ repositories {
 configurations.all {
     resolutionStrategy {
         force 'jp.wasabeef:recyclerview-animators:4.0.2'
+        force 'com.google.android:flexbox:1.1.1'
     }
 }
 
@@ -68,6 +69,7 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
     implementation 'jp.wasabeef:recyclerview-animators:4.0.2'
+    implementation 'com.google.android:flexbox:1.1.1'
     // Tuya Android SDK
     // 使用 Maven 仓库集成 Tuya SDK
     // 注意：版本号需要与 BOM 版本一致，或使用实际可用的版本

@@ -155,7 +155,7 @@ export default function BuildingDetailPage() {
   )
 }
 
-function OverviewTab({ building, buildingId }: { building: Building; buildingId: string }) {
+function OverviewTab({ building, buildingId, onNavigateTab }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes') => void }) {
   const [settingUp, setSettingUp] = useState(false)
   const [setupStatus, setSetupStatus] = useState<{
     floors: number

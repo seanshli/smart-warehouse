@@ -52,6 +52,8 @@ export async function GET(
         _count: {
           select: {
             households: true,
+            floors: true,
+            mailboxes: true,
           },
         },
       },
@@ -73,6 +75,8 @@ export async function GET(
       invitationCode: building.invitationCode,
       community: building.community,
       householdCount: building._count.households,
+      floorCountActual: building._count.floors,
+      mailboxCount: building._count.mailboxes,
       createdAt: building.createdAt,
       updatedAt: building.updatedAt,
     })

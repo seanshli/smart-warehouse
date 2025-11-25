@@ -32,6 +32,8 @@ interface Building {
     name: string
   }
   householdCount: number
+  floorCountActual?: number
+  mailboxCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -144,7 +146,7 @@ export default function BuildingDetailPage() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} />}
+          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} />}
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
         </div>
@@ -155,6 +157,25 @@ export default function BuildingDetailPage() {
 
 function OverviewTab({ building, buildingId }: { building: Building; buildingId: string }) {
   const [settingUp, setSettingUp] = useState(false)
+  const [setupStatus, setSetupStatus] = useState<{
+    floors: number
+    households: number
+    mailboxes: number
+  } | null>(null)
+
+  // Check if floors and units are already set up
+  const isSetup = (building.floorCountActual && building.floorCountActual > 0) || 
+                  (building.mailboxCount && building.mailboxCount > 0)
+
+  useEffect(() => {
+    if (isSetup) {
+      setSetupStatus({
+        floors: building.floorCountActual || 0,
+        households: building.householdCount || 0,
+        mailboxes: building.mailboxCount || 0,
+      })
+    }
+  }, [building.floorCountActual, building.householdCount, building.mailboxCount, isSetup])
 
   const handleSetupFloorsUnits = async () => {
     try {
@@ -173,6 +194,15 @@ function OverviewTab({ building, buildingId }: { building: Building; buildingId:
 
       const data = await response.json()
       toast.success(`设置成功！${data.data.floors} 层，${data.data.households} 个住户单元，${data.data.mailboxes} 个邮箱`)
+      
+      // Update local state
+      setSetupStatus({
+        floors: data.data.floors,
+        households: data.data.households,
+        mailboxes: data.data.mailboxes,
+      })
+      
+      // Refresh building data
       setTimeout(() => window.location.reload(), 1500)
     } catch (error) {
       console.error('Error setting up floors and units:', error)
@@ -255,23 +285,80 @@ function OverviewTab({ building, buildingId }: { building: Building; buildingId:
 
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">建筑设置</h3>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-gray-700 mb-4">
-            为建筑设置楼层和住户单元。系统将自动创建：
-          </p>
-          <ul className="text-sm text-gray-600 mb-4 list-disc list-inside space-y-1">
-            <li>10 层楼（1-10层）</li>
-            <li>2-9 层为住户层，每层 4 个单元（A, B, C, D）</li>
-            <li>每个单元对应的邮箱（位于公共区域）</li>
-          </ul>
-          <button
-            onClick={handleSetupFloorsUnits}
-            disabled={settingUp}
-            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {settingUp ? '设置中...' : '设置楼层和单元'}
-          </button>
-        </div>
+        
+        {isSetup ? (
+          // 已设置状态
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center mb-4">
+              <svg className="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-green-800">楼层和单元已设置</span>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-white rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-900">{setupStatus?.floors || building.floorCountActual || 0}</div>
+                <div className="text-xs text-gray-500 mt-1">楼层</div>
+              </div>
+              <div className="bg-white rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-900">{setupStatus?.households || building.householdCount || 0}</div>
+                <div className="text-xs text-gray-500 mt-1">住户单元</div>
+              </div>
+              <div className="bg-white rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-900">{setupStatus?.mailboxes || building.mailboxCount || 0}</div>
+                <div className="text-xs text-gray-500 mt-1">邮箱</div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => onNavigateTab('households')}
+                className="flex-1 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-md hover:bg-green-100 text-center text-sm font-medium"
+              >
+                查看住户
+              </button>
+              <button
+                onClick={() => onNavigateTab('mailboxes')}
+                className="flex-1 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-md hover:bg-green-100 text-center text-sm font-medium"
+              >
+                管理邮箱
+              </button>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-green-200">
+              <button
+                onClick={handleSetupFloorsUnits}
+                disabled={settingUp}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+              >
+                {settingUp ? '重新设置中...' : '重新设置楼层和单元'}
+              </button>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                重新设置将更新现有楼层和单元（不会删除已有数据）
+              </p>
+            </div>
+          </div>
+        ) : (
+          // 未设置状态
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-gray-700 mb-4">
+              为建筑设置楼层和住户单元。系统将自动创建：
+            </p>
+            <ul className="text-sm text-gray-600 mb-4 list-disc list-inside space-y-1">
+              <li>10 层楼（1-10层）</li>
+              <li>2-9 层为住户层，每层 4 个单元（A, B, C, D）</li>
+              <li>每个单元对应的邮箱（位于公共区域）</li>
+            </ul>
+            <button
+              onClick={handleSetupFloorsUnits}
+              disabled={settingUp}
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {settingUp ? '设置中...' : '设置楼层和单元'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

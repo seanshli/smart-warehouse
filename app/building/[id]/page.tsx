@@ -218,7 +218,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
       }
 
       const data = await response.json()
-      toast.success(`设置成功！${data.data.floors} 层，${data.data.households} 个住户单元，${data.data.mailboxes} 个邮箱`)
+      toast.success(`${t('buildingSetupComplete')}: ${data.data.floors} ${t('buildingFloor')}, ${data.data.households} ${t('buildingUnitsSetup')}, ${data.data.mailboxes} ${t('buildingMailbox')}`)
       
       // Update local state
       setSetupStatus({
@@ -240,10 +240,10 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">基本信息</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('buildingBasicInfo')}</h3>
         <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
           <div>
-            <dt className="text-sm font-medium text-gray-500">所属社区</dt>
+            <dt className="text-sm font-medium text-gray-500">{t('buildingCommunity')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
               <Link 
                 href={`/community/${building.community.id}`}
@@ -261,29 +261,29 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
           )}
           {building.floorCount && (
             <div>
-              <dt className="text-sm font-medium text-gray-500">楼层数</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('buildingFloorCount')}</dt>
               <dd className="mt-1 text-sm text-gray-900">{building.floorCount}</dd>
             </div>
           )}
           {building.unitCount && (
             <div>
-              <dt className="text-sm font-medium text-gray-500">单元数</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('buildingUnitCount')}</dt>
               <dd className="mt-1 text-sm text-gray-900">{building.unitCount}</dd>
             </div>
           )}
           <div>
-            <dt className="text-sm font-medium text-gray-500">住户数量</dt>
+            <dt className="text-sm font-medium text-gray-500">{t('buildingHouseholdCount')}</dt>
             <dd className="mt-1 text-sm text-gray-900">{building.householdCount}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">创建时间</dt>
+            <dt className="text-sm font-medium text-gray-500">{t('buildingCreatedAt')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
               {new Date(building.createdAt).toLocaleDateString('zh-CN')}
             </dd>
           </div>
           {building.invitationCode && (
             <div>
-              <dt className="text-sm font-medium text-gray-500">邀请码</dt>
+              <dt className="text-sm font-medium text-gray-500">{t('buildingInvitationCode')}</dt>
               <dd className="mt-1">
                 <div className="flex items-center space-x-2">
                   <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
@@ -292,15 +292,15 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(building.invitationCode!)
-                      toast.success('邀请码已复制')
+                      toast.success(t('copyInvitationCode'))
                     }}
                     className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    复制
+                    {t('buildingCopyCode')}
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  分享此邀请码给其他人，让他们可以加入此建筑
+                  {t('buildingShareCode')}
                 </p>
               </dd>
             </div>
@@ -309,7 +309,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">建筑设置</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('buildingSettings')}</h3>
         
         {isSetup ? (
           // 已设置状态
@@ -318,21 +318,21 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
               <svg className="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-sm font-medium text-green-800">楼层和单元已设置</span>
+              <span className="text-sm font-medium text-green-800">{t('buildingFloorsSetup')}</span>
             </div>
             
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="bg-white rounded-lg p-3 text-center">
                 <div className="text-2xl font-bold text-gray-900">{setupStatus?.floors || building.floorCountActual || 0}</div>
-                <div className="text-xs text-gray-500 mt-1">楼层</div>
+                <div className="text-xs text-gray-500 mt-1">{t('buildingFloor')}</div>
               </div>
               <div className="bg-white rounded-lg p-3 text-center">
                 <div className="text-2xl font-bold text-gray-900">{setupStatus?.households || building.householdCount || 0}</div>
-                <div className="text-xs text-gray-500 mt-1">住户单元</div>
+                <div className="text-xs text-gray-500 mt-1">{t('buildingUnitsSetup')}</div>
               </div>
               <div className="bg-white rounded-lg p-3 text-center">
                 <div className="text-2xl font-bold text-gray-900">{setupStatus?.mailboxes || building.mailboxCount || 0}</div>
-                <div className="text-xs text-gray-500 mt-1">邮箱</div>
+                <div className="text-xs text-gray-500 mt-1">{t('buildingMailbox')}</div>
               </div>
             </div>
 
@@ -341,13 +341,13 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
                 onClick={() => onNavigateTab('households')}
                 className="flex-1 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-md hover:bg-green-100 text-center text-sm font-medium"
               >
-                查看住户
+                {t('buildingViewHouseholds')}
               </button>
               <button
                 onClick={() => onNavigateTab('mailboxes')}
                 className="flex-1 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-md hover:bg-green-100 text-center text-sm font-medium"
               >
-                管理邮箱
+                {t('buildingManageMailboxes')}
               </button>
             </div>
 
@@ -357,10 +357,10 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
                 disabled={settingUp}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
               >
-                {settingUp ? '重新设置中...' : '重新设置楼层和单元'}
+                {settingUp ? t('buildingSetupInProgress') : t('buildingResetFloorsUnits')}
               </button>
               <p className="text-xs text-gray-500 mt-2 text-center">
-                重新设置将更新现有楼层和单元（不会删除已有数据）
+                {t('buildingResetWarning')}
               </p>
             </div>
           </div>
@@ -380,7 +380,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
               disabled={settingUp}
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {settingUp ? '设置中...' : '设置楼层和单元'}
+              {settingUp ? t('buildingSetupInProgress') : t('buildingSetupFloorsUnits')}
             </button>
           </div>
         )}

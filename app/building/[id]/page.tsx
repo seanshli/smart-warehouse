@@ -58,13 +58,30 @@ export default function BuildingDetailPage() {
   const fetchBuilding = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/building/${buildingId}`)
+      setError(null)
+      console.log('[BuildingDetailPage] Fetching building:', buildingId)
+      
+      const response = await fetch(`/api/building/${buildingId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      console.log('[BuildingDetailPage] Response status:', response.status)
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch building')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[BuildingDetailPage] Error response:', errorData)
+        throw new Error(errorData.error || 'Failed to fetch building')
       }
+      
       const data = await response.json()
+      console.log('[BuildingDetailPage] Received data:', data)
       setBuilding(data)
     } catch (err) {
+      console.error('[BuildingDetailPage] Error fetching building:', err)
       setError(err instanceof Error ? err.message : 'Failed to load building')
     } finally {
       setLoading(false)

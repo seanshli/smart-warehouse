@@ -25,7 +25,7 @@ interface MQTTDevice {
   id: string // 設備 ID
   deviceId: string // 設備 ID
   name: string // 設備名稱
-  vendor: 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' // 供應商
+  vendor: 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant' // 供應商
   connectionType?: 'mqtt' | 'restful' | 'websocket' // 連接類型
   topic?: string // MQTT 主題（MQTT 設備）
   commandTopic?: string // 命令主題（MQTT 設備）
@@ -59,7 +59,7 @@ export default function MQTTPanel() {
   const [activeTab, setActiveTab] = useState<'devices' | 'scenes' | 'automation'>('devices') // 當前標籤
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
-  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | undefined>(undefined) // 配網品牌
+  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant' | undefined>(undefined) // 配網品牌
   const [isDiscovering, setIsDiscovering] = useState(false) // 是否正在掃描設備
   const [discoveredDevices, setDiscoveredDevices] = useState<any[]>([]) // 發現的設備列表
   const [bridgeStatus, setBridgeStatus] = useState<'running' | 'stopped' | 'unknown'>('unknown') // Bridge 狀態
@@ -67,7 +67,7 @@ export default function MQTTPanel() {
   const [newDevice, setNewDevice] = useState({
     deviceId: '',
     name: '',
-    vendor: 'tuya' as 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic',
+    vendor: 'tuya' as 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant',
     roomId: '',
     baseUrl: '', // RESTful API 基礎 URL
     apiKey: '', // API 金鑰
@@ -203,6 +203,8 @@ export default function MQTTPanel() {
         return 'Philips Hue'
       case 'panasonic':
         return 'Panasonic'
+      case 'homeassistant':
+        return 'Home Assistant'
       default:
         return vendor
     }
@@ -360,7 +362,7 @@ export default function MQTTPanel() {
 
   // 檢查是否需要 RESTful API 配置
   const needsRestfulConfig = (vendor: string) => {
-    return vendor === 'philips' || vendor === 'panasonic'
+    return vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant'
   }
 
   // 獲取狀態顏色
@@ -383,7 +385,7 @@ export default function MQTTPanel() {
         <h2 className="text-xl font-semibold">MQTT 設備管理</h2>
         <p className="text-sm text-gray-500">
           MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')} • 
-          RESTful: Philips Hue, Panasonic
+          RESTful: Philips Hue, Panasonic, Home Assistant
         </p>
       </div>
 
@@ -512,6 +514,17 @@ export default function MQTTPanel() {
             Panasonic 配網
           </button>
           <button
+            onClick={() => {
+              setProvisioningVendor('homeassistant')
+              setIsProvisioningModalOpen(true)
+            }}
+            className="px-3 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2"
+            title="Home Assistant 設備添加"
+          >
+            <WifiIcon className="h-4 w-4" />
+            Home Assistant
+          </button>
+          <button
             onClick={() => setIsAddingDevice(!isAddingDevice)}
             className="px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
           >
@@ -532,7 +545,7 @@ export default function MQTTPanel() {
                 type="text"
                 value={newDevice.deviceId}
                 onChange={(e) => setNewDevice({ ...newDevice, deviceId: e.target.value })}
-                placeholder={newDevice.vendor === 'philips' ? "e.g., 1 (Hue light ID)" : newDevice.vendor === 'panasonic' ? "e.g., ac_001" : "e.g., tuya_device_001"}
+                placeholder={newDevice.vendor === 'philips' ? "e.g., 1 (Hue light ID)" : newDevice.vendor === 'panasonic' ? "e.g., ac_001" : newDevice.vendor === 'homeassistant' ? "e.g., light.living_room" : "e.g., tuya_device_001"}
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
@@ -561,6 +574,7 @@ export default function MQTTPanel() {
                 <optgroup label="RESTful API">
                   <option value="philips">Philips Hue</option>
                   <option value="panasonic">Panasonic</option>
+                  <option value="homeassistant">Home Assistant</option>
                 </optgroup>
               </select>
             </div>
@@ -583,7 +597,7 @@ export default function MQTTPanel() {
                     type="text"
                     value={newDevice.baseUrl}
                     onChange={(e) => setNewDevice({ ...newDevice, baseUrl: e.target.value })}
-                    placeholder={newDevice.vendor === 'philips' ? "e.g., http://192.168.1.100 (Hue Bridge IP)" : "e.g., https://api.panasonic.com"}
+                    placeholder={newDevice.vendor === 'philips' ? "e.g., http://192.168.1.100 (Hue Bridge IP)" : newDevice.vendor === 'homeassistant' ? "e.g., http://homeassistant.local:8123 (optional, uses env var if empty)" : "e.g., https://api.panasonic.com"}
                     className="w-full px-3 py-2 border rounded-lg"
                     required
                   />
@@ -594,7 +608,7 @@ export default function MQTTPanel() {
                     type="text"
                     value={newDevice.apiKey}
                     onChange={(e) => setNewDevice({ ...newDevice, apiKey: e.target.value })}
-                    placeholder={newDevice.vendor === 'philips' ? "Hue API Key" : "Panasonic API Key"}
+                    placeholder={newDevice.vendor === 'philips' ? "Hue API Key" : newDevice.vendor === 'homeassistant' ? "Access Token (optional, uses env var if empty)" : "Panasonic API Key"}
                     className="w-full px-3 py-2 border rounded-lg"
                     required
                   />

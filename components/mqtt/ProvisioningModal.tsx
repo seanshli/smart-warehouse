@@ -28,7 +28,7 @@ import type { TuyaStartProvisioningOptions } from '@/lib/plugins/tuya'
 type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'
 
 // 支持的品牌
-type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp'
+type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant'
 
 interface ProvisioningModalProps {
   isOpen: boolean
@@ -127,7 +127,7 @@ export default function ProvisioningModal({
 
   // 發現設備（Philips 和 Panasonic）
   const handleDiscoverDevices = async () => {
-    if (vendor !== 'philips' && vendor !== 'panasonic') {
+    if (vendor !== 'philips' && vendor !== 'panasonic' && vendor !== 'homeassistant') {
       return
     }
 
@@ -143,6 +143,10 @@ export default function ProvisioningModal({
       if (baseUrl) params.append('baseUrl', baseUrl)
       if (apiKey) params.append('apiKey', apiKey)
       if (accessToken) params.append('accessToken', accessToken)
+      // Home Assistant 不需要 apiKey，但可以過濾 domain
+      if (vendor === 'homeassistant') {
+        // 可以添加 domain 過濾（可選）
+      }
 
       const response = await fetch(`/api/mqtt/provisioning?${params.toString()}`, {
         method: 'GET',
@@ -211,8 +215,8 @@ export default function ProvisioningModal({
       }
 
       // 根據供應商添加特定配置
-      if (vendor === 'philips' || vendor === 'panasonic') {
-        // RESTful API 設備需要 baseUrl 和 apiKey
+      if (vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant') {
+        // RESTful API 設備需要 baseUrl 和 apiKey/accessToken
         if (baseUrl) deviceData.baseUrl = baseUrl
         if (apiKey) deviceData.apiKey = apiKey
         if (accessToken) deviceData.accessToken = accessToken
@@ -285,7 +289,7 @@ export default function ProvisioningModal({
         updateTuyaHomeMapping(data.householdId, data.tuyaHomeId)
       }
       
-      if (vendor === 'philips' || vendor === 'panasonic') {
+      if (vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant') {
         setStatus('success')
         toast.success('配網成功！')
         
@@ -388,6 +392,12 @@ export default function ProvisioningModal({
         toast.error('Base URL 和 API Key 為必填項')
         return
       }
+    } else if (vendor === 'homeassistant') {
+      if (!deviceId) {
+        toast.error('實體 ID 為必填項（例如：light.living_room）')
+        return
+      }
+      // Home Assistant 可以使用環境變數，所以 baseUrl 和 accessToken 是可選的
     }
 
     setStatus('starting')
@@ -644,7 +654,7 @@ export default function ProvisioningModal({
   }
 
   const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
-  const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic'
+  const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant'
 
   if (!isOpen) return null
 
@@ -659,6 +669,7 @@ export default function ProvisioningModal({
             {vendor === 'esp' && 'ESP 設備配網'}
             {vendor === 'philips' && 'Philips Hue 配網'}
             {vendor === 'panasonic' && 'Panasonic 設備配網'}
+            {vendor === 'homeassistant' && 'Home Assistant 設備添加'}
           </h2>
           <button
             onClick={handleClose}
@@ -744,6 +755,7 @@ export default function ProvisioningModal({
                   <option value="esp">ESP (ESP32/ESP8266)</option>
                   <option value="philips">Philips Hue</option>
                   <option value="panasonic">Panasonic（松下）</option>
+                  <option value="homeassistant">Home Assistant</option>
                 </select>
               </div>
             )}
@@ -1375,7 +1387,7 @@ export default function ProvisioningModal({
                     type="text"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={vendor === 'philips' ? "Hue Bridge API Key (留空以自動配對)" : "Panasonic API Key"}
+                    placeholder={vendor === 'philips' ? "Hue Bridge API Key (留空以自動配對)" : vendor === 'homeassistant' ? "Access Token (optional, uses env var)" : "Panasonic API Key"}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
@@ -1397,11 +1409,30 @@ export default function ProvisioningModal({
                   </div>
                 )}
 
+                {vendor === 'homeassistant' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      實體 ID (Entity ID) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={deviceId}
+                      onChange={(e) => setDeviceId(e.target.value)}
+                      placeholder="e.g., light.living_room, switch.bedroom, climate.thermostat"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={status !== 'idle'}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      輸入 Home Assistant 實體 ID。格式：domain.entity_name（例如：light.living_room）
+                    </p>
+                  </div>
+                )}
+
                 {/* 設備發現按鈕 */}
                 <div>
                   <button
                     onClick={handleDiscoverDevices}
-                    disabled={isDiscovering || !baseUrl || !apiKey}
+                    disabled={isDiscovering || ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey))}
                     className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <MagnifyingGlassIcon className="h-5 w-5" />

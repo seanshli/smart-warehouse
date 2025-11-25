@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 驗證供應商
-    const validVendors = ['tuya', 'esp', 'midea', 'philips', 'panasonic']
+    const validVendors = ['tuya', 'esp', 'midea', 'philips', 'panasonic', 'homeassistant']
     if (!validVendors.includes(vendor)) {
       return NextResponse.json(
         { error: `Invalid vendor. Must be one of: ${validVendors.join(', ')}` },

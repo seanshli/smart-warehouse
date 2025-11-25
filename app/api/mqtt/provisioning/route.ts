@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // 構建配網配置
     const config: ProvisioningConfig = {
-      vendor: vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
+      vendor: vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant',
       mode: mode || 'auto',
     }
 
@@ -101,6 +101,18 @@ export async function POST(request: NextRequest) {
       if (baseUrl) config.baseUrl = baseUrl
       if (apiKey) config.apiKey = apiKey
       if (accessToken) config.accessToken = accessToken
+    } else if (vendor === 'homeassistant') {
+      // Home Assistant 需要實體 ID
+      if (!deviceId) {
+        return NextResponse.json(
+          { error: 'Entity ID is required for Home Assistant devices' },
+          { status: 400 }
+        )
+      }
+      config.deviceId = deviceId
+      // Home Assistant 可以使用環境變數，所以 baseUrl 和 accessToken 是可選的
+      if (baseUrl) config.baseUrl = baseUrl
+      if (accessToken) config.accessToken = accessToken
     }
 
     // 啟動配網流程
@@ -164,7 +176,7 @@ export async function GET(request: NextRequest) {
     // 發現設備
     if (action === 'discover') {
       const config: ProvisioningConfig = {
-        vendor: vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
+        vendor: vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant',
       }
 
       // 添加品牌特定配置
@@ -176,6 +188,14 @@ export async function GET(request: NextRequest) {
         if (baseUrl) config.baseUrl = baseUrl
         if (apiKey) config.apiKey = apiKey
         if (accessToken) config.accessToken = accessToken
+      } else if (vendor === 'homeassistant') {
+        const baseUrl = searchParams.get('baseUrl')
+        const accessToken = searchParams.get('accessToken')
+        const domain = searchParams.get('domain') // 可選：只獲取特定領域的實體
+        
+        if (baseUrl) config.baseUrl = baseUrl
+        if (accessToken) config.accessToken = accessToken
+        if (domain) config.domain = domain
       }
 
       const devices = await UnifiedProvisioningFactory.discoverDevices(config)
@@ -195,7 +215,7 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await UnifiedProvisioningFactory.queryStatus(
-      vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
+      vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant',
       token
     )
 
@@ -240,7 +260,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const success = await UnifiedProvisioningFactory.stopProvisioning(
-      vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic',
+      vendor as 'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant',
       token
     )
 

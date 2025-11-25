@@ -9,6 +9,7 @@ export { MideaAdapter } from '../mqtt-adapters/midea-adapter'
 // RESTful API 適配器
 export { PhilipsAdapter } from './philips-adapter'
 export { PanasonicAdapter } from './panasonic-adapter'
+export { HomeAssistantAdapter } from './homeassistant-adapter'
 
 // 基礎介面
 export { BaseAdapter, type ConnectionType, type DeviceState, type ControlCommand, type AdapterConfig } from './base-adapter'
@@ -20,9 +21,10 @@ import { ESPAdapter } from '../mqtt-adapters/esp-adapter'
 import { MideaAdapter } from '../mqtt-adapters/midea-adapter'
 import { PhilipsAdapter } from './philips-adapter'
 import { PanasonicAdapter } from './panasonic-adapter'
+import { HomeAssistantAdapter } from './homeassistant-adapter'
 
 // 擴展的設備供應商類型（包含 RESTful API 供應商）
-export type ExtendedDeviceVendor = DeviceVendor | 'philips' | 'panasonic' | 'generic'
+export type ExtendedDeviceVendor = DeviceVendor | 'philips' | 'panasonic' | 'homeassistant' | 'generic'
 
 /**
  * MQTT 適配器包裝器
@@ -82,6 +84,8 @@ export class UnifiedAdapterFactory {
         return new PhilipsAdapter()
       case 'panasonic':
         return new PanasonicAdapter()
+      case 'homeassistant':
+        return new HomeAssistantAdapter()
       
       default:
         throw new Error(`Unsupported vendor: ${vendor}`)
@@ -97,6 +101,7 @@ export class UnifiedAdapterFactory {
         return 'mqtt'
       case 'philips':
       case 'panasonic':
+      case 'homeassistant':
         return 'restful'
       default:
         return 'mqtt' // 預設為 MQTT
@@ -115,6 +120,8 @@ export class UnifiedAdapterFactory {
       return 'philips'
     } else if (topic.startsWith('panasonic/')) {
       return 'panasonic'
+    } else if (topic.startsWith('homeassistant/')) {
+      return 'homeassistant'
     }
     return null
   }

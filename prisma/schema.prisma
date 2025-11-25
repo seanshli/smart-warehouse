@@ -120,6 +120,8 @@ model Building {
   community  Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   households Household[]
   members    BuildingMember[]
+  floors     Floor[]
+  mailboxes  Mailbox[]
 
   @@map("buildings")
 }
@@ -214,6 +216,9 @@ model Household {
   tuyaTokenExpiresAt DateTime?         @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time for household
   // Building relationship (new)
   buildingId         String?           @map("building_id")
+  floorId            String?           @map("floor_id") // Floor ID (e.g., floor 2-9)
+  floorNumber        Int?              @map("floor_number") // Floor number (2-9)
+  unit               String? // Unit identifier (A, B, C, D)
   // Location fields
   country            String?
   city               String?
@@ -235,6 +240,8 @@ model Household {
   activities         UserActivity[]
   iotDevices         IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
   building           Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  floor              Floor?            @relation(fields: [floorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  mailboxes          Mailbox[] // Mailboxes linked to this household
   automationRules    AutomationRule[] // 跨生态链控制规则
   scenes             Scene[] // 场景管理
 
@@ -425,15 +432,56 @@ model Notification {
   id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   userId    String    @map("user_id")
   itemId    String?   @map("item_id")
+  mailboxId String?   @map("mailbox_id") // Mailbox ID for mail notifications
   type      String
   title     String
   message   String
   read      Boolean?  @default(false)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   item      Item?     @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  mailbox   Mailbox?  @relation(fields: [mailboxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("notifications")
+}
+
+model Floor {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId    String    @map("building_id")
+  floorNumber   Int       @map("floor_number") // Floor number (1-10, where 2-9 are residential)
+  name          String? // Optional floor name
+  description   String? // Floor description
+  isResidential Boolean?  @default(false) @map("is_residential") // True for floors 2-9
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building   Building    @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  households Household[]
+  mailboxes  Mailbox[]
+
+  @@unique([buildingId, floorNumber])
+  @@map("floors")
+}
+
+model Mailbox {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId    String    @map("building_id")
+  floorId       String?   @map("floor_id")
+  householdId   String?   @map("household_id") // Linked household (e.g., 5A)
+  mailboxNumber String    @map("mailbox_number") // Display number (e.g., "5A")
+  location      String? // Location description (e.g., "Common Area - Mailbox Section A")
+  hasMail       Boolean?  @default(false) @map("has_mail") // Whether there's mail waiting
+  lastMailAt    DateTime? @map("last_mail_at") @db.Timestamptz(6) // Last time mail was received
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building      Building       @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  floor         Floor?         @relation(fields: [floorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  household     Household?     @relation(fields: [householdId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  notifications Notification[]
+
+  @@unique([buildingId, mailboxNumber])
+  @@map("mailboxes")
 }
 
 model UserCredentials {
@@ -450,23 +498,23 @@ model UserCredentials {
 // IoT 設備模型（統一支援 MQTT 和 RESTful API）
 // 儲存 IoT 設備資訊（支援 Tuya、ESP、Midea、Philips、Panasonic 等供應商）
 model IoTDevice {
-  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  deviceId       String    @map("device_id") // 設備 ID（供應商特定）
+  id             String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  deviceId       String        @map("device_id") // 設備 ID（供應商特定）
   name           String // 設備名稱
   vendor         String // 供應商類型（tuya, esp, midea, philips, panasonic）
-  connectionType String    @default("mqtt") @map("connection_type") // 連接類型（mqtt, restful, websocket）
+  connectionType String        @default("mqtt") @map("connection_type") // 連接類型（mqtt, restful, websocket）
   topic          String? // MQTT 主題（MQTT 設備使用）
-  commandTopic   String?   @map("command_topic") // 命令主題（MQTT 設備使用）
-  statusTopic    String?   @map("status_topic") // 狀態主題（MQTT 設備使用）
-  baseUrl        String?   @map("base_url") // RESTful API 基礎 URL（RESTful 設備使用）
-  apiKey         String?   @map("api_key") // API 金鑰（RESTful 設備使用）
-  accessToken    String?   @map("access_token") // 訪問令牌（RESTful 設備使用）
-  householdId    String    @map("household_id") // 所屬家庭
-  roomId         String?   @map("room_id") // 所屬房間（可選）
-  status         String    @default("offline") // 連接狀態（online/offline）
+  commandTopic   String?       @map("command_topic") // 命令主題（MQTT 設備使用）
+  statusTopic    String?       @map("status_topic") // 狀態主題（MQTT 設備使用）
+  baseUrl        String?       @map("base_url") // RESTful API 基礎 URL（RESTful 設備使用）
+  apiKey         String?       @map("api_key") // API 金鑰（RESTful 設備使用）
+  accessToken    String?       @map("access_token") // 訪問令牌（RESTful 設備使用）
+  householdId    String        @map("household_id") // 所屬家庭
+  roomId         String?       @map("room_id") // 所屬房間（可選）
+  status         String        @default("offline") // 連接狀態（online/offline）
   state          Json? // 設備狀態（JSON 格式）
   metadata       Json? // 額外元資料
-  lastSeen       DateTime? @map("last_seen") @db.Timestamptz(6) // 最後在線時間
+  lastSeen       DateTime?     @map("last_seen") @db.Timestamptz(6) // 最後在線時間
   createdAt      DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)

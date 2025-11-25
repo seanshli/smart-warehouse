@@ -10,8 +10,10 @@ import {
   BuildingOfficeIcon,
   HomeIcon,
   ArrowLeftIcon,
-  PlusIcon
+  PlusIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline'
+import MailboxManager from '@/components/building/MailboxManager'
 import Link from 'next/link'
 
 interface Building {
@@ -42,7 +44,7 @@ export default function BuildingDetailPage() {
   const [building, setBuilding] = useState<Building | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'households'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'households' | 'mailboxes'>('overview')
 
   useEffect(() => {
     if (buildingId) {
@@ -118,6 +120,7 @@ export default function BuildingDetailPage() {
             {[
               { id: 'overview', name: '概览', icon: BuildingOfficeIcon },
               { id: 'households', name: '住户', icon: HomeIcon },
+              { id: 'mailboxes', name: '邮箱', icon: EnvelopeIcon },
             ].map((tab) => {
               const Icon = tab.icon
               return (
@@ -140,15 +143,44 @@ export default function BuildingDetailPage() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && <OverviewTab building={building} />}
+          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} />}
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
+          {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
         </div>
       </div>
     </div>
   )
 }
 
-function OverviewTab({ building }: { building: Building }) {
+function OverviewTab({ building, buildingId }: { building: Building; buildingId: string }) {
+  const [settingUp, setSettingUp] = useState(false)
+
+  const handleSetupFloorsUnits = async () => {
+    try {
+      setSettingUp(true)
+      const response = await fetch(`/api/building/${buildingId}/floors-units/setup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to set up floors and units')
+      }
+
+      const data = await response.json()
+      toast.success(`设置成功！${data.data.floors} 层，${data.data.households} 个住户单元，${data.data.mailboxes} 个邮箱`)
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (error) {
+      console.error('Error setting up floors and units:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to set up floors and units')
+    } finally {
+      setSettingUp(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -204,7 +236,7 @@ function OverviewTab({ building }: { building: Building }) {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(building.invitationCode!)
-                      // You may want to add toast notification here
+                      toast.success('邀请码已复制')
                     }}
                     className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
@@ -218,6 +250,27 @@ function OverviewTab({ building }: { building: Building }) {
             </div>
           )}
         </dl>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">建筑设置</h3>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-gray-700 mb-4">
+            为建筑设置楼层和住户单元。系统将自动创建：
+          </p>
+          <ul className="text-sm text-gray-600 mb-4 list-disc list-inside space-y-1">
+            <li>10 层楼（1-10层）</li>
+            <li>2-9 层为住户层，每层 4 个单元（A, B, C, D）</li>
+            <li>每个单元对应的邮箱（位于公共区域）</li>
+          </ul>
+          <button
+            onClick={handleSetupFloorsUnits}
+            disabled={settingUp}
+            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {settingUp ? '设置中...' : '设置楼层和单元'}
+          </button>
+        </div>
       </div>
     </div>
   )

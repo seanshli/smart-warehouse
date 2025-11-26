@@ -50,6 +50,7 @@ android {
     
     // Screen size and density support
     // Note: splits.density is obsolete in AGP 8.x, using universal APK instead
+    // TODO: After cleanup, add AAB (Android App Bundle) generation alongside universal APK
     // splits {
     //     density {
     //         enable true

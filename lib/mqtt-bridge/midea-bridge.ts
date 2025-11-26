@@ -4,6 +4,7 @@
 
 import { getMQTTClient } from '../mqtt-client'
 import { MideaAdapter } from '../mqtt-adapters/midea-adapter'
+import { MideaAPIClient } from '../midea-api-client'
 
 interface MideaCloudDevice {
   deviceId: string
@@ -29,6 +30,7 @@ interface MideaBridgeConfig {
 export class MideaMQTTBridge {
   private config: MideaBridgeConfig
   private mqttClient: ReturnType<typeof getMQTTClient>
+  private apiClient: MideaAPIClient
   private pollingInterval: NodeJS.Timeout | null = null
   private devices: Map<string, MideaCloudDevice> = new Map()
   private isRunning = false
@@ -42,6 +44,11 @@ export class MideaMQTTBridge {
       brokerUrl: config.mqttBrokerUrl,
       username: config.mqttUsername,
       password: config.mqttPassword,
+    })
+    this.apiClient = new MideaAPIClient({
+      clientId: config.appId,
+      clientSecret: config.appKey,
+      serverHost: process.env.MIDEA_SERVER_HOST || 'https://obm.midea.com',
     })
   }
 
@@ -108,38 +115,21 @@ export class MideaMQTTBridge {
    */
   private async fetchDevicesFromCloud(): Promise<MideaCloudDevice[]> {
     try {
-      // 注意：这里需要根据 Midea API 文档实现实际的 API 调用
-      // 以下是示例实现
-      const response = await fetch('https://mapp.midea.com/mas/v5/app/protocol/json', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          protocol: '5.0',
-          iotApp: {
-            appId: this.config.appId,
-            appKey: this.config.appKey,
-          },
-          system: {
-            appId: this.config.appId,
-            appKey: this.config.appKey,
-          },
-          params: {
-            action: 'getDeviceList',
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Midea API error: ${response.statusText}`)
+      const result = await this.apiClient.getDeviceListV5()
+      
+      if (!result.success || !result.data) {
+        console.error('Midea Bridge: Failed to fetch devices:', result.error)
+        return []
       }
 
-      const data = await response.json()
-      
-      // 根据实际 API 响应格式解析设备列表
-      // 这里需要根据 Midea API 文档调整
-      return data.devices || []
+      // Transform API response to MideaCloudDevice format
+      return result.data.map((device: any) => ({
+        deviceId: device.deviceId || device.id || '',
+        name: device.name || device.deviceName || 'Unknown Device',
+        type: device.type || device.deviceType || 'unknown',
+        online: device.online !== undefined ? device.online : true,
+        ...device,
+      }))
     } catch (error) {
       console.error('Midea Bridge: Failed to fetch devices from cloud:', error)
       return []
@@ -151,34 +141,14 @@ export class MideaMQTTBridge {
    */
   private async fetchDeviceStatus(deviceId: string): Promise<any> {
     try {
-      const response = await fetch('https://mapp.midea.com/mas/v5/app/protocol/json', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          protocol: '5.0',
-          iotApp: {
-            appId: this.config.appId,
-            appKey: this.config.appKey,
-          },
-          system: {
-            appId: this.config.appId,
-            appKey: this.config.appKey,
-          },
-          params: {
-            action: 'getDeviceStatus',
-            deviceId,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Midea API error: ${response.statusText}`)
+      const result = await this.apiClient.getDeviceStatusV5(deviceId)
+      
+      if (!result.success || !result.data) {
+        console.error(`Midea Bridge: Failed to fetch status for device ${deviceId}:`, result.error)
+        return null
       }
 
-      const data = await response.json()
-      return data.status || {}
+      return result.data
     } catch (error) {
       console.error(`Midea Bridge: Failed to fetch status for device ${deviceId}:`, error)
       return null
@@ -190,31 +160,11 @@ export class MideaMQTTBridge {
    */
   private async sendCommandToCloud(deviceId: string, command: any): Promise<boolean> {
     try {
-      const response = await fetch('https://mapp.midea.com/mas/v5/app/protocol/json', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          protocol: '5.0',
-          iotApp: {
-            appId: this.config.appId,
-            appKey: this.config.appKey,
-          },
-          system: {
-            appId: this.config.appId,
-            appKey: this.config.appKey,
-          },
-          params: {
-            action: 'controlDevice',
-            deviceId,
-            command,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Midea API error: ${response.statusText}`)
+      const result = await this.apiClient.controlDeviceV5(deviceId, command)
+      
+      if (!result.success) {
+        console.error(`Midea Bridge: Failed to send command to device ${deviceId}:`, result.error)
+        return false
       }
 
       return true

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBuildingManagement } from '@/lib/middleware/community-permissions'
+import { syncFrontDoorFeatures } from '@/lib/building/front-door'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,13 +60,23 @@ export async function POST(
           },
         },
         update: {
-          name: floorNum === 1 ? 'Lobby' : isResidential ? `Floor ${floorNum}` : `Floor ${floorNum}`,
+          name:
+            floorNum === 1
+              ? 'Front Door / 大門'
+              : isResidential
+              ? `Floor ${floorNum}`
+              : `Floor ${floorNum}`,
           isResidential,
         },
         create: {
           buildingId,
           floorNumber: floorNum,
-          name: floorNum === 1 ? 'Lobby' : isResidential ? `Floor ${floorNum}` : `Floor ${floorNum}`,
+          name:
+            floorNum === 1
+              ? 'Front Door / 大門'
+              : isResidential
+              ? `Floor ${floorNum}`
+              : `Floor ${floorNum}`,
           description: isResidential ? `Residential floor with 4 units (A, B, C, D)` : `Non-residential floor`,
           isResidential,
         },
@@ -74,10 +85,9 @@ export async function POST(
       floors.push(floor)
     }
 
-    // Create households and mailboxes for residential floors (2-9)
+    // Create households for residential floors (2-9)
     const units = ['A', 'B', 'C', 'D']
     const createdHouseholds = []
-    const createdMailboxes = []
 
     for (let floorNum = 2; floorNum <= 9; floorNum++) {
       const floor = floors.find(f => f.floorNumber === floorNum)
@@ -120,33 +130,10 @@ export async function POST(
         }
 
         createdHouseholds.push(household)
-
-        // Create mailbox in common area linked to this household
-        const mailbox = await prisma.mailbox.upsert({
-          where: {
-            buildingId_mailboxNumber: {
-              buildingId,
-              mailboxNumber,
-            },
-          },
-          update: {
-            householdId: household.id,
-            floorId: floor.id,
-            location: 'Common Area - Mailbox Section',
-          },
-          create: {
-            buildingId,
-            floorId: floor.id,
-            householdId: household.id,
-            mailboxNumber,
-            location: 'Common Area - Mailbox Section',
-            hasMail: false,
-          },
-        })
-
-        createdMailboxes.push(mailbox)
       }
     }
+
+    const frontDoor = await syncFrontDoorFeatures(buildingId)
 
     // Update building floorCount and unitCount
     await prisma.building.update({
@@ -163,7 +150,9 @@ export async function POST(
       data: {
         floors: floors.length,
         households: createdHouseholds.length,
-        mailboxes: createdMailboxes.length,
+        mailboxes: frontDoor.mailboxes,
+        doorBells: frontDoor.doorBells,
+        packageLockers: frontDoor.packageLockers,
       },
     })
   } catch (error) {

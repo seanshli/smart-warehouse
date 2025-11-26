@@ -634,6 +634,38 @@ export interface Translations {
   buildingBackToCommunity: string
   buildingNotFound: string
   
+  // Front Door
+  frontDoorCommonArea: string
+  frontDoorLoading: string
+  frontDoorLoadError: string
+  frontDoorStatsHouseholds: string
+  frontDoorStatsMailboxes: string
+  frontDoorStatsDoorBells: string
+  frontDoorStatsLockers: string
+  frontDoorLockerCountLabel: string
+  frontDoorLockerCountHint: string
+  frontDoorSyncButton: string
+  frontDoorSyncing: string
+  frontDoorSyncSuccess: string
+  frontDoorSyncError: string
+  frontDoorLockerUpdateSuccess: string
+  frontDoorLockerUpdateError: string
+  frontDoorNotifySuccess: string
+  frontDoorNotifyError: string
+  frontDoorDoorBellError: string
+  frontDoorRingSuccess: string
+  frontDoorRingError: string
+  frontDoorNotifyButton: string
+  frontDoorDoorBells: string
+  frontDoorEnable: string
+  frontDoorDisable: string
+  frontDoorRingButton: string
+  frontDoorPackageLockers: string
+  frontDoorLocker: string
+  frontDoorNoMailboxes: string
+  frontDoorNoDoorBells: string
+  frontDoorNoLockers: string
+  
   // Community
   communityBackToList: string
   communityNotFound: string
@@ -664,6 +696,41 @@ export interface Translations {
   householdMail: string
   householdPackage: string
   householdVisitorTag: string
+  addHousehold: string
+  householdCount: string
+  householdUnitLabels: string
+  householdCreated: string
+  householdCreatedError: string
+  
+  // Facilities
+  buildingFacilities: string
+  facilityAddNew: string
+  facilityNameLabel: string
+  facilityTypeLabel: string
+  facilityFloorLabel: string
+  facilityCapacityLabel: string
+  facilityCreateButton: string
+  facilityCreated: string
+  facilityCreateError: string
+  facilityLoadError: string
+  facilityLoading: string
+  facilityNoFacilities: string
+  facilityDelete: string
+  facilityDeleteConfirm: string
+  facilityDeleted: string
+  facilityDeleteError: string
+  facilityOperatingHours: string
+  facilityOpenTime: string
+  facilityCloseTime: string
+  facilityClosed: string
+  facilitySaveHours: string
+  facilityHoursSaved: string
+  facilityHoursError: string
+  
+  day: string
+  status: string
+  occupied: string
+  available: string
 }
 
 // English translations (default)
@@ -1254,6 +1321,36 @@ const en: Translations = {
   buildingRooms: 'Rooms',
   buildingBackToCommunity: 'Back to Community',
   buildingNotFound: 'Building not found',
+  frontDoorCommonArea: 'Front Door & Common Area',
+  frontDoorLoading: 'Loading front door data...',
+  frontDoorLoadError: 'Unable to load front door data',
+  frontDoorStatsHouseholds: 'Households',
+  frontDoorStatsMailboxes: 'Mailboxes',
+  frontDoorStatsDoorBells: 'Door Bells',
+  frontDoorStatsLockers: 'Package Lockers',
+  frontDoorLockerCountLabel: 'Package locker count',
+  frontDoorLockerCountHint: 'Building/community admins can adjust locker capacity at any time.',
+  frontDoorSyncButton: 'Sync with households',
+  frontDoorSyncing: 'Syncing...',
+  frontDoorSyncSuccess: 'Front door facilities synced',
+  frontDoorSyncError: 'Failed to sync front door facilities',
+  frontDoorLockerUpdateSuccess: 'Locker count updated',
+  frontDoorLockerUpdateError: 'Failed to update locker count',
+  frontDoorNotifySuccess: 'Mail notification sent',
+  frontDoorNotifyError: 'Unable to send notification',
+  frontDoorDoorBellError: 'Failed to update door bell',
+  frontDoorRingSuccess: 'Door bell triggered',
+  frontDoorRingError: 'Failed to ring door bell',
+  frontDoorNotifyButton: 'Notify household',
+  frontDoorDoorBells: 'Door Bells',
+  frontDoorEnable: 'Enable',
+  frontDoorDisable: 'Disable',
+  frontDoorRingButton: 'Ring',
+  frontDoorPackageLockers: 'Package Lockers',
+  frontDoorLocker: 'Locker',
+  frontDoorNoMailboxes: 'No mailboxes yet',
+  frontDoorNoDoorBells: 'No door bells yet',
+  frontDoorNoLockers: 'No package lockers yet',
   
   // Household Actions
   householdReservation: 'Reservation',
@@ -1262,6 +1359,38 @@ const en: Translations = {
   householdMail: 'Mail',
   householdPackage: 'Package',
   householdVisitorTag: 'Visitor Tag',
+  addHousehold: 'Add Household',
+  householdCount: 'Number of households',
+  householdUnitLabels: 'Unit labels',
+  householdCreated: 'Households created successfully',
+  householdCreatedError: 'Failed to create households',
+  buildingFacilities: 'Facilities',
+  facilityAddNew: 'Add Facility',
+  facilityNameLabel: 'Facility name',
+  facilityTypeLabel: 'Facility type',
+  facilityFloorLabel: 'Floor',
+  facilityCapacityLabel: 'Capacity',
+  facilityCreateButton: 'Create facility',
+  facilityCreated: 'Facility created successfully',
+  facilityCreateError: 'Failed to create facility',
+  facilityLoadError: 'Failed to load facilities',
+  facilityLoading: 'Loading facilities...',
+  facilityNoFacilities: 'No facilities yet',
+  facilityDelete: 'Remove facility',
+  facilityDeleteConfirm: 'Remove this facility?',
+  facilityDeleted: 'Facility removed',
+  facilityDeleteError: 'Failed to remove facility',
+  facilityOperatingHours: 'Operating Hours',
+  facilityOpenTime: 'Open',
+  facilityCloseTime: 'Close',
+  facilityClosed: 'Closed',
+  facilitySaveHours: 'Save hours',
+  facilityHoursSaved: 'Operating hours saved',
+  facilityHoursError: 'Failed to save operating hours',
+  day: 'Day',
+  status: 'Status',
+  occupied: 'Occupied',
+  available: 'Available',
   
   // Community
   communityBackToList: 'Back to Community List',
@@ -1983,6 +2112,36 @@ const zhTW: Translations = {
   buildingRooms: '房間',
   buildingBackToCommunity: '返回社區',
   buildingNotFound: '找不到建築',
+  frontDoorCommonArea: '大門與公共區域',
+  frontDoorLoading: '正在載入公共區域資料...',
+  frontDoorLoadError: '無法載入公共區域資料',
+  frontDoorStatsHouseholds: '住戶',
+  frontDoorStatsMailboxes: '郵箱',
+  frontDoorStatsDoorBells: '門鈴',
+  frontDoorStatsLockers: '包裹櫃',
+  frontDoorLockerCountLabel: '包裹櫃數量',
+  frontDoorLockerCountHint: '建築或社區管理員可隨時調整包裹櫃容量。',
+  frontDoorSyncButton: '與住戶同步',
+  frontDoorSyncing: '同步中...',
+  frontDoorSyncSuccess: '公共區域資料已同步',
+  frontDoorSyncError: '同步公共區域資料失敗',
+  frontDoorLockerUpdateSuccess: '包裹櫃數量已更新',
+  frontDoorLockerUpdateError: '更新包裹櫃數量失敗',
+  frontDoorNotifySuccess: '郵件通知已送出',
+  frontDoorNotifyError: '無法送出郵件通知',
+  frontDoorDoorBellError: '更新門鈴狀態失敗',
+  frontDoorRingSuccess: '門鈴已觸發',
+  frontDoorRingError: '門鈴觸發失敗',
+  frontDoorNotifyButton: '通知住戶',
+  frontDoorDoorBells: '門鈴',
+  frontDoorEnable: '啟用',
+  frontDoorDisable: '停用',
+  frontDoorRingButton: '敲門',
+  frontDoorPackageLockers: '包裹櫃',
+  frontDoorLocker: '櫃號',
+  frontDoorNoMailboxes: '尚未建立郵箱',
+  frontDoorNoDoorBells: '尚未建立門鈴',
+  frontDoorNoLockers: '尚未建立包裹櫃',
   
   // Household Actions
   householdReservation: '預定',
@@ -1991,6 +2150,38 @@ const zhTW: Translations = {
   householdMail: '郵件',
   householdPackage: '包裹',
   householdVisitorTag: '訪客標籤',
+  addHousehold: '新增住戶',
+  householdCount: '住戶數量',
+  householdUnitLabels: '單元代號',
+  householdCreated: '住戶建立成功',
+  householdCreatedError: '建立住戶失敗',
+  buildingFacilities: '公共設施',
+  facilityAddNew: '新增設施',
+  facilityNameLabel: '設施名稱',
+  facilityTypeLabel: '設施類型',
+  facilityFloorLabel: '樓層',
+  facilityCapacityLabel: '容納人數',
+  facilityCreateButton: '建立設施',
+  facilityCreated: '設施建立成功',
+  facilityCreateError: '建立設施失敗',
+  facilityLoadError: '載入設施失敗',
+  facilityLoading: '載入設施資料中...',
+  facilityNoFacilities: '尚未設定設施',
+  facilityDelete: '移除設施',
+  facilityDeleteConfirm: '確定要移除這個設施？',
+  facilityDeleted: '設施已移除',
+  facilityDeleteError: '移除設施失敗',
+  facilityOperatingHours: '營運時段',
+  facilityOpenTime: '開放時間',
+  facilityCloseTime: '結束時間',
+  facilityClosed: '休息',
+  facilitySaveHours: '儲存時段',
+  facilityHoursSaved: '營運時段已更新',
+  facilityHoursError: '更新營運時段失敗',
+  day: '星期',
+  status: '狀態',
+  occupied: '使用中',
+  available: '可用',
   
   // Community
   communityBackToList: '返回社區列表',
@@ -2661,6 +2852,36 @@ const zh: Translations = {
   buildingRooms: '房间',
   buildingBackToCommunity: '返回社区',
   buildingNotFound: '找不到建筑',
+  frontDoorCommonArea: '大门与公共区域',
+  frontDoorLoading: '正在载入公共区域资料...',
+  frontDoorLoadError: '无法载入公共区域资料',
+  frontDoorStatsHouseholds: '住户',
+  frontDoorStatsMailboxes: '邮箱',
+  frontDoorStatsDoorBells: '门铃',
+  frontDoorStatsLockers: '包裹柜',
+  frontDoorLockerCountLabel: '包裹柜数量',
+  frontDoorLockerCountHint: '建筑或社区管理员可随时调整包裹柜容量。',
+  frontDoorSyncButton: '与住户同步',
+  frontDoorSyncing: '同步中...',
+  frontDoorSyncSuccess: '公共区域数据已同步',
+  frontDoorSyncError: '同步公共区域数据失败',
+  frontDoorLockerUpdateSuccess: '包裹柜数量已更新',
+  frontDoorLockerUpdateError: '更新包裹柜数量失败',
+  frontDoorNotifySuccess: '邮件通知已发送',
+  frontDoorNotifyError: '无法发送邮件通知',
+  frontDoorDoorBellError: '更新门铃状态失败',
+  frontDoorRingSuccess: '门铃已触发',
+  frontDoorRingError: '门铃触发失败',
+  frontDoorNotifyButton: '通知住户',
+  frontDoorDoorBells: '门铃',
+  frontDoorEnable: '启用',
+  frontDoorDisable: '停用',
+  frontDoorRingButton: '敲门',
+  frontDoorPackageLockers: '包裹柜',
+  frontDoorLocker: '柜号',
+  frontDoorNoMailboxes: '尚未建立邮箱',
+  frontDoorNoDoorBells: '尚未建立门铃',
+  frontDoorNoLockers: '尚未建立包裹柜',
   
   // Household Actions
   householdReservation: '预定',
@@ -2669,6 +2890,38 @@ const zh: Translations = {
   householdMail: '邮件',
   householdPackage: '包裹',
   householdVisitorTag: '访客标签',
+  addHousehold: '新增住户',
+  householdCount: '住户数量',
+  householdUnitLabels: '单元代号',
+  householdCreated: '住户建立成功',
+  householdCreatedError: '建立住户失败',
+  buildingFacilities: '公共设施',
+  facilityAddNew: '新增设施',
+  facilityNameLabel: '设施名称',
+  facilityTypeLabel: '设施类型',
+  facilityFloorLabel: '楼层',
+  facilityCapacityLabel: '容量',
+  facilityCreateButton: '建立设施',
+  facilityCreated: '设施建立成功',
+  facilityCreateError: '建立设施失败',
+  facilityLoadError: '载入设施失败',
+  facilityLoading: '载入设施中...',
+  facilityNoFacilities: '尚未设置设施',
+  facilityDelete: '移除设施',
+  facilityDeleteConfirm: '确定移除此设施？',
+  facilityDeleted: '设施已移除',
+  facilityDeleteError: '移除设施失败',
+  facilityOperatingHours: '营运时段',
+  facilityOpenTime: '开门',
+  facilityCloseTime: '关闭',
+  facilityClosed: '休息',
+  facilitySaveHours: '保存时段',
+  facilityHoursSaved: '营运时段已更新',
+  facilityHoursError: '更新营运时段失败',
+  day: '星期',
+  status: '状态',
+  occupied: '使用中',
+  available: '可用',
   
   // Community
   communityBackToList: '返回社区列表',
@@ -3339,6 +3592,36 @@ const ja: Translations = {
   buildingRooms: '部屋',
   buildingBackToCommunity: 'コミュニティに戻る',
   buildingNotFound: '建物が見つかりません',
+  frontDoorCommonArea: 'エントランス／共用エリア',
+  frontDoorLoading: '共用エリアの情報を読み込み中...',
+  frontDoorLoadError: '共用エリアの情報を取得できませんでした',
+  frontDoorStatsHouseholds: '世帯',
+  frontDoorStatsMailboxes: 'メールボックス',
+  frontDoorStatsDoorBells: 'ドアベル',
+  frontDoorStatsLockers: '宅配ボックス',
+  frontDoorLockerCountLabel: '宅配ボックスの台数',
+  frontDoorLockerCountHint: '建物・コミュニティ管理者はいつでも台数を調整できます。',
+  frontDoorSyncButton: '世帯情報と同期',
+  frontDoorSyncing: '同期中...',
+  frontDoorSyncSuccess: '共用エリアを同期しました',
+  frontDoorSyncError: '共用エリアの同期に失敗しました',
+  frontDoorLockerUpdateSuccess: '宅配ボックス数を更新しました',
+  frontDoorLockerUpdateError: '宅配ボックス数の更新に失敗しました',
+  frontDoorNotifySuccess: '郵便のお知らせを送信しました',
+  frontDoorNotifyError: '郵便のお知らせを送信できませんでした',
+  frontDoorDoorBellError: 'ドアベルの更新に失敗しました',
+  frontDoorRingSuccess: 'ドアベルを鳴らしました',
+  frontDoorRingError: 'ドアベルを鳴らせませんでした',
+  frontDoorNotifyButton: '住戸へ通知',
+  frontDoorDoorBells: 'ドアベル',
+  frontDoorEnable: '有効化',
+  frontDoorDisable: '無効化',
+  frontDoorRingButton: '呼び出す',
+  frontDoorPackageLockers: '宅配ボックス',
+  frontDoorLocker: 'ボックス',
+  frontDoorNoMailboxes: 'メールボックスはまだありません',
+  frontDoorNoDoorBells: 'ドアベルはまだありません',
+  frontDoorNoLockers: '宅配ボックスはまだありません',
   
   // Household Actions
   householdReservation: '予約',
@@ -3347,6 +3630,38 @@ const ja: Translations = {
   householdMail: 'メール',
   householdPackage: 'パッケージ',
   householdVisitorTag: '訪問者タグ',
+  addHousehold: '世帯を追加',
+  householdCount: '世帯数',
+  householdUnitLabels: 'ユニット記号',
+  householdCreated: '世帯を作成しました',
+  householdCreatedError: '世帯の作成に失敗しました',
+  buildingFacilities: '共用施設',
+  facilityAddNew: '施設を追加',
+  facilityNameLabel: '施設名',
+  facilityTypeLabel: '種類',
+  facilityFloorLabel: '階数',
+  facilityCapacityLabel: '定員',
+  facilityCreateButton: '施設を作成',
+  facilityCreated: '施設を作成しました',
+  facilityCreateError: '施設の作成に失敗しました',
+  facilityLoadError: '施設の読み込みに失敗しました',
+  facilityLoading: '施設を読み込み中...',
+  facilityNoFacilities: '施設はまだありません',
+  facilityDelete: '施設を削除',
+  facilityDeleteConfirm: 'この施設を削除しますか？',
+  facilityDeleted: '施設を削除しました',
+  facilityDeleteError: '施設の削除に失敗しました',
+  facilityOperatingHours: '営業スケジュール',
+  facilityOpenTime: '開始',
+  facilityCloseTime: '終了',
+  facilityClosed: '休館',
+  facilitySaveHours: 'スケジュールを保存',
+  facilityHoursSaved: '営業スケジュールを保存しました',
+  facilityHoursError: 'スケジュールの保存に失敗しました',
+  day: '曜日',
+  status: 'ステータス',
+  occupied: '使用中',
+  available: '空き',
   
   // Community
   communityBackToList: 'コミュニティリストに戻る',

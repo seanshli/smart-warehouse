@@ -2,13 +2,13 @@
 // 處理各種倉庫操作的通知，包括低庫存警告、物品變更通知等
 
 export interface NotificationData {
-  type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'QUANTITY_CHANGED' | 'LOCATION_CHANGED' | 'SYSTEM_ALERT' | 'MAIL_RECEIVED' // 通知類型
+  type: 'LOW_INVENTORY' | 'ITEM_ADDED' | 'ITEM_UPDATED' | 'ITEM_DELETED' | 'QUANTITY_CHANGED' | 'LOCATION_CHANGED' | 'SYSTEM_ALERT' | 'MAIL_RECEIVED' | 'DOOR_BELL_RUNG' | 'PACKAGE_RECEIVED' | 'FACILITY_RESERVATION_APPROVED' | 'FACILITY_RESERVATION_REJECTED' // 通知類型
   title: string // 通知標題
   message: string // 通知訊息
   userId: string // 用戶 ID
   itemId?: string // 物品 ID（可選）
   householdId?: string // 家庭 ID（可選）
-  metadata?: Record<string, any> // 額外元資料（可選，可包含 mailboxId）
+  metadata?: Record<string, any> // 額外元資料（可選，可包含 mailboxId, doorBellId, packageId, facilityReservationId）
 }
 
 // 創建通知
@@ -24,6 +24,9 @@ export async function createNotification(data: NotificationData) {
         userId: data.userId, // 用戶 ID
         itemId: data.itemId, // 物品 ID（可選）
         mailboxId: data.metadata?.mailboxId, // 郵箱 ID（可選）
+        doorBellId: data.metadata?.doorBellId, // 門鈴 ID（可選）
+        packageId: data.metadata?.packageId, // 包裹 ID（可選）
+        facilityReservationId: data.metadata?.facilityReservationId, // 設施預訂 ID（可選）
       }
     })
     

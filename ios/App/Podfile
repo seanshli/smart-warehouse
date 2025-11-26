@@ -34,12 +34,22 @@ end
 def midea_pods
   # Midea MSmartSDK - using local SDK from MideaSDK directory
   # Note: SDK path is relative to Podfile location (ios/App/)
-  # Path: ios/App -> ../ -> ios/ -> MideaSDK/OEMSDK/OEMPods_Framework
-  midea_sdk_path = '../MideaSDK/OEMSDK/OEMPods_Framework'
-  pod 'OEMFoundation/NetworkFramework', :path => midea_sdk_path
-  pod 'OEMBusiness/NetworkFramework', :path => midea_sdk_path
-  pod 'MSmartSDK', :path => midea_sdk_path
-  # Additional pods can be added as needed from OEMPods_Source
+  # Path: ios/App -> ../ -> ios/ -> MideaSDK/OEMSDK/
+  midea_framework_path = '../MideaSDK/OEMSDK/OEMPods_Framework'
+  midea_source_path = '../MideaSDK/OEMSDK/OEMPods_Source'
+  
+  # Dependencies from OEMPods_Source (required by OEMBusiness)
+  pod 'OEMLogger', :path => "#{midea_source_path}/OEMLogger"
+  pod 'DolphinRouter', :path => "#{midea_source_path}/Dolphinrouter"
+  # Note: OEMTheme and OEMEnvirement may be needed if OEMBusiness requires them
+  # Uncomment if needed:
+  # pod 'OEMTheme', :path => "#{midea_source_path}/OEMTheme"
+  # pod 'OEMEnvirement', :path => "#{midea_source_path}/OEMEnvirement"
+  
+  # Main Midea SDK pods from OEMPods_Framework
+  pod 'OEMFoundation/NetworkFramework', :path => midea_framework_path
+  pod 'OEMBusiness/NetworkFramework', :path => midea_framework_path
+  pod 'MSmartSDK', :path => midea_framework_path
 end
 
 target 'App' do

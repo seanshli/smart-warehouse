@@ -2,7 +2,7 @@
 // Abstracts native plugin calls and provides web fallbacks
 
 import { Capacitor } from '@capacitor/core'
-import { MideaProvisioning } from '../plugins/midea/web'
+import { MideaProvisioning } from '../plugins/midea'
 import type {
   MideaInitializeOptions,
   MideaStartProvisioningOptions,
@@ -33,14 +33,6 @@ export async function ensureMideaInitialized(): Promise<boolean> {
     }
 
     const config = await response.json()
-    
-    // Initialize SDK
-    const { Plugins } = await import('@capacitor/core')
-    const mideaPlugin = Plugins.MideaProvisioning as any
-
-    if (!mideaPlugin) {
-      throw new Error('MideaProvisioning plugin not found')
-    }
 
     const initOptions: MideaInitializeOptions = {
       clientId: config.clientId || process.env.MIDEA_CLIENT_ID || '',
@@ -54,7 +46,7 @@ export async function ensureMideaInitialized(): Promise<boolean> {
       throw new Error('Midea SDK credentials not configured. Please check environment variables: MIDEA_CLIENT_ID, MIDEA_CLIENT_SECRET, MIDEA_SERVER_HOST')
     }
 
-    const result = await mideaPlugin.initialize(initOptions)
+    const result = await MideaProvisioning.initialize(initOptions)
     
     if (!result.initialized) {
       throw new Error('Failed to initialize Midea SDK')
@@ -82,14 +74,7 @@ export async function startNativeMideaProvisioning(
     // Ensure SDK is initialized
     await ensureMideaInitialized()
 
-    const { Plugins } = await import('@capacitor/core')
-    const mideaPlugin = Plugins.MideaProvisioning as any
-
-    if (!mideaPlugin) {
-      throw new Error('MideaProvisioning plugin not found')
-    }
-
-    return await mideaPlugin.startProvisioning(options)
+    return await MideaProvisioning.startProvisioning(options)
   } catch (error: any) {
     console.error('Native Midea provisioning failed:', error)
     
@@ -108,14 +93,7 @@ export async function getMideaProvisioningStatus(token?: string): Promise<any> {
   }
 
   try {
-    const { Plugins } = await import('@capacitor/core')
-    const mideaPlugin = Plugins.MideaProvisioning as any
-
-    if (!mideaPlugin) {
-      return MideaProvisioning.getStatus({ token })
-    }
-
-    return await mideaPlugin.getStatus({ token })
+    return await MideaProvisioning.getStatus({ token })
   } catch (error) {
     console.error('Failed to get Midea provisioning status:', error)
     return MideaProvisioning.getStatus({ token })
@@ -132,14 +110,7 @@ export async function stopMideaProvisioning(): Promise<void> {
   }
 
   try {
-    const { Plugins } = await import('@capacitor/core')
-    const mideaPlugin = Plugins.MideaProvisioning as any
-
-    if (mideaPlugin) {
-      await mideaPlugin.stopProvisioning()
-    } else {
-      await MideaProvisioning.stopProvisioning()
-    }
+    await MideaProvisioning.stopProvisioning()
   } catch (error) {
     console.error('Failed to stop Midea provisioning:', error)
     await MideaProvisioning.stopProvisioning()

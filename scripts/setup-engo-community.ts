@@ -103,7 +103,7 @@ async function main() {
           country: 'Taiwan',
         },
       })
-      console.log(`✅ Created community: ${community.name} / ${community.nameZh}`)
+      console.log(`✅ Created community: ${community.name}`)
       console.log(`   Invitation Code: ${communityInvitationCode}`)
     } else {
       console.log(`ℹ️  Community already exists: ${community.name}`)
@@ -349,7 +349,7 @@ async function main() {
     console.log('\n' + '='.repeat(60))
     console.log('📊 SETUP SUMMARY')
     console.log('='.repeat(60))
-    console.log(`\n🏘️  Community: ${community.name} / ${community.nameZh}`)
+    console.log(`\n🏘️  Community: ${community.name}`)
     console.log(`   ID: ${community.id}`)
     console.log(`   Invitation Code: ${community.invitationCode}`)
     console.log(`\n👤 Community Admin:`)

@@ -1,14 +1,14 @@
 // Web fallback for Midea Provisioning Plugin
 
 import { 
-  MideaPlugin, 
+  MideaProvisioningPlugin, 
   MideaInitializeOptions, 
   MideaStartProvisioningOptions,
   MideaProvisioningResult,
   MideaStatusResult
 } from './index'
 
-export const MideaProvisioning: MideaPlugin = {
+export class MideaProvisioning implements MideaProvisioningPlugin {
   async initialize(options: MideaInitializeOptions) {
     // Web fallback: use API endpoint
     const response = await fetch('/api/mqtt/midea/initialize', {
@@ -22,7 +22,7 @@ export const MideaProvisioning: MideaPlugin = {
     }
 
     return await response.json()
-  },
+  }
 
   async startProvisioning(options: MideaStartProvisioningOptions): Promise<MideaProvisioningResult> {
     // Web fallback: use API endpoint
@@ -49,7 +49,7 @@ export const MideaProvisioning: MideaPlugin = {
     }
 
     return await response.json()
-  },
+  }
 
   async getStatus(options: { token?: string }): Promise<MideaStatusResult> {
     const response = await fetch(`/api/mqtt/provisioning?token=${options.token || ''}`, {
@@ -64,7 +64,7 @@ export const MideaProvisioning: MideaPlugin = {
     }
 
     return await response.json()
-  },
+  }
 
   async stopProvisioning() {
     const response = await fetch('/api/mqtt/provisioning', {
@@ -76,7 +76,7 @@ export const MideaProvisioning: MideaPlugin = {
     }
 
     return await response.json()
-  },
+  }
 
   async resumeProvisioning() {
     // Web fallback: not supported
@@ -84,6 +84,6 @@ export const MideaProvisioning: MideaPlugin = {
       success: false,
       message: 'Resume provisioning not supported on web platform',
     }
-  },
+  }
 }
 

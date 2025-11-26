@@ -1,5 +1,7 @@
 // Midea Provisioning Capacitor Plugin Interface
 
+import { registerPlugin } from '@capacitor/core'
+
 export interface MideaInitializeOptions {
   clientId: string
   clientSecret: string
@@ -40,7 +42,7 @@ export interface MideaStatusResult {
   token?: string
 }
 
-export interface MideaPlugin {
+export interface MideaProvisioningPlugin {
   initialize(options: MideaInitializeOptions): Promise<{ initialized: boolean; native: boolean; message: string }>
   startProvisioning(options: MideaStartProvisioningOptions): Promise<MideaProvisioningResult>
   getStatus(options: { token?: string }): Promise<MideaStatusResult>
@@ -48,9 +50,7 @@ export interface MideaPlugin {
   resumeProvisioning(): Promise<{ success: boolean; message: string }>
 }
 
-declare global {
-  interface PluginRegistry {
-    MideaProvisioning?: MideaPlugin
-  }
-}
+export const MideaProvisioning = registerPlugin<MideaProvisioningPlugin>('MideaProvisioning', {
+  web: () => import('./web').then((m) => new m.MideaProvisioning()),
+})
 

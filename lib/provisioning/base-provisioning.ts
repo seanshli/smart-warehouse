@@ -48,6 +48,7 @@ export interface ProvisioningConfig {
 
 // 配網結果
 export interface ProvisioningResult {
+  token?: string // Provisioning token for status tracking
   success: boolean
   deviceId?: string // 設備 ID
   deviceName?: string // 設備名稱

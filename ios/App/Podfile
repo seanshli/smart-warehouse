@@ -31,9 +31,19 @@ def tuya_pods
   # If login fails, we may need to check the SDK documentation or use a different approach
 end
 
+def midea_pods
+  # Midea MSmartSDK - using local SDK from MideaSDK directory
+  # Note: SDK path is relative to Podfile location (ios/App/)
+  pod 'OEMFoundation/NetworkFramework', :path => '../../MideaSDK/OEMSDK/OEMPods_Framework'
+  pod 'OEMBusiness/NetworkFramework', :path => '../../MideaSDK/OEMSDK/OEMPods_Framework'
+  pod 'MSmartSDK', :path => '../../MideaSDK/OEMSDK/OEMPods_Framework'
+  # Additional pods can be added as needed from OEMPods_Source
+end
+
 target 'App' do
   capacitor_pods
   tuya_pods
+  midea_pods
   # Add your Pods here
 end
 

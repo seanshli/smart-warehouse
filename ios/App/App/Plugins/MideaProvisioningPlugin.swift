@@ -1,10 +1,6 @@
 import Foundation
 import Capacitor
-
-// Midea SDK imports - these will be available after SDK integration
-// import MSmartSDK
-// import OEMFoundation
-// import OEMBusiness
+import MSmartSDK
 
 @objc(MideaProvisioningPlugin)
 public class MideaProvisioningPlugin: CAPPlugin {
@@ -17,69 +13,46 @@ public class MideaProvisioningPlugin: CAPPlugin {
     @objc func initialize(_ call: CAPPluginCall) {
         guard let clientId = call.getString("clientId"),
               let clientSecret = call.getString("clientSecret"),
-              let serverHost = call.getString("serverHost"),
-              let accessToken = call.getString("accessToken") else {
-            call.reject("Midea credentials are required: clientId, clientSecret, serverHost, accessToken")
+              let serverHost = call.getString("serverHost") else {
+            call.reject("Midea credentials are required: clientId, clientSecret, serverHost")
             return
         }
         
-        // TODO: Initialize Midea SDK
-        // Based on SDK documentation:
-        // 1. Initialize OEMBaseSDK with config
-        // 2. Initialize BaseService with clientId, clientSecret, host
-        // 3. Set access token
+        let accessToken = call.getString("accessToken") ?? ""
         
-        /*
-        // Example initialization (needs SDK integration):
-        let config = OEMSDKConfig()
-        config.domain = serverHost
-        config.appID = clientId
-        config.appSecret = clientSecret
-        config.enableFileLog = true
-        config.enableConsoleLog = true
-        OEMBaseSDK.initSDK(with: config)
+        // Initialize MSmartSDK
+        let config = MSConfig()
+        config.clientId = clientId
+        config.clientSecret = clientSecret
+        config.serverHost = serverHost
+        config.enableLog = true
         
-        BaseService.initService(withClientId: clientId,
-                               clientSecret: clientSecret,
-                               authURL: serverHost,
-                               serviceImpl: nil,
-                               onTokenExpiredCompletion: { [weak self] dic in
-            // Handle token refresh
-            if let uid = OEMAccountManager.getUid(),
-               let token = OEMAccountManager.getAccessToken() {
-                BaseService.setToken(uid,
-                                    accessToken: token,
-                                    signType: .tob2_0) { success, error in
-                    print("Token refresh: \(success ? "success" : "failed")")
-                }
-            }
-        })
+        // Initialize SDK in OVERSEAS_OEM mode (海外OEM版)
+        let initResult = MSInterface.shareInstance()?.initSDK(config, workMode: .overSeaOEM, extra: nil) ?? false
         
-        // Set access token
-        if let uid = call.getString("uid") {
-            BaseService.setToken(uid,
-                                accessToken: accessToken,
-                                signType: .tob2_0) { success, error in
-                if success {
-                    self.isInitialized = true
-                    call.resolve([
-                        "initialized": true,
-                        "native": true,
-                        "message": "Midea SDK initialized successfully"
-                    ])
-                } else {
-                    call.reject("Failed to set access token: \(error?.localizedDescription ?? "unknown error")")
-                }
+        if !initResult {
+            call.reject("Failed to initialize Midea SDK")
+            return
+        }
+        
+        // Set access token if provided
+        if !accessToken.isEmpty {
+            let tokenSet = MSInterface.shareInstance()?.setAccessToken("Bearer \(accessToken)") ?? false
+            if !tokenSet {
+                call.reject("Failed to set access token")
+                return
             }
         }
-        */
         
-        // Placeholder until SDK is integrated
+        // Set token refresh delegate
+        MSInterface.shareInstance()?.setTokenRefreshDelegate(self)
+        
         isInitialized = true
+        
         call.resolve([
             "initialized": true,
             "native": true,
-            "message": "Midea SDK initialization placeholder - SDK integration needed"
+            "message": "Midea SDK initialized successfully"
         ])
     }
     
@@ -109,72 +82,100 @@ public class MideaProvisioningPlugin: CAPPlugin {
         currentProvisioningCall = call
         currentToken = "midea_ap_\(Int(Date().timeIntervalSince1970 * 1000))"
         
-        // TODO: Implement AP mode provisioning using Midea SDK
-        // Based on Android implementation pattern:
-        // 1. Create AP config parameters
-        // 2. Start device configuration
-        // 3. Handle progress callbacks
-        // 4. Return device info on success
+        // Create AP config parameters
+        let params = MSDeviceApConfigParams()
+        params.deviceSSID = deviceSsid
+        params.routerSSID = routerSsid
+        params.routerPwd = routerPassword
+        // routerBSSID is optional, can be nil
+        params.routerBSSID = nil
         
-        /*
-        // Example provisioning (needs SDK integration):
-        // Note: The actual API may differ - need to check iOS SDK documentation
+        // Stop any existing provisioning
+        MSDeviceConfigManager.shareInstance()?.stopConfigureDevice({ [weak self] error in
+            // Ignore errors when stopping
+        })
         
-        let params = MSDeviceApConfigParams(
-            context: UIApplication.shared,
-            deviceSsid: deviceSsid,
-            routerSsid: routerSsid,
-            routerSecurityParams: routerSecurityParams,
-            routerPassword: routerPassword
-        )
-        
-        MSDeviceConfigManager.sharedInstance().stopConfigureDevice()
-        MSDeviceConfigManager.sharedInstance().startConfigureDevice(
-            with: params,
+        // Start device configuration
+        MSDeviceConfigManager.shareInstance()?.startConfigureDevice(
+            params,
             configType: .ap,
-            callback: { [weak self] (step, device, error) in
+            progressCallback: { [weak self] (apStep, bleStep) in
                 guard let self = self else { return }
                 
-                if let error = error {
-                    self.currentProvisioningCall?.reject(
-                        error.localizedDescription,
-                        nil,
-                        [
-                            "errorCode": error.code,
-                            "subErrorCode": error.userInfo["subErrorCode"] ?? "",
-                            "status": "failed",
-                            "token": self.currentToken ?? ""
-                        ]
-                    )
-                    self.currentProvisioningCall = nil
-                    return
-                }
+                // Report progress to JavaScript
+                // Note: We can't directly notify from here, but we can store the step
+                // The completion callback will be called when done
+                print("Midea provisioning progress - AP Step: \(apStep), BLE Step: \(bleStep)")
+            },
+            completioncallback: { [weak self] (error, device) in
+                guard let self = self else { return }
                 
-                if let device = device, step == .complete {
-                    self.currentProvisioningCall?.resolve([
-                        "success": true,
-                        "deviceId": device.deviceId ?? "",
-                        "deviceName": device.deviceName ?? "",
-                        "status": "success",
-                        "token": self.currentToken ?? "",
-                        "deviceInfo": [
+                DispatchQueue.main.async {
+                    if let error = error {
+                        // Provisioning failed
+                        self.currentProvisioningCall?.reject(
+                            error.localizedDescription,
+                            nil,
+                            [
+                                "errorCode": error.code,
+                                "status": "failed",
+                                "token": self.currentToken ?? ""
+                            ]
+                        )
+                        self.currentProvisioningCall = nil
+                        self.currentToken = nil
+                    } else if let device = device {
+                        // Provisioning succeeded
+                        var deviceInfo: [String: Any] = [:]
+                        if let deviceId = device.deviceId {
+                            deviceInfo["deviceId"] = deviceId
+                        }
+                        if let deviceName = device.deviceName {
+                            deviceInfo["deviceName"] = deviceName
+                        }
+                        if let deviceType = device.deviceType {
+                            deviceInfo["deviceType"] = deviceType
+                        }
+                        if let deviceSn = device.deviceSn {
+                            deviceInfo["deviceSn"] = deviceSn
+                        }
+                        if let deviceSsid = device.deviceSsid {
+                            deviceInfo["deviceSsid"] = deviceSsid
+                        }
+                        
+                        self.currentProvisioningCall?.resolve([
+                            "success": true,
                             "deviceId": device.deviceId ?? "",
                             "deviceName": device.deviceName ?? "",
-                            "deviceType": device.deviceType ?? ""
-                        ]
-                    ])
-                    self.currentProvisioningCall = nil
+                            "status": "success",
+                            "token": self.currentToken ?? "",
+                            "deviceInfo": deviceInfo
+                        ])
+                        self.currentProvisioningCall = nil
+                        self.currentToken = nil
+                    } else {
+                        // Unexpected: no error but no device
+                        self.currentProvisioningCall?.reject(
+                            "Provisioning completed but no device information received",
+                            nil,
+                            [
+                                "status": "failed",
+                                "token": self.currentToken ?? ""
+                            ]
+                        )
+                        self.currentProvisioningCall = nil
+                        self.currentToken = nil
+                    }
                 }
             }
         )
-        */
         
-        // Placeholder response
+        // Return immediately with provisioning status
         call.resolve([
             "success": true,
             "token": currentToken ?? "",
             "status": "provisioning",
-            "message": "Midea AP mode provisioning - SDK integration needed",
+            "message": "Midea AP mode provisioning started",
             "mode": "ap"
         ])
     }
@@ -195,25 +196,31 @@ public class MideaProvisioningPlugin: CAPPlugin {
     }
     
     @objc func stopProvisioning(_ call: CAPPluginCall) {
-        // TODO: Stop provisioning using SDK
-        // MSDeviceConfigManager.sharedInstance().stopConfigureDevice()
-        
-        currentToken = nil
-        
-        if let provisioningCall = currentProvisioningCall {
-            provisioningCall.reject("Provisioning stopped by user")
-            currentProvisioningCall = nil
+        MSDeviceConfigManager.shareInstance()?.stopConfigureDevice { [weak self] error in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.currentToken = nil
+                
+                if let provisioningCall = self.currentProvisioningCall {
+                    provisioningCall.reject("Provisioning stopped by user")
+                    self.currentProvisioningCall = nil
+                }
+                
+                if let error = error {
+                    call.reject("Failed to stop provisioning: \(error.localizedDescription)")
+                } else {
+                    call.resolve([
+                        "success": true,
+                        "message": "Provisioning stopped"
+                    ])
+                }
+            }
         }
-        
-        call.resolve([
-            "success": true,
-            "message": "Provisioning stopped"
-        ])
     }
     
     @objc func resumeProvisioning(_ call: CAPPluginCall) {
-        // TODO: Resume provisioning using SDK
-        // MSDeviceConfigManager.sharedInstance().resumeConfigureDevice()
+        MSDeviceConfigManager.shareInstance()?.resumeConfigureDevice()
         
         call.resolve([
             "success": true,
@@ -222,3 +229,13 @@ public class MideaProvisioningPlugin: CAPPlugin {
     }
 }
 
+// MARK: - MSRefreshDelegate
+
+extension MideaProvisioningPlugin: MSRefreshDelegate {
+    public func refreshToken(_ competion: @escaping MSRefreshTokenBlock) {
+        // Token refresh should be handled by the app
+        // For now, just call the completion with false to indicate refresh failed
+        // The app should implement token refresh logic
+        competion(false)
+    }
+}

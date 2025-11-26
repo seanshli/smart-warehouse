@@ -34,9 +34,26 @@ async function setupBuildingFloorsAndUnits(buildingId: string, buildingName: str
       return { success: false, error: 'Building not found' }
     }
 
-    // Create 3 floors (1, 2, 3) - all residential
+    // Create 3 floors (1, 2, 3)
+    // Floor 1: Front door area (no residential units)
+    // Floor 2: Facilities (Gym, Meeting Rooms) - no residential units
+    // Floor 3: Residential units only
     const floors = []
     for (let floorNum = 1; floorNum <= 3; floorNum++) {
+      const isResidential = floorNum === 3
+      let floorName = `Floor ${floorNum}`
+      let description = ''
+      
+      if (floorNum === 1) {
+        floorName = 'Front Door / 大門'
+        description = 'Front door area with door bells, mailboxes, and package room'
+      } else if (floorNum === 2) {
+        floorName = 'Facilities / 設施'
+        description = 'Facilities floor with Gym, Meeting Room #1, and Meeting Room #2'
+      } else {
+        description = `Residential floor ${floorNum} with 5 units (A, B, C, D, E)`
+      }
+      
       const floor = await prisma.floor.upsert({
         where: {
           buildingId_floorNumber: {
@@ -45,34 +62,36 @@ async function setupBuildingFloorsAndUnits(buildingId: string, buildingName: str
           },
         },
         update: {
-          name: `Floor ${floorNum}`,
-          isResidential: true,
-          description: `Residential floor ${floorNum} with 5 units (A, B, C, D, E)`,
+          name: floorName,
+          isResidential,
+          description,
         },
         create: {
           buildingId,
           floorNumber: floorNum,
-          name: `Floor ${floorNum}`,
-          description: `Residential floor ${floorNum} with 5 units (A, B, C, D, E)`,
-          isResidential: true,
+          name: floorName,
+          description,
+          isResidential,
         },
       })
 
       floors.push(floor)
-      console.log(`   ✅ Created/Updated floor ${floorNum}`)
+      console.log(`   ✅ Created/Updated floor ${floorNum}: ${floorName}`)
     }
 
-    // Create households and mailboxes for all floors (1-3), each with 5 units
+    // Create households, mailboxes, door bells, and package lockers for Floor 3 only (5 units)
     const units = ['A', 'B', 'C', 'D', 'E']
     const createdHouseholds = []
     const createdMailboxes = []
+    const createdDoorBells = []
+    const createdPackageLockers = []
 
-    for (let floorNum = 1; floorNum <= 3; floorNum++) {
-      const floor = floors.find(f => f.floorNumber === floorNum)
-      if (!floor) continue
-
+    // Only create residential units on Floor 3
+    const floorNum = 3
+    const floor = floors.find(f => f.floorNumber === floorNum)
+    if (floor) {
       for (const unit of units) {
-        const unitNumber = `${floorNum}${unit}` // e.g., "1A", "2B", "3C"
+        const unitNumber = `${floorNum}${unit}` // e.g., "3A", "3B", "3C"
         
         // Check if household already exists for this floor/unit
         const existingHousehold = building.households.find(
@@ -109,30 +128,151 @@ async function setupBuildingFloorsAndUnits(buildingId: string, buildingName: str
 
         createdHouseholds.push(household)
 
-        // Create mailbox in common area linked to this household
-        const mailbox = await prisma.mailbox.upsert({
-          where: {
-            buildingId_mailboxNumber: {
+        // Get Floor 1 for front door features
+        const frontDoorFloor = floors.find(f => f.floorNumber === 1)
+        if (frontDoorFloor) {
+          // Create mailbox at front door (moved from common area)
+          const mailbox = await prisma.mailbox.upsert({
+            where: {
+              buildingId_mailboxNumber: {
+                buildingId,
+                mailboxNumber: unitNumber,
+              },
+            },
+            update: {
+              householdId: household.id,
+              floorId: frontDoorFloor.id, // Front door floor
+              location: 'Front Door - Mailbox Section',
+            },
+            create: {
               buildingId,
+              floorId: frontDoorFloor.id, // Front door floor
+              householdId: household.id,
               mailboxNumber: unitNumber,
+              location: 'Front Door - Mailbox Section',
+              hasMail: false,
+            },
+          })
+
+          createdMailboxes.push(mailbox)
+
+          // Create door bell at front door
+          const doorBell = await prisma.doorBell.upsert({
+            where: {
+              buildingId_doorBellNumber: {
+                buildingId,
+                doorBellNumber: unitNumber,
+              },
+            },
+            update: {
+              householdId: household.id,
+              location: 'Front Door',
+              isEnabled: true,
+            },
+            create: {
+              buildingId,
+              householdId: household.id,
+              doorBellNumber: unitNumber,
+              location: 'Front Door',
+              isEnabled: true,
+            },
+          })
+
+          createdDoorBells.push(doorBell)
+        }
+      }
+    } else {
+      console.log(`   ⚠️  Floor ${floorNum} not found, skipping household creation`)
+    }
+
+    // Create 10 package lockers in package room (Floor 1)
+    const frontDoorFloor = floors.find(f => f.floorNumber === 1)
+    if (frontDoorFloor) {
+      for (let lockerNum = 1; lockerNum <= 10; lockerNum++) {
+        const locker = await prisma.packageLocker.upsert({
+          where: {
+            buildingId_lockerNumber: {
+              buildingId,
+              lockerNumber: lockerNum,
             },
           },
           update: {
-            householdId: household.id,
-            floorId: floor.id,
-            location: 'Common Area - Mailbox Section',
+            location: 'Front Door - Package Room',
+            isOccupied: false,
           },
           create: {
             buildingId,
-            floorId: floor.id,
-            householdId: household.id,
-            mailboxNumber: unitNumber,
-            location: 'Common Area - Mailbox Section',
-            hasMail: false,
+            lockerNumber: lockerNum,
+            location: 'Front Door - Package Room',
+            isOccupied: false,
+          },
+        })
+        createdPackageLockers.push(locker)
+      }
+      console.log(`   ✅ Created/Updated 10 package lockers`)
+    }
+
+    // Create facilities on Floor 2: Gym, Meeting Room #1, Meeting Room #2
+    const facilitiesFloor = floors.find(f => f.floorNumber === 2)
+    if (facilitiesFloor) {
+      const facilities = [
+        { name: 'Gym', nameZh: '健身房', type: 'gym', capacity: 20 },
+        { name: 'Meeting Room #1', nameZh: '會議室 #1', type: 'meeting_room', capacity: 10 },
+        { name: 'Meeting Room #2', nameZh: '會議室 #2', type: 'meeting_room', capacity: 10 },
+      ]
+
+      for (const facilityData of facilities) {
+        const facility = await prisma.facility.upsert({
+          where: {
+            buildingId_name: {
+              buildingId,
+              name: facilityData.name,
+            },
+          },
+          update: {
+            floorId: facilitiesFloor.id,
+            floorNumber: 2,
+            description: `${facilityData.nameZh} - ${facilityData.name}`,
+            type: facilityData.type,
+            capacity: facilityData.capacity,
+            isActive: true,
+          },
+          create: {
+            buildingId,
+            floorId: facilitiesFloor.id,
+            floorNumber: 2,
+            name: facilityData.name,
+            description: `${facilityData.nameZh} - ${facilityData.name}`,
+            type: facilityData.type,
+            capacity: facilityData.capacity,
+            isActive: true,
           },
         })
 
-        createdMailboxes.push(mailbox)
+        // Create default operating hours for each facility (Monday-Sunday, 9:00-22:00)
+        for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
+          await prisma.facilityOperatingHours.upsert({
+            where: {
+              facilityId_dayOfWeek: {
+                facilityId: facility.id,
+                dayOfWeek,
+              },
+            },
+            update: {
+              openTime: '09:00',
+              closeTime: '22:00',
+              isClosed: false,
+            },
+            create: {
+              facilityId: facility.id,
+              dayOfWeek,
+              openTime: '09:00',
+              closeTime: '22:00',
+              isClosed: false,
+            },
+          })
+        }
+        console.log(`   ✅ Created/Updated facility: ${facilityData.name}`)
       }
     }
 
@@ -141,11 +281,17 @@ async function setupBuildingFloorsAndUnits(buildingId: string, buildingName: str
       where: { id: buildingId },
       data: {
         floorCount: 3,
-        unitCount: 3 * 5, // 3 floors * 5 units each = 15 units
+        unitCount: 5, // Only Floor 3 has residential units (5 units)
       },
     })
 
-    console.log(`   ✅ Completed: ${floors.length} floors, ${createdHouseholds.length} households, ${createdMailboxes.length} mailboxes`)
+    console.log(`   ✅ Completed:`)
+    console.log(`      - ${floors.length} floors`)
+    console.log(`      - ${createdHouseholds.length} households (Floor 3 only)`)
+    console.log(`      - ${createdMailboxes.length} mailboxes (Front Door)`)
+    console.log(`      - ${createdDoorBells.length} door bells (Front Door)`)
+    console.log(`      - ${createdPackageLockers.length} package lockers (Package Room)`)
+    console.log(`      - 3 facilities (Floor 2: Gym, Meeting Room #1, Meeting Room #2)`)
 
     return {
       success: true,
@@ -153,6 +299,8 @@ async function setupBuildingFloorsAndUnits(buildingId: string, buildingName: str
         floors: floors.length,
         households: createdHouseholds.length,
         mailboxes: createdMailboxes.length,
+        doorBells: createdDoorBells.length,
+        packageLockers: createdPackageLockers.length,
       },
     }
   } catch (error) {
@@ -219,8 +367,11 @@ async function main() {
       if (result.success) {
         console.log(`      ✅ Success`)
         console.log(`         Floors: ${result.data?.floors || 0}`)
-        console.log(`         Households: ${result.data?.households || 0}`)
-        console.log(`         Mailboxes: ${result.data?.mailboxes || 0}`)
+        console.log(`         Households: ${result.data?.households || 0} (Floor 3 only)`)
+        console.log(`         Mailboxes: ${result.data?.mailboxes || 0} (Front Door)`)
+        console.log(`         Door Bells: ${result.data?.doorBells || 0} (Front Door)`)
+        console.log(`         Package Lockers: ${result.data?.packageLockers || 0} (Package Room)`)
+        console.log(`         Facilities: 3 (Floor 2: Gym, Meeting Room #1, Meeting Room #2)`)
       } else {
         console.log(`      ❌ Failed: ${result.error}`)
       }
@@ -229,11 +380,16 @@ async function main() {
     const totalFloors = results.reduce((sum, r) => sum + (r.data?.floors || 0), 0)
     const totalHouseholds = results.reduce((sum, r) => sum + (r.data?.households || 0), 0)
     const totalMailboxes = results.reduce((sum, r) => sum + (r.data?.mailboxes || 0), 0)
+    const totalDoorBells = results.reduce((sum, r) => sum + (r.data?.doorBells || 0), 0)
+    const totalPackageLockers = results.reduce((sum, r) => sum + (r.data?.packageLockers || 0), 0)
 
     console.log(`\n📊 Totals:`)
     console.log(`   Total Floors: ${totalFloors}`)
-    console.log(`   Total Households: ${totalHouseholds}`)
-    console.log(`   Total Mailboxes: ${totalMailboxes}`)
+    console.log(`   Total Households: ${totalHouseholds} (Floor 3 only)`)
+    console.log(`   Total Mailboxes: ${totalMailboxes} (Front Door)`)
+    console.log(`   Total Door Bells: ${totalDoorBells} (Front Door)`)
+    console.log(`   Total Package Lockers: ${totalPackageLockers} (Package Room)`)
+    console.log(`   Total Facilities: ${3 * community.buildings.length} (3 per building)`)
 
     console.log('\n' + '='.repeat(60))
     console.log('✅ enGo Smart Home buildings floors and units setup completed!')

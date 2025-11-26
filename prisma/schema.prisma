@@ -117,11 +117,15 @@ model Building {
   createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  community  Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  households Household[]
-  members    BuildingMember[]
-  floors     Floor[]
-  mailboxes  Mailbox[]
+  community      Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  households     Household[]
+  members        BuildingMember[]
+  floors         Floor[]
+  mailboxes      Mailbox[]
+  doorBells      DoorBell[]
+  packageLockers PackageLocker[]
+  packages       Package[]
+  facilities     Facility[]
 
   @@map("buildings")
 }
@@ -203,47 +207,50 @@ model WorkingGroupPermission {
 }
 
 model Household {
-  id                 String            @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name               String
-  description        String?
-  invitationCode     String?           @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  id                   String                @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name                 String
+  description          String?
+  invitationCode       String?               @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
   // Tuya Home integration
-  tuyaHomeId         String?           @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
-  tuyaAccount        String?           @map("tuya_account") // Tuya account for this household (email or phone)
-  tuyaPassword       String?           @map("tuya_password") // Encrypted Tuya password for household
-  tuyaCountryCode    String?           @default("886") @map("tuya_country_code") // Country code for Tuya household account
-  tuyaAccessToken    String?           @map("tuya_access_token") // Tuya access token for household (temporary, encrypted)
-  tuyaTokenExpiresAt DateTime?         @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time for household
+  tuyaHomeId           String?               @unique @map("tuya_home_id") // Tuya Home ID (對應到 Tuya SDK 的 Home)
+  tuyaAccount          String?               @map("tuya_account") // Tuya account for this household (email or phone)
+  tuyaPassword         String?               @map("tuya_password") // Encrypted Tuya password for household
+  tuyaCountryCode      String?               @default("886") @map("tuya_country_code") // Country code for Tuya household account
+  tuyaAccessToken      String?               @map("tuya_access_token") // Tuya access token for household (temporary, encrypted)
+  tuyaTokenExpiresAt   DateTime?             @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time for household
   // Building relationship (new)
-  buildingId         String?           @map("building_id")
-  floorId            String?           @map("floor_id") // Floor ID (e.g., floor 2-9)
-  floorNumber        Int?              @map("floor_number") // Floor number (2-9)
-  unit               String? // Unit identifier (A, B, C, D)
+  buildingId           String?               @map("building_id")
+  floorId              String?               @map("floor_id") // Floor ID (e.g., floor 2-9)
+  floorNumber          Int?                  @map("floor_number") // Floor number (2-9)
+  unit                 String? // Unit identifier (A, B, C, D)
   // Location fields
-  country            String?
-  city               String?
-  district           String?
-  community          String? // Legacy field, kept for backward compatibility
-  apartmentNo        String?           @map("apartment_no")
-  latitude           Float?
-  longitude          Float?
-  address            String?
-  streetAddress      String?           @map("street_address")
-  buildingAddress    String?           @map("building_address")
-  telephone          String?
-  createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  categories         Category[]
-  members            HouseholdMember[]
-  items              Item[]
-  rooms              Room[]
-  activities         UserActivity[]
-  iotDevices         IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
-  building           Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  floor              Floor?            @relation(fields: [floorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  mailboxes          Mailbox[] // Mailboxes linked to this household
-  automationRules    AutomationRule[] // 跨生态链控制规则
-  scenes             Scene[] // 场景管理
+  country              String?
+  city                 String?
+  district             String?
+  community            String? // Legacy field, kept for backward compatibility
+  apartmentNo          String?               @map("apartment_no")
+  latitude             Float?
+  longitude            Float?
+  address              String?
+  streetAddress        String?               @map("street_address")
+  buildingAddress      String?               @map("building_address")
+  telephone            String?
+  createdAt            DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime?             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  categories           Category[]
+  members              HouseholdMember[]
+  items                Item[]
+  rooms                Room[]
+  activities           UserActivity[]
+  iotDevices           IoTDevice[] // IoT 設備（統一支援 MQTT 和 RESTful API）
+  building             Building?             @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  floor                Floor?                @relation(fields: [floorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  mailboxes            Mailbox[] // Mailboxes linked to this household
+  doorBells            DoorBell[] // Door bells linked to this household
+  packages             Package[] // Packages for this household
+  facilityReservations FacilityReservation[] // Facility reservations by this household
+  automationRules      AutomationRule[] // 跨生态链控制规则
+  scenes               Scene[] // 场景管理
 
   @@map("households")
 }
@@ -429,18 +436,24 @@ model Barcode {
 }
 
 model Notification {
-  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  userId    String    @map("user_id")
-  itemId    String?   @map("item_id")
-  mailboxId String?   @map("mailbox_id") // Mailbox ID for mail notifications
-  type      String
-  title     String
-  message   String
-  read      Boolean?  @default(false)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  item      Item?     @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  mailbox   Mailbox?  @relation(fields: [mailboxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    String               @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId                String               @map("user_id")
+  itemId                String?              @map("item_id")
+  mailboxId             String?              @map("mailbox_id") // Mailbox ID for mail notifications
+  doorBellId            String?              @map("door_bell_id") // Door bell ID for door bell notifications
+  packageId             String?              @map("package_id") // Package ID for package notifications
+  facilityReservationId String?              @map("facility_reservation_id") // Facility reservation ID
+  type                  String
+  title                 String
+  message               String
+  read                  Boolean?             @default(false)
+  createdAt             DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
+  item                  Item?                @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  mailbox               Mailbox?             @relation(fields: [mailboxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  doorBell              DoorBell?            @relation(fields: [doorBellId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  package               Package?             @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  facilityReservation   FacilityReservation? @relation(fields: [facilityReservationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("notifications")
 }
@@ -458,6 +471,7 @@ model Floor {
   building   Building    @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   households Household[]
   mailboxes  Mailbox[]
+  facilities Facility[]
 
   @@unique([buildingId, floorNumber])
   @@map("floors")
@@ -482,6 +496,134 @@ model Mailbox {
 
   @@unique([buildingId, mailboxNumber])
   @@map("mailboxes")
+}
+
+// Front Door Door Bell - Similar to Mailbox, triggers alarm to household
+model DoorBell {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId     String    @map("building_id")
+  householdId    String?   @map("household_id") // Linked household
+  doorBellNumber String    @map("door_bell_number") // Display number (e.g., "3A")
+  location       String?   @default("Front Door") // Location description
+  isEnabled      Boolean?  @default(true) @map("is_enabled") // Whether door bell is enabled
+  lastRungAt     DateTime? @map("last_rung_at") @db.Timestamptz(6) // Last time door bell was rung
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building      Building       @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  household     Household?     @relation(fields: [householdId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  notifications Notification[]
+
+  @@unique([buildingId, doorBellNumber])
+  @@map("door_bells")
+}
+
+// Package Locker - 10 lockers in package room
+model PackageLocker {
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId   String    @map("building_id")
+  lockerNumber Int       @map("locker_number") // Locker number (1-10)
+  location     String?   @default("Front Door - Package Room") // Location description
+  isOccupied   Boolean?  @default(false) @map("is_occupied") // Whether locker is occupied
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building Building  @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  packages Package[]
+
+  @@unique([buildingId, lockerNumber])
+  @@map("package_lockers")
+}
+
+// Package - Check-in record for packages
+model Package {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId    String    @map("building_id")
+  lockerId      String    @map("locker_id") // PackageLocker ID
+  householdId   String    @map("household_id") // Linked household
+  packageNumber String?   @map("package_number") // Tracking number or reference
+  description   String? // Package description
+  checkedInAt   DateTime? @default(now()) @map("checked_in_at") @db.Timestamptz(6) // When package was checked in
+  checkedOutAt  DateTime? @map("checked_out_at") @db.Timestamptz(6) // When package was picked up
+  checkedInBy   String?   @map("checked_in_by") // User ID who checked in the package
+  checkedOutBy  String?   @map("checked_out_by") // User ID who picked up the package
+  status        String?   @default("pending") // pending, picked_up, expired
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building      Building       @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  locker        PackageLocker  @relation(fields: [lockerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notifications Notification[]
+
+  @@map("packages")
+}
+
+// Facility - Gym, Meeting Room #1, Meeting Room #2 on 2nd floor
+model Facility {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId  String    @map("building_id")
+  floorId     String?   @map("floor_id") // Floor ID (e.g., floor 2)
+  floorNumber Int?      @map("floor_number") // Floor number (2)
+  name        String // Facility name (e.g., "Gym", "Meeting Room #1", "Meeting Room #2")
+  description String? // Facility description
+  type        String? // Facility type (gym, meeting_room, etc.)
+  capacity    Int? // Maximum capacity
+  isActive    Boolean?  @default(true) @map("is_active") // Whether facility is active
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  building       Building                 @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  floor          Floor?                   @relation(fields: [floorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  operatingHours FacilityOperatingHours[]
+  reservations   FacilityReservation[]
+
+  @@unique([buildingId, name])
+  @@map("facilities")
+}
+
+// Facility Operating Hours - Calendar for operation hours (building admin can edit)
+model FacilityOperatingHours {
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  facilityId String    @map("facility_id")
+  dayOfWeek  Int       @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  openTime   String    @map("open_time") // Time in HH:mm format (e.g., "09:00")
+  closeTime  String    @map("close_time") // Time in HH:mm format (e.g., "22:00")
+  isClosed   Boolean?  @default(false) @map("is_closed") // Whether facility is closed on this day
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([facilityId, dayOfWeek])
+  @@map("facility_operating_hours")
+}
+
+// Facility Reservation - Members can reserve time slots
+model FacilityReservation {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  facilityId  String    @map("facility_id")
+  householdId String    @map("household_id") // Reserving household
+  requestedBy String    @map("requested_by") // User ID who requested
+  startTime   DateTime  @map("start_time") @db.Timestamptz(6) // Reservation start time
+  endTime     DateTime  @map("end_time") @db.Timestamptz(6) // Reservation end time
+  status      String    @default("pending") // pending, approved, rejected, completed, cancelled
+  approvedBy  String?   @map("approved_by") // User ID who approved (building admin)
+  approvedAt  DateTime? @map("approved_at") @db.Timestamptz(6) // When reservation was approved
+  accessCode  String?   @map("access_code") // Access code for entry (generated after approval)
+  purpose     String? // Purpose of reservation
+  notes       String? // Additional notes
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  facility      Facility       @relation(fields: [facilityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notifications Notification[]
+
+  @@index([facilityId, startTime, endTime])
+  @@index([householdId])
+  @@index([status])
+  @@map("facility_reservations")
 }
 
 model UserCredentials {

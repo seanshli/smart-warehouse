@@ -28,6 +28,13 @@ android {
         // Support for multiple screen densities and sizes
         multiDexEnabled true
     }
+    
+    // Manifest merger configuration to handle conflicts
+    packagingOptions {
+        pickFirst '**/libc++_shared.so'
+        pickFirst '**/libjsc.so'
+    }
+    
     buildTypes {
         release {
             minifyEnabled false

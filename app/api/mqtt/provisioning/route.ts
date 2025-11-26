@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { vendor, ssid, password, mode, baseUrl, apiKey, accessToken, deviceId, zigbeeGatewayId, bluetoothMac } = body
+    const { vendor, ssid, password, mode, baseUrl, apiKey, accessToken, deviceId, zigbeeGatewayId, bluetoothMac, deviceSsid, routerSecurityParams } = body
 
     // 驗證必填欄位
     if (!vendor) {
@@ -86,11 +86,28 @@ export async function POST(request: NextRequest) {
           config.bluetoothMac = bluetoothMac
         }
       }
-    } else if (vendor === 'midea' || vendor === 'esp') {
-      // MQTT 設備需要 Wi-Fi 配置
+    } else if (vendor === 'midea') {
+      // Midea 需要 Wi-Fi 配置
       if (!ssid || !password) {
         return NextResponse.json(
-          { error: 'Wi-Fi SSID and password are required for MQTT devices' },
+          { error: 'Wi-Fi SSID and password are required for Midea devices' },
+          { status: 400 }
+        )
+      }
+      config.ssid = ssid
+      config.password = password
+      // Midea AP 模式需要設備熱點 SSID
+      if ((mode === 'ap' || mode === 'hotspot') && deviceSsid) {
+        config.deviceSsid = deviceSsid
+      }
+      if (routerSecurityParams) {
+        config.routerSecurityParams = routerSecurityParams
+      }
+    } else if (vendor === 'esp') {
+      // ESP 需要 Wi-Fi 配置
+      if (!ssid || !password) {
+        return NextResponse.json(
+          { error: 'Wi-Fi SSID and password are required for ESP devices' },
           { status: 400 }
         )
       }

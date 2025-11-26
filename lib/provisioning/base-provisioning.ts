@@ -38,6 +38,10 @@ export interface ProvisioningConfig {
   zigbeeGatewayId?: string // Zigbee 配網時使用的網關 ID
   bluetoothMac?: string // Bluetooth 配網時使用的 MAC 地址
   
+  // Midea 特定配置
+  deviceSsid?: string // AP 模式：設備創建的 WiFi 熱點 SSID
+  routerSecurityParams?: string // 路由器安全參數（默認：[WPA2-PSK-CCMP][RSN-PSK-CCMP][ESS]）
+  
   // 品牌特定配置
   [key: string]: any
 }

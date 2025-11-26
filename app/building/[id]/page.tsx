@@ -48,7 +48,7 @@ export default function BuildingDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session } = useSession()
-  const { t } = useLanguage()
+  const { currentLanguage, setLanguage, t } = useLanguage()
   const buildingId = params.id as string
 
   const [building, setBuilding] = useState<Building | null>(null)
@@ -137,6 +137,23 @@ export default function BuildingDetailPage() {
               {building.description && (
                 <p className="mt-2 text-sm text-gray-600">{building.description}</p>
               )}
+            </div>
+            <div className="flex items-center space-x-3">
+              {/* Language Selection */}
+              <div className="flex items-center space-x-2">
+                <label htmlFor="language-select-building" className="text-sm text-gray-500">{t('commonLanguage')}:</label>
+                <select
+                  id="language-select-building"
+                  value={currentLanguage}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                >
+                  <option value="en">English</option>
+                  <option value="zh-TW">繁體中文</option>
+                  <option value="zh">简体中文</option>
+                  <option value="ja">日文</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

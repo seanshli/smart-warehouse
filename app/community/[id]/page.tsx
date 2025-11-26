@@ -17,6 +17,7 @@ import {
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import JoinRequestList from '@/components/community/JoinRequestList'
+import { useLanguage } from '@/components/LanguageProvider'
 
 interface Community {
   id: string
@@ -39,6 +40,7 @@ export default function CommunityDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session } = useSession()
+  const { currentLanguage, setLanguage, t } = useLanguage()
   const communityId = params?.id as string
 
   const [community, setCommunity] = useState<Community | null>(null)
@@ -121,7 +123,7 @@ export default function CommunityDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
+          <p className="mt-4 text-gray-600">{t('commonLoading')}</p>
         </div>
       </div>
     )
@@ -131,9 +133,9 @@ export default function CommunityDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600">{error || 'Community not found'}</p>
+          <p className="text-red-600">{error || t('communityNotFound')}</p>
           <Link href="/community" className="mt-4 text-primary-600 hover:text-primary-700">
-            返回社区列表
+            {t('communityBackToList')}
           </Link>
         </div>
       </div>
@@ -150,7 +152,7 @@ export default function CommunityDetailPage() {
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
-            返回社区列表
+            {t('communityBackToList')}
           </Link>
           <div className="flex items-center justify-between">
             <div>
@@ -159,10 +161,25 @@ export default function CommunityDetailPage() {
                 <p className="mt-2 text-sm text-gray-600">{community.description}</p>
               )}
             </div>
-            <div className="flex space-x-3">
+            <div className="flex items-center space-x-3">
+              {/* Language Selection */}
+              <div className="flex items-center space-x-2">
+                <label htmlFor="language-select-community" className="text-sm text-gray-500">{t('commonLanguage')}:</label>
+                <select
+                  id="language-select-community"
+                  value={currentLanguage}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                >
+                  <option value="en">English</option>
+                  <option value="zh-TW">繁體中文</option>
+                  <option value="zh">简体中文</option>
+                  <option value="ja">日文</option>
+                </select>
+              </div>
               <button className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 <CogIcon className="h-5 w-5 mr-2" />
-                设置
+                {t('commonSettings')}
               </button>
             </div>
           </div>
@@ -172,10 +189,10 @@ export default function CommunityDetailPage() {
         <div className="border-b border-gray-200 mb-6">
           <nav className="-mb-px flex space-x-8">
             {[
-              { id: 'overview', name: '概览', icon: BuildingOfficeIcon },
-              { id: 'buildings', name: '建筑', icon: BuildingOfficeIcon },
-              { id: 'members', name: '成员', icon: UserGroupIcon },
-              { id: 'working-groups', name: '工作组', icon: CogIcon },
+              { id: 'overview', name: t('communityOverview'), icon: BuildingOfficeIcon },
+              { id: 'buildings', name: t('adminBuildings'), icon: BuildingOfficeIcon },
+              { id: 'members', name: t('members'), icon: UserGroupIcon },
+              { id: 'working-groups', name: t('communityWorkingGroups'), icon: CogIcon },
             ].map((tab) => {
               const Icon = tab.icon
               return (
@@ -209,28 +226,30 @@ export default function CommunityDetailPage() {
 }
 
 function OverviewTab({ community }: { community: Community }) {
+  const { t, currentLanguage } = useLanguage()
+  
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">基本信息</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('communityBasicInfo')}</h3>
         <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
           <div>
-            <dt className="text-sm font-medium text-gray-500">地址</dt>
+            <dt className="text-sm font-medium text-gray-500">{t('communityAddress')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
               {[community.address, community.city, community.district, community.country]
                 .filter(Boolean)
-                .join(', ') || '未设置'}
+                .join(', ') || t('communityNotSet')}
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">创建时间</dt>
+            <dt className="text-sm font-medium text-gray-500">{t('communityCreatedAt')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {new Date(community.createdAt).toLocaleDateString('zh-TW')}
+              {new Date(community.createdAt).toLocaleDateString(currentLanguage === 'zh-TW' ? 'zh-TW' : currentLanguage === 'zh' ? 'zh-CN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US')}
             </dd>
           </div>
           {community.invitationCode && (
             <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500 mb-1">邀请码</dt>
+              <dt className="text-sm font-medium text-gray-500 mb-1">{t('communityInvitationCode')}</dt>
               <dd className="mt-1">
                 <div className="flex items-center space-x-2">
                   <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
@@ -239,15 +258,15 @@ function OverviewTab({ community }: { community: Community }) {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(community.invitationCode!)
-                      toast.success('邀请码已复制')
+                      toast.success(t('communityInvitationCopied'))
                     }}
                     className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    复制
+                    {t('communityCopyInvitation')}
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  分享此邀请码给其他人，让他们可以加入此社区
+                  {t('communityShareInvitation')}
                 </p>
               </dd>
             </div>
@@ -256,19 +275,19 @@ function OverviewTab({ community }: { community: Community }) {
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">统计信息</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('communityStats')}</h3>
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-gray-900">{community.stats?.buildings ?? 0}</div>
-            <div className="text-sm text-gray-500 mt-1">建筑</div>
+            <div className="text-sm text-gray-500 mt-1">{t('adminBuildings')}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-gray-900">{community.stats?.members ?? 0}</div>
-            <div className="text-sm text-gray-500 mt-1">成员</div>
+            <div className="text-sm text-gray-500 mt-1">{t('members')}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-gray-900">{community.stats?.workingGroups ?? 0}</div>
-            <div className="text-sm text-gray-500 mt-1">工作组</div>
+            <div className="text-sm text-gray-500 mt-1">{t('communityWorkingGroups')}</div>
           </div>
         </div>
       </div>

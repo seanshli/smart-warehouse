@@ -34,6 +34,7 @@
     "setup:external": "./scripts/setup-external-access.sh",
     "setup:engo": "tsx scripts/setup-engo-community.ts",
     "setup:engo-floors": "tsx scripts/setup-engo-buildings-floors.ts",
+    "setup:twin-oak-floors": "tsx scripts/setup-twin-oak-buildings-floors.ts",
     "lint": "next lint",
     "setup": "node scripts/setup.js",
     "seed": "node scripts/seed.js",

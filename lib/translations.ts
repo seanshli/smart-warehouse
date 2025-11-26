@@ -153,6 +153,10 @@ export interface Translations {
   commonLanguage: string
   commonCurrentLanguage: string
   commonSignOut: string
+  commonLoading: string
+  commonSettings: string
+  commonCopy: string
+  commonNotSet: string
   
   // Password Change
   changePassword: string
@@ -630,6 +634,29 @@ export interface Translations {
   buildingBackToCommunity: string
   buildingNotFound: string
   
+  // Community
+  communityBackToList: string
+  communityNotFound: string
+  communityOverview: string
+  communityBasicInfo: string
+  communityStats: string
+  communityAddress: string
+  communityCreatedAt: string
+  communityInvitationCode: string
+  communityShareInvitation: string
+  communityCopyInvitation: string
+  communityInvitationCopied: string
+  communityWorkingGroups: string
+  communityAddMember: string
+  communityNoMembers: string
+  communityCreateWorkgroup: string
+  communityNoWorkgroups: string
+  communityNotSet: string
+  communityMemberList: string
+  communityWorkgroupList: string
+  communityWorkgroupType: string
+  communityWorkgroupMembers: string
+  
   // Household Actions
   householdReservation: string
   householdMaintenance: string
@@ -792,6 +819,10 @@ const en: Translations = {
   commonLanguage: 'Language',
   commonCurrentLanguage: 'Current Language',
   commonSignOut: 'Sign Out',
+  commonLoading: 'Loading...',
+  commonSettings: 'Settings',
+  commonCopy: 'Copy',
+  commonNotSet: 'Not set',
   
   // Password Change
   changePassword: 'Change Password',
@@ -1232,6 +1263,29 @@ const en: Translations = {
   householdPackage: 'Package',
   householdVisitorTag: 'Visitor Tag',
   
+  // Community
+  communityBackToList: 'Back to Community List',
+  communityNotFound: 'Community not found',
+  communityOverview: 'Overview',
+  communityBasicInfo: 'Basic Information',
+  communityStats: 'Statistics',
+  communityAddress: 'Address',
+  communityCreatedAt: 'Created At',
+  communityInvitationCode: 'Invitation Code',
+  communityShareInvitation: 'Share this invitation code with others so they can join this community',
+  communityCopyInvitation: 'Copy',
+  communityInvitationCopied: 'Invitation code copied',
+  communityWorkingGroups: 'Working Groups',
+  communityAddMember: 'Add Member',
+  communityNoMembers: 'No members yet',
+  communityCreateWorkgroup: 'Create Workgroup',
+  communityNoWorkgroups: 'No workgroups yet',
+  communityNotSet: 'Not set',
+  communityMemberList: 'Member List',
+  communityWorkgroupList: 'Workgroup List',
+  communityWorkgroupType: 'Type',
+  communityWorkgroupMembers: 'Members',
+  
   // Invitation Codes
   invitationCode: 'Invitation Code',
   shareInvitationCode: 'Share this code with others to let them join your household',
@@ -1435,6 +1489,10 @@ const zhTW: Translations = {
   commonLanguage: '語言',
   commonCurrentLanguage: '目前語言',
   commonSignOut: '登出',
+  commonLoading: '載入中...',
+  commonSettings: '設定',
+  commonCopy: '複製',
+  commonNotSet: '未設定',
   
   // Password Change
   changePassword: '變更密碼',
@@ -1933,6 +1991,29 @@ const zhTW: Translations = {
   householdMail: '郵件',
   householdPackage: '包裹',
   householdVisitorTag: '訪客標籤',
+  
+  // Community
+  communityBackToList: '返回社區列表',
+  communityNotFound: '找不到社區',
+  communityOverview: '概覽',
+  communityBasicInfo: '基本信息',
+  communityStats: '統計信息',
+  communityAddress: '地址',
+  communityCreatedAt: '創建時間',
+  communityInvitationCode: '邀請碼',
+  communityShareInvitation: '分享此邀請碼給其他人，讓他們可以加入此社區',
+  communityCopyInvitation: '複製',
+  communityInvitationCopied: '邀請碼已複製',
+  communityWorkingGroups: '工作組',
+  communityAddMember: '添加成員',
+  communityNoMembers: '暫無成員',
+  communityCreateWorkgroup: '創建工作組',
+  communityNoWorkgroups: '暫無工作組',
+  communityNotSet: '未設置',
+  communityMemberList: '成員列表',
+  communityWorkgroupList: '工作組列表',
+  communityWorkgroupType: '類型',
+  communityWorkgroupMembers: '成員',
 }
 
 // Simplified Chinese translations (zh)
@@ -2088,6 +2169,10 @@ const zh: Translations = {
   commonLanguage: '语言',
   commonCurrentLanguage: '当前语言',
   commonSignOut: '登出',
+  commonLoading: '加载中...',
+  commonSettings: '设置',
+  commonCopy: '复制',
+  commonNotSet: '未设置',
   
   // Password Change
   changePassword: '更改密码',
@@ -2584,6 +2669,29 @@ const zh: Translations = {
   householdMail: '邮件',
   householdPackage: '包裹',
   householdVisitorTag: '访客标签',
+  
+  // Community
+  communityBackToList: '返回社区列表',
+  communityNotFound: '找不到社区',
+  communityOverview: '概览',
+  communityBasicInfo: '基本信息',
+  communityStats: '统计信息',
+  communityAddress: '地址',
+  communityCreatedAt: '创建时间',
+  communityInvitationCode: '邀请码',
+  communityShareInvitation: '分享此邀请码给其他人，让他们可以加入此社区',
+  communityCopyInvitation: '复制',
+  communityInvitationCopied: '邀请码已复制',
+  communityWorkingGroups: '工作组',
+  communityAddMember: '添加成员',
+  communityNoMembers: '暂无成员',
+  communityCreateWorkgroup: '创建工作组',
+  communityNoWorkgroups: '暂无工作组',
+  communityNotSet: '未设置',
+  communityMemberList: '成员列表',
+  communityWorkgroupList: '工作组列表',
+  communityWorkgroupType: '类型',
+  communityWorkgroupMembers: '成员',
 }
 
 // Japanese translations (ja)
@@ -2739,6 +2847,10 @@ const ja: Translations = {
   commonLanguage: '言語',
   commonCurrentLanguage: '現在の言語',
   commonSignOut: 'サインアウト',
+  commonLoading: '読み込み中...',
+  commonSettings: '設定',
+  commonCopy: 'コピー',
+  commonNotSet: '未設定',
   
   // Password Change
   changePassword: 'パスワードの変更',
@@ -3235,6 +3347,29 @@ const ja: Translations = {
   householdMail: 'メール',
   householdPackage: 'パッケージ',
   householdVisitorTag: '訪問者タグ',
+  
+  // Community
+  communityBackToList: 'コミュニティリストに戻る',
+  communityNotFound: 'コミュニティが見つかりません',
+  communityOverview: '概要',
+  communityBasicInfo: '基本情報',
+  communityStats: '統計情報',
+  communityAddress: '住所',
+  communityCreatedAt: '作成日時',
+  communityInvitationCode: '招待コード',
+  communityShareInvitation: 'この招待コードを他の人と共有して、このコミュニティに参加できるようにします',
+  communityCopyInvitation: 'コピー',
+  communityInvitationCopied: '招待コードをコピーしました',
+  communityWorkingGroups: '作業グループ',
+  communityAddMember: 'メンバーを追加',
+  communityNoMembers: 'メンバーはまだいません',
+  communityCreateWorkgroup: '作業グループを作成',
+  communityNoWorkgroups: '作業グループはまだありません',
+  communityNotSet: '未設定',
+  communityMemberList: 'メンバーリスト',
+  communityWorkgroupList: '作業グループリスト',
+  communityWorkgroupType: 'タイプ',
+  communityWorkgroupMembers: 'メンバー',
 }
 
 // Translation registry

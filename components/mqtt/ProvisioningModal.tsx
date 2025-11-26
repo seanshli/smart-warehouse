@@ -52,6 +52,7 @@ export default function ProvisioningModal({
   const [deviceId, setDeviceId] = useState<string>('') // 手動配網時使用
   const [zigbeeGatewayId, setZigbeeGatewayId] = useState<string>('') // Zigbee 配網時使用
   const [bluetoothMac, setBluetoothMac] = useState<string>('') // Bluetooth 配網時使用
+  const [deviceSsid, setDeviceSsid] = useState<string>('') // Midea AP 模式：設備熱點 SSID
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [accessToken, setAccessToken] = useState('')
@@ -382,7 +383,19 @@ export default function ProvisioningModal({
           return
         }
       }
-    } else if (vendor === 'midea' || vendor === 'esp') {
+    } else if (vendor === 'midea') {
+      if (!ssid || !password) {
+        toast.error('Wi-Fi SSID 和密碼為必填項')
+        return
+      }
+      // Midea AP 模式需要設備熱點 SSID
+      if (mode === 'ap' || mode === 'hotspot') {
+        if (!deviceSsid) {
+          toast.error('Midea AP 模式需要設備熱點 SSID（設備創建的 WiFi 熱點名稱）')
+          return
+        }
+      }
+    } else if (vendor === 'esp') {
       if (!ssid || !password) {
         toast.error('Wi-Fi SSID 和密碼為必填項')
         return
@@ -414,6 +427,7 @@ export default function ProvisioningModal({
       deviceId: vendor === 'tuya' && mode === 'manual' ? deviceId : undefined,
       zigbeeGatewayId: vendor === 'tuya' && mode === 'zigbee' ? zigbeeGatewayId : undefined,
       bluetoothMac: vendor === 'tuya' && (mode === 'bt' || mode === 'wifi/bt') ? bluetoothMac : undefined,
+      deviceSsid: vendor === 'midea' && (mode === 'ap' || mode === 'hotspot') ? deviceSsid : undefined,
       // 傳遞 Household 信息（用於 Tuya Home 對應）
       householdId: household?.id,
       householdName: household?.name,
@@ -560,6 +574,7 @@ export default function ProvisioningModal({
     setDiscoveredDevices([])
     setZigbeeGatewayId('')
     setBluetoothMac('')
+    setDeviceSsid('')
     // ESP 配網狀態重置
     setEspStep('connect')
     setEspHotspotPassword('')
@@ -894,6 +909,26 @@ export default function ProvisioningModal({
                     </label>
                   </div>
                 </div>
+
+                {/* Midea AP 模式：設備熱點 SSID */}
+                {vendor === 'midea' && (mode === 'ap' || mode === 'hotspot') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      設備熱點 SSID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={deviceSsid}
+                      onChange={(e) => setDeviceSsid(e.target.value)}
+                      placeholder="輸入設備創建的 WiFi 熱點名稱（例如：Midea_XXXXXX）"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={status !== 'idle'}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Midea AP 模式：設備會創建一個 WiFi 熱點，請先連接到該熱點，然後輸入熱點名稱
+                    </p>
+                  </div>
+                )}
               </>
             )}
 
@@ -1021,6 +1056,34 @@ export default function ProvisioningModal({
                   </div>
                 </div>
               </>
+            )}
+
+            {/* Midea 配網模式選擇 */}
+            {vendor === 'midea' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  配網模式 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={mode}
+                  onChange={(e) => {
+                    const newMode = e.target.value as typeof mode
+                    setMode(newMode)
+                    // 重置模式相關字段
+                    if (newMode !== 'ap' && newMode !== 'hotspot') setDeviceSsid('')
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={status !== 'idle'}
+                >
+                  <option value="ap">AP 模式（熱點配網）</option>
+                  <option value="hotspot">Hotspot 配網（AP模式）</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {mode === 'ap' || mode === 'hotspot' 
+                    ? '設備指示燈慢速閃爍時使用，連接設備熱點進行配置。需要先連接到設備創建的 WiFi 熱點，然後輸入路由器 WiFi 信息。'
+                    : 'Midea 目前支持 AP 模式配網'}
+                </p>
+              </div>
             )}
 
             {vendor === 'tuya' && (

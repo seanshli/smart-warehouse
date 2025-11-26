@@ -6,12 +6,13 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 /**
- * POST /api/building/[id]/door-bell/[doorBellNumber]/ring
+ * POST /api/building/[id]/door-bell/ring
  * Ring a door bell (triggers notification to household)
+ * Body: { doorBellNumber: string } or { doorBellId: string }
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; doorBellNumber: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,37 +22,70 @@ export async function POST(
     }
 
     const buildingId = params.id
-    const doorBellNumber = params.doorBellNumber
+    const { doorBellNumber, doorBellId } = await request.json()
+
+    if (!doorBellNumber && !doorBellId) {
+      return NextResponse.json(
+        { error: 'doorBellNumber or doorBellId is required' },
+        { status: 400 }
+      )
+    }
 
     // Find door bell
-    const doorBell = await prisma.doorBell.findUnique({
-      where: {
-        buildingId_doorBellNumber: {
-          buildingId,
-          doorBellNumber,
-        },
-      },
-      include: {
-        household: {
+    const doorBell = doorBellId
+      ? await prisma.doorBell.findUnique({
+          where: { id: doorBellId },
           include: {
-            members: {
+            household: {
               include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
+                members: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                      },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      },
-    })
+        })
+      : await prisma.doorBell.findUnique({
+          where: {
+            buildingId_doorBellNumber: {
+              buildingId,
+              doorBellNumber: doorBellNumber!,
+            },
+          },
+          include: {
+            household: {
+              include: {
+                members: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
 
     if (!doorBell) {
       return NextResponse.json({ error: 'Door bell not found' }, { status: 404 })
+    }
+
+    // Verify building matches if found by ID
+    if (doorBell.buildingId !== buildingId) {
+      return NextResponse.json({ error: 'Door bell does not belong to this building' }, { status: 400 })
     }
 
     if (!doorBell.isEnabled) {

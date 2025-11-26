@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -22,7 +22,7 @@ export async function PUT(
     }
 
     const userId = (session.user as any).id
-    const reservationId = params.id
+    const reservationId = params.reservationId
     const { reason } = await request.json()
 
     // Find reservation

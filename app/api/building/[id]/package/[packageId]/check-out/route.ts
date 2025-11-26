@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; packageId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,7 @@ export async function PUT(
     }
 
     const userId = (session.user as any).id
-    const packageId = params.id
+    const packageId = params.packageId
 
     // Find package
     const packageRecord = await prisma.package.findUnique({

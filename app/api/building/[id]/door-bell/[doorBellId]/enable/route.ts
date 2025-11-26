@@ -7,12 +7,12 @@ import { checkBuildingManagement } from '@/lib/middleware/community-permissions'
 export const dynamic = 'force-dynamic'
 
 /**
- * PUT /api/building/[id]/door-bell/[id]/enable
+ * PUT /api/building/[id]/door-bell/[doorBellId]/enable
  * Enable or disable a door bell (admin only)
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; doorBellId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -22,7 +22,7 @@ export async function PUT(
     }
 
     const userId = (session.user as any).id
-    const doorBellId = params.id
+    const doorBellId = params.doorBellId
     const { isEnabled } = await request.json()
 
     // Find door bell

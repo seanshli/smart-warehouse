@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; facilityId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,7 @@ export async function POST(
     }
 
     const userId = (session.user as any).id
-    const facilityId = params.id
+    const facilityId = params.facilityId
     const { householdId, startTime, endTime, purpose, notes } = await request.json()
 
     if (!householdId || !startTime || !endTime) {
@@ -215,7 +215,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; facilityId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -224,7 +224,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const facilityId = params.id
+    const facilityId = params.facilityId
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const householdId = searchParams.get('householdId')

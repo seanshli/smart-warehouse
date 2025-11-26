@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; reservationId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,7 @@ export async function GET(
     }
 
     const userId = (session.user as any).id
-    const reservationId = params.id
+    const reservationId = params.reservationId
 
     // Find reservation
     const reservation = await prisma.facilityReservation.findUnique({

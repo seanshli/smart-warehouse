@@ -1,0 +1,18 @@
+RAC空调协议说明
+
+
+开发者使用MSmartSDK对接美的云，接入家用空调，可参考此说明文件。
+此文件详细定义了app使用MSmartSDK的查询和控制使用的属性值，请结合"Midea Open Smart Development Guide - MSmartSDK & HTTP API.pdf"文档的 4.2.3.9(查询设备状态) 和 4.2.3.10(控制设备) 一起使用。
+
+
+
+1.控制与查询
+
+查询：
+文档：4.2.3.9 
+请求路径：/midea/open/business/v1/appliance/fullQuery
+
+
+控制
+文档：4.2.3.10
+请求路径：/midea/open/business/v1/appliance/control/json

@@ -3,6 +3,7 @@
 // Midea Provisioning Module - Handles device provisioning flow
 
 import { BaseProvisioningAdapter, ProvisioningConfig, ProvisioningResult, ProvisioningStatus } from './base-provisioning'
+import { startNativeMideaProvisioning, canUseNativeMideaProvisioning } from './midea-native-client'
 
 /**
  * Midea 配網適配器
@@ -26,33 +27,47 @@ export class MideaProvisioningAdapter extends BaseProvisioningAdapter {
         }
       }
 
-      // Midea 配網需要通過美的 IoT 平台
-      // 這裡使用模擬流程，實際需要集成美的 SDK
       const mode = config.mode || 'ap'
-      
-      // 構建配網請求
-      const requestData = {
-        protocol: '5.0',
-        iotApp: {
-          appId: process.env.MIDEA_APP_ID || '',
-          appKey: process.env.MIDEA_APP_KEY || '',
-        },
-        system: {
-          appId: process.env.MIDEA_APP_ID || '',
-          appKey: process.env.MIDEA_APP_KEY || '',
-        },
-        params: {
-          ssid: config.ssid,
-          password: config.password,
-          mode: mode === 'ap' ? 'AP' : 'EZ',
-        },
+
+      // Try native SDK first (Android/iOS)
+      if (canUseNativeMideaProvisioning()) {
+        try {
+          const nativeResult = await startNativeMideaProvisioning({
+            mode: mode as 'ap' | 'ez' | 'bluetooth',
+            deviceSsid: config.deviceSsid, // Device's AP SSID (for AP mode)
+            ssid: config.ssid,
+            password: config.password,
+            routerSecurityParams: config.routerSecurityParams,
+          })
+
+          if (nativeResult.success) {
+            return {
+              success: true,
+              status: nativeResult.status === 'success' ? 'success' : 'provisioning',
+              deviceId: nativeResult.deviceId,
+              deviceName: nativeResult.deviceName,
+              deviceInfo: nativeResult.deviceInfo,
+              token: nativeResult.token,
+            }
+          } else {
+            return {
+              success: false,
+              error: nativeResult.error || 'Native provisioning failed',
+              status: 'failed',
+              token: nativeResult.token,
+            }
+          }
+        } catch (nativeError: any) {
+          console.error('Native Midea provisioning failed, falling back to API:', nativeError)
+          // Fall through to API fallback
+        }
       }
 
-      // 注意：實際實現需要集成美的 MSmartSDK
-      // 這裡提供基本框架
+      // API fallback (web or if native fails)
+      // Note: This requires Midea Cloud API integration
       return {
         success: false,
-        error: 'Midea provisioning requires MSmartSDK integration. Please use Midea official app for provisioning.',
+        error: 'Midea provisioning requires native SDK on mobile devices. Please use Android/iOS app for provisioning.',
         status: 'failed',
       }
     } catch (error: any) {

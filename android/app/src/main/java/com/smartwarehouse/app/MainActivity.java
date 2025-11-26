@@ -4,11 +4,13 @@ import android.os.Bundle;
 
 import com.getcapacitor.BridgeActivity;
 import com.smartwarehouse.app.plugins.TuyaProvisioningPlugin;
+import com.smartwarehouse.app.plugins.MideaProvisioningPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(TuyaProvisioningPlugin.class);
+        registerPlugin(MideaProvisioningPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

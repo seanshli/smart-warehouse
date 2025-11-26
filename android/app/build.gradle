@@ -81,11 +81,9 @@ dependencies {
     // 注意：版本号需要与 BOM 版本一致，或使用实际可用的版本
     api enforcedPlatform("com.thingclips.smart:thingsmart-BizBundlesBom:6.11.0")
     // 使用 6.11.0 版本（与 BOM 版本一致），如果 Maven 仓库中没有 6.11.1
+    // thingsmart 核心 SDK 已包含 home 和 user 功能，无需单独添加
     implementation 'com.thingclips.smart:thingsmart:6.11.0'
     implementation 'com.thingclips.smart:thingsmart-bizbundle-device_activator'
-    // 添加用户模块和其他核心模块
-    implementation 'com.thingclips.smart:thingsmart-user'
-    implementation 'com.thingclips.smart:thingsmart-home'
     
     // 可选：如果需要扫一扫功能
     // implementation 'com.thingclips.smart:thingsmart-bizbundle-qrcode_mlkit'

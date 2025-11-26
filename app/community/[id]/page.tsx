@@ -472,7 +472,7 @@ function MembersTab({ communityId }: { communityId: string }) {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(member.joinedAt).toLocaleDateString('zh-CN')}
+                    {new Date(member.joinedAt).toLocaleDateString('zh-TW')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button className="text-primary-600 hover:text-primary-900 mr-4">编辑</button>

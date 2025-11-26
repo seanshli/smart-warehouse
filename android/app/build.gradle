@@ -49,13 +49,14 @@ android {
     }
     
     // Screen size and density support
-    splits {
-        density {
-            enable true
-            reset()
-            include "ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"
-        }
-    }
+    // Note: splits.density is obsolete in AGP 8.x, using universal APK instead
+    // splits {
+    //     density {
+    //         enable true
+    //         reset()
+    //         include "ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"
+    //     }
+    // }
 }
 
 repositories {

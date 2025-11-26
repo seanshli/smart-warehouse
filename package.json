@@ -33,6 +33,7 @@
     "build:all-platforms:production": "npm run build:production && npm run cap:copy:production",
     "setup:external": "./scripts/setup-external-access.sh",
     "setup:engo": "tsx scripts/setup-engo-community.ts",
+    "setup:engo-floors": "tsx scripts/setup-engo-buildings-floors.ts",
     "lint": "next lint",
     "setup": "node scripts/setup.js",
     "seed": "node scripts/seed.js",

@@ -90,7 +90,7 @@ function detectAudioFormat(audioBase64: string): { format: string; encoding: str
  * Note: X-Param should NOT include the audio data in the base64 string
  */
 function generateIFLYTEKParam(
-  language: string = 'zh_cn',
+  language: string = 'zh_tw', // Default to Traditional Chinese
   format?: string,
   encoding?: string
 ): string {
@@ -140,12 +140,12 @@ async function transcribeWithIFLYTEK(
     // Map language codes to iFLYTEK format
     const languageMap: Record<string, string> = {
       'zh': 'zh_cn',
-      'zh-TW': 'zh_cn',
+      'zh-TW': 'zh_tw',
       'zh-CN': 'zh_cn',
       'en': 'en_us',
       'ja': 'ja_jp',
     }
-    const iflytekLang = language ? languageMap[language] || 'zh_cn' : 'zh_cn'
+    const iflytekLang = language ? languageMap[language] || 'zh_tw' : 'zh_tw'
 
     const { format: detectedFormat, encoding: detectedEncoding } = detectAudioFormat(audioBase64)
 
@@ -381,15 +381,16 @@ function getIFLYTEKVoiceForLanguage(language?: string): string {
 }
 
 function getIFLYTEKLanguageCode(language?: string): string {
-  if (!language) return 'zh_cn'
+  if (!language) return 'zh_tw' // Default to Traditional Chinese
   const normalized = language.toLowerCase()
 
   if (normalized.startsWith('ja')) return 'ja_jp'
   if (normalized.startsWith('en')) return 'en_us'
-  if (normalized.startsWith('zh-tw')) return 'zh_tw'
-  if (normalized.startsWith('zh')) return 'zh_cn'
+  if (normalized.startsWith('zh-tw') || normalized.startsWith('zh-hk')) return 'zh_tw'
+  if (normalized.startsWith('zh-cn') || normalized.startsWith('zh-sg')) return 'zh_cn'
+  if (normalized.startsWith('zh')) return 'zh_tw' // Default to Traditional Chinese for generic zh
 
-  return 'zh_cn'
+  return 'zh_tw' // Default to Traditional Chinese
 }
 
 function generateIFLYTEKTTSParam(voice: string, language?: string): string {

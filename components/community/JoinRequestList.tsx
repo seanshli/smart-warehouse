@@ -135,7 +135,7 @@ export default function JoinRequestList({
                 <p className="mt-2 text-sm text-gray-600">{request.message}</p>
               )}
               <p className="mt-2 text-xs text-gray-500">
-                请求时间: {new Date(request.requestedAt).toLocaleString('zh-CN')}
+                请求时间: {new Date(request.requestedAt).toLocaleString('zh-TW')}
               </p>
             </div>
             <div className="flex items-center space-x-2 ml-4">

@@ -68,13 +68,14 @@ export default function VoiceCommentRecorder({
   }, [existingAudioUrl])
 
   const mapLanguageToSpeechSynthesis = useCallback((language?: string) => {
-    if (!language) return 'en-US'
+    if (!language) return 'zh-TW' // Default to Traditional Chinese
     const normalized = language.toLowerCase()
-    if (normalized.startsWith('zh-tw')) return 'zh-TW'
-    if (normalized.startsWith('zh')) return 'zh-CN'
+    if (normalized.startsWith('zh-tw') || normalized.startsWith('zh-hk')) return 'zh-TW'
+    if (normalized.startsWith('zh-cn') || normalized.startsWith('zh-sg')) return 'zh-CN'
+    if (normalized.startsWith('zh')) return 'zh-TW' // Default to Traditional Chinese for generic zh
     if (normalized.startsWith('ja')) return 'ja-JP'
     if (normalized.startsWith('en')) return 'en-US'
-    return 'en-US'
+    return 'zh-TW' // Default to Traditional Chinese
   }, [])
 
   const speakWithBrowserTTS = useCallback((text: string) => {

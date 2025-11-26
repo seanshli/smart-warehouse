@@ -9,8 +9,8 @@ export interface LanguageInfo {
 // Supported languages with their metadata
 export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'zh', name: '简体中文', nativeName: '简体中文' },
   { code: 'zh-TW', name: '繁體中文', nativeName: '繁體中文' },
+  { code: 'zh', name: '简体中文', nativeName: '简体中文' },
   { code: 'ja', name: '日文', nativeName: '日文' },
   { code: 'ko', name: '한국어', nativeName: '한국어' },
   { code: 'es', name: 'Español', nativeName: 'Español' },
@@ -62,11 +62,12 @@ export function detectUserLanguage(): string {
 
   // Special handling for Chinese variants
   if (browserLanguages.some(lang => lang.startsWith('zh'))) {
-    // Check if it's Traditional Chinese
-    if (browserLanguages.some(lang => lang.includes('TW') || lang.includes('HK'))) {
-      return 'zh-TW'
+    // Check if it's Simplified Chinese (CN)
+    if (browserLanguages.some(lang => lang.includes('CN') || lang.includes('SG'))) {
+      return 'zh'
     }
-    return 'zh' // Default to Simplified Chinese
+    // Default to Traditional Chinese (TW, HK, or generic zh)
+    return 'zh-TW'
   }
 
   return 'en' // Default fallback

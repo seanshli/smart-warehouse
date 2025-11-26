@@ -5,9 +5,16 @@ PODS:
     - Capacitor
   - CapacitorCordova (7.4.3)
   - DACircularProgress (2.3.1)
+  - DolphinRouter (1.0.1):
+    - MJExtension
   - dsBridge (3.0.202.2):
     - ThingFoundationKit
     - ThingUIKit
+  - FMDB (2.7.12):
+    - FMDB/standard (= 2.7.12)
+  - FMDB/Core (2.7.12)
+  - FMDB/standard (2.7.12):
+    - FMDB/Core
   - HMSegmentedControl (1.5.7-v1.5.7.thing.1)
   - IQKeyboardManager (6.5.19)
   - libextobjc (0.6):
@@ -58,10 +65,19 @@ PODS:
   - libwebp/webp (1.5.0):
     - libwebp/sharpyuv
   - Masonry (1.1.0)
+  - MJExtension (3.4.2)
   - MJRefresh (3.7.9)
   - MMKV (101.2.13.2):
     - MMKVCore (~> 101.2.14)
   - MMKVCore (101.2.14.1)
+  - MSmartSDK (0.1.0)
+  - OEMBusiness/NetworkFramework (0.1.0):
+    - DolphinRouter
+    - FMDB (~> 2.7.5)
+    - OEMFoundation/NetworkFramework
+    - OEMLogger
+  - OEMFoundation/NetworkFramework (0.1.0)
+  - OEMLogger (0.0.1)
   - ThingActivatorModule (5.23.1):
     - DACircularProgress
     - IQKeyboardManager
@@ -914,6 +930,11 @@ DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorCommunityBarcodeScanner (from `../../node_modules/@capacitor-community/barcode-scanner`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - DolphinRouter (from `../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter`)
+  - MSmartSDK (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
+  - OEMBusiness/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
+  - OEMFoundation/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
+  - OEMLogger (from `../MideaSDK/OEMSDK/OEMPods_Source/OEMLogger`)
   - ThingSmartActivatorBizBundle (~> 6.11.0)
   - ThingSmartCryption (from `../../iOS_SDK-2`)
   - ThingSmartHomeKit (~> 6.11.0)
@@ -921,10 +942,12 @@ DEPENDENCIES:
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - DACircularProgress
+    - FMDB
     - IQKeyboardManager
     - libextobjc
     - libwebp
     - Masonry
+    - MJExtension
     - MJRefresh
     - YYModel
   https://github.com/tuya/tuya-pod-specs.git:
@@ -1089,6 +1112,16 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor-community/barcode-scanner"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  DolphinRouter:
+    :path: "../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter"
+  MSmartSDK:
+    :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
+  OEMBusiness:
+    :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
+  OEMFoundation:
+    :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
+  OEMLogger:
+    :path: "../MideaSDK/OEMSDK/OEMPods_Source/OEMLogger"
   ThingSmartCryption:
     :path: "../../iOS_SDK-2"
 
@@ -1097,15 +1130,22 @@ SPEC CHECKSUMS:
   CapacitorCommunityBarcodeScanner: 7feb206489c8555a8ca0c74c57ddf49ead774eb8
   CapacitorCordova: 435121e81a2df4d0034f0fb11fcefab5104cfdb5
   DACircularProgress: 4dd437c0fc3da5161cb289e07ac449493d41db71
+  DolphinRouter: 343a53843138de14de5ce7305e6c075a7b8a8122
   dsBridge: 57c143231959462a85aaab420ef640fb1edd40bc
+  FMDB: 728731dd336af3936ce00f91d9d8495f5718a0e6
   HMSegmentedControl: d1c5d14e4ad5f117c9826e476ee02c5a640aab64
   IQKeyboardManager: c8665b3396bd0b79402b4c573eac345a31c7d485
   libextobjc: aed8b7d2b07f511c1a7ecaacb33ea03e327c69b7
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
+  MJExtension: e97d164cb411aa9795cf576093a1fa208b4a8dd8
   MJRefresh: ff9e531227924c84ce459338414550a05d2aea78
   MMKV: 1a98e8d019dd06023091ea48b49b7506fee381a8
   MMKVCore: c24975f7f2532fa96567ae9d2e91bea1256f4a84
+  MSmartSDK: a75fe0ab15e78b3afdbdb9260b58f7e29c84f068
+  OEMBusiness: 5fd6343d77a69c80fec0d240bb13445329b3d612
+  OEMFoundation: 283d8eb99f2a437dce1703755b5621c53f4b392f
+  OEMLogger: 5aaf2ca1f255d4d9dcdf03d7729aa2b3da4462fc
   ThingActivatorModule: 18d67731052fdb1e55c04a1ea472969ded10dd30
   ThingActivatorPlugAPI: 3a8e04172634ddc45e1765dfdb804283b9ad9b7b
   ThingAIImageClassifyAPI: 2d5af5b59c7168890ff93a4c26fcd856f9489265
@@ -1258,6 +1298,6 @@ SPEC CHECKSUMS:
   TRCTResourceManager: 8dbe838bb252de23f84c62c3838f6fd6c2f39cf0
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: 712975bb104d87b45764a15d48657fa809381add
+PODFILE CHECKSUM: 9bafcd89c61add9853aecc8623af262de54138b3
 
 COCOAPODS: 1.16.2

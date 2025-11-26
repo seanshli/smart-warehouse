@@ -278,7 +278,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
           <div>
             <dt className="text-sm font-medium text-gray-500">{t('buildingCreatedAt')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {new Date(building.createdAt).toLocaleDateString('zh-CN')}
+              {new Date(building.createdAt).toLocaleDateString('zh-TW')}
             </dd>
           </div>
           {building.invitationCode && (

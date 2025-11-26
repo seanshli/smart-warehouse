@@ -232,10 +232,11 @@ public class MideaProvisioningPlugin: CAPPlugin {
 // MARK: - MSRefreshDelegate
 
 extension MideaProvisioningPlugin: MSRefreshDelegate {
-    public func refreshToken(_ competion: @escaping MSRefreshTokenBlock) {
+    @objc public func refreshToken(_ competion: @escaping MSRefreshTokenBlock) {
         // Token refresh should be handled by the app
         // For now, just call the completion with false to indicate refresh failed
         // The app should implement token refresh logic
+        // TODO: Implement actual token refresh logic
         competion(false)
     }
 }

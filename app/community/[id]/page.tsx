@@ -225,7 +225,7 @@ function OverviewTab({ community }: { community: Community }) {
           <div>
             <dt className="text-sm font-medium text-gray-500">创建时间</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {new Date(community.createdAt).toLocaleDateString('zh-CN')}
+              {new Date(community.createdAt).toLocaleDateString('zh-TW')}
             </dd>
           </div>
           {community.invitationCode && (

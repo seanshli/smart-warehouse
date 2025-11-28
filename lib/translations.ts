@@ -3408,7 +3408,6 @@ const ja: Translations = {
   back: '戻る',
   next: '次へ',
   close: '閉じる',
-  optionalLabel: 'オプション',
   move: '移動',
   moving: '移動中...',
   checkout: 'チェックアウト',

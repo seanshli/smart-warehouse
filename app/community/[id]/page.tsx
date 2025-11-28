@@ -12,10 +12,12 @@ import {
   CogIcon,
   PencilIcon,
   TrashIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import QRCodeDisplay from '@/components/QRCode'
 import JoinRequestList from '@/components/community/JoinRequestList'
 import { useLanguage } from '@/components/LanguageProvider'
 
@@ -227,6 +229,28 @@ export default function CommunityDetailPage() {
 
 function OverviewTab({ community }: { community: Community }) {
   const { t, currentLanguage } = useLanguage()
+  const [buildings, setBuildings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const communityId = community.id
+
+  useEffect(() => {
+    fetchBuildings()
+  }, [communityId])
+
+  const fetchBuildings = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/community/${communityId}/buildings`)
+      if (response.ok) {
+        const data = await response.json()
+        setBuildings(data.buildings || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch buildings:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
   
   return (
     <div className="space-y-6">
@@ -251,7 +275,7 @@ function OverviewTab({ community }: { community: Community }) {
             <div className="sm:col-span-2">
               <dt className="text-sm font-medium text-gray-500 mb-1">{t('communityInvitationCode')}</dt>
               <dd className="mt-1">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mb-2">
                   <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
                     {community.invitationCode}
                   </code>
@@ -265,9 +289,19 @@ function OverviewTab({ community }: { community: Community }) {
                     {t('communityCopyInvitation')}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  {t('communityShareInvitation')}
-                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <QRCodeDisplay value={community.invitationCode} size={120} className="p-2 bg-white rounded border border-gray-200" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500">
+                      {t('communityShareInvitation')}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {t('scanQRCodeToJoin')}
+                    </p>
+                  </div>
+                </div>
               </dd>
             </div>
           )}
@@ -276,7 +310,7 @@ function OverviewTab({ community }: { community: Community }) {
 
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">{t('communityStats')}</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-gray-50 rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-gray-900">{community.stats?.buildings ?? 0}</div>
             <div className="text-sm text-gray-500 mt-1">{t('adminBuildings')}</div>
@@ -290,6 +324,54 @@ function OverviewTab({ community }: { community: Community }) {
             <div className="text-sm text-gray-500 mt-1">{t('communityWorkingGroups')}</div>
           </div>
         </div>
+      </div>
+
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('adminBuildings')}</h3>
+          <Link
+            href={`/community/${communityId}/buildings/new`}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+          >
+            <PlusIcon className="h-4 w-4 mr-1" />
+            {t('addBuilding')}
+          </Link>
+        </div>
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">{t('commonLoading')}</div>
+        ) : buildings.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">{t('noBuildings')}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {buildings.map((building) => (
+              <Link
+                key={building.id}
+                href={`/building/${building.id}`}
+                className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900">{building.name}</h4>
+                  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                </div>
+                {building.description && (
+                  <p className="text-sm text-gray-600 mt-1 mb-3">{building.description}</p>
+                )}
+                <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-100">
+                  <div>
+                    <div className="text-xs text-gray-500">{t('buildingHouseholdCount')}</div>
+                    <div className="text-lg font-semibold text-gray-900">{building.householdCount || 0}</div>
+                  </div>
+                  {building.floorCount && (
+                    <div>
+                      <div className="text-xs text-gray-500">{t('buildingFloorCount')}</div>
+                      <div className="text-lg font-semibold text-gray-900">{building.floorCount}</div>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

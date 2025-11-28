@@ -23,6 +23,7 @@ import {
   XCircleIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
+import QRCodeDisplay from '@/components/QRCode'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -212,6 +213,8 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
     households: number
     mailboxes: number
   } | null>(null)
+  const [frontDoorSummary, setFrontDoorSummary] = useState<any>(null)
+  const [loadingSummary, setLoadingSummary] = useState(true)
 
   // Check if floors and units are already set up
   const isSetup = (building.floorCountActual && building.floorCountActual > 0) || 
@@ -225,7 +228,23 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
         mailboxes: building.mailboxCount || 0,
       })
     }
-  }, [building.floorCountActual, building.householdCount, building.mailboxCount, isSetup])
+    fetchFrontDoorSummary()
+  }, [building.floorCountActual, building.householdCount, building.mailboxCount, isSetup, buildingId])
+
+  const fetchFrontDoorSummary = async () => {
+    try {
+      setLoadingSummary(true)
+      const response = await fetch(`/api/building/${buildingId}/front-door`)
+      if (response.ok) {
+        const data = await response.json()
+        setFrontDoorSummary(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch front door summary:', err)
+    } finally {
+      setLoadingSummary(false)
+    }
+  }
 
   const handleSetupFloorsUnits = async () => {
     try {
@@ -307,10 +326,10 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
             </dd>
           </div>
           {building.invitationCode && (
-            <div>
-              <dt className="text-sm font-medium text-gray-500">{t('buildingInvitationCode')}</dt>
+            <div className="sm:col-span-2">
+              <dt className="text-sm font-medium text-gray-500 mb-1">{t('buildingInvitationCode')}</dt>
               <dd className="mt-1">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mb-2">
                   <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
                     {building.invitationCode}
                   </code>
@@ -324,13 +343,47 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
                     {t('buildingCopyCode')}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  {t('buildingShareCode')}
-                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <QRCodeDisplay value={building.invitationCode} size={120} className="p-2 bg-white rounded border border-gray-200" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500">
+                      {t('buildingShareCode')}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {t('scanQRCodeToJoin')}
+                    </p>
+                  </div>
+                </div>
               </dd>
             </div>
           )}
         </dl>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('buildingSummary')}</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+            <div className="text-2xl font-bold text-blue-900">{building.householdCount || 0}</div>
+            <div className="text-sm text-blue-700 mt-1">{t('buildingHouseholdCount')}</div>
+          </div>
+          <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+            <div className="text-2xl font-bold text-green-900">{building.floorCountActual || 0}</div>
+            <div className="text-sm text-green-700 mt-1">{t('buildingFloor')}</div>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4 text-center border border-purple-200">
+            <div className="text-2xl font-bold text-purple-900">{building.mailboxCount || 0}</div>
+            <div className="text-sm text-purple-700 mt-1">{t('buildingMailbox')}</div>
+          </div>
+          {frontDoorSummary && (
+            <div className="bg-orange-50 rounded-lg p-4 text-center border border-orange-200">
+              <div className="text-2xl font-bold text-orange-900">{frontDoorSummary.packageLockers?.length || 0}</div>
+              <div className="text-sm text-orange-700 mt-1">{t('buildingPackageLockers')}</div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div>
@@ -484,23 +537,28 @@ function HouseholdCard({ household }: { household: any }) {
         
         {/* Invitation Code */}
         {household.invitationCode && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">{t('householdInvitationCode')}:</span>
-            <div className="flex items-center gap-1">
-              <code className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                {household.invitationCode.substring(0, 8)}...
-              </code>
-              <button
-                onClick={() => copyToClipboard(household.invitationCode, 'code')}
-                className="p-1 text-gray-500 hover:text-primary-600"
-                title={t('copyInvitationCode')}
-              >
-                {copiedCode ? (
-                  <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                ) : (
-                  <ClipboardDocumentIcon className="h-4 w-4" />
-                )}
-              </button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">{t('householdInvitationCode')}:</span>
+              <div className="flex items-center gap-1">
+                <code className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                  {household.invitationCode.substring(0, 8)}...
+                </code>
+                <button
+                  onClick={() => copyToClipboard(household.invitationCode, 'code')}
+                  className="p-1 text-gray-500 hover:text-primary-600"
+                  title={t('copyInvitationCode')}
+                >
+                  {copiedCode ? (
+                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <ClipboardDocumentIcon className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-center pt-1">
+              <QRCodeDisplay value={household.invitationCode} size={80} className="p-2 bg-white rounded" />
             </div>
           </div>
         )}

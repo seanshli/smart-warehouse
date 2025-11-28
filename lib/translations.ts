@@ -110,6 +110,8 @@ export interface Translations {
   adminBuildings: string
   adminBuildingsDescription: string
   adminFilterByCommunity: string
+  noBuildings: string
+  addBuilding: string
   adminBuildingsCount: string
   adminMembersCount: string
   adminWorkgroupsCount: string
@@ -449,6 +451,7 @@ export interface Translations {
   takePhoto: string
   scanBarcode: string
   scanQRCode: string
+  scanQRCodeToJoin: string
   dragAndDropImage: string
   orClickToSelect: string
   dropImageHere: string
@@ -605,7 +608,9 @@ export interface Translations {
   buildingHouseholds: string
   buildingMailboxes: string
   buildingSettings: string
+  buildingSummary: string
   buildingBasicInfo: string
+  buildingPackageLockers: string
   buildingCommunity: string
   buildingFloorCount: string
   buildingUnitCount: string
@@ -849,6 +854,8 @@ const en: Translations = {
   adminBuildings: 'Buildings',
   adminBuildingsDescription: 'View and manage all buildings and residents',
   adminFilterByCommunity: 'Filter by Community',
+  noBuildings: 'No buildings yet',
+  addBuilding: 'Add Building',
   adminBuildingsCount: 'Buildings',
   adminMembersCount: 'Members',
   adminWorkgroupsCount: 'Workgroups',
@@ -1178,6 +1185,7 @@ const en: Translations = {
   takePhoto: 'Take Photo',
   scanBarcode: 'Scan Barcode',
   scanQRCode: 'Scan QR Code',
+  scanQRCodeToJoin: 'Scan QR code to join',
   dragAndDropImage: 'Drag & drop an image here, or click to select',
   orClickToSelect: 'or click to select',
   dropImageHere: 'Drop the image here...',
@@ -1299,7 +1307,9 @@ const en: Translations = {
   buildingHouseholds: 'Households',
   buildingMailboxes: 'Mailboxes',
   buildingSettings: 'Building Settings',
+  buildingSummary: 'Building Summary',
   buildingBasicInfo: 'Basic Information',
+  buildingPackageLockers: 'Package Lockers',
   buildingCommunity: 'Community',
   buildingFloorCount: 'Floors',
   buildingUnitCount: 'Units',
@@ -1587,6 +1597,8 @@ const zhTW: Translations = {
   adminBuildings: '建築',
   adminBuildingsDescription: '查看和管理所有建築和住戶',
   adminFilterByCommunity: '篩選社區',
+  noBuildings: '尚無建築',
+  addBuilding: '新增建築',
   adminBuildingsCount: '建築',
   adminMembersCount: '成員',
   adminWorkgroupsCount: '工作組',
@@ -1916,6 +1928,7 @@ const zhTW: Translations = {
   takePhoto: '拍攝照片',
   scanBarcode: '掃描條碼',
   scanQRCode: '掃描 QR 碼',
+  scanQRCodeToJoin: '掃描 QR 碼加入',
   dragAndDropImage: '拖放圖片到這裡，或點擊選擇',
   orClickToSelect: '或點擊選擇',
   dropImageHere: '將圖片拖放到這裡...',
@@ -2096,7 +2109,9 @@ const zhTW: Translations = {
   buildingHouseholds: '住戶',
   buildingMailboxes: '郵箱',
   buildingSettings: '建築設置',
+  buildingSummary: '建築摘要',
   buildingBasicInfo: '基本信息',
+  buildingPackageLockers: '包裹櫃',
   buildingCommunity: '所屬社區',
   buildingFloorCount: '樓層數',
   buildingUnitCount: '單元數',
@@ -2335,6 +2350,8 @@ const zh: Translations = {
   adminBuildings: '建筑',
   adminBuildingsDescription: '查看和管理所有建筑和住户',
   adminFilterByCommunity: '筛选社区',
+  noBuildings: '尚无建筑',
+  addBuilding: '新增建筑',
   adminBuildingsCount: '建筑',
   adminMembersCount: '成员',
   adminWorkgroupsCount: '工作组',
@@ -2664,6 +2681,7 @@ const zh: Translations = {
   takePhoto: '拍摄照片',
   scanBarcode: '扫描条码',
   scanQRCode: '扫描 QR 码',
+  scanQRCodeToJoin: '扫描 QR 码加入',
   dragAndDropImage: '拖放图片到这里，或点击选择',
   orClickToSelect: '或点击选择',
   dropImageHere: '将图片拖放到这里...',
@@ -2842,7 +2860,9 @@ const zh: Translations = {
   buildingHouseholds: '住户',
   buildingMailboxes: '邮箱',
   buildingSettings: '建筑设置',
+  buildingSummary: '建筑摘要',
   buildingBasicInfo: '基本信息',
+  buildingPackageLockers: '包裹柜',
   buildingCommunity: '所属社区',
   buildingFloorCount: '楼层数',
   buildingUnitCount: '单元数',
@@ -3081,6 +3101,8 @@ const ja: Translations = {
   adminBuildings: '建物',
   adminBuildingsDescription: 'すべての建物と住民を表示および管理',
   adminFilterByCommunity: 'コミュニティでフィルター',
+  noBuildings: '建物はまだありません',
+  addBuilding: '建物を追加',
   adminBuildingsCount: '建物',
   adminMembersCount: 'メンバー',
   adminWorkgroupsCount: '作業グループ',
@@ -3410,6 +3432,7 @@ const ja: Translations = {
   takePhoto: '写真を撮影',
   scanBarcode: 'バーコードをスキャン',
   scanQRCode: 'QRコードをスキャン',
+  scanQRCodeToJoin: 'QRコードをスキャンして参加',
   dragAndDropImage: '画像をここにドラッグ&ドロップするか、クリックして選択',
   orClickToSelect: 'またはクリックして選択',
   dropImageHere: '画像をここにドロップ...',
@@ -3588,7 +3611,9 @@ const ja: Translations = {
   buildingHouseholds: '世帯',
   buildingMailboxes: 'メールボックス',
   buildingSettings: '建物設定',
+  buildingSummary: '建物サマリー',
   buildingBasicInfo: '基本情報',
+  buildingPackageLockers: 'パッケージロッカー',
   buildingCommunity: 'コミュニティ',
   buildingFloorCount: '階数',
   buildingUnitCount: 'ユニット数',

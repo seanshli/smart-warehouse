@@ -167,7 +167,8 @@ export default function SignUp() {
           } else {
             toast.success('Account created successfully!')
           }
-          router.push('/')
+          // Force a full page reload to refresh household data
+          window.location.href = '/'
         }
       } else {
         const errorData = await registerResponse.json()

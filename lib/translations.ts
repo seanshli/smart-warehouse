@@ -1046,6 +1046,7 @@ const en: Translations = {
   back: 'Back',
   next: 'Next',
   close: 'Close',
+  optional: 'Optional',
   optionalLabel: 'Optional',
   move: 'Move',
   moving: 'Moving...',

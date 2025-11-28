@@ -27,6 +27,7 @@ import QRCodeDisplay from '@/components/QRCode'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLanguage } from '@/components/LanguageProvider'
+import { XMarkIcon, UserIcon } from '@heroicons/react/24/outline'
 
 interface Building {
   id: string
@@ -471,7 +472,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
   )
 }
 
-function HouseholdCard({ household }: { household: any }) {
+function HouseholdCard({ household, onManageMembers }: { household: any; onManageMembers?: (householdId: string) => void }) {
   const { t } = useLanguage()
   const [copiedId, setCopiedId] = useState(false)
   const [copiedCode, setCopiedCode] = useState(false)
@@ -494,12 +495,19 @@ function HouseholdCard({ household }: { household: any }) {
   }
   
   return (
-    <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 w-72 flex-shrink-0">
+    <div 
+      className={`border rounded-lg p-3 hover:shadow-md w-72 flex-shrink-0 transition-all ${
+        isActive 
+          ? 'border-gray-200 bg-white hover:bg-gray-50' 
+          : 'border-gray-300 bg-gray-100 hover:bg-gray-200'
+      }`}
+    >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Link
               href={`/household/${household.id}`}
+              onClick={(e) => e.stopPropagation()}
               className="font-medium text-gray-900 hover:text-primary-600"
             >
               {household.name}
@@ -526,7 +534,10 @@ function HouseholdCard({ household }: { household: any }) {
               {household.id.substring(0, 8)}...
             </code>
             <button
-              onClick={() => copyToClipboard(household.id, 'id')}
+              onClick={(e) => {
+                e.stopPropagation()
+                copyToClipboard(household.id, 'id')
+              }}
               className="p-1 text-gray-500 hover:text-primary-600"
               title={t('copyHouseholdId')}
             >
@@ -549,7 +560,10 @@ function HouseholdCard({ household }: { household: any }) {
                   {household.invitationCode.substring(0, 8)}...
                 </code>
                 <button
-                  onClick={() => copyToClipboard(household.invitationCode, 'code')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    copyToClipboard(household.invitationCode, 'code')
+                  }}
                   className="p-1 text-gray-500 hover:text-primary-600"
                   title={t('copyInvitationCode')}
                 >
@@ -593,9 +607,26 @@ function HouseholdCard({ household }: { household: any }) {
         </div>
       </div>
 
+      {isActive && onManageMembers && (
+        <div className="pt-2 border-t border-gray-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onManageMembers(household.id)
+            }}
+            className="w-full px-3 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors flex items-center justify-center gap-2"
+            title="Manage Members"
+          >
+            <UserIcon className="h-4 w-4" />
+            <span>Manage Members</span>
+          </button>
+        </div>
+      )}
+      
       <div className="grid grid-cols-3 gap-1 pt-2 border-t border-gray-100 text-xs">
         <Link
           href={`/household/${household.id}/reservation`}
+          onClick={(e) => e.stopPropagation()}
           className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
           title={t('householdReservation')}
         >
@@ -604,6 +635,7 @@ function HouseholdCard({ household }: { household: any }) {
         </Link>
         <Link
           href={`/household/${household.id}/maintenance`}
+          onClick={(e) => e.stopPropagation()}
           className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
           title={t('householdMaintenance')}
         >
@@ -612,6 +644,7 @@ function HouseholdCard({ household }: { household: any }) {
         </Link>
         <div className="relative group">
           <button
+            onClick={(e) => e.stopPropagation()}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors w-full"
             title={t('householdProperty')}
           >
@@ -621,6 +654,7 @@ function HouseholdCard({ household }: { household: any }) {
           <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[140px]">
             <Link
               href={`/household/${household.id}/property/mail`}
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
             >
               <EnvelopeIcon className="h-4 w-4 mr-2" />
@@ -628,6 +662,7 @@ function HouseholdCard({ household }: { household: any }) {
             </Link>
             <Link
               href={`/household/${household.id}/property/package`}
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
             >
               <CubeIcon className="h-4 w-4 mr-2" />
@@ -635,6 +670,7 @@ function HouseholdCard({ household }: { household: any }) {
             </Link>
             <Link
               href={`/household/${household.id}/property/visitor`}
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
             >
               <IdentificationIcon className="h-4 w-4 mr-2" />
@@ -652,6 +688,7 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
   const [floors, setFloors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchHouseholds()
@@ -669,6 +706,10 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleManageMembers = (householdId: string) => {
+    setSelectedHouseholdId(householdId)
   }
 
   if (loading) {
@@ -704,7 +745,11 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
               <div className="overflow-x-auto">
                 <div className="flex gap-3 min-w-max">
                   {floor.households.map((household: any) => (
-                    <HouseholdCard key={household.id} household={household} />
+                    <HouseholdCard 
+                      key={household.id} 
+                      household={household} 
+                      onManageMembers={handleManageMembers}
+                    />
                   ))}
                 </div>
               </div>
@@ -723,6 +768,146 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
           }}
         />
       )}
+
+      {selectedHouseholdId && (
+        <HouseholdMemberRoleModal
+          householdId={selectedHouseholdId}
+          onClose={() => setSelectedHouseholdId(null)}
+          onUpdated={() => {
+            setSelectedHouseholdId(null)
+            fetchHouseholds()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function HouseholdMemberRoleModal({
+  householdId,
+  onClose,
+  onUpdated,
+}: {
+  householdId: string
+  onClose: () => void
+  onUpdated: () => void
+}) {
+  const { t } = useLanguage()
+  const [members, setMembers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    fetchMembers()
+  }, [householdId])
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/household/members?householdId=${householdId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setMembers(data.members || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch members:', err)
+      toast.error('Error loading members')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    try {
+      setUpdating((prev) => ({ ...prev, [memberId]: true }))
+      const response = await fetch(`/api/household/members/${memberId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to update role')
+      }
+
+      toast.success('Role updated successfully')
+      fetchMembers()
+      onUpdated()
+    } catch (err) {
+      console.error('Error updating role:', err)
+      toast.error(err instanceof Error ? err.message : 'Error updating role')
+    } finally {
+      setUpdating((prev) => ({ ...prev, [memberId]: false }))
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Manage Household Members</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-500"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">{t('buildingLoading')}</div>
+          ) : members.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No members found</div>
+          ) : (
+            <div className="space-y-3">
+              {members.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <UserIcon className="h-6 w-6 text-gray-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {member.user.name || member.user.email}
+                      </p>
+                      <p className="text-xs text-gray-500">{member.user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <select
+                      value={member.role}
+                      onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                      disabled={updating[member.id]}
+                      className="text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                    >
+                      <option value="OWNER">OWNER</option>
+                      <option value="USER">USER</option>
+                      <option value="VISITOR">VISITOR</option>
+                    </select>
+                    {updating[member.id] && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end p-6 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            {t('close') || 'Close'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

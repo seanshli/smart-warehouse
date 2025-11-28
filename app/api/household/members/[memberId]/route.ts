@@ -53,6 +53,7 @@ export async function PUT(
     // 2. OR check if user is a building admin for the building containing this household
     let hasPermission = false
     let userRole: UserRole | null = null
+    let isBuildingAdmin = false
 
     // Check household membership
     const userMembership = await prisma.householdMember.findUnique({
@@ -72,8 +73,8 @@ export async function PUT(
       }
     }
 
-    // If not a household owner, check if user is a building admin
-    if (!hasPermission && memberToUpdate.household.buildingId) {
+    // Check if user is a building admin
+    if (memberToUpdate.household.buildingId) {
       const buildingMembership = await prisma.buildingMember.findUnique({
         where: {
           userId_buildingId: {
@@ -84,6 +85,7 @@ export async function PUT(
       })
 
       if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
+        isBuildingAdmin = true
         hasPermission = true
       }
     }
@@ -92,8 +94,15 @@ export async function PUT(
       return NextResponse.json({ error: 'Insufficient permissions. Only household OWNER or building ADMIN can modify roles.' }, { status: 403 })
     }
 
-    // If user is household member, check role management rules
-    if (userRole) {
+    // If user is building admin, allow all role changes except removing OWNER role
+    if (isBuildingAdmin) {
+      // Building admin can assign any role, but cannot change OWNER to non-OWNER
+      if (memberToUpdate.role === 'OWNER' && role !== 'OWNER') {
+        return NextResponse.json({ error: 'Building admin cannot remove OWNER role. Only household OWNER can do this.' }, { status: 403 })
+      }
+      // Building admin can assign OWNER role to any member
+    } else if (userRole) {
+      // If user is household member (not building admin), check role management rules
       // Check if user can manage this role
       if (!canManageRole(userRole, role as UserRole)) {
         return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
@@ -102,11 +111,6 @@ export async function PUT(
       // Check if trying to change OWNER role (only OWNER can change OWNER)
       if (memberToUpdate.role === 'OWNER' && userRole !== 'OWNER') {
         return NextResponse.json({ error: 'Only OWNER can modify OWNER role' }, { status: 403 })
-      }
-    } else {
-      // Building admin can modify roles, but cannot change OWNER to non-OWNER
-      if (memberToUpdate.role === 'OWNER' && role !== 'OWNER') {
-        return NextResponse.json({ error: 'Building admin cannot remove OWNER role. Only household OWNER can do this.' }, { status: 403 })
       }
     }
 

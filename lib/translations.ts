@@ -94,6 +94,29 @@ export interface Translations {
   mqttVendorMidea: string // Midea
   householdSettings: string // 家庭設定
   
+  // Facility Reservations
+  facilityReservations: string
+  reserveBuildingFacilities: string
+  newReservation: string
+  noFacilitiesAvailable: string
+  householdNotInBuilding: string
+  floor: string
+  capacity: string
+  myReservations: string
+  purpose: string
+  accessCode: string
+  date: string
+  startTime: string
+  endTime: string
+  optionalLabel: string
+  purposePlaceholder: string
+  notesPlaceholder: string
+  notes: string
+  cancelReservation: string
+  createReservation: string
+  submitting: string
+  reservationCreated: string
+  
   // Admin
   adminPanel: string
   adminManagement: string
@@ -1003,7 +1026,7 @@ const en: Translations = {
   back: 'Back',
   next: 'Next',
   close: 'Close',
-  optional: 'Optional',
+  optionalLabel: 'Optional',
   move: 'Move',
   moving: 'Moving...',
   checkout: 'Checkout',
@@ -1529,6 +1552,27 @@ const zhTW: Translations = {
   notifications: '通知',
   members: '成員',
   householdSettings: '家庭設定',
+  facilityReservations: '設施預約',
+  reserveBuildingFacilities: '預約大樓設施，如健身房、會議室等',
+  newReservation: '新增預約',
+  noFacilitiesAvailable: '無可用設施',
+  householdNotInBuilding: '此住戶不屬於有設施的大樓',
+  floor: '樓層',
+  capacity: '容量',
+  myReservations: '我的預約',
+  purpose: '用途',
+  accessCode: '存取碼',
+  date: '日期',
+  startTime: '開始時間',
+  endTime: '結束時間',
+  optionalLabel: '選填',
+  purposePlaceholder: '例如：團隊會議、運動時間',
+  notesPlaceholder: '其他備註...',
+  notes: '備註',
+  cancel: '取消',
+  createReservation: '建立預約',
+  submitting: '提交中...',
+  reservationCreated: '預約請求已建立，等待審核',
   items: '物品',
   allItems: '所有物品',
   duplicates: '重複項目',
@@ -3298,7 +3342,7 @@ const ja: Translations = {
   back: '戻る',
   next: '次へ',
   close: '閉じる',
-  optional: 'オプション',
+  optionalLabel: 'オプション',
   move: '移動',
   moving: '移動中...',
   checkout: 'チェックアウト',

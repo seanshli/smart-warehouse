@@ -339,7 +339,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('purpose') || 'Purpose'} ({t('optional') || 'Optional'})
+                  {t('purpose') || 'Purpose'} ({t('optionalLabel') || 'Optional'})
                 </label>
                 <input
                   type="text"
@@ -352,7 +352,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('notes') || 'Notes'} ({t('optional') || 'Optional'})
+                  {t('notes') || 'Notes'} ({t('optionalLabel') || 'Optional'})
                 </label>
                 <textarea
                   value={notes}
@@ -372,7 +372,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                 }}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                {t('cancel') || 'Cancel'}
+                {t('cancelReservation') || 'Cancel'}
               </button>
               <button
                 onClick={handleCreateReservation}

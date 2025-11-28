@@ -798,20 +798,45 @@ function HouseholdMemberRoleModal({
   const [updating, setUpdating] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    fetchMembers()
+    if (householdId) {
+      fetchMembers()
+    }
   }, [householdId])
 
   const fetchMembers = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/household/members?householdId=${householdId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setMembers(data.members || [])
+      console.log('[HouseholdMemberRoleModal] Fetching members for household:', householdId)
+      const response = await fetch(`/api/household/members?householdId=${householdId}`, {
+        cache: 'no-store', // Always fetch fresh data
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[HouseholdMemberRoleModal] Failed to fetch members:', {
+          status: response.status,
+          error: errorData.error
+        })
+        throw new Error(errorData.error || 'Failed to fetch members')
       }
+      
+      const data = await response.json()
+      console.log('[HouseholdMemberRoleModal] Members fetched:', {
+        count: data.members?.length || 0,
+        members: data.members?.map((m: any) => ({
+          id: m.id,
+          email: m.user?.email,
+          role: m.role
+        })),
+        isBuildingAdmin: data.isBuildingAdmin
+      })
+      setMembers(data.members || [])
     } catch (err) {
-      console.error('Failed to fetch members:', err)
-      toast.error('Error loading members')
+      console.error('[HouseholdMemberRoleModal] Error fetching members:', err)
+      toast.error(err instanceof Error ? err.message : 'Error loading members')
     } finally {
       setLoading(false)
     }

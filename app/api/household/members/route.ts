@@ -71,9 +71,10 @@ export async function GET(request: NextRequest) {
         role: member.role,
         joinedAt: member.joinedAt,
         user: member.user,
-        canManage: canManageRole(userRole, member.role as UserRole)
+        canManage: isBuildingAdmin ? true : canManageRole(effectiveUserRole, member.role as UserRole)
       })),
-      assignableRoles: getAssignableRoles(userRole)
+      assignableRoles: isBuildingAdmin ? ['OWNER', 'USER', 'VISITOR'] : getAssignableRoles(effectiveUserRole),
+      isBuildingAdmin
     })
 
   } catch (error) {

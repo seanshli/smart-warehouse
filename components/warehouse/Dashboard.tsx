@@ -41,6 +41,7 @@ import ItemsList from './ItemsList'
 import { useDeviceDetection } from '../MobileLayout'
 import HouseholdSettings from '../HouseholdSettings'
 import CreateHouseholdModal from '../CreateHouseholdModal'
+import JoinHouseholdModal from '../JoinHouseholdModal'
 import VoiceAssistantPanel from '../VoiceAssistantPanel'
 import HomeAssistantPanel from '../mqtt/HomeAssistantPanel'
 import MQTTPanel from '../mqtt/MQTTPanel'
@@ -50,6 +51,7 @@ function HouseholdSwitcher() {
   const { memberships, activeHouseholdId, setActiveHousehold, switching, error } = useHousehold() // 家庭相關狀態
   const { t } = useLanguage() // 語言設定
   const [showCreateModal, setShowCreateModal] = useState(false) // 是否顯示創建家庭模態框
+  const [showJoinModal, setShowJoinModal] = useState(false) // 是否顯示加入家庭模態框
   const [pendingHouseholdId, setPendingHouseholdId] = useState<string | null>(null) // 待切換的家庭 ID
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false) // 是否顯示切換確認對話框
 
@@ -138,18 +140,31 @@ function HouseholdSwitcher() {
         </div>
       )}
       
-      {/* Create New Household Button */}
-      <button
-        onClick={() => {
-          console.log('🔄 Create household button clicked')
-          setShowCreateModal(true)
-        }}
-        className="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/20 dark:text-primary-400 rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30 focus:outline-none focus:ring-2 focus:ring-primary-500"
-        title={t('createNewHousehold') || 'Create New Household'}
-      >
-        <PlusIcon className="h-3 w-3 mr-1" />
-        {t('createNewHousehold') || 'New'}
-      </button>
+      {/* Create New Household and Join Household Buttons */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => {
+            console.log('🔄 Create household button clicked')
+            setShowCreateModal(true)
+          }}
+          className="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/20 dark:text-primary-400 rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          title={t('createNewHousehold') || 'Create New Household'}
+        >
+          <PlusIcon className="h-3 w-3 mr-1" />
+          {t('createNewHousehold') || 'New'}
+        </button>
+        <button
+          onClick={() => {
+            console.log('🔄 Join household button clicked')
+            setShowJoinModal(true)
+          }}
+          className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 focus:outline-none focus:ring-2 focus:ring-green-500"
+          title={t('joinHousehold') || 'Join Household'}
+        >
+          <UserGroupIcon className="h-3 w-3 mr-1" />
+          {t('joinHousehold') || 'Join'}
+        </button>
+      </div>
       
       {error && (
         <div className="text-xs text-red-500 dark:text-red-400 max-w-xs truncate" title={error}>
@@ -163,6 +178,16 @@ function HouseholdSwitcher() {
           onClose={() => {
             console.log('🔄 Closing create household modal')
             setShowCreateModal(false)
+          }} 
+        />
+      )}
+
+      {/* Join Household Modal */}
+      {showJoinModal && (
+        <JoinHouseholdModal 
+          onClose={() => {
+            console.log('🔄 Closing join household modal')
+            setShowJoinModal(false)
           }} 
         />
       )}

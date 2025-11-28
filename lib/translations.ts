@@ -432,6 +432,22 @@ export interface Translations {
   joinWithInvitationCode: string
   enterInvitationCode: string
   invalidInvitationCode: string
+  failedToValidateCode: string
+  joinHousehold: string
+  joinType: string
+  codeScanned: string
+  pleaseSignIn: string
+  found: string
+  householdFound: string
+  codePasted: string
+  failedToPaste: string
+  checking: string
+  joining: string
+  check: string
+  join: string
+  joinRequestSent: string
+  successfullyJoined: string
+  failedToJoin: string
   householdNotFound: string
   alreadyMemberOfHousehold: string
   alreadyMemberOfAnotherHousehold: string
@@ -1444,6 +1460,22 @@ const en: Translations = {
   copyInvitationCode: 'Copy to clipboard',
   invitationCodeInstructions: '• Share this code with family members to invite them\n• New users can enter this code during signup to join your household\n• Regenerate if you suspect the code has been compromised',
   joinWithInvitationCode: 'Join with Invitation Code',
+  joinHousehold: 'Join Household',
+  joinType: 'Join Type',
+  codeScanned: 'Code scanned successfully',
+  pleaseSignIn: 'Please sign in',
+  found: 'Found',
+  householdFound: 'Household Found',
+  codePasted: 'Code pasted from clipboard',
+  failedToPaste: 'Failed to read from clipboard',
+  checking: 'Checking...',
+  joining: 'Joining...',
+  check: 'Check',
+  join: 'Join',
+  joinRequestSent: 'Join request sent. Waiting for approval.',
+  successfullyJoined: 'Successfully joined!',
+  failedToJoin: 'Failed to join',
+  failedToValidateCode: 'Failed to validate invitation code',
   enterInvitationCode: 'Enter invitation code (optional)',
   invalidInvitationCode: 'Invalid invitation code',
   householdNotFound: 'Household not found',
@@ -2052,6 +2084,22 @@ const zhTW: Translations = {
   copyInvitationCode: '複製到剪貼板',
   invitationCodeInstructions: '• 與家庭成員分享此代碼以邀請他們\n• 新用戶可以在註冊時輸入此代碼加入您的家庭\n• 如果懷疑代碼已洩露，請重新生成',
   joinWithInvitationCode: '使用邀請碼加入',
+  joinHousehold: '加入住戶',
+  joinType: '加入類型',
+  codeScanned: '代碼掃描成功',
+  pleaseSignIn: '請登入',
+  found: '找到',
+  householdFound: '找到住戶',
+  codePasted: '已從剪貼簿貼上代碼',
+  failedToPaste: '無法從剪貼簿讀取',
+  checking: '檢查中...',
+  joining: '加入中...',
+  check: '檢查',
+  join: '加入',
+  joinRequestSent: '加入請求已發送，等待審核',
+  successfullyJoined: '成功加入！',
+  failedToJoin: '加入失敗',
+  failedToValidateCode: '驗證邀請碼失敗',
   enterInvitationCode: '輸入邀請碼（可選）',
   invalidInvitationCode: '無效的邀請碼',
   householdNotFound: '找不到家庭',
@@ -2803,6 +2851,22 @@ const zh: Translations = {
   copyInvitationCode: '复制到剪贴板',
   invitationCodeInstructions: '• 与家庭成员分享此代码以邀请他们\n• 新用户可以在注册时输入此代码加入您的家庭\n• 如果怀疑代码已泄露，请重新生成',
   joinWithInvitationCode: '使用邀请码加入',
+  joinHousehold: '加入住户',
+  joinType: '加入类型',
+  codeScanned: '代码扫描成功',
+  pleaseSignIn: '请登录',
+  found: '找到',
+  householdFound: '找到住户',
+  codePasted: '已从剪贴板粘贴代码',
+  failedToPaste: '无法从剪贴板读取',
+  checking: '检查中...',
+  joining: '加入中...',
+  check: '检查',
+  join: '加入',
+  joinRequestSent: '加入请求已发送，等待审核',
+  successfullyJoined: '成功加入！',
+  failedToJoin: '加入失败',
+  failedToValidateCode: '验证邀请码失败',
   enterInvitationCode: '输入邀请码（可选）',
   invalidInvitationCode: '无效的邀请码',
   householdNotFound: '找不到家庭',
@@ -3554,6 +3618,22 @@ const ja: Translations = {
   copyInvitationCode: 'クリップボードにコピー',
   invitationCodeInstructions: '• このコードを家族と共有して招待してください\n• 新しいユーザーはサインアップ時にこのコードを入力してあなたの世帯に参加できます\n• コードが漏洩した疑いがある場合は再生成してください',
   joinWithInvitationCode: '招待コードで参加',
+  joinHousehold: '世帯に参加',
+  joinType: '参加タイプ',
+  codeScanned: 'コードがスキャンされました',
+  pleaseSignIn: 'サインインしてください',
+  found: '見つかりました',
+  householdFound: '世帯が見つかりました',
+  codePasted: 'クリップボードからコードが貼り付けられました',
+  failedToPaste: 'クリップボードから読み取れませんでした',
+  checking: '確認中...',
+  joining: '参加中...',
+  check: '確認',
+  join: '参加',
+  joinRequestSent: '参加リクエストが送信されました。承認を待っています。',
+  successfullyJoined: '正常に参加しました！',
+  failedToJoin: '参加に失敗しました',
+  failedToValidateCode: '招待コードの検証に失敗しました',
   enterInvitationCode: '招待コードを入力（オプション）',
   invalidInvitationCode: '無効な招待コード',
   householdNotFound: '世帯が見つかりません',

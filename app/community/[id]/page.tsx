@@ -291,7 +291,11 @@ function OverviewTab({ community }: { community: Community }) {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
-                    <QRCodeDisplay value={community.invitationCode} size={120} className="p-2 bg-white rounded border border-gray-200" />
+                    <QRCodeDisplay 
+                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/join?code=${community.invitationCode}&type=community`} 
+                      size={120} 
+                      className="p-2 bg-white rounded border border-gray-200" 
+                    />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-gray-500">

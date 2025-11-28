@@ -69,7 +69,75 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Add user to household
+    // Check if household has existing members (other than the joining user)
+    const existingMembers = await prisma.householdMember.findMany({
+      where: { householdId: household.id },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    })
+
+    // If household has existing members, create a join request instead of directly joining
+    if (existingMembers.length > 0) {
+      // Find the owner to send the request to
+      const owner = existingMembers.find(m => m.role === 'OWNER')
+      if (!owner) {
+        // If no owner, use the first member
+        const firstMember = existingMembers[0]
+        
+        // Create join request
+        const joinRequest = await prisma.joinRequest.create({
+          data: {
+            userId: userId,
+            type: 'household',
+            targetId: household.id,
+            status: 'pending',
+            message: `User wants to join ${household.name}`,
+          },
+        })
+
+        return NextResponse.json({
+          requiresApproval: true,
+          message: 'Join request created. Waiting for owner approval.',
+          joinRequest: {
+            id: joinRequest.id,
+            status: joinRequest.status,
+          },
+          household: {
+            id: household.id,
+            name: household.name,
+          },
+        })
+      }
+
+      // Create join request for owner approval
+      const joinRequest = await prisma.joinRequest.create({
+        data: {
+          userId: userId,
+          type: 'household',
+          targetId: household.id,
+          status: 'pending',
+          message: `User wants to join ${household.name}`,
+        },
+      })
+
+      return NextResponse.json({
+        requiresApproval: true,
+        message: 'Join request created. Waiting for owner approval.',
+        joinRequest: {
+          id: joinRequest.id,
+          status: joinRequest.status,
+        },
+        household: {
+          id: household.id,
+          name: household.name,
+        },
+      })
+    }
+
+    // If no existing members, directly add user to household
     const newMembership = await prisma.householdMember.create({
       data: {
         userId: userId,

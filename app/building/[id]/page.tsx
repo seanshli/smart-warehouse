@@ -345,7 +345,11 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
-                    <QRCodeDisplay value={building.invitationCode} size={120} className="p-2 bg-white rounded border border-gray-200" />
+                    <QRCodeDisplay 
+                      value={`${typeof window !== 'undefined' ? window.location.origin : ''}/join?code=${building.invitationCode}&type=building`} 
+                      size={120} 
+                      className="p-2 bg-white rounded border border-gray-200" 
+                    />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-gray-500">
@@ -558,7 +562,11 @@ function HouseholdCard({ household }: { household: any }) {
               </div>
             </div>
             <div className="flex justify-center pt-1">
-              <QRCodeDisplay value={household.invitationCode} size={80} className="p-2 bg-white rounded" />
+              <QRCodeDisplay 
+                value={household.invitationCode ? `${typeof window !== 'undefined' ? window.location.origin : ''}/join?code=${household.invitationCode}&type=household` : ''} 
+                size={80} 
+                className="p-2 bg-white rounded" 
+              />
             </div>
           </div>
         )}

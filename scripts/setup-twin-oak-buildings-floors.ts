@@ -55,27 +55,6 @@ async function setupTwinOakBuildingsFloors() {
       })
       console.log(`   ✅ Created/Updated floor 1: ${floor1.name}`)
 
-      // Floor 2: Facilities (no households)
-      const floor2 = await prisma.floor.upsert({
-        where: {
-          buildingId_floorNumber: {
-            buildingId: building.id,
-            floorNumber: 2,
-          },
-        },
-        update: {
-          name: 'Facilities / 設施',
-          description: 'Building facilities: gym, meeting rooms',
-        },
-        create: {
-          buildingId: building.id,
-          floorNumber: 2,
-          name: 'Facilities / 設施',
-          description: 'Building facilities: gym, meeting rooms',
-        },
-      })
-      console.log(`   ✅ Created/Updated floor 2: ${floor2.name}`)
-
       // Floors 3-10: Residential units (4 units per floor: A, B, C, D)
       for (let floorNum = 3; floorNum <= 10; floorNum++) {
         const floor = await prisma.floor.upsert({
@@ -110,6 +89,11 @@ async function setupTwinOakBuildingsFloors() {
             update: {
               name: unitName,
               description: `Household ${unitName} in ${building.name}`,
+              buildingId: building.id,
+              floorId: floor.id,
+              floorNumber: floorNum,
+              unit: unit,
+              apartmentNo: unitName,
             },
             create: {
               id: `${building.id}-${unitName}`,
@@ -117,6 +101,9 @@ async function setupTwinOakBuildingsFloors() {
               description: `Household ${unitName} in ${building.name}`,
               buildingId: building.id,
               floorId: floor.id,
+              floorNumber: floorNum,
+              unit: unit,
+              apartmentNo: unitName,
             },
           })
 
@@ -184,57 +171,6 @@ async function setupTwinOakBuildingsFloors() {
       }
       console.log(`   ✅ Created/Updated 10 package lockers`)
 
-      // Create facilities on Floor 2
-      const facilities = [
-        { name: 'Gym', nameZh: '健身房' },
-        { name: 'Meeting Room #1', nameZh: '會議室 #1' },
-        { name: 'Meeting Room #2', nameZh: '會議室 #2' },
-      ]
-
-      for (const facility of facilities) {
-        const facilityRecord = await prisma.facility.upsert({
-          where: {
-            buildingId_name: {
-              buildingId: building.id,
-              name: facility.name,
-            },
-          },
-          update: {
-            floorId: floor2.id,
-          },
-          create: {
-            buildingId: building.id,
-            name: facility.name,
-            description: `${facility.name} in ${building.name}`,
-            floorId: floor2.id,
-            isActive: true,
-          },
-        })
-
-        // Create default operating hours (Monday-Friday, 6 AM - 10 PM)
-        for (let day = 1; day <= 5; day++) {
-          await prisma.facilityOperatingHours.upsert({
-            where: {
-              facilityId_dayOfWeek: {
-                facilityId: facilityRecord.id,
-                dayOfWeek: day,
-              },
-            },
-            update: {
-              openTime: '06:00',
-              closeTime: '22:00',
-            },
-            create: {
-              facilityId: facilityRecord.id,
-              dayOfWeek: day,
-              openTime: '06:00',
-              closeTime: '22:00',
-            },
-          })
-        }
-        console.log(`   ✅ Created/Updated facility: ${facility.name}`)
-      }
-
       // Count created items
       const householdCount = await prisma.household.count({
         where: { buildingId: building.id },
@@ -248,17 +184,13 @@ async function setupTwinOakBuildingsFloors() {
       const packageLockerCount = await prisma.packageLocker.count({
         where: { buildingId: building.id },
       })
-      const facilityCount = await prisma.facility.count({
-        where: { buildingId: building.id },
-      })
 
       console.log(`   ✅ Completed:`)
-      console.log(`      - 10 floors`)
+      console.log(`      - 9 floors (Floor 1: Front Door, Floors 3-10: Residential)`)
       console.log(`      - ${householdCount} households (Floors 3-10 only)`)
       console.log(`      - ${mailboxCount} mailboxes (Front Door)`)
       console.log(`      - ${doorBellCount} door bells (Front Door)`)
       console.log(`      - ${packageLockerCount} package lockers (Package Room)`)
-      console.log(`      - ${facilityCount} facilities (Floor 2: Gym, Meeting Room #1, Meeting Room #2)`)
       console.log('')
     }
 

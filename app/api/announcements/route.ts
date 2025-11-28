@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
           }
         }
       })
-      hasPermission = membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER')
+      hasPermission = !!(membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER'))
     } else if (source === 'BUILDING') {
       // Check if user is building admin
       if (!sourceId) {
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
           }
         }
       })
-      hasPermission = membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER')
+      hasPermission = !!(membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER'))
     }
 
     if (!hasPermission) {

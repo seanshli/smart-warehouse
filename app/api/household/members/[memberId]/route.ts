@@ -139,7 +139,47 @@ export async function PUT(
     }
 
     if (!hasPermission) {
-      return NextResponse.json({ error: 'Insufficient permissions. Only household OWNER or building ADMIN can modify roles.' }, { status: 403 })
+      console.log('[Role Update] ❌ Permission denied:', {
+        userId,
+        householdId: memberToUpdate.householdId,
+        householdName: memberToUpdate.household.name,
+        buildingId: memberToUpdate.household.buildingId,
+        userRole,
+        isBuildingAdmin,
+        hasPermission,
+        memberRole: memberToUpdate.role,
+        requestedRole: role,
+        userMembership: userMembership ? { role: userMembership.role } : null
+      })
+      
+      // If household has no buildingId, suggest linking it
+      if (!memberToUpdate.household.buildingId) {
+        return NextResponse.json({ 
+          error: 'Household is not linked to a building. Building admins can only manage households that belong to their building. Please link this household to a building first.',
+          debug: {
+            userId,
+            householdId: memberToUpdate.householdId,
+            buildingId: null,
+            userRole,
+            isBuildingAdmin: false,
+            hasPermission: false,
+            reason: 'household_not_linked_to_building'
+          }
+        }, { status: 403 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Insufficient permissions. Only household OWNER or building ADMIN can modify roles.',
+        debug: {
+          userId,
+          householdId: memberToUpdate.householdId,
+          buildingId: memberToUpdate.household.buildingId,
+          userRole,
+          isBuildingAdmin,
+          hasPermission,
+          reason: isBuildingAdmin ? 'unknown' : (userRole ? 'not_owner' : 'not_member_or_admin')
+        }
+      }, { status: 403 })
     }
 
     // If user is building admin, allow ALL role changes including assigning OWNER

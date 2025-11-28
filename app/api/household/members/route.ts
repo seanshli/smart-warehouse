@@ -82,8 +82,43 @@ export async function GET(request: NextRequest) {
     }
 
     if (!hasPermission) {
+      console.log('[Get Members] ❌ Permission denied:', {
+        userId,
+        householdId,
+        buildingId: household.buildingId,
+        userRole,
+        isBuildingAdmin,
+        hasPermission,
+        userMembership: userMembership ? { role: userMembership.role } : null
+      })
+      
+      // If household has no buildingId, suggest linking it
+      if (!household.buildingId) {
+        return NextResponse.json({ 
+          error: 'Household is not linked to a building. Building admins can only view members of households that belong to their building. Please link this household to a building first.',
+          debug: {
+            userId,
+            householdId,
+            buildingId: null,
+            userRole,
+            isBuildingAdmin: false,
+            hasPermission: false,
+            reason: 'household_not_linked_to_building'
+          }
+        }, { status: 403 })
+      }
+      
       return NextResponse.json({ 
-        error: 'Insufficient permissions. Only household members with management rights or building admins can view members.' 
+        error: 'Insufficient permissions. Only household members with management rights or building admins can view members.',
+        debug: {
+          userId,
+          householdId,
+          buildingId: household.buildingId,
+          userRole,
+          isBuildingAdmin,
+          hasPermission,
+          reason: isBuildingAdmin ? 'unknown' : (userRole ? 'no_management_rights' : 'not_member_or_admin')
+        }
       }, { status: 403 })
     }
 

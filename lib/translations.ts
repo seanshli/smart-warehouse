@@ -1829,6 +1829,7 @@ const zhTW: Translations = {
   next: '下一步',
   close: '關閉',
   optional: '可選',
+  optionalLabel: '選填',
   move: '移動',
   moving: '移動中...',
   checkout: '結帳',

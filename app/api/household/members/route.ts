@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPermissions, canManageRole, getAssignableRoles, UserRole } from '@/lib/permissions'
+import { isSuperAdmin } from '@/lib/middleware/community-permissions'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -49,6 +50,15 @@ export async function GET(request: NextRequest) {
     let userRole: UserRole | null = null
     let hasPermission = false
     let isBuildingAdmin = false
+    let isSuperAdminUser = false
+
+    // Check if user is super admin
+    isSuperAdminUser = await isSuperAdmin(userId)
+    if (isSuperAdminUser) {
+      hasPermission = true
+      isBuildingAdmin = true // Super admins have all permissions
+      console.log('[Get Members] ✅ Super admin detected - ALL permissions granted')
+    }
 
     if (userMembership) {
       userRole = userMembership.role as UserRole

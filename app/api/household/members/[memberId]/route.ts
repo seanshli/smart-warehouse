@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPermissions, canManageRole, UserRole } from '@/lib/permissions'
+import { isSuperAdmin } from '@/lib/middleware/community-permissions'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -63,6 +64,15 @@ export async function PUT(
     let hasPermission = false
     let userRole: UserRole | null = null
     let isBuildingAdmin = false
+    let isSuperAdminUser = false
+
+    // Check if user is super admin
+    isSuperAdminUser = await isSuperAdmin(userId)
+    if (isSuperAdminUser) {
+      hasPermission = true
+      isBuildingAdmin = true // Super admins have all permissions
+      console.log('[Role Update] ✅ Super admin detected - ALL permissions granted')
+    }
 
     // Check household membership
     const userMembership = await prisma.householdMember.findUnique({
@@ -182,8 +192,8 @@ export async function PUT(
       }, { status: 403 })
     }
 
-    // If user is building admin, allow ALL role changes including assigning OWNER
-    if (isBuildingAdmin) {
+    // If user is building admin or super admin, allow ALL role changes including assigning OWNER
+    if (isBuildingAdmin || isSuperAdminUser) {
       console.log('[Role Update] Building admin detected, allowing role change:', {
         currentRole: memberToUpdate.role,
         newRole: role,
@@ -206,8 +216,8 @@ export async function PUT(
       }
     }
 
-    // Prevent removing the last OWNER (unless building admin)
-    if (memberToUpdate.role === 'OWNER' && role !== 'OWNER' && !isBuildingAdmin) {
+    // Prevent removing the last OWNER (unless building admin or super admin)
+    if (memberToUpdate.role === 'OWNER' && role !== 'OWNER' && !isBuildingAdmin && !isSuperAdminUser) {
       const ownerCount = await prisma.householdMember.count({
         where: {
           householdId: memberToUpdate.householdId,

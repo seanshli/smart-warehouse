@@ -40,6 +40,8 @@ model User {
   sessions             Session[]
   credentials          UserCredentials?
   activities           UserActivity[]
+  announcements        Announcement[]
+  announcementReads    AnnouncementRead[]
 
   @@map("users")
 }
@@ -251,6 +253,7 @@ model Household {
   facilityReservations FacilityReservation[] // Facility reservations by this household
   automationRules      AutomationRule[] // 跨生态链控制规则
   scenes               Scene[] // 场景管理
+  announcementReads    AnnouncementRead[] // Announcements read by this household
 
   @@map("households")
 }
@@ -763,4 +766,44 @@ model SceneAction {
   @@index([sceneId])
   @@index([deviceId])
   @@map("scene_actions")
+}
+
+model Announcement {
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  source     String // 'SYSTEM' | 'COMMUNITY' | 'BUILDING'
+  sourceId   String?   @map("source_id") // Community ID or Building ID, null for SYSTEM
+  title      String
+  message    String
+  targetType String    @map("target_type") // 'ALL_HOUSEHOLDS' | 'COMMUNITY' | 'BUILDING' | 'SPECIFIC_HOUSEHOLD'
+  targetId   String?   @map("target_id") // Community ID, Building ID, or Household ID, null for ALL_HOUSEHOLDS
+  createdBy  String    @map("created_by") // User ID who created the announcement
+  isActive   Boolean   @default(true) @map("is_active")
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz(6) // Optional expiration date
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  creator User               @relation(fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reads   AnnouncementRead[]
+
+  @@index([source, sourceId])
+  @@index([targetType, targetId])
+  @@index([isActive, createdAt])
+  @@map("announcements")
+}
+
+model AnnouncementRead {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  announcementId String    @map("announcement_id")
+  userId         String    @map("user_id")
+  householdId    String    @map("household_id") // Track which household context it was read in
+  readAt         DateTime? @default(now()) @map("read_at") @db.Timestamptz(6)
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  household    Household    @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([announcementId, userId, householdId])
+  @@index([userId, householdId])
+  @@index([announcementId])
+  @@map("announcement_reads")
 }

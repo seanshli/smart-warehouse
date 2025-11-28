@@ -117,6 +117,38 @@ export interface Translations {
   submitting: string
   reservationCreated: string
   
+  // Announcements
+  announcements: string
+  announcement: string
+  createAnnouncement: string
+  sendAnnouncement: string
+  manageAnnouncements: string
+  noAnnouncements: string
+  clickToView: string
+  unread: string
+  system: string
+  community: string
+  building: string
+  from: string
+  expires: string
+  expirationDate: string
+  active: string
+  inactive: string
+  targetAudience: string
+  allHouseholds: string
+  specificCommunity: string
+  specificBuilding: string
+  specificHousehold: string
+  communityId: string
+  buildingId: string
+  householdId: string
+  characters: string
+  sending: string
+  pleaseFillAllFields: string
+  announcementCreated: string
+  source: string
+  adminAnnouncements: string
+  
   // Admin
   adminPanel: string
   adminManagement: string
@@ -813,6 +845,36 @@ const en: Translations = {
   createReservation: 'Create Reservation',
   submitting: 'Submitting...',
   reservationCreated: 'Reservation request created. Waiting for building admin approval.',
+  announcements: 'Announcements',
+  announcement: 'Announcement',
+  createAnnouncement: 'Create Announcement',
+  sendAnnouncement: 'Send Announcement',
+  manageAnnouncements: 'Manage Announcements',
+  noAnnouncements: 'No announcements',
+  clickToView: 'Click to view',
+  unread: 'unread',
+  system: 'System',
+  community: 'Community',
+  building: 'Building',
+  from: 'From',
+  expires: 'Expires',
+  expirationDate: 'Expiration Date',
+  active: 'Active',
+  inactive: 'Inactive',
+  targetAudience: 'Target Audience',
+  allHouseholds: 'All Households',
+  specificCommunity: 'Specific Community',
+  specificBuilding: 'Specific Building',
+  specificHousehold: 'Specific Household',
+  communityId: 'Community ID',
+  buildingId: 'Building ID',
+  householdId: 'Household ID',
+  characters: 'characters',
+  sending: 'Sending...',
+  pleaseFillAllFields: 'Please fill all required fields',
+  announcementCreated: 'Announcement created successfully',
+  source: 'Source',
+  adminAnnouncements: 'Announcements',
   items: 'Items',
   allItems: 'All Items',
   duplicates: 'Duplicates',

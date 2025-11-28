@@ -46,6 +46,7 @@ import VoiceAssistantPanel from '../VoiceAssistantPanel'
 import HomeAssistantPanel from '../mqtt/HomeAssistantPanel'
 import MQTTPanel from '../mqtt/MQTTPanel'
 import FacilityReservationPanel from '../facility/FacilityReservationPanel'
+import AnnouncementBanner from '../AnnouncementBanner'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -1180,6 +1181,11 @@ function DashboardContent({
 
   return (
     <div className={`${deviceInfo.isMobile ? 'px-1 py-2' : 'px-2 sm:px-4 py-4 sm:py-6 sm:px-0'} space-y-6 sm:space-y-8`}>
+      {/* Announcement Banner */}
+      {household && household.id && (
+        <AnnouncementBanner householdId={household.id} />
+      )}
+
       <div
         className={`grid gap-3 sm:gap-4 lg:gap-5 ${
           deviceInfo.isMobile 

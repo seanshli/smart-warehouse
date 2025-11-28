@@ -29,6 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: t('adminBuildings'), href: '/admin/buildings', icon: BuildingOfficeIcon, current: pathname === '/admin/buildings' },
     { name: t('adminHouseholds'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
     { name: t('adminItems'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
+    { name: t('adminAnnouncements'), href: '/admin/announcements', icon: BellIcon, current: pathname === '/admin/announcements' },
     { name: t('adminDuplicateManagement'), href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },
     { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
     { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },

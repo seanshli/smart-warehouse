@@ -48,7 +48,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    // Get user's role in this household
+    // Check if user has permission to modify roles
+    // 1. Check if user is a household member with OWNER role
+    // 2. OR check if user is a building admin for the building containing this household
+    let hasPermission = false
+    let userRole: UserRole | null = null
+
+    // Check household membership
     const userMembership = await prisma.householdMember.findUnique({
       where: {
         userId_householdId: {
@@ -58,25 +64,50 @@ export async function PUT(
       }
     })
 
-    if (!userMembership) {
-      return NextResponse.json({ error: 'User is not a member of this household' }, { status: 403 })
+    if (userMembership) {
+      userRole = userMembership.role as UserRole
+      const permissions = getPermissions(userRole)
+      if (permissions.canManageMembers) {
+        hasPermission = true
+      }
     }
 
-    const userRole = userMembership.role as UserRole
-    const permissions = getPermissions(userRole)
+    // If not a household owner, check if user is a building admin
+    if (!hasPermission && memberToUpdate.household.buildingId) {
+      const buildingMembership = await prisma.buildingMember.findUnique({
+        where: {
+          userId_buildingId: {
+            userId: userId,
+            buildingId: memberToUpdate.household.buildingId
+          }
+        }
+      })
 
-    if (!permissions.canManageMembers) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
+        hasPermission = true
+      }
     }
 
-    // Check if user can manage this role
-    if (!canManageRole(userRole, role as UserRole)) {
-      return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Insufficient permissions. Only household OWNER or building ADMIN can modify roles.' }, { status: 403 })
     }
 
-    // Check if trying to change OWNER role (only OWNER can change OWNER)
-    if (memberToUpdate.role === 'OWNER' && userRole !== 'OWNER') {
-      return NextResponse.json({ error: 'Only OWNER can modify OWNER role' }, { status: 403 })
+    // If user is household member, check role management rules
+    if (userRole) {
+      // Check if user can manage this role
+      if (!canManageRole(userRole, role as UserRole)) {
+        return NextResponse.json({ error: 'Cannot assign this role' }, { status: 403 })
+      }
+
+      // Check if trying to change OWNER role (only OWNER can change OWNER)
+      if (memberToUpdate.role === 'OWNER' && userRole !== 'OWNER') {
+        return NextResponse.json({ error: 'Only OWNER can modify OWNER role' }, { status: 403 })
+      }
+    } else {
+      // Building admin can modify roles, but cannot change OWNER to non-OWNER
+      if (memberToUpdate.role === 'OWNER' && role !== 'OWNER') {
+        return NextResponse.json({ error: 'Building admin cannot remove OWNER role. Only household OWNER can do this.' }, { status: 403 })
+      }
     }
 
     // Prevent removing the last OWNER
@@ -151,7 +182,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    // Get user's role in this household
+    // Check if user has permission to remove members
+    // 1. Check if user is a household member with OWNER role
+    // 2. OR check if user is a building admin for the building containing this household
+    let hasPermission = false
+    let userRole: UserRole | null = null
+
+    // Check household membership
     const userMembership = await prisma.householdMember.findUnique({
       where: {
         userId_householdId: {
@@ -161,24 +198,41 @@ export async function DELETE(
       }
     })
 
-    if (!userMembership) {
-      return NextResponse.json({ error: 'User is not a member of this household' }, { status: 403 })
+    if (userMembership) {
+      userRole = userMembership.role as UserRole
+      const permissions = getPermissions(userRole)
+      if (permissions.canManageMembers) {
+        hasPermission = true
+      }
     }
 
-    const userRole = userMembership.role as UserRole
-    const permissions = getPermissions(userRole)
+    // If not a household owner, check if user is a building admin
+    if (!hasPermission && memberToDelete.household.buildingId) {
+      const buildingMembership = await prisma.buildingMember.findUnique({
+        where: {
+          userId_buildingId: {
+            userId: userId,
+            buildingId: memberToDelete.household.buildingId
+          }
+        }
+      })
 
-    if (!permissions.canManageMembers) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
+        hasPermission = true
+      }
     }
 
-    // Prevent removing OWNER
-    if (memberToDelete.role === 'OWNER') {
-      return NextResponse.json({ error: 'Cannot remove OWNER role' }, { status: 400 })
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Insufficient permissions. Only household OWNER or building ADMIN can remove members.' }, { status: 403 })
     }
 
-    // Prevent self-removal unless it's the user's own membership
-    if (memberToDelete.userId !== userId && userRole !== 'OWNER') {
+    // Prevent removing OWNER (only household OWNER can do this, not building admin)
+    if (memberToDelete.role === 'OWNER' && userRole !== 'OWNER') {
+      return NextResponse.json({ error: 'Cannot remove OWNER role. Only household OWNER can do this.' }, { status: 400 })
+    }
+
+    // Prevent self-removal unless it's the user's own membership or they're OWNER/building admin
+    if (memberToDelete.userId !== userId && userRole !== 'OWNER' && !hasPermission) {
       return NextResponse.json({ error: 'Cannot remove other members' }, { status: 403 })
     }
 

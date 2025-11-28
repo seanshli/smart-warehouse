@@ -38,6 +38,7 @@ export default function JoinRequestList({
 }: JoinRequestListProps) {
   const [requests, setRequests] = useState<JoinRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchRequests()
@@ -62,15 +63,23 @@ export default function JoinRequestList({
 
   const handleApprove = async (requestId: string) => {
     try {
+      const role = selectedRoles[requestId] || (type === 'household' ? 'USER' : 'MEMBER')
       const response = await fetch(`/api/join-request/${requestId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
       })
 
       if (response.ok) {
         toast.success('请求已批准')
         fetchRequests()
         onUpdate?.()
+        // Clear selected role for this request
+        setSelectedRoles(prev => {
+          const next = { ...prev }
+          delete next[requestId]
+          return next
+        })
       } else {
         const data = await response.json()
         toast.error(data.error || '批准失败')
@@ -137,6 +146,22 @@ export default function JoinRequestList({
               <p className="mt-2 text-xs text-gray-500">
                 请求时间: {new Date(request.requestedAt).toLocaleString('zh-TW')}
               </p>
+              {type === 'household' && (
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    角色:
+                  </label>
+                  <select
+                    value={selectedRoles[request.id] || 'USER'}
+                    onChange={(e) => setSelectedRoles(prev => ({ ...prev, [request.id]: e.target.value }))}
+                    className="text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="USER">USER</option>
+                    <option value="OWNER">OWNER</option>
+                    <option value="VISITOR">VISITOR</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2 ml-4">
               <button

@@ -102,13 +102,19 @@ export async function POST(
 
     // 根据类型添加用户
     if (joinRequest.type === 'household') {
-      // 检查用户是否已经是其他 Household 的成员
-      const existingMembership = await prisma.householdMember.findFirst({
-        where: { userId: joinRequest.userId },
+      // Note: Users can be members of multiple households
+      // Only check if they're already a member of THIS specific household
+      const existingMembership = await prisma.householdMember.findUnique({
+        where: {
+          userId_householdId: {
+            userId: joinRequest.userId,
+            householdId: joinRequest.targetId,
+          },
+        },
       })
 
       if (existingMembership) {
-        // 更新请求状态为已拒绝
+        // Update request status to rejected
         await prisma.joinRequest.update({
           where: { id: requestId },
           data: {
@@ -120,8 +126,7 @@ export async function POST(
 
         return NextResponse.json(
           {
-            error:
-              'User is already a member of another household. Request rejected.',
+            error: 'User is already a member of this household. Request rejected.',
           },
           { status: 400 }
         )

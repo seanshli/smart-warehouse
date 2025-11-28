@@ -93,26 +93,48 @@ export async function PUT(
         }
       })
 
+      console.log('[Role Update] Building admin check:', {
+        userId,
+        householdId: memberToUpdate.householdId,
+        buildingId: memberToUpdate.household.buildingId,
+        buildingMembership: buildingMembership ? {
+          id: buildingMembership.id,
+          role: buildingMembership.role,
+          userId: buildingMembership.userId,
+          buildingId: buildingMembership.buildingId
+        } : null,
+        isAdmin: buildingMembership?.role === 'ADMIN',
+        isManager: buildingMembership?.role === 'MANAGER',
+        willBeAdmin: buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')
+      })
+
       if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
         isBuildingAdmin = true
         hasPermission = true
-        console.log('[Role Update] Building admin verified:', {
+        console.log('[Role Update] ✅ Building admin verified - ALL role changes allowed:', {
           userId,
           buildingId: memberToUpdate.household.buildingId,
           buildingRole: buildingMembership.role,
-          isBuildingAdmin
+          isBuildingAdmin,
+          currentRole: memberToUpdate.role,
+          newRole: role,
+          canAssignOwner: true
         })
       } else {
-        console.log('[Role Update] Not a building admin:', {
+        console.log('[Role Update] ❌ Not a building admin:', {
           userId,
           buildingId: memberToUpdate.household.buildingId,
-          buildingMembership: buildingMembership ? { role: buildingMembership.role } : null
+          buildingMembership: buildingMembership ? { 
+            role: buildingMembership.role,
+            expectedRoles: ['ADMIN', 'MANAGER']
+          } : 'No membership found'
         })
       }
     } else {
-      console.log('[Role Update] Household has no buildingId:', {
+      console.log('[Role Update] ⚠️ Household has no buildingId - cannot check building admin:', {
         householdId: memberToUpdate.householdId,
-        buildingId: memberToUpdate.household.buildingId
+        buildingId: memberToUpdate.household.buildingId,
+        householdName: memberToUpdate.household.name
       })
     }
 

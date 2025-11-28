@@ -33,7 +33,16 @@ export async function PUT(
     const memberToUpdate = await prisma.householdMember.findUnique({
       where: { id: memberId },
       include: {
-        household: true,
+        household: {
+          include: {
+            building: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
         user: {
           select: {
             id: true,

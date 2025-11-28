@@ -3169,7 +3169,6 @@ const ja: Translations = {
   purposePlaceholder: '例：チームミーティング、ワークアウトセッション',
   notesPlaceholder: '追加のメモ...',
   notes: 'メモ',
-  cancel: 'キャンセル',
   cancelReservation: 'キャンセル',
   createReservation: '予約を作成',
   submitting: '送信中...',

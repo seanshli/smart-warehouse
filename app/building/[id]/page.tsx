@@ -820,23 +820,38 @@ function HouseholdMemberRoleModal({
   const handleRoleChange = async (memberId: string, newRole: string) => {
     try {
       setUpdating((prev) => ({ ...prev, [memberId]: true }))
+      console.log('[HouseholdMemberRoleModal] Attempting role change:', {
+        memberId,
+        newRole,
+        householdId
+      })
+      
       const response = await fetch(`/api/household/members/${memberId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole }),
       })
 
+      const responseData = await response.json().catch(() => ({}))
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Failed to update role')
+        console.error('[HouseholdMemberRoleModal] Role update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: responseData.error,
+          debug: responseData.debug
+        })
+        throw new Error(responseData.error || `Failed to update role (${response.status})`)
       }
 
+      console.log('[HouseholdMemberRoleModal] Role updated successfully:', responseData)
       toast.success('Role updated successfully')
       fetchMembers()
       onUpdated()
     } catch (err) {
-      console.error('Error updating role:', err)
-      toast.error(err instanceof Error ? err.message : 'Error updating role')
+      console.error('[HouseholdMemberRoleModal] Error updating role:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error updating role'
+      toast.error(errorMessage)
     } finally {
       setUpdating((prev) => ({ ...prev, [memberId]: false }))
     }

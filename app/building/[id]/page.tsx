@@ -807,10 +807,14 @@ function HouseholdMemberRoleModal({
     try {
       setLoading(true)
       console.log('[HouseholdMemberRoleModal] Fetching members for household:', householdId)
-      const response = await fetch(`/api/household/members?householdId=${householdId}`, {
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime()
+      const response = await fetch(`/api/household/members?householdId=${householdId}&_t=${timestamp}`, {
         cache: 'no-store', // Always fetch fresh data
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       })
       
@@ -829,11 +833,17 @@ function HouseholdMemberRoleModal({
         members: data.members?.map((m: any) => ({
           id: m.id,
           email: m.user?.email,
-          role: m.role
+          role: m.role,
+          userId: m.user?.id
         })),
-        isBuildingAdmin: data.isBuildingAdmin
+        isBuildingAdmin: data.isBuildingAdmin,
+        timestamp: new Date().toISOString()
       })
-      setMembers(data.members || [])
+      // Force update state to ensure React re-renders with new data
+      setMembers([])
+      setTimeout(() => {
+        setMembers(data.members || [])
+      }, 0)
     } catch (err) {
       console.error('[HouseholdMemberRoleModal] Error fetching members:', err)
       toast.error(err instanceof Error ? err.message : 'Error loading members')
@@ -871,8 +881,11 @@ function HouseholdMemberRoleModal({
 
       console.log('[HouseholdMemberRoleModal] Role updated successfully:', responseData)
       toast.success('Role updated successfully')
-      fetchMembers()
-      onUpdated()
+      // Force refresh with a small delay to ensure database is updated
+      setTimeout(() => {
+        fetchMembers()
+        onUpdated()
+      }, 100)
     } catch (err) {
       console.error('[HouseholdMemberRoleModal] Error updating role:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error updating role'

@@ -2376,8 +2376,6 @@ const zh: Translations = {
   date: '日期',
   startTime: '开始时间',
   endTime: '结束时间',
-  optional: '选填',
-  optionalLabel: '选填',
   purposePlaceholder: '例如：团队会议、运动时间',
   notesPlaceholder: '其他备注...',
   notes: '备注',

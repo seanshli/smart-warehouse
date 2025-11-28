@@ -58,16 +58,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You are already a member of this household' }, { status: 400 })
     }
 
-    // Check if user is already a member of any household
-    const userMembership = await prisma.householdMember.findFirst({
-      where: { userId },
-    })
-
-    if (userMembership) {
-      return NextResponse.json({ 
-        error: 'You are already a member of another household. Please leave your current household first.' 
-      }, { status: 400 })
-    }
+    // Note: Users can be members of multiple households (e.g., own one, visit another)
+    // We only check if they're already a member of THIS specific household above
 
     // Check if household has existing members (other than the joining user)
     const existingMembers = await prisma.householdMember.findMany({
@@ -273,16 +265,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'You are already a member of this household' }, { status: 400 })
       }
 
-      // Check if user is already a member of any household
-      const userMembership = await prisma.householdMember.findFirst({
-        where: { userId },
-      })
-
-      if (userMembership) {
-        return NextResponse.json({ 
-          error: 'You are already a member of another household' 
-        }, { status: 400 })
-      }
+      // Note: Users can be members of multiple households
+      // We only check if they're already a member of THIS specific household above
     }
 
     return NextResponse.json({

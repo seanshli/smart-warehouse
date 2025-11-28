@@ -1590,7 +1590,6 @@ const zhTW: Translations = {
   purposePlaceholder: '例如：團隊會議、運動時間',
   notesPlaceholder: '其他備註...',
   notes: '備註',
-  cancel: '取消',
   cancelReservation: '取消',
   createReservation: '建立預約',
   submitting: '提交中...',

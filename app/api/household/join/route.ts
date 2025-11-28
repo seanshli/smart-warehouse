@@ -37,6 +37,13 @@ export async function POST(request: NextRequest) {
             user: true,
           },
         },
+        building: {
+          select: {
+            id: true,
+            name: true,
+            communityId: true,
+          },
+        },
       },
     })
 

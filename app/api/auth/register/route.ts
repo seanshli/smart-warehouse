@@ -95,6 +95,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // Auto-join Building and Community if household belongs to one
+      const { cascadeAutoJoin } = await import('@/lib/hierarchy-join-manager')
+      await cascadeAutoJoin(user.id, existingHousehold.id)
+
       household = existingHousehold
     } else {
       // Create a default household for the user

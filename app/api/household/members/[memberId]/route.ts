@@ -120,19 +120,17 @@ export async function PUT(
       return NextResponse.json({ error: 'Insufficient permissions. Only household OWNER or building ADMIN can modify roles.' }, { status: 403 })
     }
 
-    // If user is building admin, allow all role changes except removing OWNER role
+    // If user is building admin, allow ALL role changes including assigning OWNER
     if (isBuildingAdmin) {
       console.log('[Role Update] Building admin detected, allowing role change:', {
         currentRole: memberToUpdate.role,
         newRole: role,
         memberId: memberId,
-        householdId: memberToUpdate.householdId
+        householdId: memberToUpdate.householdId,
+        isBuildingAdmin: true
       })
-      // Building admin can assign any role, but cannot change OWNER to non-OWNER
-      if (memberToUpdate.role === 'OWNER' && role !== 'OWNER') {
-        return NextResponse.json({ error: 'Building admin cannot remove OWNER role. Only household OWNER can do this.' }, { status: 403 })
-      }
-      // Building admin can assign OWNER role to any member - no restrictions
+      // Building admin can assign ANY role including OWNER - no restrictions
+      // Building admin has full control over household member roles
     } else if (userRole) {
       // If user is household member (not building admin), check role management rules
       // Check if user can manage this role
@@ -146,8 +144,8 @@ export async function PUT(
       }
     }
 
-    // Prevent removing the last OWNER
-    if (memberToUpdate.role === 'OWNER' && role !== 'OWNER') {
+    // Prevent removing the last OWNER (unless building admin)
+    if (memberToUpdate.role === 'OWNER' && role !== 'OWNER' && !isBuildingAdmin) {
       const ownerCount = await prisma.householdMember.count({
         where: {
           householdId: memberToUpdate.householdId,

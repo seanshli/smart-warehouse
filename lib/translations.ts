@@ -2381,7 +2381,6 @@ const zh: Translations = {
   purposePlaceholder: '例如：团队会议、运动时间',
   notesPlaceholder: '其他备注...',
   notes: '备注',
-  cancel: '取消',
   cancelReservation: '取消',
   createReservation: '建立预约',
   submitting: '提交中...',

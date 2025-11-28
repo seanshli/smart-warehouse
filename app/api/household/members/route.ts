@@ -23,6 +23,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Household ID is required' }, { status: 400 })
     }
 
+    // Get household with building info
+    const household = await prisma.household.findUnique({
+      where: { id: householdId },
+      select: {
+        id: true,
+        buildingId: true,
+      },
+    })
+
+    if (!household) {
+      return NextResponse.json({ error: 'Household not found' }, { status: 404 })
+    }
+
     // Get user's role in this household
     const userMembership = await prisma.householdMember.findUnique({
       where: {
@@ -33,16 +46,50 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (!userMembership) {
-      return NextResponse.json({ error: 'User is not a member of this household' }, { status: 403 })
+    let userRole: UserRole | null = null
+    let hasPermission = false
+    let isBuildingAdmin = false
+
+    if (userMembership) {
+      userRole = userMembership.role as UserRole
+      const permissions = getPermissions(userRole)
+      if (permissions.canManageMembers) {
+        hasPermission = true
+      }
     }
 
-    const userRole = userMembership.role as UserRole
-    const permissions = getPermissions(userRole)
+    // Check if user is a building admin (even if not a household member)
+    if (household.buildingId) {
+      const buildingMembership = await prisma.buildingMember.findUnique({
+        where: {
+          userId_buildingId: {
+            userId: userId,
+            buildingId: household.buildingId
+          }
+        }
+      })
 
-    if (!permissions.canManageMembers) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
+        isBuildingAdmin = true
+        hasPermission = true
+        console.log('[Get Members] Building admin accessing household members:', {
+          userId,
+          buildingId: household.buildingId,
+          buildingRole: buildingMembership.role,
+          householdId
+        })
+      }
     }
+
+    if (!hasPermission) {
+      return NextResponse.json({ 
+        error: 'Insufficient permissions. Only household members with management rights or building admins can view members.' 
+      }, { status: 403 })
+    }
+
+    // If building admin, allow viewing all roles (no restrictions)
+    // If household member, use their role for permission checks
+    const effectiveUserRole = isBuildingAdmin ? 'OWNER' : (userRole || 'VISITOR')
 
     // Get all household members
     const members = await prisma.householdMember.findMany({

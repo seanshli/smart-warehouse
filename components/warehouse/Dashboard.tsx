@@ -45,6 +45,7 @@ import JoinHouseholdModal from '../JoinHouseholdModal'
 import VoiceAssistantPanel from '../VoiceAssistantPanel'
 import HomeAssistantPanel from '../mqtt/HomeAssistantPanel'
 import MQTTPanel from '../mqtt/MQTTPanel'
+import FacilityReservationPanel from '../facility/FacilityReservationPanel'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -567,33 +568,8 @@ export default function Dashboard() {
                    }}
                  />
                )}
-               {activeTab === 'reservations' && (
-                <DashboardContent
-                  household={household}
-                  refreshTrigger={refreshTrigger}
-                  onTabChange={setActiveTab}
-                  activeTab="reservations"
-                  onItemEdit={(item) => {
-                     setSelectedItem(item)
-                     setShowEditItem(true)
-                   }}
-                   onItemMove={(item) => {
-                     setSelectedItem(item)
-                     setShowMoveItem(true)
-                   }}
-                   onItemCheckout={(item) => {
-                     setSelectedItem(item)
-                     setShowCheckoutItem(true)
-                   }}
-                   onItemQuantityAdjust={(item) => {
-                     setSelectedItem(item)
-                     setShowQuantityAdjust(true)
-                   }}
-                   onItemHistory={(item) => {
-                     setSelectedItem(item)
-                     setShowItemHistory(true)
-                   }}
-                 />
+               {activeTab === 'reservations' && household?.id && (
+                 <FacilityReservationPanel householdId={household.id} />
                )}
               {activeTab === 'search' && <SearchPage />}
               {activeTab === 'assistant' && <VoiceAssistantPanel />}

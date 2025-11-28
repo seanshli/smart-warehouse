@@ -1591,6 +1591,7 @@ const zhTW: Translations = {
   notesPlaceholder: '其他備註...',
   notes: '備註',
   cancel: '取消',
+  cancelReservation: '取消',
   createReservation: '建立預約',
   submitting: '提交中...',
   reservationCreated: '預約請求已建立，等待審核',

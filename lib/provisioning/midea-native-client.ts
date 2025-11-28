@@ -1,5 +1,6 @@
 // Midea Native Provisioning Client
 // Abstracts native plugin calls and provides web fallbacks
+// Uses Capacitor v3+ registerPlugin API (not the old Plugins pattern)
 
 import { Capacitor } from '@capacitor/core'
 import { MideaProvisioning } from '../plugins/midea'

@@ -87,7 +87,24 @@ export async function PUT(
       if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
         isBuildingAdmin = true
         hasPermission = true
+        console.log('[Role Update] Building admin verified:', {
+          userId,
+          buildingId: memberToUpdate.household.buildingId,
+          buildingRole: buildingMembership.role,
+          isBuildingAdmin
+        })
+      } else {
+        console.log('[Role Update] Not a building admin:', {
+          userId,
+          buildingId: memberToUpdate.household.buildingId,
+          buildingMembership: buildingMembership ? { role: buildingMembership.role } : null
+        })
       }
+    } else {
+      console.log('[Role Update] Household has no buildingId:', {
+        householdId: memberToUpdate.householdId,
+        buildingId: memberToUpdate.household.buildingId
+      })
     }
 
     if (!hasPermission) {
@@ -96,11 +113,17 @@ export async function PUT(
 
     // If user is building admin, allow all role changes except removing OWNER role
     if (isBuildingAdmin) {
+      console.log('[Role Update] Building admin detected, allowing role change:', {
+        currentRole: memberToUpdate.role,
+        newRole: role,
+        memberId: memberId,
+        householdId: memberToUpdate.householdId
+      })
       // Building admin can assign any role, but cannot change OWNER to non-OWNER
       if (memberToUpdate.role === 'OWNER' && role !== 'OWNER') {
         return NextResponse.json({ error: 'Building admin cannot remove OWNER role. Only household OWNER can do this.' }, { status: 403 })
       }
-      // Building admin can assign OWNER role to any member
+      // Building admin can assign OWNER role to any member - no restrictions
     } else if (userRole) {
       // If user is household member (not building admin), check role management rules
       // Check if user can manage this role

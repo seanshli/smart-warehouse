@@ -72,6 +72,7 @@ export async function GET(
         address: h.address,
         floorNumber: h.floorNumber,
         floor: h.floor,
+        invitationCode: h.invitationCode,
         stats: {
           members: h._count.members,
           items: h._count.items,
@@ -100,6 +101,7 @@ export async function GET(
         address: h.address,
         floorNumber: h.floorNumber,
         floor: h.floor,
+        invitationCode: h.invitationCode,
         stats: {
           members: h._count.members,
           items: h._count.items,

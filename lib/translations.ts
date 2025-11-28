@@ -696,6 +696,12 @@ export interface Translations {
   householdMail: string
   householdPackage: string
   householdVisitorTag: string
+  householdId: string
+  householdInvitationCode: string
+  copyHouseholdId: string
+  householdActive: string
+  householdInactive: string
+  copyError: string
   addHousehold: string
   householdCount: string
   householdUnitLabels: string
@@ -1359,6 +1365,12 @@ const en: Translations = {
   householdMail: 'Mail',
   householdPackage: 'Package',
   householdVisitorTag: 'Visitor Tag',
+  householdId: 'Household ID',
+  householdInvitationCode: 'Invitation Code',
+  copyHouseholdId: 'Copy Household ID',
+  householdActive: 'Active',
+  householdInactive: 'Inactive',
+  copyError: 'Failed to copy',
   addHousehold: 'Add Household',
   householdCount: 'Number of households',
   householdUnitLabels: 'Unit labels',
@@ -2150,6 +2162,12 @@ const zhTW: Translations = {
   householdMail: '郵件',
   householdPackage: '包裹',
   householdVisitorTag: '訪客標籤',
+  householdId: '住戶 ID',
+  householdInvitationCode: '邀請碼',
+  copyHouseholdId: '複製住戶 ID',
+  householdActive: '已啟用',
+  householdInactive: '未啟用',
+  copyError: '複製失敗',
   addHousehold: '新增住戶',
   householdCount: '住戶數量',
   householdUnitLabels: '單元代號',
@@ -2890,6 +2908,12 @@ const zh: Translations = {
   householdMail: '邮件',
   householdPackage: '包裹',
   householdVisitorTag: '访客标签',
+  householdId: '住户 ID',
+  householdInvitationCode: '邀请码',
+  copyHouseholdId: '复制住户 ID',
+  householdActive: '已启用',
+  householdInactive: '未启用',
+  copyError: '复制失败',
   addHousehold: '新增住户',
   householdCount: '住户数量',
   householdUnitLabels: '单元代号',
@@ -3630,6 +3654,12 @@ const ja: Translations = {
   householdMail: 'メール',
   householdPackage: 'パッケージ',
   householdVisitorTag: '訪問者タグ',
+  householdId: '世帯 ID',
+  householdInvitationCode: '招待コード',
+  copyHouseholdId: '世帯 ID をコピー',
+  householdActive: 'アクティブ',
+  householdInactive: '非アクティブ',
+  copyError: 'コピーに失敗しました',
   addHousehold: '世帯を追加',
   householdCount: '世帯数',
   householdUnitLabels: 'ユニット記号',

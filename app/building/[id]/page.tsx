@@ -17,7 +17,10 @@ import {
   BuildingStorefrontIcon,
   CubeIcon,
   IdentificationIcon,
-  CogIcon
+  CogIcon,
+  ClipboardDocumentIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import Link from 'next/link'
@@ -411,6 +414,173 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
   )
 }
 
+function HouseholdCard({ household }: { household: any }) {
+  const { t } = useLanguage()
+  const [copiedId, setCopiedId] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
+  const isActive = household.stats.members > 0
+  
+  const copyToClipboard = async (text: string, type: 'id' | 'code') => {
+    try {
+      await navigator.clipboard.writeText(text)
+      if (type === 'id') {
+        setCopiedId(true)
+        setTimeout(() => setCopiedId(false), 2000)
+      } else {
+        setCopiedCode(true)
+        setTimeout(() => setCopiedCode(false), 2000)
+      }
+      toast.success(t('copyInvitationCode'))
+    } catch (err) {
+      toast.error(t('copyError'))
+    }
+  }
+  
+  return (
+    <div className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 w-72 flex-shrink-0">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/household/${household.id}`}
+              className="font-medium text-gray-900 hover:text-primary-600"
+            >
+              {household.name}
+            </Link>
+            {isActive ? (
+              <CheckCircleIcon className="h-4 w-4 text-green-500" title={t('householdActive')} />
+            ) : (
+              <XCircleIcon className="h-4 w-4 text-gray-400" title={t('householdInactive')} />
+            )}
+          </div>
+          {household.apartmentNo && (
+            <p className="text-xs text-gray-500 mt-1">{household.apartmentNo}</p>
+          )}
+        </div>
+      </div>
+      
+      {/* Household ID and Invitation Code */}
+      <div className="space-y-2 mb-3 pt-2 border-t border-gray-100">
+        {/* Household ID */}
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">{t('householdId')}:</span>
+          <div className="flex items-center gap-1">
+            <code className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded">
+              {household.id.substring(0, 8)}...
+            </code>
+            <button
+              onClick={() => copyToClipboard(household.id, 'id')}
+              className="p-1 text-gray-500 hover:text-primary-600"
+              title={t('copyHouseholdId')}
+            >
+              {copiedId ? (
+                <CheckCircleIcon className="h-4 w-4 text-green-500" />
+              ) : (
+                <ClipboardDocumentIcon className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+        </div>
+        
+        {/* Invitation Code */}
+        {household.invitationCode && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">{t('householdInvitationCode')}:</span>
+            <div className="flex items-center gap-1">
+              <code className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                {household.invitationCode.substring(0, 8)}...
+              </code>
+              <button
+                onClick={() => copyToClipboard(household.invitationCode, 'code')}
+                className="p-1 text-gray-500 hover:text-primary-600"
+                title={t('copyInvitationCode')}
+              >
+                {copiedCode ? (
+                  <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                ) : (
+                  <ClipboardDocumentIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-3 gap-2 mb-3 pt-2 border-t border-gray-100">
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1">
+            <HomeIcon className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-sm font-semibold text-gray-900">{household.stats.members}</div>
+        </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1">
+            <CubeIcon className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-sm font-semibold text-gray-900">{household.stats.items}</div>
+        </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1">
+            <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-sm font-semibold text-gray-900">{household.stats.rooms}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1 pt-2 border-t border-gray-100 text-xs">
+        <Link
+          href={`/household/${household.id}/reservation`}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+          title={t('householdReservation')}
+        >
+          <CalendarIcon className="h-4 w-4 mb-1" />
+          <span className="hidden sm:inline">{t('householdReservation')}</span>
+        </Link>
+        <Link
+          href={`/household/${household.id}/maintenance`}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+          title={t('householdMaintenance')}
+        >
+          <WrenchScrewdriverIcon className="h-4 w-4 mb-1" />
+          <span className="hidden sm:inline">{t('householdMaintenance')}</span>
+        </Link>
+        <div className="relative group">
+          <button
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors w-full"
+            title={t('householdProperty')}
+          >
+            <BuildingStorefrontIcon className="h-4 w-4 mb-1" />
+            <span className="hidden sm:inline">{t('householdProperty')}</span>
+          </button>
+          <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[140px]">
+            <Link
+              href={`/household/${household.id}/property/mail`}
+              className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
+            >
+              <EnvelopeIcon className="h-4 w-4 mr-2" />
+              {t('householdMail')}
+            </Link>
+            <Link
+              href={`/household/${household.id}/property/package`}
+              className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
+            >
+              <CubeIcon className="h-4 w-4 mr-2" />
+              {t('householdPackage')}
+            </Link>
+            <Link
+              href={`/household/${household.id}/property/visitor`}
+              className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
+            >
+              <IdentificationIcon className="h-4 w-4 mr-2" />
+              {t('householdVisitorTag')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HouseholdsTab({ buildingId }: { buildingId: string }) {
   const { t } = useLanguage()
   const [floors, setFloors] = useState<any[]>([])
@@ -468,96 +638,7 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
               <div className="overflow-x-auto">
                 <div className="flex gap-3 min-w-max">
                   {floor.households.map((household: any) => (
-                    <div
-                      key={household.id}
-                      className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 w-64 flex-shrink-0"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <Link
-                            href={`/household/${household.id}`}
-                            className="font-medium text-gray-900 hover:text-primary-600"
-                          >
-                            {household.name}
-                          </Link>
-                          {household.apartmentNo && (
-                            <p className="text-xs text-gray-500 mt-1">{household.apartmentNo}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 mb-3 pt-2 border-t border-gray-100">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center mb-1">
-                            <HomeIcon className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="text-sm font-semibold text-gray-900">{household.stats.members}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center mb-1">
-                            <CubeIcon className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="text-sm font-semibold text-gray-900">{household.stats.items}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center mb-1">
-                            <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="text-sm font-semibold text-gray-900">{household.stats.rooms}</div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-1 pt-2 border-t border-gray-100 text-xs">
-                        <Link
-                          href={`/household/${household.id}/reservation`}
-                          className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                          title={t('householdReservation')}
-                        >
-                          <CalendarIcon className="h-4 w-4 mb-1" />
-                          <span className="hidden sm:inline">{t('householdReservation')}</span>
-                        </Link>
-                        <Link
-                          href={`/household/${household.id}/maintenance`}
-                          className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                          title={t('householdMaintenance')}
-                        >
-                          <WrenchScrewdriverIcon className="h-4 w-4 mb-1" />
-                          <span className="hidden sm:inline">{t('householdMaintenance')}</span>
-                        </Link>
-                        <div className="relative group">
-                          <button
-                            className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors w-full"
-                            title={t('householdProperty')}
-                          >
-                            <BuildingStorefrontIcon className="h-4 w-4 mb-1" />
-                            <span className="hidden sm:inline">{t('householdProperty')}</span>
-                          </button>
-                          <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[140px]">
-                            <Link
-                              href={`/household/${household.id}/property/mail`}
-                              className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
-                            >
-                              <EnvelopeIcon className="h-4 w-4 mr-2" />
-                              {t('householdMail')}
-                            </Link>
-                            <Link
-                              href={`/household/${household.id}/property/package`}
-                              className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
-                            >
-                              <CubeIcon className="h-4 w-4 mr-2" />
-                              {t('householdPackage')}
-                            </Link>
-                            <Link
-                              href={`/household/${household.id}/property/visitor`}
-                              className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
-                            >
-                              <IdentificationIcon className="h-4 w-4 mr-2" />
-                              {t('householdVisitorTag')}
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <HouseholdCard key={household.id} household={household} />
                   ))}
                 </div>
               </div>

@@ -439,6 +439,11 @@ export interface Translations {
   searchByCategory: string
   searchByLocation: string
   useChatGPT: string
+  propertyServices: string
+  propertyServicesSubtitle: string
+  openReservations: string
+  openBuildingServices: string
+  buildingNotLinked: string
   
   // Image upload
   itemPhoto: string
@@ -1682,6 +1687,11 @@ const zhTW: Translations = {
   message: '訊息',
   manageAnnouncements: '管理公告',
   noAnnouncements: '無公告',
+  propertyServices: '物業服務',
+  propertyServicesSubtitle: '信箱 / 包裹 / 門鈴與共用空間',
+  openReservations: '預約共用設施',
+  openBuildingServices: '查看信箱 / 包裹 / 門鈴',
+  buildingNotLinked: '此家庭尚未連結大樓資料',
   clickToView: '點擊查看',
   unread: '未讀',
   system: '系統',
@@ -2509,6 +2519,11 @@ const zh: Translations = {
   sendAnnouncement: '发送公告',
   title: '标题',
   message: '消息',
+  propertyServices: '物业服务',
+  propertyServicesSubtitle: '信箱 / 包裹 / 门铃与共用空间',
+  openReservations: '预约共用设施',
+  openBuildingServices: '查看信箱 / 包裹 / 门铃',
+  buildingNotLinked: '此家庭尚未连接大楼资料',
   manageAnnouncements: '管理公告',
   noAnnouncements: '无公告',
   clickToView: '点击查看',
@@ -3335,6 +3350,11 @@ const ja: Translations = {
   createAnnouncement: 'お知らせを作成',
   sendAnnouncement: 'お知らせを送信',
   title: 'タイトル',
+  propertyServices: '物件サービス',
+  propertyServicesSubtitle: '郵便 / 荷物 / ドアベルと共用スペース',
+  openReservations: '共用施設を予約',
+  openBuildingServices: '郵便 / 荷物 / ドアベルを表示',
+  buildingNotLinked: 'この世帯はまだ建物にリンクされていません',
   message: 'メッセージ',
   manageAnnouncements: 'お知らせを管理',
   noAnnouncements: 'お知らせなし',

@@ -20,8 +20,10 @@ import {
   ExclamationTriangleIcon,
   SparklesIcon,
   ShieldCheckIcon,
-  WifiIcon
+  WifiIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 import AddItemModal from './AddItemModal'
 import SearchModal from './SearchModal'
 import EditItemModal from './EditItemModal'
@@ -978,7 +980,7 @@ function DashboardContent({
       id: 'property',
       title: translate('propertyServices', '物業服務'),
       subtitle: translate('propertyServicesSubtitle', '信箱 / 包裹 / 門鈴與共用空間'),
-      icon: BuildingStorefrontIcon,
+      icon: BuildingOfficeIcon,
       tag: 'NEW',
       metrics: [
         { label: translate('upcoming', '即將到來'), value: upcomingReservations },

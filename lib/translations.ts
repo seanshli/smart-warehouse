@@ -457,6 +457,18 @@ export interface Translations {
   lastMailAt: string
   lastRungAt: string
   checkedInAt: string
+  packageCheckedOut: string
+  mailCheckedOut: string
+  packageCreated: string
+  assignPackage: string
+  packageLockerDescription: string
+  noPackageLockers: string
+  selectHousehold: string
+  enterTrackingNumber: string
+  assign: string
+  tracking: string
+  locker: string
+  empty: string
   enabled: string
   disabled: string
   pending: string
@@ -1547,6 +1559,18 @@ const en: Translations = {
   lastMailAt: 'Last mail',
   lastRungAt: 'Last rung',
   checkedInAt: 'Checked in',
+  packageCheckedOut: 'Package checked out successfully',
+  mailCheckedOut: 'Mail checked out successfully',
+  packageCreated: 'Package created successfully',
+  assignPackage: 'Assign Package',
+  packageLockerDescription: 'Click on an empty locker to assign a package to a household',
+  noPackageLockers: 'No package lockers configured',
+  selectHousehold: 'Select household',
+  enterTrackingNumber: 'Enter tracking number',
+  assign: 'Assign Package',
+  tracking: 'Tracking',
+  locker: 'Locker',
+  empty: 'Empty',
   enabled: 'Enabled',
   disabled: 'Disabled',
   pending: 'Pending',
@@ -1757,6 +1781,18 @@ const zhTW: Translations = {
   doorBellNumber: '門鈴號碼',
   packageLocker: '包裹櫃',
   packageNumber: '追蹤號碼',
+  packageCheckedOut: '包裹已領取',
+  mailCheckedOut: '郵件已領取',
+  packageCreated: '包裹已建立',
+  assignPackage: '分配包裹',
+  packageLockerDescription: '點擊空置的包裹櫃以分配包裹給住戶',
+  noPackageLockers: '尚未設置包裹櫃',
+  selectHousehold: '選擇住戶',
+  enterTrackingNumber: '輸入追蹤號碼',
+  assign: '分配包裹',
+  tracking: '追蹤',
+  locker: '包裹櫃',
+  empty: '空置',
   noMailboxAssigned: '此家庭尚未分配信箱',
   noDoorbellsAssigned: '此家庭尚未分配門鈴',
   noPackages: '目前沒有待領取的包裹',
@@ -2578,6 +2614,18 @@ const zh: Translations = {
   doorBellNumber: '门铃号码',
   packageLocker: '包裹柜',
   packageNumber: '追踪号码',
+  packageCheckedOut: '包裹已领取',
+  mailCheckedOut: '邮件已领取',
+  packageCreated: '包裹已创建',
+  assignPackage: '分配包裹',
+  packageLockerDescription: '点击空置的包裹柜以分配包裹给住户',
+  noPackageLockers: '尚未设置包裹柜',
+  selectHousehold: '选择住户',
+  enterTrackingNumber: '输入追踪号码',
+  assign: '分配包裹',
+  tracking: '追踪',
+  locker: '包裹柜',
+  empty: '空置',
   noMailboxAssigned: '此家庭尚未分配信箱',
   noDoorbellsAssigned: '此家庭尚未分配门铃',
   noPackages: '目前没有待领取的包裹',
@@ -3415,6 +3463,18 @@ const ja: Translations = {
   title: 'タイトル',
   propertyServices: '物件サービス',
   propertyServicesSubtitle: '郵便 / 荷物 / ドアベルと共用スペース',
+  packageCheckedOut: '荷物を受け取りました',
+  mailCheckedOut: '郵便を受け取りました',
+  packageCreated: '荷物が作成されました',
+  assignPackage: '荷物を割り当て',
+  packageLockerDescription: '空いているロッカーをクリックして、世帯に荷物を割り当てます',
+  noPackageLockers: '荷物ロッカーが設定されていません',
+  selectHousehold: '世帯を選択',
+  enterTrackingNumber: '追跡番号を入力',
+  assign: '荷物を割り当て',
+  tracking: '追跡',
+  locker: 'ロッカー',
+  empty: '空',
   openReservations: '共用施設を予約',
   openBuildingServices: '郵便 / 荷物 / ドアベルを表示',
   buildingNotLinked: 'この世帯はまだ建物にリンクされていません',

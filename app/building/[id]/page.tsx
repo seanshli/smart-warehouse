@@ -23,6 +23,7 @@ import {
   XCircleIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
+import PackageManager from '@/components/building/PackageManager'
 import QRCodeDisplay from '@/components/QRCode'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -65,6 +66,7 @@ export default function BuildingDetailPage() {
       | 'households'
       | 'mailboxes'
       | 'frontdoor'
+      | 'packages'
       | 'facilities'
       | 'announcements'
       | null) || 'overview'
@@ -73,7 +75,7 @@ export default function BuildingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'announcements'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'facilities' | 'announcements'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
 
@@ -187,6 +189,7 @@ export default function BuildingDetailPage() {
               { id: 'households', name: t('buildingHouseholds'), icon: HomeIcon },
               { id: 'frontdoor', name: t('frontDoorCommonArea'), icon: BuildingStorefrontIcon },
               { id: 'mailboxes', name: t('buildingMailboxes'), icon: EnvelopeIcon },
+              { id: 'packages', name: t('packageLocker') || 'Packages', icon: CubeIcon },
               { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
               { id: 'announcements', name: t('announcements'), icon: BellIcon },
             ].map((tab) => {
@@ -215,6 +218,7 @@ export default function BuildingDetailPage() {
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
           {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} />}
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
+          {activeTab === 'packages' && <PackageManager buildingId={buildingId} />}
           {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} />}
           {activeTab === 'announcements' && buildingId && (
             <AnnouncementsTab 

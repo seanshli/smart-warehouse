@@ -221,15 +221,44 @@ export default function HouseholdPropertyPage() {
                         )}
                       </div>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      mailbox.hasMail
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {mailbox.hasMail 
-                        ? (t('hasMail') || 'Has Mail') 
-                        : (t('noMail') || 'No Mail')
-                      }
+                    <div className="flex flex-col items-end space-y-2">
+                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        mailbox.hasMail
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {mailbox.hasMail 
+                          ? (t('hasMail') || 'Has Mail') 
+                          : (t('noMail') || 'No Mail')
+                        }
+                      </div>
+                      {mailbox.hasMail && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`/api/mailbox/${mailbox.id}/checkout`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                              })
+                              
+                              if (!response.ok) {
+                                const error = await response.json()
+                                throw new Error(error.error || 'Failed to check out mail')
+                              }
+                              
+                              toast.success(t('mailCheckedOut') || 'Mail checked out successfully')
+                              fetchPropertyData()
+                            } catch (error) {
+                              console.error('Error checking out mail:', error)
+                              toast.error(error instanceof Error ? error.message : 'Failed to check out mail')
+                            }
+                          }}
+                          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                        >
+                          <CheckCircleIcon className="h-4 w-4 inline mr-1" />
+                          {t('checkout') || 'Check Out'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -348,6 +377,35 @@ export default function HouseholdPropertyPage() {
                               </div>
                             )}
                           </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {pkg.status === 'pending' && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/package/${pkg.id}/checkout`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                  })
+                                  
+                                  if (!response.ok) {
+                                    const error = await response.json()
+                                    throw new Error(error.error || 'Failed to check out package')
+                                  }
+                                  
+                                  toast.success(t('packageCheckedOut') || 'Package checked out successfully')
+                                  fetchPropertyData()
+                                } catch (error) {
+                                  console.error('Error checking out package:', error)
+                                  toast.error(error instanceof Error ? error.message : 'Failed to check out package')
+                                }
+                              }}
+                              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                            >
+                              <CheckCircleIcon className="h-4 w-4 inline mr-1" />
+                              {t('checkout') || 'Check Out'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

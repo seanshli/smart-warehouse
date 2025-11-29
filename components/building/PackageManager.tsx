@@ -240,7 +240,7 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('household') || 'Household'} <span className="text-red-500">*</span>
+                  Household <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.householdId}

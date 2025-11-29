@@ -3191,7 +3191,6 @@ const zh: Translations = {
   failedToValidateCode: '验证邀请码失败',
   enterInvitationCode: '输入邀请码（可选）',
   invalidInvitationCode: '无效的邀请码',
-  householdNotFound: '找不到家庭',
   alreadyMemberOfHousehold: '您已经是此家庭的成员',
   alreadyMemberOfAnotherHousehold: '您已经是另一个家庭的成员',
   

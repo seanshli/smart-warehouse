@@ -138,7 +138,7 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {t('packageLockers') || 'Package Lockers'}
+            {t('packageLocker') || 'Package Lockers'}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {t('packageLockerDescription') || 'Click on an empty locker to assign a package to a household'}

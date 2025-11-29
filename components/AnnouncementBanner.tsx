@@ -299,7 +299,7 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              setDismissedIds(prev => new Set([...prev, announcement.id]))
+                              setDismissedIds(prev => new Set([...Array.from(prev), announcement.id]))
                             }}
                             className="flex-shrink-0 text-gray-400 hover:text-gray-600 ml-2"
                           >
@@ -318,4 +318,5 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
     </div>
   )
 }
+
 

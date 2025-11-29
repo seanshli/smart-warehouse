@@ -237,7 +237,7 @@ export async function POST(
     }
 
     // Check for overlapping reservations (approved or pending)
-    const overlapping = await prisma.facilityReservation.findFirst({
+    const overlappingReservations = await prisma.facilityReservation.findMany({
       where: {
         facilityId,
         status: {
@@ -274,38 +274,96 @@ export async function POST(
       },
     })
 
-    if (overlapping) {
-      // Find next available slot
-      const nextAvailable = await prisma.facilityReservation.findFirst({
-        where: {
-          facilityId,
-          status: {
-            in: ['pending', 'approved'],
+    // If facility has a capacity, check if total people exceeds capacity
+    if (facility.capacity && facility.capacity > 0) {
+      // Sum up people from all overlapping reservations
+      const totalPeopleInOverlapping = overlappingReservations.reduce((sum, res) => {
+        return sum + (res.numberOfPeople || 1) // Default to 1 if numberOfPeople is null
+      }, 0)
+      
+      // Add the new reservation's people count
+      const newReservationPeople = numberOfPeople ? parseInt(numberOfPeople) : 1
+      const totalPeople = totalPeopleInOverlapping + newReservationPeople
+      
+      if (totalPeople > facility.capacity) {
+        // Find next available slot
+        const lastOverlapping = overlappingReservations.sort((a, b) => 
+          new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
+        )[0]
+        
+        const nextAvailable = await prisma.facilityReservation.findFirst({
+          where: {
+            facilityId,
+            status: {
+              in: ['pending', 'approved'],
+            },
+            startTime: {
+              gt: lastOverlapping.endTime,
+            },
           },
-          startTime: {
-            gt: overlapping.endTime,
+          orderBy: {
+            startTime: 'asc',
           },
-        },
-        orderBy: {
-          startTime: 'asc',
-        },
-      })
+        })
 
-      return NextResponse.json(
-        { 
-          error: 'Time slot is already reserved',
-          conflict: {
-            household: overlapping.household.name || overlapping.household.apartmentNo,
-            startTime: overlapping.startTime,
-            endTime: overlapping.endTime,
+        return NextResponse.json(
+          { 
+            error: `Facility capacity exceeded. Current reservations: ${totalPeopleInOverlapping}/${facility.capacity}, adding ${newReservationPeople} would exceed capacity.`,
+            conflict: {
+              totalPeople: totalPeopleInOverlapping,
+              capacity: facility.capacity,
+              newReservationPeople: newReservationPeople,
+            },
+            nextAvailable: nextAvailable ? {
+              startTime: nextAvailable.startTime,
+              endTime: nextAvailable.endTime,
+            } : null,
           },
-          nextAvailable: nextAvailable ? {
-            startTime: nextAvailable.startTime,
-            endTime: nextAvailable.endTime,
-          } : null,
-        },
-        { status: 400 }
-      )
+          { status: 400 }
+        )
+      }
+      // If capacity allows, proceed with creating the reservation
+    } else {
+      // If no capacity is set, block overlaps (for exclusive facilities like meeting rooms)
+      if (overlappingReservations.length > 0) {
+        const firstOverlapping = overlappingReservations[0]
+        
+        // Find next available slot
+        const lastOverlapping = overlappingReservations.sort((a, b) => 
+          new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
+        )[0]
+        
+        const nextAvailable = await prisma.facilityReservation.findFirst({
+          where: {
+            facilityId,
+            status: {
+              in: ['pending', 'approved'],
+            },
+            startTime: {
+              gt: lastOverlapping.endTime,
+            },
+          },
+          orderBy: {
+            startTime: 'asc',
+          },
+        })
+
+        return NextResponse.json(
+          { 
+            error: 'Time slot is already reserved',
+            conflict: {
+              household: firstOverlapping.household.name || firstOverlapping.household.apartmentNo,
+              startTime: firstOverlapping.startTime,
+              endTime: firstOverlapping.endTime,
+            },
+            nextAvailable: nextAvailable ? {
+              startTime: nextAvailable.startTime,
+              endTime: nextAvailable.endTime,
+            } : null,
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Create reservation (pending, needs building admin approval)

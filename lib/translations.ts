@@ -2590,7 +2590,6 @@ const zh: Translations = {
   disabled: '停用',
   pending: '待领取',
   householdNotFound: '找不到家庭资料',
-  back: '返回',
   manageAnnouncements: '管理公告',
   noAnnouncements: '无公告',
   clickToView: '点击查看',

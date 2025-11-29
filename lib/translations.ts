@@ -3312,6 +3312,8 @@ const ja: Translations = {
   date: '日付',
   startTime: '開始時間',
   endTime: '終了時間',
+  numberOfPeople: '予定人数',
+  numberOfPeoplePlaceholder: '例：5',
   optional: 'オプション',
   optionalLabel: 'オプション',
   purposePlaceholder: '例：チームミーティング、ワークアウトセッション',

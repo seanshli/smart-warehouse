@@ -202,11 +202,34 @@ export async function POST(
       const [openHour, openMinute] = operatingHours.openTime.split(':').map(Number)
       const [closeHour, closeMinute] = operatingHours.closeTime.split(':').map(Number)
       
-      // Extract time from reservation start and end times
-      const reservationStartHour = start.getHours()
-      const reservationStartMinute = start.getMinutes()
-      const reservationEndHour = end.getHours()
-      const reservationEndMinute = end.getMinutes()
+      // Extract time from the ISO string directly to avoid timezone issues
+      // Parse the time from the original string to get the intended local time
+      const startTimeStr = typeof startTime === 'string' ? startTime : startTime.toISOString()
+      const endTimeStr = typeof endTime === 'string' ? endTime : endTime.toISOString()
+      
+      // Extract hour and minute from ISO string (format: YYYY-MM-DDTHH:MM:SS or YYYY-MM-DDTHH:MM:SS.sssZ)
+      const startMatch = startTimeStr.match(/T(\d{2}):(\d{2})/)
+      const endMatch = endTimeStr.match(/T(\d{2}):(\d{2})/)
+      
+      // If we can't parse from string, fall back to getHours/getMinutes (local time)
+      let reservationStartHour: number
+      let reservationStartMinute: number
+      let reservationEndHour: number
+      let reservationEndMinute: number
+      
+      if (startMatch && endMatch) {
+        // Parse from ISO string - this gives us the time as entered
+        reservationStartHour = parseInt(startMatch[1], 10)
+        reservationStartMinute = parseInt(startMatch[2], 10)
+        reservationEndHour = parseInt(endMatch[1], 10)
+        reservationEndMinute = parseInt(endMatch[2], 10)
+      } else {
+        // Fallback to local time extraction
+        reservationStartHour = start.getHours()
+        reservationStartMinute = start.getMinutes()
+        reservationEndHour = end.getHours()
+        reservationEndMinute = end.getMinutes()
+      }
       
       // Convert to minutes for easier comparison
       const openTimeMinutes = openHour * 60 + openMinute
@@ -214,9 +237,31 @@ export async function POST(
       const reservationStartMinutes = reservationStartHour * 60 + reservationStartMinute
       const reservationEndMinutes = reservationEndHour * 60 + reservationEndMinute
       
+      // Debug logging
+      console.log('[Reservation Operating Hours Check]', {
+        operatingHours: `${operatingHours.openTime} - ${operatingHours.closeTime}`,
+        openTimeMinutes,
+        closeTimeMinutes,
+        reservationStart: `${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}`,
+        reservationEnd: `${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}`,
+        reservationStartMinutes,
+        reservationEndMinutes,
+        startTimeStr,
+        endTimeStr,
+        startISO: start.toISOString(),
+        endISO: end.toISOString(),
+        startLocal: start.toLocaleString(),
+        endLocal: end.toLocaleString(),
+      })
+      
       // Check if reservation is within operating hours
       // Allow reservations that start at or after open time and end at or before close time
       if (reservationStartMinutes < openTimeMinutes || reservationEndMinutes > closeTimeMinutes) {
+        console.log('[Reservation Operating Hours Check] FAILED', {
+          reason: reservationStartMinutes < openTimeMinutes 
+            ? `Start time ${reservationStartMinutes} (${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}) is before open time ${openTimeMinutes} (${operatingHours.openTime})`
+            : `End time ${reservationEndMinutes} (${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}) is after close time ${closeTimeMinutes} (${operatingHours.closeTime})`,
+        })
         return NextResponse.json(
           { 
             error: `Reservation must be within operating hours (${operatingHours.openTime} - ${operatingHours.closeTime})`,
@@ -233,6 +278,8 @@ export async function POST(
           { status: 400 }
         )
       }
+      
+      console.log('[Reservation Operating Hours Check] PASSED')
     }
 
     // Create reservation

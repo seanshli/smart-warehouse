@@ -13,7 +13,8 @@ import {
   PencilIcon,
   TrashIcon,
   ArrowLeftIcon,
-  PlusIcon
+  PlusIcon,
+  BellIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -21,7 +22,6 @@ import QRCodeDisplay from '@/components/QRCode'
 import JoinRequestList from '@/components/community/JoinRequestList'
 import { useLanguage } from '@/components/LanguageProvider'
 import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
-import { BellIcon } from '@heroicons/react/24/outline'
 
 interface Community {
   id: string

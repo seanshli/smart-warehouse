@@ -1658,6 +1658,8 @@ const zhTW: Translations = {
   date: '日期',
   startTime: '開始時間',
   endTime: '結束時間',
+  numberOfPeople: '預計人數',
+  numberOfPeoplePlaceholder: '例如 : 5',
   purposePlaceholder: '例如：團隊會議、運動時間',
   notesPlaceholder: '其他備註...',
   notes: '備註',

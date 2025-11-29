@@ -217,15 +217,30 @@ export async function POST(
     if (operatingHours) {
       const [openHour, openMinute] = operatingHours.openTime.split(':').map(Number)
       const [closeHour, closeMinute] = operatingHours.closeTime.split(':').map(Number)
-      const openTime = new Date(start)
-      openTime.setHours(openHour, openMinute, 0, 0)
-      const closeTime = new Date(start)
-      closeTime.setHours(closeHour, closeMinute, 0, 0)
-
-      if (start < openTime || end > closeTime) {
+      
+      // Extract time from reservation start and end times
+      const reservationStartHour = start.getHours()
+      const reservationStartMinute = start.getMinutes()
+      const reservationEndHour = end.getHours()
+      const reservationEndMinute = end.getMinutes()
+      
+      // Convert to minutes for easier comparison
+      const openTimeMinutes = openHour * 60 + openMinute
+      const closeTimeMinutes = closeHour * 60 + closeMinute
+      const reservationStartMinutes = reservationStartHour * 60 + reservationStartMinute
+      const reservationEndMinutes = reservationEndHour * 60 + reservationEndMinute
+      
+      // Check if reservation is within operating hours
+      // Allow reservations that start at or after open time and end at or before close time
+      if (reservationStartMinutes < openTimeMinutes || reservationEndMinutes > closeTimeMinutes) {
         return NextResponse.json(
           { 
             error: `Reservation must be within operating hours (${operatingHours.openTime} - ${operatingHours.closeTime})`,
+            details: {
+              requestedStart: `${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}`,
+              requestedEnd: `${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}`,
+              operatingHours: `${operatingHours.openTime} - ${operatingHours.closeTime}`,
+            },
             suggestedTimes: {
               earliest: operatingHours.openTime,
               latest: operatingHours.closeTime,

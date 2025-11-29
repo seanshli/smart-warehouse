@@ -2462,7 +2462,6 @@ const zhTW: Translations = {
   householdReservation: '預定',
   householdMaintenance: '報修',
   householdProperty: '物業',
-  householdMail: '郵件',
   householdPackage: '包裹',
   householdVisitorTag: '訪客標籤',
   householdInvitationCode: '邀請碼',

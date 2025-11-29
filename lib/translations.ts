@@ -4156,8 +4156,6 @@ const ja: Translations = {
   householdReservation: '予約',
   householdMaintenance: '修理',
   householdProperty: '物件',
-  householdMail: 'メール',
-  householdPackage: 'パッケージ',
   householdVisitorTag: '訪問者タグ',
   householdInvitationCode: '招待コード',
   copyHouseholdId: '世帯 ID をコピー',

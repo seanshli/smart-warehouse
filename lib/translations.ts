@@ -3140,7 +3140,6 @@ const zh: Translations = {
   checkDuplicates: '检查重复项目',
   backToApp: '返回应用',
   avgItemsPerHousehold: '平均每户物品数',
-  allHouseholds: '所有家庭',
   updatePhoto: '更新照片',
   tryAdjustingSearch: '请尝试调整搜索或筛选条件。',
   noItemsCreatedYet: '尚未创建任何物品。',

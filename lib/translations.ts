@@ -1784,6 +1784,7 @@ const zhTW: Translations = {
   
   // Admin
   adminPanel: '管理面板',
+  adminAnnouncements: '公告',
   adminManagement: '智能倉庫管理',
   adminDashboard: '儀表板',
   adminCommunities: '社區',
@@ -2610,6 +2611,7 @@ const zh: Translations = {
   
   // Admin
   adminPanel: '管理面板',
+  adminAnnouncements: '公告',
   adminManagement: '智能仓库管理',
   adminDashboard: '仪表板',
   adminCommunities: '社区',
@@ -4042,7 +4044,6 @@ const ja: Translations = {
   householdMail: 'メール',
   householdPackage: 'パッケージ',
   householdVisitorTag: '訪問者タグ',
-  householdId: '世帯 ID',
   householdInvitationCode: '招待コード',
   copyHouseholdId: '世帯 ID をコピー',
   householdActive: 'アクティブ',

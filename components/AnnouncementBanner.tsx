@@ -120,13 +120,13 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
   const getSourceColor = (source: string) => {
     switch (source) {
       case 'SYSTEM':
-        return 'bg-blue-50 border-blue-200 text-blue-800'
+        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
       case 'COMMUNITY':
-        return 'bg-green-50 border-green-200 text-green-800'
+        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
       case 'BUILDING':
-        return 'bg-purple-50 border-purple-200 text-purple-800'
+        return 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300'
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-800'
+        return 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-300'
     }
   }
 
@@ -141,10 +141,10 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
 
   if (loading) {
     return (
-      <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+      <div className="mb-4 border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <span className="text-sm text-gray-600">{t('commonLoading') || 'Loading announcements...'}</span>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('commonLoading') || 'Loading announcements...'}</span>
         </div>
       </div>
     )
@@ -156,29 +156,31 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
       {!expanded && (
         <div
           className={`border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow ${
-            unreadCount > 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'
+            unreadCount > 0 
+              ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+              : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'
           }`}
           onClick={() => setExpanded(true)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <InformationCircleIcon className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-gray-900">
+              <InformationCircleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium text-gray-900 dark:text-gray-100">
                 {t('announcements') || 'Announcements'}
               </span>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 text-xs font-semibold text-white bg-blue-600 rounded-full">
+                <span className="px-2 py-0.5 text-xs font-semibold text-white bg-blue-600 dark:bg-blue-500 rounded-full">
                   {unreadCount}
                 </span>
               )}
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {announcements.length === 0
                   ? (t('noAnnouncements') || 'No announcements yet')
                   : (t('clickToView') || 'Click to view')}
               </span>
-              <ClockIcon className="h-4 w-4 text-gray-400" />
+              <ClockIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
             </div>
           </div>
         </div>
@@ -186,36 +188,36 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
 
       {/* Expanded View */}
       {expanded && (
-        <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
-              <InformationCircleIcon className="h-6 w-6 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
+              <InformationCircleIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {t('announcements') || 'Announcements'}
               </h3>
               {unreadCount > 0 && (
-                <span className="px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded-full">
+                <span className="px-2 py-1 text-xs font-semibold text-white bg-blue-600 dark:bg-blue-500 rounded-full">
                   {unreadCount} {t('unread') || 'unread'}
                 </span>
               )}
             </div>
             <button
               onClick={() => setExpanded(false)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setActiveTab('all')}
               className={`px-4 py-2 text-sm font-medium ${
                 activeTab === 'all'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {t('all') || 'All'} ({announcements.length})
@@ -224,8 +226,8 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
               onClick={() => setActiveTab('SYSTEM')}
               className={`px-4 py-2 text-sm font-medium ${
                 activeTab === 'SYSTEM'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {t('system') || 'System'} ({grouped.SYSTEM?.length || 0})
@@ -234,8 +236,8 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
               onClick={() => setActiveTab('COMMUNITY')}
               className={`px-4 py-2 text-sm font-medium ${
                 activeTab === 'COMMUNITY'
-                  ? 'border-b-2 border-green-600 text-green-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-green-600 dark:border-green-400 text-green-600 dark:text-green-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {t('community') || 'Community'} ({grouped.COMMUNITY?.length || 0})
@@ -244,8 +246,8 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
               onClick={() => setActiveTab('BUILDING')}
               className={`px-4 py-2 text-sm font-medium ${
                 activeTab === 'BUILDING'
-                  ? 'border-b-2 border-purple-600 text-purple-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {t('building') || 'Building'} ({grouped.BUILDING?.length || 0})
@@ -255,16 +257,16 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
           {/* Announcements List */}
           <div className="max-h-96 overflow-y-auto">
             {displayedAnnouncements.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 {t('noAnnouncements') || 'No announcements'}
               </div>
             ) : (
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {displayedAnnouncements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className={`p-4 hover:bg-gray-50 transition-colors ${
-                      !announcement.isRead ? 'bg-blue-50' : ''
+                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                      !announcement.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                     }`}
                     onClick={() => {
                       if (!announcement.isRead) {
@@ -283,20 +285,20 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
-                              <h4 className="text-sm font-semibold text-gray-900">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                                 {announcement.title}
                               </h4>
                               {!announcement.isRead && (
-                                <span className="h-2 w-2 bg-blue-600 rounded-full"></span>
+                                <span className="h-2 w-2 bg-blue-600 dark:bg-blue-400 rounded-full"></span>
                               )}
                               {announcement.isRead && (
-                                <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                                <CheckCircleIcon className="h-4 w-4 text-green-500 dark:text-green-400" />
                               )}
                             </div>
-                            <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                               {announcement.message}
                             </p>
-                            <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                            <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                               <div className="flex items-center space-x-1">
                                 <ClockIcon className="h-3 w-3" />
                                 <span>{formatDate(announcement.createdAt)}</span>
@@ -313,7 +315,7 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
                               e.stopPropagation()
                               setDismissedIds(prev => new Set([...Array.from(prev), announcement.id]))
                             }}
-                            className="flex-shrink-0 text-gray-400 hover:text-gray-600 ml-2"
+                            className="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 ml-2"
                           >
                             <XMarkIcon className="h-4 w-4" />
                           </button>

@@ -245,11 +245,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions based on source
-    let hasPermission = false
+    // Super admins can always create announcements regardless of source
+    const superAdmin = await isSuperAdmin(userId)
+    let hasPermission = superAdmin
 
     if (source === 'SYSTEM') {
       // Only super admins can create system announcements
-      hasPermission = await isSuperAdmin(userId)
+      // superAdmin flag already set above
+      hasPermission = superAdmin
     } else if (source === 'COMMUNITY') {
       // Check if user is community admin
       if (!sourceId) {
@@ -263,7 +266,9 @@ export async function POST(request: NextRequest) {
           }
         }
       })
-      hasPermission = !!(membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER'))
+      if (membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER')) {
+        hasPermission = true
+      }
     } else if (source === 'BUILDING') {
       // Check if user is building admin
       if (!sourceId) {
@@ -277,7 +282,9 @@ export async function POST(request: NextRequest) {
           }
         }
       })
-      hasPermission = !!(membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER'))
+      if (membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER')) {
+        hasPermission = true
+      }
     }
 
     if (!hasPermission) {

@@ -1638,7 +1638,6 @@ const en: Translations = {
   failedToValidateCode: 'Failed to validate invitation code',
   enterInvitationCode: 'Enter invitation code (optional)',
   invalidInvitationCode: 'Invalid invitation code',
-  householdNotFound: 'Household not found',
   alreadyMemberOfHousehold: 'You are already a member of this household',
   alreadyMemberOfAnotherHousehold: 'You are already a member of another household',
   

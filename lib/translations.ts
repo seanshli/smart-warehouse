@@ -776,7 +776,6 @@ export interface Translations {
   householdMail: string
   householdPackage: string
   householdVisitorTag: string
-  householdId: string
   householdInvitationCode: string
   copyHouseholdId: string
   householdActive: string
@@ -2317,7 +2316,6 @@ const zhTW: Translations = {
   checkDuplicates: '檢查重複項目',
   backToApp: '返回應用程式',
   avgItemsPerHousehold: '平均每戶物品數',
-  allHouseholds: '所有家庭',
   updatePhoto: '更新照片',
   tryAdjustingSearch: '請嘗試調整搜尋或篩選條件。',
   noItemsCreatedYet: '尚未建立任何物品。',
@@ -3967,7 +3965,6 @@ const ja: Translations = {
   checkDuplicates: '重複項目をチェック',
   backToApp: 'アプリに戻る',
   avgItemsPerHousehold: '世帯あたりの平均アイテム数',
-  allHouseholds: 'すべての世帯',
   updatePhoto: '写真を更新',
   tryAdjustingSearch: '検索またはフィルターを調整してみてください。',
   noItemsCreatedYet: 'まだアイテムが作成されていません。',

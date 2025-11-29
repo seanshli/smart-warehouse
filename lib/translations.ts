@@ -3219,7 +3219,6 @@ const zh: Translations = {
   householdMail: '邮件',
   householdPackage: '包裹',
   householdVisitorTag: '访客标签',
-  householdId: '住户 ID',
   householdInvitationCode: '邀请码',
   copyHouseholdId: '复制住户 ID',
   householdActive: '已启用',

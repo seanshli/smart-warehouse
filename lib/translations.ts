@@ -3309,8 +3309,6 @@ const zh: Translations = {
   householdReservation: '预定',
   householdMaintenance: '报修',
   householdProperty: '物业',
-  householdMail: '邮件',
-  householdPackage: '包裹',
   householdVisitorTag: '访客标签',
   householdInvitationCode: '邀请码',
   copyHouseholdId: '复制住户 ID',

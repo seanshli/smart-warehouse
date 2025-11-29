@@ -185,7 +185,7 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
                 {locker.isOccupied && currentPackage ? (
                   <div className="text-xs space-y-1">
                     <div className="text-gray-600 dark:text-gray-400">
-                      <strong>{t('household') || 'Household'}:</strong> {currentPackage.household.name}
+                      <strong>{t('householdName') || 'Household'}:</strong> {currentPackage.household.name}
                     </div>
                     {currentPackage.packageNumber && (
                       <div className="text-gray-600 dark:text-gray-400">

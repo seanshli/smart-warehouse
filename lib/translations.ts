@@ -2486,6 +2486,8 @@ const zh: Translations = {
   date: '日期',
   startTime: '开始时间',
   endTime: '结束时间',
+  numberOfPeople: '预计人数',
+  numberOfPeoplePlaceholder: '例如 : 5',
   optionalLabel: '选填',
   purposePlaceholder: '例如：团队会议、运动时间',
   notesPlaceholder: '其他备注...',

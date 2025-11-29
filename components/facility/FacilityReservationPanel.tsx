@@ -56,6 +56,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
   const [endTime, setEndTime] = useState('10:00')
   const [purpose, setPurpose] = useState('')
   const [notes, setNotes] = useState('')
+  const [numberOfPeople, setNumberOfPeople] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -117,6 +118,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
           endTime: endDateTime.toISOString(),
           purpose: purpose || null,
           notes: notes || null,
+          numberOfPeople: numberOfPeople || null,
         }),
       })
 
@@ -126,6 +128,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
         setSelectedFacility(null)
         setPurpose('')
         setNotes('')
+        setNumberOfPeople('')
         fetchReservations()
         alert(t('reservationCreated') || 'Reservation request created successfully')
       } else {
@@ -335,6 +338,20 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('numberOfPeople') || 'Number of People'} ({t('optionalLabel') || 'Optional'})
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={numberOfPeople}
+                  onChange={(e) => setNumberOfPeople(e.target.value)}
+                  placeholder={t('numberOfPeoplePlaceholder') || 'e.g., 5'}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
               </div>
 
               <div>

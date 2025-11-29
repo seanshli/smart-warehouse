@@ -58,12 +58,19 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
   const fetchAnnouncements = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/announcements?householdId=${householdId}`)
+      const response = await fetch(`/api/announcements?householdId=${householdId}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
       if (response.ok) {
         const data = await response.json()
         setAnnouncements(data.announcements || [])
         setGrouped(data.grouped || { SYSTEM: [], COMMUNITY: [], BUILDING: [] })
         setUnreadCount(data.unreadCount || 0)
+      } else {
+        console.error('Failed to fetch announcements:', response.status, response.statusText)
       }
     } catch (err) {
       console.error('Failed to fetch announcements:', err)
@@ -133,9 +140,17 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
     : grouped[activeTab]?.filter(a => !dismissedIds.has(a.id)) || []
 
   if (loading) {
-    return null
+    return (
+      <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <span className="text-sm text-gray-600">{t('commonLoading') || 'Loading announcements...'}</span>
+        </div>
+      </div>
+    )
   }
 
+  // Show banner even if no announcements (but collapsed)
   if (announcements.length === 0) {
     return null
   }

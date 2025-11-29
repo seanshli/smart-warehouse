@@ -108,6 +108,8 @@ export interface Translations {
   date: string
   startTime: string
   endTime: string
+  numberOfPeople: string
+  numberOfPeoplePlaceholder: string
   optionalLabel: string
   purposePlaceholder: string
   notesPlaceholder: string
@@ -841,6 +843,8 @@ const en: Translations = {
   date: 'Date',
   startTime: 'Start Time',
   endTime: 'End Time',
+  numberOfPeople: 'Number of People',
+  numberOfPeoplePlaceholder: 'e.g., 5',
   purposePlaceholder: 'e.g., Team meeting, Workout session',
   notesPlaceholder: 'Additional notes...',
   notes: 'Notes',

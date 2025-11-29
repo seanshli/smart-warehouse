@@ -113,7 +113,7 @@ export async function POST(
 
     const userId = (session.user as any).id
     const facilityId = params.id
-    const { householdId, startTime, endTime, purpose, notes } = await request.json()
+    const { householdId, startTime, endTime, purpose, notes, numberOfPeople } = await request.json()
 
     if (!householdId || !startTime || !endTime) {
       return NextResponse.json(
@@ -318,6 +318,7 @@ export async function POST(
         endTime: end,
         purpose: purpose || null,
         notes: notes || null,
+        numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
         status: 'pending',
       },
       include: {

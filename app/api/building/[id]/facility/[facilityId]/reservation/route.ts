@@ -22,7 +22,7 @@ export async function POST(
 
     const userId = (session.user as any).id
     const facilityId = params.facilityId
-    const { householdId, startTime, endTime, purpose, notes } = await request.json()
+    const { householdId, startTime, endTime, purpose, notes, numberOfPeople } = await request.json()
 
     if (!householdId || !startTime || !endTime) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function POST(
       )
     }
 
-    // Find facility
+    // Find facility with capacity info
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId },
       include: {
@@ -95,8 +95,8 @@ export async function POST(
       )
     }
 
-    // Check for overlapping reservations
-    const overlapping = await prisma.facilityReservation.findFirst({
+    // Check for overlapping reservations (approved or pending)
+    const overlappingReservations = await prisma.facilityReservation.findMany({
       where: {
         facilityId,
         status: {
@@ -123,13 +123,61 @@ export async function POST(
           },
         ],
       },
+      include: {
+        household: {
+          select: {
+            name: true,
+            apartmentNo: true,
+          },
+        },
+      },
     })
 
-    if (overlapping) {
-      return NextResponse.json(
-        { error: 'Time slot is already reserved' },
-        { status: 400 }
-      )
+    // If facility has a capacity, check if total people exceeds capacity
+    if (facility.capacity && facility.capacity > 0) {
+      // Sum up people from all overlapping reservations
+      const totalPeopleInOverlapping = overlappingReservations.reduce((sum, res) => {
+        return sum + (res.numberOfPeople || 1) // Default to 1 if numberOfPeople is null
+      }, 0)
+      
+      // Add the new reservation's people count
+      const newReservationPeople = numberOfPeople ? parseInt(numberOfPeople) : 1
+      const totalPeople = totalPeopleInOverlapping + newReservationPeople
+      
+      if (totalPeople > facility.capacity) {
+        const lastOverlapping = overlappingReservations.sort((a, b) => 
+          new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
+        )[0]
+        
+        return NextResponse.json(
+          { 
+            error: `Facility capacity exceeded. Current reservations: ${totalPeopleInOverlapping}/${facility.capacity}, adding ${newReservationPeople} would exceed capacity.`,
+            conflict: {
+              totalPeople: totalPeopleInOverlapping,
+              capacity: facility.capacity,
+              newReservationPeople: newReservationPeople,
+            },
+          },
+          { status: 400 }
+        )
+      }
+      // If capacity allows, proceed with creating the reservation
+    } else {
+      // If no capacity is set, block overlaps (for exclusive facilities like meeting rooms)
+      if (overlappingReservations.length > 0) {
+        const firstOverlapping = overlappingReservations[0]
+        return NextResponse.json(
+          { 
+            error: 'Time slot is already reserved',
+            conflict: {
+              household: firstOverlapping.household.name || firstOverlapping.household.apartmentNo,
+              startTime: firstOverlapping.startTime,
+              endTime: firstOverlapping.endTime,
+            },
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Check operating hours
@@ -153,14 +201,35 @@ export async function POST(
     if (operatingHours) {
       const [openHour, openMinute] = operatingHours.openTime.split(':').map(Number)
       const [closeHour, closeMinute] = operatingHours.closeTime.split(':').map(Number)
-      const openTime = new Date(start)
-      openTime.setHours(openHour, openMinute, 0, 0)
-      const closeTime = new Date(start)
-      closeTime.setHours(closeHour, closeMinute, 0, 0)
-
-      if (start < openTime || end > closeTime) {
+      
+      // Extract time from reservation start and end times
+      const reservationStartHour = start.getHours()
+      const reservationStartMinute = start.getMinutes()
+      const reservationEndHour = end.getHours()
+      const reservationEndMinute = end.getMinutes()
+      
+      // Convert to minutes for easier comparison
+      const openTimeMinutes = openHour * 60 + openMinute
+      const closeTimeMinutes = closeHour * 60 + closeMinute
+      const reservationStartMinutes = reservationStartHour * 60 + reservationStartMinute
+      const reservationEndMinutes = reservationEndHour * 60 + reservationEndMinute
+      
+      // Check if reservation is within operating hours
+      // Allow reservations that start at or after open time and end at or before close time
+      if (reservationStartMinutes < openTimeMinutes || reservationEndMinutes > closeTimeMinutes) {
         return NextResponse.json(
-          { error: `Reservation must be within operating hours (${operatingHours.openTime} - ${operatingHours.closeTime})` },
+          { 
+            error: `Reservation must be within operating hours (${operatingHours.openTime} - ${operatingHours.closeTime})`,
+            details: {
+              requestedStart: `${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}`,
+              requestedEnd: `${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}`,
+              operatingHours: `${operatingHours.openTime} - ${operatingHours.closeTime}`,
+            },
+            suggestedTimes: {
+              earliest: operatingHours.openTime,
+              latest: operatingHours.closeTime,
+            }
+          },
           { status: 400 }
         )
       }
@@ -176,6 +245,7 @@ export async function POST(
         endTime: end,
         purpose: purpose || null,
         notes: notes || null,
+        numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
         status: 'pending',
       },
       include: {

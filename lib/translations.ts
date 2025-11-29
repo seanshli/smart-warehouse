@@ -461,7 +461,6 @@ export interface Translations {
   disabled: string
   pending: string
   householdNotFound: string
-  back: string
   
   // Image upload
   itemPhoto: string

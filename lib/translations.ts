@@ -672,7 +672,6 @@ export interface Translations {
   checkDuplicates: string
   backToApp: string
   avgItemsPerHousehold: string
-  allHouseholds: string
   updatePhoto: string
   tryAdjustingSearch: string
   noItemsCreatedYet: string
@@ -1627,7 +1626,6 @@ const en: Translations = {
   checkDuplicates: 'Check Duplicates',
   backToApp: 'Back to App',
   avgItemsPerHousehold: 'Avg Items/Household',
-  allHouseholds: 'All Households',
   updatePhoto: 'Update Photo',
   tryAdjustingSearch: 'Try adjusting your search or filters.',
   noItemsCreatedYet: 'No items have been created yet.',

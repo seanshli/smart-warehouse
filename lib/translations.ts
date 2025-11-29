@@ -444,6 +444,24 @@ export interface Translations {
   openReservations: string
   openBuildingServices: string
   buildingNotLinked: string
+  mailboxNumber: string
+  doorBells: string
+  doorBellNumber: string
+  packageLocker: string
+  packageNumber: string
+  noMailboxAssigned: string
+  noDoorbellsAssigned: string
+  noPackages: string
+  hasMail: string
+  noMail: string
+  lastMailAt: string
+  lastRungAt: string
+  checkedInAt: string
+  enabled: string
+  disabled: string
+  pending: string
+  householdNotFound: string
+  back: string
   
   // Image upload
   itemPhoto: string
@@ -1518,6 +1536,24 @@ const en: Translations = {
   buildingNotLinked: 'This household is not linked to a building yet',
   householdMail: 'Mail',
   householdPackage: 'Package',
+  mailboxNumber: 'Mailbox',
+  doorBells: 'Door Bells',
+  doorBellNumber: 'Door Bell',
+  packageLocker: 'Package Locker',
+  packageNumber: 'Tracking Number',
+  noMailboxAssigned: 'No mailbox assigned to this household',
+  noDoorbellsAssigned: 'No doorbells assigned to this household',
+  noPackages: 'No packages waiting for pickup',
+  hasMail: 'Has Mail',
+  noMail: 'No Mail',
+  lastMailAt: 'Last mail',
+  lastRungAt: 'Last rung',
+  checkedInAt: 'Checked in',
+  enabled: 'Enabled',
+  disabled: 'Disabled',
+  pending: 'Pending',
+  householdNotFound: 'Household not found',
+  back: 'Back',
   householdVisitorTag: 'Visitor Tag',
   householdInvitationCode: 'Invitation Code',
   copyHouseholdId: 'Copy Household ID',
@@ -2524,6 +2560,26 @@ const zh: Translations = {
   openReservations: '预约共用设施',
   openBuildingServices: '查看信箱 / 包裹 / 门铃',
   buildingNotLinked: '此家庭尚未连接大楼资料',
+  householdMail: '信箱',
+  householdPackage: '包裹',
+  mailboxNumber: '信箱号码',
+  doorBells: '门铃',
+  doorBellNumber: '门铃号码',
+  packageLocker: '包裹柜',
+  packageNumber: '追踪号码',
+  noMailboxAssigned: '此家庭尚未分配信箱',
+  noDoorbellsAssigned: '此家庭尚未分配门铃',
+  noPackages: '目前没有待领取的包裹',
+  hasMail: '有邮件',
+  noMail: '无邮件',
+  lastMailAt: '最后邮件时间',
+  lastRungAt: '最后响铃时间',
+  checkedInAt: '登记时间',
+  enabled: '启用',
+  disabled: '停用',
+  pending: '待领取',
+  householdNotFound: '找不到家庭资料',
+  back: '返回',
   manageAnnouncements: '管理公告',
   noAnnouncements: '无公告',
   clickToView: '点击查看',

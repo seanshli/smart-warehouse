@@ -994,21 +994,17 @@ function DashboardContent({
         {
           label: translate('openBuildingServices', '查看信箱 / 包裹 / 門鈴'),
           onClick: () => {
-            const currentHousehold: any = household
-            const buildingId = currentHousehold?.buildingId
-            if (buildingId) {
-              window.open(`/building/${buildingId}?tab=frontdoor`, '_blank')
+            if (household?.id) {
+              window.open(`/household/${household.id}/property`, '_blank')
             } else {
-              toast.error(translate('buildingNotLinked', '此家庭尚未連結大樓資料'))
+              toast.error(translate('householdNotFound', 'Household not found'))
             }
           },
         },
       ],
       onClick: () => {
-        const currentHousehold: any = household
-        const buildingId = currentHousehold?.buildingId
-        if (buildingId) {
-          window.open(`/building/${buildingId}?tab=frontdoor`, '_blank')
+        if (household?.id) {
+          window.open(`/household/${household.id}/property`, '_blank')
         } else {
           onTabChange('reservations')
         }

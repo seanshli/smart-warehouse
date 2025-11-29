@@ -20,18 +20,50 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id
 
-    // Check if user is super admin
-    const isAdmin = await isSuperAdmin(userId)
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const { searchParams } = new URL(request.url)
     const source = searchParams.get('source') // Optional filter
+    const sourceId = searchParams.get('sourceId') // Optional filter
+
+    // Check permissions based on source
+    const isAdmin = await isSuperAdmin(userId)
+    let hasPermission = isAdmin
+
+    if (!isAdmin) {
+      if (source === 'COMMUNITY' && sourceId) {
+        // Check if user is community admin
+        const membership = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId: userId,
+              communityId: sourceId
+            }
+          }
+        })
+        hasPermission = !!(membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER'))
+      } else if (source === 'BUILDING' && sourceId) {
+        // Check if user is building admin
+        const membership = await prisma.buildingMember.findUnique({
+          where: {
+            userId_buildingId: {
+              userId: userId,
+              buildingId: sourceId
+            }
+          }
+        })
+        hasPermission = !!(membership && (membership.role === 'ADMIN' || membership.role === 'MANAGER'))
+      }
+    }
+
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const where: any = {}
     if (source) {
       where.source = source
+    }
+    if (sourceId) {
+      where.sourceId = sourceId
     }
 
     const announcements = await prisma.announcement.findMany({

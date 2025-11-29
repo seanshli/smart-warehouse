@@ -20,6 +20,8 @@ import toast from 'react-hot-toast'
 import QRCodeDisplay from '@/components/QRCode'
 import JoinRequestList from '@/components/community/JoinRequestList'
 import { useLanguage } from '@/components/LanguageProvider'
+import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
+import { BellIcon } from '@heroicons/react/24/outline'
 
 interface Community {
   id: string
@@ -48,7 +50,8 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<Community | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements'>('overview')
+  const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
 
   useEffect(() => {
     if (communityId) {
@@ -195,6 +198,7 @@ export default function CommunityDetailPage() {
               { id: 'buildings', name: t('adminBuildings'), icon: BuildingOfficeIcon },
               { id: 'members', name: t('members'), icon: UserGroupIcon },
               { id: 'working-groups', name: t('communityWorkingGroups'), icon: CogIcon },
+              { id: 'announcements', name: t('announcements'), icon: BellIcon },
             ].map((tab) => {
               const Icon = tab.icon
               return (
@@ -221,6 +225,32 @@ export default function CommunityDetailPage() {
           {activeTab === 'buildings' && communityId && <BuildingsTab communityId={communityId} />}
           {activeTab === 'members' && communityId && <MembersTab communityId={communityId} />}
           {activeTab === 'working-groups' && communityId && <WorkingGroupsTab communityId={communityId} />}
+          {activeTab === 'announcements' && communityId && (
+            <AnnouncementsTab 
+              communityId={communityId} 
+              communityName={community?.name || ''}
+              onShowCreate={() => setShowCreateAnnouncement(true)}
+            />
+          )}
+        </div>
+
+        {/* Create Announcement Modal */}
+        {communityId && (
+          <CreateAnnouncementModal
+            isOpen={showCreateAnnouncement}
+            onClose={() => setShowCreateAnnouncement(false)}
+            onSuccess={() => {
+              setShowCreateAnnouncement(false)
+              if (activeTab === 'announcements') {
+                window.location.reload()
+              }
+            }}
+            source="COMMUNITY"
+            sourceId={communityId}
+            sourceName={community?.name}
+            targetType="ALL_HOUSEHOLDS"
+          />
+        )}
         </div>
       </div>
     </div>
@@ -587,6 +617,84 @@ function MembersTab({ communityId }: { communityId: string }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AnnouncementsTab({ 
+  communityId, 
+  communityName, 
+  onShowCreate 
+}: { 
+  communityId: string
+  communityName: string
+  onShowCreate: () => void
+}) {
+  const { t } = useLanguage()
+  const [announcements, setAnnouncements] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [communityId])
+
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/admin/announcements?source=COMMUNITY&sourceId=${communityId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAnnouncements(data.announcements || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch announcements:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-900">{t('announcements') || 'Announcements'}</h3>
+        <button
+          onClick={onShowCreate}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" />
+          {t('createAnnouncement') || 'Create Announcement'}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+        </div>
+      ) : announcements.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          {t('noAnnouncements') || 'No announcements found'}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {announcements.map((announcement) => (
+            <div
+              key={announcement.id}
+              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <h4 className="text-sm font-semibold text-gray-900">{announcement.title}</h4>
+              <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">{announcement.message}</p>
+              <div className="mt-2 text-xs text-gray-500">
+                {formatDate(announcement.createdAt)}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

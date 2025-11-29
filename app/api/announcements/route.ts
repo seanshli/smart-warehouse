@@ -62,24 +62,58 @@ export async function GET(request: NextRequest) {
     // Build query for announcements
     const where: any = {
       isActive: true,
-      OR: [
-        { targetType: 'ALL_HOUSEHOLDS' },
-      ]
+      OR: []
     }
 
-    // Add community-level announcements
+    // System-wide announcements (from SYSTEM source with ALL_HOUSEHOLDS)
+    where.OR.push({
+      AND: [
+        { source: 'SYSTEM' },
+        { targetType: 'ALL_HOUSEHOLDS' }
+      ]
+    })
+
+    // Community-level announcements
     if (communityId) {
+      // Community admin's ALL_HOUSEHOLDS announcements (only for this community)
+      where.OR.push({
+        AND: [
+          { source: 'COMMUNITY' },
+          { sourceId: communityId },
+          { targetType: 'ALL_HOUSEHOLDS' }
+        ]
+      })
+      // Community-specific announcements
       where.OR.push(
         { targetType: 'COMMUNITY', targetId: communityId },
-        { source: 'COMMUNITY', sourceId: communityId }
+        { 
+          AND: [
+            { source: 'COMMUNITY' },
+            { sourceId: communityId }
+          ]
+        }
       )
     }
 
-    // Add building-level announcements
+    // Building-level announcements
     if (buildingId) {
+      // Building admin's ALL_HOUSEHOLDS announcements (only for this building)
+      where.OR.push({
+        AND: [
+          { source: 'BUILDING' },
+          { sourceId: buildingId },
+          { targetType: 'ALL_HOUSEHOLDS' }
+        ]
+      })
+      // Building-specific announcements
       where.OR.push(
         { targetType: 'BUILDING', targetId: buildingId },
-        { source: 'BUILDING', sourceId: buildingId }
+        { 
+          AND: [
+            { source: 'BUILDING' },
+            { sourceId: buildingId }
+          ]
+        }
       )
     }
 

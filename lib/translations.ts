@@ -386,7 +386,7 @@ export interface Translations {
   country: string
   city: string
   district: string
-  community: string
+  neighborhood: string
   streetAddress: string
   apartmentNo: string
   telephone: string
@@ -1207,7 +1207,7 @@ const en: Translations = {
   country: 'Country',
   city: 'City',
   district: 'District',
-  community: 'Community/Neighborhood',
+  neighborhood: 'Community/Neighborhood',
   streetAddress: 'Street Address',
   apartmentNo: 'Apartment/Building No.',
   telephone: 'Telephone',
@@ -2025,7 +2025,7 @@ const zhTW: Translations = {
   country: '國家',
   city: '城市',
   district: '區域',
-  community: '社區/鄰里',
+  neighborhood: '社區/鄰里',
   streetAddress: '街道地址',
   apartmentNo: '公寓/建築物號碼',
   telephone: '電話',
@@ -2852,7 +2852,7 @@ const zh: Translations = {
   country: '国家',
   city: '城市',
   district: '区域',
-  community: '社区/邻里',
+  neighborhood: '社区/邻里',
   streetAddress: '街道地址',
   apartmentNo: '公寓/建筑物号码',
   telephone: '电话',
@@ -3677,7 +3677,7 @@ const ja: Translations = {
   country: '国',
   city: '都市',
   district: '地区',
-  community: 'コミュニティ/近隣',
+  neighborhood: 'コミュニティ/近隣',
   streetAddress: '住所',
   apartmentNo: 'アパート/建物番号',
   telephone: '電話',

@@ -251,7 +251,7 @@ export default function CommunityDetailPage() {
             targetType="ALL_HOUSEHOLDS"
           />
         )}
-        </div>
+      </div>
       </div>
     </div>
   )

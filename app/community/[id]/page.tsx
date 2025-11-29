@@ -57,6 +57,7 @@ export default function CommunityDetailPage() {
     if (communityId) {
       fetchCommunity()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId])
 
   const fetchCommunity = async () => {
@@ -251,7 +252,6 @@ export default function CommunityDetailPage() {
             targetType="ALL_HOUSEHOLDS"
           />
         )}
-      </div>
       </div>
     </div>
   )
@@ -638,6 +638,7 @@ function AnnouncementsTab({
 
   useEffect(() => {
     fetchAnnouncements()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId])
 
   const fetchAnnouncements = async () => {

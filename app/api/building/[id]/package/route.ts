@@ -228,25 +228,40 @@ export async function POST(
     // Create notifications for all household members
     const { createNotification } = await import('@/lib/notifications')
     const notifications = []
+    const errors = []
+    
+    console.log(`[Package Check-in] Creating notifications for household ${householdId} with ${household.members.length} members`)
     
     for (const member of household.members) {
-      const notification = await createNotification({
-        type: 'PACKAGE_RECEIVED',
-        title: 'Package Received',
-        message: `You have a package in locker #${locker.lockerNumber}${packageNumber ? ` (Tracking: ${packageNumber})` : ''}`,
-        userId: member.userId,
-        householdId,
-        metadata: {
-          packageId: packageRecord.id,
-        },
-      })
-      notifications.push(notification)
+      try {
+        console.log(`[Package Check-in] Creating notification for user ${member.userId} (${member.user?.email || 'no email'})`)
+        const notification = await createNotification({
+          type: 'PACKAGE_RECEIVED',
+          title: 'Package Received',
+          message: `You have a package in locker #${locker.lockerNumber}${packageNumber ? ` (Tracking: ${packageNumber})` : ''}`,
+          userId: member.userId,
+          householdId,
+          metadata: {
+            packageId: packageRecord.id,
+          },
+        })
+        notifications.push(notification)
+        console.log(`[Package Check-in] Notification created successfully for user ${member.userId}`)
+      } catch (error) {
+        console.error(`[Package Check-in] Failed to create notification for user ${member.userId}:`, error)
+        errors.push({ userId: member.userId, error: error instanceof Error ? error.message : 'Unknown error' })
+      }
+    }
+
+    if (errors.length > 0) {
+      console.error(`[Package Check-in] ${errors.length} notification(s) failed to create:`, errors)
     }
 
     return NextResponse.json({
       success: true,
       data: packageRecord,
       notificationsSent: notifications.length,
+      errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error) {
     console.error('Error creating package:', error)

@@ -16,6 +16,13 @@ export async function createNotification(data: NotificationData) {
   try {
     const { prisma } = await import('@/lib/prisma')
     
+    console.log('[createNotification] Creating notification:', {
+      type: data.type,
+      userId: data.userId,
+      householdId: data.householdId,
+      packageId: data.metadata?.packageId,
+    })
+    
     const notification = await prisma.notification.create({
       data: {
         type: data.type, // 通知類型
@@ -30,9 +37,16 @@ export async function createNotification(data: NotificationData) {
       }
     })
     
+    console.log('[createNotification] Notification created successfully:', notification.id)
     return notification
   } catch (error) {
-    console.error('Failed to create notification:', error)
+    console.error('[createNotification] Failed to create notification:', error)
+    console.error('[createNotification] Error details:', {
+      type: data.type,
+      userId: data.userId,
+      householdId: data.householdId,
+      error: error instanceof Error ? error.message : String(error),
+    })
     throw error
   }
 }

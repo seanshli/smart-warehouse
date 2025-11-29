@@ -1551,7 +1551,6 @@ const en: Translations = {
   disabled: 'Disabled',
   pending: 'Pending',
   householdNotFound: 'Household not found',
-  back: 'Back',
   householdVisitorTag: 'Visitor Tag',
   householdInvitationCode: 'Invitation Code',
   copyHouseholdId: 'Copy Household ID',

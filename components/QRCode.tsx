@@ -38,3 +38,4 @@ export default function QRCodeDisplay({ value, size = 200, className = '' }: QRC
   )
 }
 
+

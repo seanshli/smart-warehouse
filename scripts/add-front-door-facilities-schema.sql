@@ -125,3 +125,4 @@ CREATE INDEX IF NOT EXISTS idx_notifications_facility_reservation_id ON notifica
 -- Update buildings table to add new relations (already exists via schema)
 -- Update households table to add new relations (already exists via schema)
 
+

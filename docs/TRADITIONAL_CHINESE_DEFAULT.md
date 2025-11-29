@@ -103,3 +103,4 @@ To verify the changes:
 **Last Updated:** 2025-11-26  
 **Commit:** `a64a5d0` - `feat: set Traditional Chinese (zh-TW) as default instead of Simplified Chinese`
 
+

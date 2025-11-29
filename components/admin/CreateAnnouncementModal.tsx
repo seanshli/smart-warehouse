@@ -34,7 +34,7 @@ export default function CreateAnnouncementModal({
   const { t } = useLanguage()
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
-  const [selectedTargetType, setSelectedTargetType] = useState(targetType)
+  const [selectedTargetType, setSelectedTargetType] = useState<'ALL_HOUSEHOLDS' | 'COMMUNITY' | 'BUILDING' | 'SPECIFIC_HOUSEHOLD'>(targetType || 'ALL_HOUSEHOLDS')
   const [selectedTargetId, setSelectedTargetId] = useState(targetId || '')
   const [expiresAt, setExpiresAt] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -225,11 +225,11 @@ export default function CreateAnnouncementModal({
                     value={selectedTargetId}
                     onChange={(e) => setSelectedTargetId(e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                    required={selectedTargetType !== 'ALL_HOUSEHOLDS'}
+                    required={(selectedTargetType as string) !== 'ALL_HOUSEHOLDS'}
                     placeholder={
-                      selectedTargetType === 'COMMUNITY' ? 'Enter community ID' :
-                      selectedTargetType === 'BUILDING' ? 'Enter building ID' :
-                      'Enter household ID'
+                      selectedTargetType === 'COMMUNITY' ? (t('enterCommunityId') || 'Enter community ID') :
+                      selectedTargetType === 'BUILDING' ? (t('enterBuildingId') || 'Enter building ID') :
+                      (t('enterHouseholdId') || 'Enter household ID')
                     }
                   />
                 </div>
@@ -272,4 +272,5 @@ export default function CreateAnnouncementModal({
     </div>
   )
 }
+
 

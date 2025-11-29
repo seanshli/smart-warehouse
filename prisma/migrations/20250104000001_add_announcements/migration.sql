@@ -57,3 +57,4 @@ ALTER TABLE "announcement_reads" ADD CONSTRAINT "announcement_reads_user_id_fkey
 -- AddForeignKey
 ALTER TABLE "announcement_reads" ADD CONSTRAINT "announcement_reads_household_id_fkey" FOREIGN KEY ("household_id") REFERENCES "households"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
+

@@ -69,3 +69,4 @@ From `ios/App/Podfile`, the correct relative path is:
 **Status:** ✅ Fixed  
 **Commit:** `7944830` - `fix(ios): correct Midea SDK path in Podfile (../ instead of ../../)`
 
+

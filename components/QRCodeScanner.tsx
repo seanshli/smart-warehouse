@@ -73,3 +73,4 @@ export default function QRCodeScanner({ onScan, onError }: QRCodeScannerProps) {
   )
 }
 
+

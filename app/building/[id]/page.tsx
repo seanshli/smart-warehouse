@@ -230,7 +230,6 @@ export default function BuildingDetailPage() {
             targetType="ALL_HOUSEHOLDS"
           />
         )}
-        </div>
       </div>
     </div>
   )

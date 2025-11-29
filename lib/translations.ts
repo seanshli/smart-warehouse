@@ -3438,6 +3438,7 @@ const ja: Translations = {
   
   // Admin
   adminPanel: '管理パネル',
+  adminAnnouncements: 'お知らせ',
   adminManagement: 'スマート倉庫管理',
   adminDashboard: 'ダッシュボード',
   adminCommunities: 'コミュニティ',

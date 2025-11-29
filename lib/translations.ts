@@ -1768,7 +1768,6 @@ const zhTW: Translations = {
   enabled: '啟用',
   disabled: '停用',
   pending: '待領取',
-  
   items: '物品',
   allItems: '所有物品',
   duplicates: '重複項目',

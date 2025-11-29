@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { 
   BuildingOfficeIcon,
@@ -55,14 +55,26 @@ interface Building {
 export default function BuildingDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
   const { currentLanguage, setLanguage, t } = useLanguage()
   const buildingId = params.id as string
+  const initialTabFromQuery =
+    (searchParams?.get('tab') as
+      | 'overview'
+      | 'households'
+      | 'mailboxes'
+      | 'frontdoor'
+      | 'facilities'
+      | 'announcements'
+      | null) || 'overview'
 
   const [building, setBuilding] = useState<Building | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'announcements'>('overview')
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'announcements'
+  >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
 
   useEffect(() => {

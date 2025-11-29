@@ -371,7 +371,8 @@ export default function Dashboard() {
     { id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon },
     { id: 'mqtt', name: t('mqttDevices') || 'MQTT Devices', icon: WifiIcon },
     { id: 'maintenance', name: (t as any)('maintenanceTickets') || '報修', icon: ExclamationTriangleIcon },
-    { id: 'reservations', name: (t as any)('reservationCenter') || '預定', icon: ClockIcon },
+    // Reservation entry point is now in the Property Services area on the dashboard
+    // { id: 'reservations', name: (t as any)('reservationCenter') || '預定', icon: ClockIcon },
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
     { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
   ]
@@ -972,6 +973,44 @@ function DashboardContent({
         { label: translate('openCalendar', '檢視行事曆'), onClick: () => onTabChange('reservations') },
       ],
       onClick: () => onTabChange('reservations'), // Navigate to reservations page
+    },
+    {
+      id: 'property',
+      title: translate('propertyServices', '物業服務'),
+      subtitle: translate('propertyServicesSubtitle', '信箱 / 包裹 / 門鈴與共用空間'),
+      icon: BuildingStorefrontIcon,
+      tag: 'NEW',
+      metrics: [
+        { label: translate('upcoming', '即將到來'), value: upcomingReservations },
+        { label: translate('maintenanceTickets', '報修'), value: maintenanceStats.open },
+      ],
+      actions: [
+        {
+          label: translate('openReservations', '預約共用設施'),
+          onClick: () => onTabChange('reservations'),
+        },
+        {
+          label: translate('openBuildingServices', '查看信箱 / 包裹 / 門鈴'),
+          onClick: () => {
+            const currentHousehold: any = household
+            const buildingId = currentHousehold?.buildingId
+            if (buildingId) {
+              window.open(`/building/${buildingId}?tab=frontdoor`, '_blank')
+            } else {
+              toast.error(translate('buildingNotLinked', '此家庭尚未連結大樓資料'))
+            }
+          },
+        },
+      ],
+      onClick: () => {
+        const currentHousehold: any = household
+        const buildingId = currentHousehold?.buildingId
+        if (buildingId) {
+          window.open(`/building/${buildingId}?tab=frontdoor`, '_blank')
+        } else {
+          onTabChange('reservations')
+        }
+      },
     },
   ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations])
 

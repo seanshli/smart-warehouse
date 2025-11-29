@@ -150,11 +150,6 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
     )
   }
 
-  // Show banner even if no announcements (but collapsed)
-  if (announcements.length === 0) {
-    return null
-  }
-
   return (
     <div className="mb-4">
       {/* Compact Banner View */}
@@ -179,7 +174,9 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">
-                {t('clickToView') || 'Click to view'}
+                {announcements.length === 0
+                  ? (t('noAnnouncements') || 'No announcements yet')
+                  : (t('clickToView') || 'Click to view')}
               </span>
               <ClockIcon className="h-4 w-4 text-gray-400" />
             </div>

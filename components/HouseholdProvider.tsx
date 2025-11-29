@@ -9,6 +9,8 @@ interface Household {
   name: string
   description: string | null
   createdAt: string
+  // Optional building linkage (used for property services links)
+  buildingId?: string | null
 }
 
 interface Membership {

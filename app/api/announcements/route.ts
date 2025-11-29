@@ -327,10 +327,19 @@ export async function POST(request: NextRequest) {
       creator: announcement.creator
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating announcement:', error)
+    // Surface more details to the client to help debugging (still generic enough for users)
+    const message =
+      (error && typeof error === 'object' && 'message' in error && (error as any).message) ||
+      'Failed to create announcement'
+
     return NextResponse.json(
-      { error: 'Failed to create announcement' },
+      {
+        error: message,
+        // Include limited structured info for debugging (safe, no secrets)
+        code: (error as any)?.code || null,
+      },
       { status: 500 }
     )
   }

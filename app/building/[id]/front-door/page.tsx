@@ -277,7 +277,7 @@ export default function FrontDoorPage() {
               <button
                 onClick={() => {
                   // Ring all doorbells or contact building admin
-                  toast.info('Contacting building administrator...')
+                  toast('Contacting building administrator...', { icon: '📞' })
                 }}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-8 rounded-lg shadow-md transition-all transform hover:scale-105 active:scale-95 inline-flex items-center space-x-2"
               >

@@ -127,6 +127,8 @@ export default function FrontDoorPage() {
             setInCall(true)
             clearInterval(interval)
             startCallSession(doorBellId)
+            // Initialize WebRTC when call is connected
+            initializeWebRTC()
           } else if (data.status === 'ended') {
             setCallStatus('ended')
             setInCall(false)
@@ -146,6 +148,33 @@ export default function FrontDoorPage() {
     }, 1000)
   }
 
+  const initializeWebRTC = async () => {
+    try {
+      if (!localVideoRef.current || !remoteVideoRef.current) return
+
+      webrtcRef.current = new DoorBellWebRTC({
+        localVideoElement: localVideoRef.current,
+        remoteVideoElement: remoteVideoRef.current,
+        onLocalStream: (stream) => {
+          console.log('Local stream initialized')
+        },
+        onRemoteStream: (stream) => {
+          console.log('Remote stream received')
+        },
+        onError: (error) => {
+          console.error('WebRTC error:', error)
+          toast.error('Video/audio connection error')
+        },
+      })
+
+      // Initialize with current camera/mic settings
+      await webrtcRef.current.initializeLocalStream(cameraEnabled, micEnabled)
+    } catch (error) {
+      console.error('Error initializing WebRTC:', error)
+      toast.error('Failed to initialize camera/microphone')
+    }
+  }
+
   const startCallSession = (doorBellId: string) => {
     // Initialize WebSocket or SSE connection for real-time communication
     // For now, we'll use polling for messages
@@ -155,7 +184,12 @@ export default function FrontDoorPage() {
         if (response.ok) {
           const data = await response.json()
           if (data.messages) {
-            setMessages(data.messages)
+            setMessages(data.messages.map((msg: any) => ({
+              id: msg.id,
+              text: msg.text,
+              from: msg.from,
+              timestamp: new Date(msg.timestamp),
+            })))
           }
         }
       } catch (error) {
@@ -192,22 +226,54 @@ export default function FrontDoorPage() {
     }
   }
 
-  const toggleCamera = () => {
-    setCameraEnabled(!cameraEnabled)
-    // TODO: Implement camera stream
-    toast(cameraEnabled ? 'Camera Off' : 'Camera On', { icon: '📷' })
+  const toggleCamera = async () => {
+    const newState = !cameraEnabled
+    setCameraEnabled(newState)
+
+    if (inCall && webrtcRef.current) {
+      if (newState) {
+        // Enable camera
+        await webrtcRef.current.initializeLocalStream(true, micEnabled)
+      } else {
+        // Disable camera - stop video tracks
+        if (webrtcRef.current['localStream']) {
+          webrtcRef.current['localStream'].getVideoTracks().forEach(track => track.stop())
+        }
+      }
+    }
+
+    toast(newState ? 'Camera On' : 'Camera Off', { icon: '📷' })
   }
 
-  const toggleMic = () => {
-    setMicEnabled(!micEnabled)
-    // TODO: Implement microphone stream
-    toast(micEnabled ? 'Mic Off' : 'Mic On', { icon: '🎤' })
+  const toggleMic = async () => {
+    const newState = !micEnabled
+    setMicEnabled(newState)
+
+    if (inCall && webrtcRef.current) {
+      if (newState) {
+        // Enable mic
+        await webrtcRef.current.initializeLocalStream(cameraEnabled, true)
+      } else {
+        // Disable mic - stop audio tracks
+        if (webrtcRef.current['localStream']) {
+          webrtcRef.current['localStream'].getAudioTracks().forEach(track => track.stop())
+        }
+      }
+    }
+
+    toast(newState ? 'Mic On' : 'Mic Off', { icon: '🎤' })
   }
 
   const endCall = async () => {
     if (!selectedDoorBell) return
 
     try {
+      // Close WebRTC connection
+      if (webrtcRef.current) {
+        webrtcRef.current.close()
+        webrtcRef.current = null
+      }
+
       await fetch(`/api/building/${buildingId}/door-bell/${selectedDoorBell.id}/end-call/public`, {
         method: 'POST',
       })
@@ -216,10 +282,22 @@ export default function FrontDoorPage() {
       setSelectedDoorBell(null)
       setMessages([])
       setRinging(false)
+      setCameraEnabled(false)
+      setMicEnabled(false)
     } catch (error) {
       console.error('Error ending call:', error)
     }
   }
+
+  useEffect(() => {
+    // Cleanup WebRTC on unmount
+    return () => {
+      if (webrtcRef.current) {
+        webrtcRef.current.close()
+        webrtcRef.current = null
+      }
+    }
+  }, [])
 
   if (loading) {
     return (
@@ -322,20 +400,38 @@ export default function FrontDoorPage() {
             {callStatus === 'connected' && inCall && (
               <div className="space-y-4">
                 {/* Video/Audio Area */}
-                <div className="bg-gray-100 rounded-lg p-4 min-h-[300px] flex items-center justify-center">
-                  {cameraEnabled ? (
-                    <div className="text-center">
-                      <VideoCameraIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500">Camera Active</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <div className="w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-white text-3xl font-bold">
-                          {selectedDoorBell.doorBellNumber}
-                        </span>
+                <div className="bg-gray-100 rounded-lg p-4 min-h-[300px] relative">
+                  {/* Remote Video (Household) */}
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full rounded-lg object-cover"
+                    style={{ minHeight: '300px' }}
+                  />
+                  
+                  {/* Local Video (Guest) - Picture in Picture */}
+                  {cameraEnabled && (
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="absolute bottom-4 right-4 w-32 h-24 rounded-lg object-cover border-2 border-white shadow-lg"
+                    />
+                  )}
+                  
+                  {/* Fallback when camera is off */}
+                  {!cameraEnabled && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="text-white text-3xl font-bold">
+                            {selectedDoorBell.doorBellNumber}
+                          </span>
+                        </div>
+                        <p className="text-gray-600">Video Call</p>
                       </div>
-                      <p className="text-gray-600">Video Call</p>
                     </div>
                   )}
                 </div>

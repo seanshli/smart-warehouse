@@ -242,7 +242,6 @@ export interface Translations {
   resetPassword: string
   enterNewPassword: string
   resetting: string
-  sending: string
   adminAccessRequired: string
   adminPleaseSignIn: string
   commonSignIn: string

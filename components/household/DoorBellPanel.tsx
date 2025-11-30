@@ -82,7 +82,7 @@ export default function DoorBellPanel() {
       }
     } catch (error) {
       console.error('Error answering call:', error)
-      toast.error(t('callAnswerError') || 'Failed to answer call')
+      toast.error('Failed to answer call')
     }
   }
 
@@ -102,7 +102,7 @@ export default function DoorBellPanel() {
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error(t('messageSendError') || 'Failed to send message')
+      toast.error('Failed to send message')
     }
   }
 
@@ -115,11 +115,11 @@ export default function DoorBellPanel() {
       })
 
       if (response.ok) {
-        toast.success(t('doorUnlocked') || 'Door unlocked')
+        toast.success('Door unlocked')
       }
     } catch (error) {
       console.error('Error unlocking door:', error)
-      toast.error(t('doorUnlockError') || 'Failed to unlock door')
+      toast.error('Failed to unlock door')
     }
   }
 
@@ -132,7 +132,7 @@ export default function DoorBellPanel() {
       })
 
       if (response.ok) {
-        toast.success(t('callEnded') || 'Call ended')
+        toast.success('Call ended')
         setSelectedCall(null)
         fetchActiveCalls()
       }
@@ -153,7 +153,7 @@ export default function DoorBellPanel() {
       </h3>
 
       {activeCalls.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">{t('noActiveCalls') || 'No active calls'}</p>
+        <p className="text-gray-500 text-center py-8">No active calls</p>
       ) : (
         <div className="space-y-4">
           {/* Active Calls List */}
@@ -171,8 +171,8 @@ export default function DoorBellPanel() {
                 <div>
                   <p className="font-semibold text-gray-900">{call.doorBellNumber}</p>
                   <p className="text-sm text-gray-500">
-                    {call.status === 'ringing' && t('ringing')}
-                    {call.status === 'connected' && t('connected')}
+                    {call.status === 'ringing' && 'Ringing'}
+                    {call.status === 'connected' && 'Connected'}
                   </p>
                 </div>
                 {call.status === 'ringing' && (
@@ -184,7 +184,7 @@ export default function DoorBellPanel() {
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
                   >
                     <PhoneIcon className="h-4 w-4" />
-                    <span>{t('answer') || 'Answer'}</span>
+                    <span>Answer</span>
                   </button>
                 )}
               </div>
@@ -198,7 +198,7 @@ export default function DoorBellPanel() {
                 {cameraEnabled ? (
                   <div className="text-center">
                     <VideoCameraIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500">{t('cameraActive') || 'Camera Active'}</p>
+                      <p className="text-gray-500">Camera Active</p>
                   </div>
                 ) : (
                   <div className="text-center">
@@ -207,7 +207,7 @@ export default function DoorBellPanel() {
                         {selectedCall.doorBellNumber}
                       </span>
                     </div>
-                    <p className="text-gray-600">{t('videoCall') || 'Video Call'}</p>
+                    <p className="text-gray-600">Video Call</p>
                   </div>
                 )}
               </div>
@@ -229,7 +229,7 @@ export default function DoorBellPanel() {
                 <button
                   onClick={unlockDoor}
                   className="p-3 rounded-full bg-blue-500 text-white"
-                  title={t('unlockDoor') || 'Unlock Door'}
+                  title="Unlock Door"
                 >
                   <LockOpenIcon className="h-5 w-5" />
                 </button>
@@ -267,14 +267,14 @@ export default function DoorBellPanel() {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder={t('typeMessage') || 'Type a message...'}
+                    placeholder="Type a message..."
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <button
                     onClick={sendMessage}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
                   >
-                    {t('send') || 'Send'}
+                    Send
                   </button>
                 </div>
               </div>

@@ -125,7 +125,6 @@ export async function POST(
           const notification = await prisma.notification.create({
             data: {
               userId: member.user.id,
-              householdId: doorBell.household.id,
               doorBellId: doorBell.id,
               type: 'DOOR_BELL_RUNG',
               title: 'Door Bell',

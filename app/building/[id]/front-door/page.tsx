@@ -67,7 +67,7 @@ export default function FrontDoorPage() {
       }
     } catch (error) {
       console.error('Error fetching building data:', error)
-      toast.error(t('frontDoorLoadError') || 'Failed to load building information')
+      toast.error('Failed to load building information')
     } finally {
       setLoading(false)
     }
@@ -95,13 +95,13 @@ export default function FrontDoorPage() {
       }
 
       const data = await response.json()
-      toast.success(t('doorBellRung') || 'Doorbell rung! Waiting for response...')
+      toast.success('Doorbell rung! Waiting for response...')
       
       // Start polling for call status
       pollCallStatus(doorBell.id)
     } catch (error) {
       console.error('Error ringing doorbell:', error)
-      toast.error(t('doorBellRingError') || 'Failed to ring doorbell')
+      toast.error('Failed to ring doorbell')
       setRinging(false)
       setCallStatus(null)
     }
@@ -137,7 +137,7 @@ export default function FrontDoorPage() {
         clearInterval(interval)
         setCallStatus('ended')
         setRinging(false)
-        toast.error(t('doorBellNoAnswer') || 'No answer from household')
+        toast.error('No answer from household')
       }
     }, 1000)
   }
@@ -184,20 +184,20 @@ export default function FrontDoorPage() {
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error(t('messageSendError') || 'Failed to send message')
+      toast.error('Failed to send message')
     }
   }
 
   const toggleCamera = () => {
     setCameraEnabled(!cameraEnabled)
     // TODO: Implement camera stream
-    toast.info(cameraEnabled ? t('cameraOff') : t('cameraOn'))
+                    toast.info(cameraEnabled ? 'Camera Off' : 'Camera On')
   }
 
   const toggleMic = () => {
     setMicEnabled(!micEnabled)
     // TODO: Implement microphone stream
-    toast.info(micEnabled ? t('micOff') : t('micOn'))
+                    toast.info(micEnabled ? 'Mic Off' : 'Mic On')
   }
 
   const endCall = async () => {
@@ -222,7 +222,7 @@ export default function FrontDoorPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('loading') || 'Loading...'}</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -236,10 +236,10 @@ export default function FrontDoorPage() {
           <div className="text-center">
             <HomeIcon className="h-16 w-16 text-indigo-600 mx-auto mb-4" />
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {t('welcome') || 'Welcome'}
+              Welcome
             </h1>
             <p className="text-2xl text-gray-600">
-              {building?.name || t('building')}
+              {building?.name || 'Building'}
             </p>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function FrontDoorPage() {
             {/* Room Buttons Grid */}
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-                {t('selectRoom') || 'Select a Room'}
+                Select a Room
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {doorBells
@@ -277,12 +277,12 @@ export default function FrontDoorPage() {
               <button
                 onClick={() => {
                   // Ring all doorbells or contact building admin
-                  toast.info(t('contactingBuildingAdmin') || 'Contacting building administrator...')
+                  toast.info('Contacting building administrator...')
                 }}
                 className="bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-8 rounded-lg shadow-md transition-all transform hover:scale-105 active:scale-95 inline-flex items-center space-x-2"
               >
                 <PhoneIcon className="h-6 w-6" />
-                <span>{t('frontDoorAgent') || 'Front Door Agent'}</span>
+                <span>Front Door Agent</span>
               </button>
             </div>
           </>
@@ -310,7 +310,7 @@ export default function FrontDoorPage() {
               <div className="text-center py-12">
                 <div className="animate-pulse">
                   <PhoneIcon className="h-16 w-16 text-indigo-600 mx-auto mb-4" />
-                  <p className="text-xl text-gray-700">{t('ringing') || 'Ringing...'}</p>
+                  <p className="text-xl text-gray-700">Ringing...</p>
                 </div>
               </div>
             )}
@@ -322,7 +322,7 @@ export default function FrontDoorPage() {
                   {cameraEnabled ? (
                     <div className="text-center">
                       <VideoCameraIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500">{t('cameraActive') || 'Camera Active'}</p>
+                      <p className="text-gray-500">Camera Active</p>
                     </div>
                   ) : (
                     <div className="text-center">
@@ -331,7 +331,7 @@ export default function FrontDoorPage() {
                           {selectedDoorBell.doorBellNumber}
                         </span>
                       </div>
-                      <p className="text-gray-600">{t('videoCall') || 'Video Call'}</p>
+                      <p className="text-gray-600">Video Call</p>
                     </div>
                   )}
                 </div>
@@ -384,14 +384,14 @@ export default function FrontDoorPage() {
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                      placeholder={t('typeMessage') || 'Type a message...'}
+                      placeholder="Type a message..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     <button
                       onClick={sendMessage}
                       className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
                     >
-                      {t('send') || 'Send'}
+                      Send
                     </button>
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function FrontDoorPage() {
 
             {callStatus === 'ended' && (
               <div className="text-center py-12">
-                <p className="text-xl text-gray-700">{t('callEnded') || 'Call Ended'}</p>
+                <p className="text-xl text-gray-700">Call Ended</p>
                 <button
                   onClick={() => {
                     setSelectedDoorBell(null)
@@ -409,7 +409,7 @@ export default function FrontDoorPage() {
                   }}
                   className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
                 >
-                  {t('back') || 'Back'}
+                  Back
                 </button>
               </div>
             )}

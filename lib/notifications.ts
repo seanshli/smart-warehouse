@@ -30,7 +30,6 @@ export async function createNotification(data: NotificationData) {
         message: data.message, // 訊息
         userId: data.userId, // 用戶 ID
         itemId: data.itemId, // 物品 ID（可選）
-        householdId: data.householdId, // 家庭 ID（可選）
         mailboxId: data.metadata?.mailboxId, // 郵箱 ID（可選）
         doorBellId: data.metadata?.doorBellId, // 門鈴 ID（可選）
         packageId: data.metadata?.packageId, // 包裹 ID（可選）

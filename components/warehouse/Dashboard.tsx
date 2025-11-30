@@ -49,6 +49,7 @@ import HomeAssistantPanel from '../mqtt/HomeAssistantPanel'
 import MQTTPanel from '../mqtt/MQTTPanel'
 import FacilityReservationPanel from '../facility/FacilityReservationPanel'
 import AnnouncementBanner from '../AnnouncementBanner'
+import DoorBellPanel from '../household/DoorBellPanel'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -638,6 +639,9 @@ export default function Dashboard() {
                
                {activeTab === 'household' && (
                  <HouseholdSettings />
+               )}
+               {activeTab === 'doorbell' && (
+                 <DoorBellPanel />
                )}
              </main>
 

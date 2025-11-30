@@ -34,7 +34,9 @@ export async function middleware(request: NextRequest) {
     '/admin-auth/signout',
     '/api/auth/',
     '/api/health',
-    '/api/dashboard/simple' // Allow simple dashboard API without auth check
+    '/api/dashboard/simple', // Allow simple dashboard API without auth check
+    '/building/', // Front door public interface
+    '/api/building/', // Public building APIs
   ]
   
   const isPublicRoute = publicRoutes.some(route => 

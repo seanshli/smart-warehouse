@@ -106,15 +106,35 @@ export async function POST(
     // Create notifications for all household members
     const notifications = []
     for (const member of doorBell.household.members) {
-      const notification = await createNotification({
-        userId: member.user.id,
-        householdId: doorBell.household.id,
-        doorBellId: doorBell.id,
-        type: 'DOOR_BELL_RUNG',
-        title: 'Door Bell',
-        message: `Someone is at the door (${doorBell.doorBellNumber})`,
-      })
-      notifications.push(notification)
+      try {
+        const notification = await createNotification({
+          userId: member.user.id,
+          householdId: doorBell.household.id,
+          doorBellId: doorBell.id,
+          type: 'DOOR_BELL_RUNG',
+          title: 'Door Bell',
+          message: `Someone is at the door (${doorBell.doorBellNumber})`,
+        })
+        notifications.push(notification)
+      } catch (error) {
+        console.error('Error creating notification:', error)
+        // Create notification directly if createNotification fails
+        try {
+          const notification = await prisma.notification.create({
+            data: {
+              userId: member.user.id,
+              householdId: doorBell.household.id,
+              doorBellId: doorBell.id,
+              type: 'DOOR_BELL_RUNG',
+              title: 'Door Bell',
+              message: `Someone is at the door (${doorBell.doorBellNumber})`,
+            },
+          })
+          notifications.push(notification)
+        } catch (prismaError) {
+          console.error('Error creating notification via Prisma:', prismaError)
+        }
+      }
     }
 
     return NextResponse.json({

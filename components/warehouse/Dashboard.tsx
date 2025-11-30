@@ -378,6 +378,7 @@ export default function Dashboard() {
     // { id: 'reservations', name: (t as any)('reservationCenter') || '預定', icon: ClockIcon },
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
     { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
+    { id: 'doorbell', name: t('doorBell') || 'Door Bell', icon: BellIcon },
   ]
 
   return (

@@ -149,7 +149,7 @@ export default function DoorBellPanel() {
     <div className="bg-white rounded-lg shadow-lg p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
         <BellIcon className="h-5 w-5 mr-2 text-indigo-600" />
-        {t('doorBell') || 'Door Bell'}
+        Door Bell
       </h3>
 
       {activeCalls.length === 0 ? (

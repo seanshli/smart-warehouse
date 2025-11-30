@@ -75,7 +75,7 @@ export default function FrontDoorPage() {
 
   const handleRingDoorBell = async (doorBell: DoorBell) => {
     if (!doorBell.isEnabled) {
-      toast.error(t('doorBellDisabled') || 'This doorbell is disabled')
+      toast.error('This doorbell is disabled')
       return
     }
 

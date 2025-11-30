@@ -19,10 +19,31 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const pathname = usePathname()
   // Use the language context for actual language switching
   const { currentLanguage, setLanguage, t } = useLanguage()
+
+  // If not authenticated, show login prompt
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center">
+            <ShieldCheckIcon className="h-12 w-12 text-red-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('adminAccessRequired') || 'Admin Access Required'}</h2>
+            <p className="text-gray-600 mb-6">{t('adminPleaseSignIn') || 'Please sign in to access the admin panel'}</p>
+            <Link
+              href="/auth/signin"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              {t('commonSignIn') || 'Sign In'}
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const navigation = [
     { name: t('adminDashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },

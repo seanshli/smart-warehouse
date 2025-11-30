@@ -47,4 +47,84 @@ export async function DELETE(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string; facilityId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user || !(session.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = (session.user as any).id
+    const buildingId = params.id
+    const facilityId = params.facilityId
+    const { name, description, type, floorNumber, capacity } = await request.json()
+
+    const facility = await prisma.facility.findUnique({
+      where: { id: facilityId },
+    })
+
+    if (!facility || facility.buildingId !== buildingId) {
+      return NextResponse.json({ error: 'Facility not found' }, { status: 404 })
+    }
+
+    if (!(await checkBuildingManagement(userId, buildingId))) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    let floorId: string | null = facility.floorId
+    if (typeof floorNumber === 'number' && floorNumber > 0 && floorNumber !== facility.floorNumber) {
+      const floor = await prisma.floor.upsert({
+        where: {
+          buildingId_floorNumber: {
+            buildingId,
+            floorNumber,
+          },
+        },
+        update: {
+          name: floorNumber === 1 ? 'Front Door / 大門' : `Floor ${floorNumber}`,
+        },
+        create: {
+          buildingId,
+          floorNumber,
+          name: floorNumber === 1 ? 'Front Door / 大門' : `Floor ${floorNumber}`,
+          description: floorNumber === 1 ? 'Common area' : 'Facility floor',
+          isResidential: floorNumber >= 2,
+        },
+      })
+      floorId = floor.id
+    }
+
+    const updated = await prisma.facility.update({
+      where: { id: facilityId },
+      data: {
+        name: name !== undefined ? name : facility.name,
+        description: description !== undefined ? description : facility.description,
+        type: type !== undefined ? type : facility.type,
+        floorId: floorId !== undefined ? floorId : facility.floorId,
+        floorNumber: floorNumber !== undefined ? floorNumber : facility.floorNumber,
+        capacity: capacity !== undefined ? (typeof capacity === 'number' ? capacity : null) : facility.capacity,
+      },
+      include: {
+        operatingHours: {
+          orderBy: {
+            dayOfWeek: 'asc',
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error updating facility:', error)
+    return NextResponse.json(
+      { error: 'Failed to update facility' },
+      { status: 500 }
+    )
+  }
+}
+
 

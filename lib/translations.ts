@@ -227,6 +227,25 @@ export interface Translations {
   currentPassword: string
   newPassword: string
   confirmPassword: string
+  editFacility: string
+  facilityUpdated: string
+  facilityUpdateError: string
+  forgotPassword: string
+  forgotPasswordDescription: string
+  checkYourEmail: string
+  passwordResetEmailSent: string
+  backToSignIn: string
+  sendResetLink: string
+  invalidResetLink: string
+  passwordsDoNotMatch: string
+  passwordTooShort: string
+  resetPassword: string
+  enterNewPassword: string
+  resetting: string
+  sending: string
+  adminAccessRequired: string
+  adminPleaseSignIn: string
+  commonSignIn: string
   passwordRequirements: string
   changing: string
   
@@ -1962,6 +1981,25 @@ const zhTW: Translations = {
   confirmPassword: '確認新密碼',
   passwordRequirements: '至少 6 個字元',
   changing: '變更中...',
+  editFacility: '編輯設施',
+  facilityUpdated: '設施更新成功',
+  facilityUpdateError: '更新設施失敗',
+  forgotPassword: '忘記密碼',
+  forgotPasswordDescription: '輸入您的電子郵件地址，我們將發送重置密碼連結給您。',
+  checkYourEmail: '檢查您的電子郵件',
+  passwordResetEmailSent: '如果此電子郵件存在帳戶，已發送密碼重置連結。',
+  backToSignIn: '返回登入',
+  sendResetLink: '發送重置連結',
+  invalidResetLink: '無效的重置連結',
+  passwordsDoNotMatch: '密碼不相符',
+  passwordTooShort: '密碼至少需要 6 個字元',
+  resetPassword: '重置密碼',
+  enterNewPassword: '請在下方輸入您的新密碼',
+  resetting: '重置中...',
+  sending: '發送中...',
+  adminAccessRequired: '需要管理員權限',
+  adminPleaseSignIn: '請登入以存取管理面板',
+  commonSignIn: '登入',
   
   // Dashboard Time Filters
   today: '今天',
@@ -2823,6 +2861,25 @@ const zh: Translations = {
   currentPassword: '当前密码',
   newPassword: '新密码',
   confirmPassword: '确认新密码',
+  editFacility: '编辑设施',
+  facilityUpdated: '设施更新成功',
+  facilityUpdateError: '更新设施失败',
+  forgotPassword: '忘记密码',
+  forgotPasswordDescription: '输入您的电子邮件地址，我们将发送重置密码链接给您。',
+  checkYourEmail: '检查您的电子邮件',
+  passwordResetEmailSent: '如果此电子邮件存在账户，已发送密码重置链接。',
+  backToSignIn: '返回登录',
+  sendResetLink: '发送重置链接',
+  invalidResetLink: '无效的重置链接',
+  passwordsDoNotMatch: '密码不匹配',
+  passwordTooShort: '密码至少需要 6 个字符',
+  resetPassword: '重置密码',
+  enterNewPassword: '请在下方输入您的新密码',
+  resetting: '重置中...',
+  sending: '发送中...',
+  adminAccessRequired: '需要管理员权限',
+  adminPleaseSignIn: '请登录以访问管理面板',
+  commonSignIn: '登录',
   passwordRequirements: '至少 6 个字符',
   changing: '更改中...',
   

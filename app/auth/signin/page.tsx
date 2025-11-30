@@ -208,6 +208,11 @@ export default function SignIn() {
                 Create one
               </a>
             </p>
+            <p className="text-sm text-gray-600">
+              <a href="/auth/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+                Forgot your password?
+              </a>
+            </p>
             <p className="text-xs text-gray-500">
               To join an existing household, ask the household admin for the Household ID
             </p>

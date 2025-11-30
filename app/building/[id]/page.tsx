@@ -1540,9 +1540,17 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
     floorNumber: 2,
     capacity: 10,
   })
+  const [editingFacility, setEditingFacility] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    type: 'custom',
+    floorNumber: 2,
+    capacity: 10,
+  })
   const [hoursState, setHoursState] = useState<Record<string, any[]>>({})
   const [savingFacility, setSavingFacility] = useState(false)
   const [savingHours, setSavingHours] = useState<Record<string, boolean>>({})
+  const [updatingFacility, setUpdatingFacility] = useState<Record<string, boolean>>({})
 
   const fetchFacilities = async () => {
     try {
@@ -1591,6 +1599,45 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
       toast.error(error instanceof Error ? error.message : t('facilityCreateError'))
     } finally {
       setSavingFacility(false)
+    }
+  }
+
+  const handleEdit = (facility: any) => {
+    setEditingFacility(facility.id)
+    setEditForm({
+      name: facility.name || '',
+      type: facility.type || 'custom',
+      floorNumber: facility.floorNumber || 2,
+      capacity: facility.capacity || 10,
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingFacility(null)
+    setEditForm({ name: '', type: 'custom', floorNumber: 2, capacity: 10 })
+  }
+
+  const handleUpdate = async (facilityId: string) => {
+    try {
+      setUpdatingFacility(prev => ({ ...prev, [facilityId]: true }))
+      const response = await fetch(`/api/building/${buildingId}/facility/${facilityId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to update facility')
+      }
+      toast.success(t('facilityUpdated') || 'Facility updated successfully')
+      setEditingFacility(null)
+      setEditForm({ name: '', type: 'custom', floorNumber: 2, capacity: 10 })
+      fetchFacilities()
+    } catch (error) {
+      console.error('Error updating facility:', error)
+      toast.error(error instanceof Error ? error.message : t('facilityUpdateError') || 'Failed to update facility')
+    } finally {
+      setUpdatingFacility(prev => ({ ...prev, [facilityId]: false }))
     }
   }
 
@@ -1712,21 +1759,90 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
         <div className="space-y-4">
           {facilities.map((facility) => (
             <div key={facility.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-                <div>
-                  <h4 className="text-base font-semibold text-gray-900">{facility.name}</h4>
-                  <p className="text-xs text-gray-500">
-                    {t('facilityTypeLabel')}: {facility.type || 'custom'} · {t('facilityFloorLabel')}:{' '}
-                    {facility.floorNumber || '-'}
-                  </p>
+              {editingFacility === facility.id ? (
+                <div className="mb-4">
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">{t('editFacility') || 'Edit Facility'}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">{t('facilityNameLabel')}</label>
+                      <input
+                        value={editForm.name}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">{t('facilityTypeLabel')}</label>
+                      <input
+                        value={editForm.type}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value }))}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">{t('facilityFloorLabel')}</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={editForm.floorNumber}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, floorNumber: Number(e.target.value) }))}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">{t('facilityCapacityLabel')}</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={editForm.capacity}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, capacity: Number(e.target.value) }))}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end space-x-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button
+                      onClick={() => handleUpdate(facility.id)}
+                      disabled={updatingFacility[facility.id] || !editForm.name}
+                      className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:bg-gray-400"
+                    >
+                      {updatingFacility[facility.id] ? t('saving') : t('save')}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(facility.id)}
-                  className="text-xs text-red-600 hover:text-red-800"
-                >
-                  {t('facilityDelete')}
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                  <div>
+                    <h4 className="text-base font-semibold text-gray-900">{facility.name}</h4>
+                    <p className="text-xs text-gray-500">
+                      {t('facilityTypeLabel')}: {facility.type || 'custom'} · {t('facilityFloorLabel')}:{' '}
+                      {facility.floorNumber || '-'} · {t('facilityCapacityLabel')}: {facility.capacity || '-'}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(facility)}
+                      className="text-xs text-primary-600 hover:text-primary-800"
+                    >
+                      {t('edit') || 'Edit'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(facility.id)}
+                      className="text-xs text-red-600 hover:text-red-800"
+                    >
+                      {t('facilityDelete')}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-xs">

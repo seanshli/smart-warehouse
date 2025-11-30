@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useHousehold } from '@/components/HouseholdProvider'
 import { useLanguage } from '@/components/LanguageProvider'
 import { 
@@ -12,6 +12,7 @@ import {
   BellIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { DoorBellWebRTC } from '@/lib/webrtc'
 
 interface DoorBellCall {
   id: string
@@ -35,6 +36,9 @@ export default function DoorBellPanel() {
   const [messageInput, setMessageInput] = useState('')
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [micEnabled, setMicEnabled] = useState(false)
+  const localVideoRef = useRef<HTMLVideoElement>(null)
+  const remoteVideoRef = useRef<HTMLVideoElement>(null)
+  const webrtcRef = useRef<DoorBellWebRTC | null>(null)
 
   useEffect(() => {
     if (!household?.id || !household?.buildingId) return

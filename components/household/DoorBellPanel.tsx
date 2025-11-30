@@ -76,7 +76,7 @@ export default function DoorBellPanel() {
       })
 
       if (response.ok) {
-        toast.success(t('callAnswered') || 'Call answered')
+        toast.success('Call answered')
         setSelectedCall(call)
         fetchActiveCalls()
       }

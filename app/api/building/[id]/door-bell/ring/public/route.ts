@@ -110,10 +110,12 @@ export async function POST(
         const notification = await createNotification({
           userId: member.user.id,
           householdId: doorBell.household.id,
-          doorBellId: doorBell.id,
           type: 'DOOR_BELL_RUNG',
           title: 'Door Bell',
           message: `Someone is at the door (${doorBell.doorBellNumber})`,
+          metadata: {
+            doorBellId: doorBell.id,
+          },
         })
         notifications.push(notification)
       } catch (error) {

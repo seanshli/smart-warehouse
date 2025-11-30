@@ -191,13 +191,13 @@ export default function FrontDoorPage() {
   const toggleCamera = () => {
     setCameraEnabled(!cameraEnabled)
     // TODO: Implement camera stream
-                    toast.info(cameraEnabled ? 'Camera Off' : 'Camera On')
+    toast(cameraEnabled ? 'Camera Off' : 'Camera On', { icon: '📷' })
   }
 
   const toggleMic = () => {
     setMicEnabled(!micEnabled)
     // TODO: Implement microphone stream
-                    toast.info(micEnabled ? 'Mic Off' : 'Mic On')
+    toast(micEnabled ? 'Mic Off' : 'Mic On', { icon: '🎤' })
   }
 
   const endCall = async () => {

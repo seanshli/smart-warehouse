@@ -265,6 +265,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
   } | null>(null)
   const [frontDoorSummary, setFrontDoorSummary] = useState<any>(null)
   const [loadingSummary, setLoadingSummary] = useState(true)
+  const [workingTeamSummary, setWorkingTeamSummary] = useState<any[]>([])
 
   // Check if floors and units are already set up
   const isSetup = (building.floorCountActual && building.floorCountActual > 0) || 
@@ -279,6 +280,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
       })
     }
     fetchFrontDoorSummary()
+    fetchWorkingTeamSummary()
   }, [building.floorCountActual, building.householdCount, building.mailboxCount, isSetup, buildingId])
 
   const fetchFrontDoorSummary = async () => {
@@ -293,6 +295,71 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
       console.error('Failed to fetch front door summary:', err)
     } finally {
       setLoadingSummary(false)
+    }
+  }
+
+  const fetchWorkingTeamSummary = async () => {
+    try {
+      const response = await fetch(`/api/building/${buildingId}/working-groups`)
+      if (!response.ok) {
+        return
+      }
+
+      const data = await response.json()
+      const groups: any[] = data.workingGroups || []
+
+      const TYPES = [
+        { type: 'MANAGEMENT', label: 'Management Team' },
+        { type: 'MAINTENANCE', label: 'Maintenance Team' },
+        { type: 'FRONT_DOOR', label: 'Front Door Team' },
+      ]
+
+      const summary = TYPES.map((entry) => {
+        const group = groups.find((g) => g.type === entry.type)
+
+        if (!group) {
+          return {
+            type: entry.type,
+            label: entry.label,
+            exists: false,
+            members: 0,
+            leaders: 0,
+            defaultAccountsOk: entry.type !== 'FRONT_DOOR' ? false : false,
+            status: 'missing',
+          }
+        }
+
+        const members = group.members || []
+        const leaders = members.filter((m: any) => m.role === 'LEADER').length
+
+        let defaultAccountsOk = true
+        if (entry.type === 'FRONT_DOOR') {
+          const hasDoorbell = members.some((m: any) => m.userEmail?.startsWith('doorbell@'))
+          const hasFrontdesk = members.some((m: any) => m.userEmail?.startsWith('frontdesk@'))
+          defaultAccountsOk = hasDoorbell && hasFrontdesk
+        }
+
+        let status: 'ok' | 'warning' | 'missing' = 'ok'
+        if (!group || members.length === 0) {
+          status = 'missing'
+        } else if (leaders === 0 || (entry.type === 'FRONT_DOOR' && !defaultAccountsOk)) {
+          status = 'warning'
+        }
+
+        return {
+          type: entry.type,
+          label: entry.label,
+          exists: true,
+          members: members.length,
+          leaders,
+          defaultAccountsOk,
+          status,
+        }
+      })
+
+      setWorkingTeamSummary(summary)
+    } catch (error) {
+      console.error('Failed to fetch working team summary:', error)
     }
   }
 
@@ -438,6 +505,88 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
             </div>
           )}
         </div>
+
+        {workingTeamSummary && workingTeamSummary.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-md font-medium text-gray-900">Working Teams</h4>
+              <button
+                onClick={() => onNavigateTab('facilities')}
+                className="text-xs text-primary-600 hover:text-primary-700 underline"
+              >
+                View details
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {workingTeamSummary.map((team) => (
+                <div
+                  key={team.type}
+                  className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold text-gray-900">{team.label}</p>
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                          team.status === 'ok'
+                            ? 'bg-green-100 text-green-800'
+                            : team.status === 'warning'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {team.status === 'ok'
+                          ? 'Ready'
+                          : team.status === 'warning'
+                          ? 'Needs Attention'
+                          : 'Not Set Up'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {team.type === 'MANAGEMENT' &&
+                        'Manages overall building and community operations.'}
+                      {team.type === 'MAINTENANCE' &&
+                        'Handles maintenance and repair tasks for this building.'}
+                      {team.type === 'FRONT_DOOR' &&
+                        'Handles front door, visitor access, and security.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                      <div>
+                        <p className="font-medium">Members</p>
+                        <p>{team.members}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Leaders</p>
+                        <p>{team.leaders}</p>
+                      </div>
+                      {team.type === 'FRONT_DOOR' && (
+                        <div className="col-span-2">
+                          <p className="font-medium">Default Accounts</p>
+                          <p className={team.defaultAccountsOk ? 'text-green-700' : 'text-yellow-700'}>
+                            {team.defaultAccountsOk ? 'doorbell & frontdesk linked' : 'Missing doorbell/frontdesk accounts'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-[11px] text-gray-500">
+                      Tasks:
+                      {' '}
+                      {team.exists ? 'Team created' : 'Create team'} ·{' '}
+                      {team.leaders > 0 ? 'Leader assigned' : 'Assign a leader'} ·{' '}
+                      {team.type === 'FRONT_DOOR'
+                        ? team.defaultAccountsOk
+                          ? 'Front desk/doorbell accounts ready'
+                          : 'Create/link frontdesk & doorbell accounts'
+                        : 'Add building staff as members'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div>

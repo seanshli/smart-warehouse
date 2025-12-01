@@ -45,13 +45,98 @@ export default function FrontDoorPage() {
   const [messageInput, setMessageInput] = useState('')
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [micEnabled, setMicEnabled] = useState(false)
+  const [incomingCall, setIncomingCall] = useState<any>(null)
+  const [showCallDialog, setShowCallDialog] = useState(false)
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const webrtcRef = useRef<DoorBellWebRTC | null>(null)
 
   useEffect(() => {
     fetchBuildingData()
+    
+    // Poll for incoming calls (for front desk)
+    const callPollInterval = setInterval(() => {
+      fetchActiveCalls()
+    }, 2000)
+    
+    return () => clearInterval(callPollInterval)
   }, [buildingId])
+  
+  const fetchActiveCalls = async () => {
+    try {
+      const response = await fetch(`/api/building/${buildingId}/door-bell/active-calls`)
+      if (response.ok) {
+        const data = await response.json()
+        const activeCalls = data.calls || []
+        
+        // Find ringing calls (incoming)
+        const ringingCall = activeCalls.find((call: any) => call.status === 'ringing')
+        
+        if (ringingCall && !incomingCall) {
+          // New incoming call
+          setIncomingCall(ringingCall)
+          setShowCallDialog(true)
+          toast.success(`Incoming call from ${ringingCall.doorBellNumber}`, {
+            duration: 10000,
+            icon: '🔔',
+          })
+        } else if (!ringingCall && incomingCall) {
+          // Call ended or answered
+          setIncomingCall(null)
+          setShowCallDialog(false)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching active calls:', error)
+    }
+  }
+  
+  const handleAnswerCall = async (call: any) => {
+    try {
+      // Find the doorbell for this call
+      const doorBell = doorBells.find(db => db.id === call.doorBellId)
+      if (!doorBell) {
+        toast.error('Doorbell not found')
+        return
+      }
+      
+      setSelectedDoorBell(doorBell)
+      setIncomingCall(null)
+      setShowCallDialog(false)
+      setCallStatus('connected')
+      setInCall(true)
+      
+      // Answer the call via API (public endpoint for front desk)
+      const response = await fetch(`/api/building/${buildingId}/door-bell/${doorBell.id}/answer/public`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      if (response.ok) {
+        toast.success('Call answered')
+        initializeWebRTC()
+        startCallSession(doorBell.id)
+      } else {
+        toast.error('Failed to answer call')
+      }
+    } catch (error) {
+      console.error('Error answering call:', error)
+      toast.error('Failed to answer call')
+    }
+  }
+  
+  const handleRejectCall = async (call: any) => {
+    try {
+      const response = await fetch(`/api/building/${buildingId}/door-bell/${call.doorBellId}/end-call/public`, {
+        method: 'POST',
+      })
+      setIncomingCall(null)
+      setShowCallDialog(false)
+      toast('Call rejected')
+    } catch (error) {
+      console.error('Error rejecting call:', error)
+    }
+  }
 
   const fetchBuildingData = async () => {
     try {
@@ -312,6 +397,45 @@ export default function FrontDoorPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Incoming Call Dialog */}
+      {showCallDialog && incomingCall && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="animate-pulse mb-4">
+                <PhoneIcon className="h-16 w-16 text-indigo-600 mx-auto" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Incoming Call
+              </h2>
+              <p className="text-xl text-gray-600 mb-1">
+                Doorbell {incomingCall.doorBellNumber}
+              </p>
+              {incomingCall.household && (
+                <p className="text-sm text-gray-500 mb-6">
+                  {incomingCall.household.name || incomingCall.household.apartmentNo}
+                </p>
+              )}
+              <div className="flex space-x-4 justify-center">
+                <button
+                  onClick={() => handleRejectCall(incomingCall)}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold flex items-center space-x-2"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                  <span>Reject</span>
+                </button>
+                <button
+                  onClick={() => handleAnswerCall(incomingCall)}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center space-x-2"
+                >
+                  <PhoneIcon className="h-5 w-5" />
+                  <span>Answer</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Welcome Header */}
       <div className="bg-white shadow-lg">
         <div className="max-w-4xl mx-auto px-6 py-8">

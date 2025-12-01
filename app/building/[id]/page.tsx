@@ -1402,20 +1402,42 @@ function FrontDoorTab({ buildingId }: { buildingId: string }) {
               {summary.doorBells.map((bell: any) => (
                 <div key={bell.id} className="border border-gray-100 rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{bell.doorBellNumber}</p>
-                      <p className="text-xs text-gray-500">{bell.household?.name || t('householdProperty')}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <p className="text-sm font-medium text-gray-900">{bell.doorBellNumber}</p>
+                        {bell.isEnabled && (
+                          <span className="px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">
+                            Enabled
+                          </span>
+                        )}
+                        {bell.household ? (
+                          <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                            Linked
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800">
+                            Not Linked
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {bell.household?.name || bell.household?.apartmentNo || 'No household linked'}
+                      </p>
                     </div>
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleDoorBellToggle(bell.id, !bell.isEnabled)}
-                        className="px-3 py-1 text-xs font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        disabled={!bell.household}
+                        className="px-3 py-1 text-xs font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        title={!bell.household ? 'Link household first' : ''}
                       >
                         {bell.isEnabled ? t('frontDoorDisable') : t('frontDoorEnable')}
                       </button>
                       <button
                         onClick={() => handleRingDoorBell(bell.id)}
-                        className="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                        disabled={!bell.isEnabled || !bell.household}
+                        className="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        title={!bell.household ? 'Link household first' : !bell.isEnabled ? 'Enable first' : ''}
                       >
                         {t('frontDoorRingButton')}
                       </button>

@@ -229,7 +229,7 @@ export default function AdminUsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserDetails, setShowUserDetails] = useState(false)
-  const [activeTab, setActiveTab] = useState<'all' | 'community' | 'building'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'community' | 'building' | 'other'>('all')
   const [communities, setCommunities] = useState<Array<{ id: string; name: string }>>([])
   const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
   const [selectedCommunityId, setSelectedCommunityId] = useState<string>('')
@@ -260,34 +260,50 @@ export default function AdminUsersPage() {
   // Refetch users when filter changes
   useEffect(() => {
     fetchUsers()
-  }, [selectedCommunityId, selectedBuildingId, activeTab])
+  }, [selectedCommunityId, selectedBuildingId, filterType])
 
-  // Reset building selection when community changes
+  // Reset selections when filter type changes
   useEffect(() => {
-    if (activeTab === 'community') {
+    if (filterType !== 'community') {
+      setSelectedCommunityId('')
+    }
+    if (filterType !== 'building') {
       setSelectedBuildingId('')
     }
-  }, [selectedCommunityId, activeTab])
+  }, [filterType])
 
   const fetchUsers = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
       
-      // Hierarchical filtering: if building is selected, use building; otherwise use community
-      if (selectedBuildingId) {
-        params.append('buildingId', selectedBuildingId)
-      } else if (selectedCommunityId && activeTab === 'community') {
+      // Simple filtering based on filterType
+      if (filterType === 'community' && selectedCommunityId) {
         params.append('communityId', selectedCommunityId)
-      } else if (selectedBuildingId && activeTab === 'building') {
+      } else if (filterType === 'building' && selectedBuildingId) {
         params.append('buildingId', selectedBuildingId)
+      } else if (filterType === 'other') {
+        params.append('filterType', 'other') // Special filter for users with no community/building
       }
+      // 'all' doesn't need any params
       
       const response = await fetch(`/api/admin/users?${params.toString()}`)
       
       if (response.ok) {
         const data = await response.json()
-        setUsers(data.users || [])
+        let filteredUsers = data.users || []
+        
+        // Client-side filter for "other" (users with no community/building)
+        if (filterType === 'other') {
+          filteredUsers = filteredUsers.filter((user: User) => {
+            const hasCommunity = user.communities && user.communities.length > 0
+            const hasBuilding = user.buildings && user.buildings.length > 0
+            const hasHouseholdWithBuilding = user.households && user.households.some((h: any) => h.building)
+            return !hasCommunity && !hasBuilding && !hasHouseholdWithBuilding
+          })
+        }
+        
+        setUsers(filteredUsers)
       } else {
         setError('Failed to fetch users')
       }
@@ -396,114 +412,54 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => {
-                setActiveTab('all')
-                setSelectedCommunityId('')
-                setSelectedBuildingId('')
-              }}
-              className={`${
-                activeTab === 'all'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+        {/* Filter */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Filter Users
+          </label>
+          <div className="flex flex-wrap gap-4 items-end">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
             >
-              All Users
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('community')
-                setSelectedBuildingId('')
-              }}
-              className={`${
-                activeTab === 'community'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              By Community
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('building')
-                setSelectedCommunityId('')
-              }}
-              className={`${
-                activeTab === 'building'
-                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              By Building
-            </button>
-          </nav>
-        </div>
+              <option value="all">All Users</option>
+              <option value="community">By Community</option>
+              <option value="building">By Building</option>
+              <option value="other">Other (No Community/Building)</option>
+            </select>
 
-        {/* Filter Selectors */}
-        {activeTab === 'community' && (
-          <div className="mb-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Community
-              </label>
+            {filterType === 'community' && (
               <select
                 value={selectedCommunityId}
                 onChange={(e) => setSelectedCommunityId(e.target.value)}
-                className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
               >
-                <option value="">All Communities</option>
+                <option value="">Select Community</option>
                 {communities.map((community) => (
                   <option key={community.id} value={community.id}>
                     {community.name}
                   </option>
                 ))}
               </select>
-            </div>
-            
-            {selectedCommunityId && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Building (Optional - further filter)
-                </label>
-                <select
-                  value={selectedBuildingId}
-                  onChange={(e) => setSelectedBuildingId(e.target.value)}
-                  className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
-                >
-                  <option value="">All Buildings in Community</option>
-                  {filteredBuildings.map((building) => (
-                    <option key={building.id} value={building.id}>
-                      {building.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            )}
+
+            {filterType === 'building' && (
+              <select
+                value={selectedBuildingId}
+                onChange={(e) => setSelectedBuildingId(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              >
+                <option value="">Select Building</option>
+                {buildings.map((building) => (
+                  <option key={building.id} value={building.id}>
+                    {building.name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
-        )}
-
-        {activeTab === 'building' && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Building
-            </label>
-            <select
-              value={selectedBuildingId}
-              onChange={(e) => setSelectedBuildingId(e.target.value)}
-              className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
-            >
-              <option value="">All Buildings</option>
-              {buildings.map((building) => (
-                <option key={building.id} value={building.id}>
-                  {building.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        </div>
 
         {/* Controls */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">

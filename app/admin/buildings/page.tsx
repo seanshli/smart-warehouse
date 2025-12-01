@@ -8,8 +8,10 @@ import {
   BuildingOfficeIcon,
   HomeIcon,
   UserGroupIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  ClipboardDocumentIcon
 } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 
 interface Building {
   id: string
@@ -220,6 +222,27 @@ export default function AdminBuildingsPage() {
                             {building.name}
                           </Link>
                         </h3>
+                        <div className="mt-1 flex items-center space-x-2 flex-wrap gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(building.id)
+                              toast.success('Building ID copied to clipboard')
+                            }}
+                            className="inline-flex items-center space-x-1 text-xs font-mono text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+                            title="Click to copy Building ID"
+                          >
+                            <ClipboardDocumentIcon className="h-3 w-3" />
+                            <span>ID: {building.id}</span>
+                          </button>
+                          <span className="text-xs text-gray-400">•</span>
+                          <Link
+                            href={`/building/${building.id}/front-door`}
+                            className="text-xs text-primary-600 hover:text-primary-700 underline"
+                            title="Front Door Alarm Page"
+                          >
+                            Front Door: /building/{building.id}/front-door
+                          </Link>
+                        </div>
                         {building.description && (
                           <p className="mt-1 text-sm text-gray-500">{building.description}</p>
                         )}

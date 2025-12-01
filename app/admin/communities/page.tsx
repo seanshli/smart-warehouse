@@ -195,6 +195,11 @@ export default function AdminCommunitiesPage() {
                             {community.name}
                           </Link>
                         </h3>
+                        <div className="mt-1 flex items-center space-x-2">
+                          <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                            Community ID: {community.id}
+                          </span>
+                        </div>
                         {community.description && (
                           <p className="mt-1 text-sm text-gray-500">{community.description}</p>
                         )}

@@ -14,7 +14,8 @@ import {
   TrashIcon,
   ArrowLeftIcon,
   PlusIcon,
-  BellIcon
+  BellIcon,
+  ClipboardDocumentIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -301,9 +302,28 @@ function OverviewTab({ community }: { community: Community }) {
               {new Date(community.createdAt).toLocaleDateString(currentLanguage === 'zh-TW' ? 'zh-TW' : currentLanguage === 'zh' ? 'zh-CN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US')}
             </dd>
           </div>
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-gray-500 mb-1">Community ID</dt>
+            <dd className="mt-1">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(community.id)
+                  toast.success('Community ID copied to clipboard')
+                }}
+                className="inline-flex items-center space-x-2 text-xs font-mono text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded transition-colors"
+                title="Click to copy Community ID"
+              >
+                <ClipboardDocumentIcon className="h-4 w-4" />
+                <span>{community.id}</span>
+              </button>
+              <p className="text-xs text-gray-500 mt-1">
+                Note: Community ID is different from Invitation Code. Use this ID for API calls and direct links.
+              </p>
+            </dd>
+          </div>
           {community.invitationCode && (
             <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500 mb-1">{t('communityInvitationCode')}</dt>
+              <dt className="text-sm font-medium text-gray-500 mb-1">{t('communityInvitationCode')} <span className="text-xs text-gray-400 font-normal">(for joining)</span></dt>
               <dd className="mt-1">
                 <div className="flex items-center space-x-2 mb-2">
                   <code className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-mono">
@@ -333,6 +353,9 @@ function OverviewTab({ community }: { community: Community }) {
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                       {t('scanQRCodeToJoin')}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2 italic">
+                      Note: Invitation Code is different from Community ID. Use this code to invite people to join.
                     </p>
                   </div>
                 </div>
@@ -378,14 +401,41 @@ function OverviewTab({ community }: { community: Community }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {buildings.map((building) => (
-              <Link
+              <div
                 key={building.id}
-                href={`/building/${building.id}`}
                 className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900">{building.name}</h4>
+                  <Link
+                    href={`/building/${building.id}`}
+                    className="flex-1"
+                  >
+                    <h4 className="font-semibold text-gray-900 hover:text-primary-600">{building.name}</h4>
+                  </Link>
                   <BuildingOfficeIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                </div>
+                <div className="mt-1 mb-2 flex items-center space-x-2 flex-wrap gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      navigator.clipboard.writeText(building.id)
+                      toast.success('Building ID copied to clipboard')
+                    }}
+                    className="inline-flex items-center space-x-1 text-xs font-mono text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+                    title="Click to copy Building ID"
+                  >
+                    <ClipboardDocumentIcon className="h-3 w-3" />
+                    <span>ID: {building.id}</span>
+                  </button>
+                  <span className="text-xs text-gray-400">•</span>
+                  <Link
+                    href={`/building/${building.id}/front-door`}
+                    className="text-xs text-primary-600 hover:text-primary-700 underline"
+                    title="Front Door Alarm Page"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Front Door
+                  </Link>
                 </div>
                 {building.description && (
                   <p className="text-sm text-gray-600 mt-1 mb-3">{building.description}</p>
@@ -402,7 +452,7 @@ function OverviewTab({ community }: { community: Community }) {
                     </div>
                   )}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
@@ -513,19 +563,48 @@ function BuildingsTab({ communityId }: { communityId: string }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {buildings.map((building) => (
-            <Link
+            <div
               key={building.id}
-              href={`/building/${building.id}`}
               className="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
             >
-              <h4 className="font-medium text-gray-900">{building.name}</h4>
+              <div className="flex items-start justify-between mb-2">
+                <Link
+                  href={`/building/${building.id}`}
+                  className="flex-1"
+                >
+                  <h4 className="font-medium text-gray-900 hover:text-primary-600">{building.name}</h4>
+                </Link>
+              </div>
+              <div className="mt-1 mb-2 flex items-center space-x-2 flex-wrap gap-1">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigator.clipboard.writeText(building.id)
+                    toast.success('Building ID copied to clipboard')
+                  }}
+                  className="inline-flex items-center space-x-1 text-xs font-mono text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+                  title="Click to copy Building ID"
+                >
+                  <ClipboardDocumentIcon className="h-3 w-3" />
+                  <span>ID: {building.id}</span>
+                </button>
+                <span className="text-xs text-gray-400">•</span>
+                <Link
+                  href={`/building/${building.id}/front-door`}
+                  className="text-xs text-primary-600 hover:text-primary-700 underline"
+                  title="Front Door Alarm Page"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Front Door
+                </Link>
+              </div>
               {building.description && (
                 <p className="text-sm text-gray-600 mt-1">{building.description}</p>
               )}
               <p className="text-xs text-gray-500 mt-2">
                 {building.householdCount || 0} households
               </p>
-            </Link>
+            </div>
           ))}
         </div>
       )}

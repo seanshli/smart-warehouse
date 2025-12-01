@@ -2119,6 +2119,12 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
   const [workingGroups, setWorkingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null)
+  const [groupMembers, setGroupMembers] = useState<any[]>([])
+  const [groupLoading, setGroupLoading] = useState(false)
+  const [groupError, setGroupError] = useState<string | null>(null)
+  const [addEmail, setAddEmail] = useState('')
+  const [addingMember, setAddingMember] = useState(false)
 
   useEffect(() => {
     fetchWorkingGroups()
@@ -2141,6 +2147,102 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
       setError(err instanceof Error ? err.message : 'Failed to load working groups')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const openGroupDetails = async (group: any) => {
+    if (!group.communityId) {
+      console.warn('Working group missing communityId', group)
+      return
+    }
+    setSelectedGroup(group)
+    setGroupError(null)
+    setGroupLoading(true)
+    try {
+      const response = await fetch(
+        `/api/community/${group.communityId}/working-groups/${group.id}/members`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        setGroupMembers(data.members || [])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setGroupError(errorData.error || 'Failed to load members')
+      }
+    } catch (err) {
+      console.error('Failed to load group members:', err)
+      setGroupError(err instanceof Error ? err.message : 'Failed to load members')
+    } finally {
+      setGroupLoading(false)
+    }
+  }
+
+  const closeGroupDetails = () => {
+    setSelectedGroup(null)
+    setGroupMembers([])
+    setAddEmail('')
+    setGroupError(null)
+  }
+
+  const handleAddMember = async () => {
+    if (!selectedGroup || !addEmail.trim()) return
+    if (!selectedGroup.communityId) {
+      toast.error('Missing community information for this group')
+      return
+    }
+
+    try {
+      setAddingMember(true)
+      setGroupError(null)
+      const response = await fetch(
+        `/api/community/${selectedGroup.communityId}/working-groups/${selectedGroup.id}/members`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUserEmail: addEmail.trim(), role: 'MEMBER' }),
+        }
+      )
+
+      if (response.ok) {
+        const newMember = await response.json()
+        setGroupMembers(prev => [...prev, newMember])
+        setAddEmail('')
+        toast.success('Member added to team')
+        fetchWorkingGroups()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setGroupError(errorData.error || 'Failed to add member')
+        toast.error(errorData.error || 'Failed to add member')
+      }
+    } catch (err) {
+      console.error('Error adding member:', err)
+      setGroupError(err instanceof Error ? err.message : 'Failed to add member')
+      toast.error('Failed to add member')
+    } finally {
+      setAddingMember(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!selectedGroup || !selectedGroup.communityId) return
+    if (!confirm('Remove this member from the team?')) return
+
+    try {
+      const response = await fetch(
+        `/api/community/${selectedGroup.communityId}/working-groups/${selectedGroup.id}/members/${memberId}`,
+        { method: 'DELETE' }
+      )
+      if (response.ok) {
+        setGroupMembers(prev => prev.filter(m => m.id !== memberId))
+        toast.success('Member removed')
+        fetchWorkingGroups()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || 'Failed to remove member')
+      }
+    } catch (err) {
+      console.error('Error removing member:', err)
+      toast.error('Failed to remove member')
     }
   }
 
@@ -2170,28 +2272,38 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900">{t('communityWorkingGroups') || 'Working Groups'}</h3>
+        <h3 className="text-lg font-medium text-gray-900">
+          {t('communityWorkingGroups') || 'Working Groups'}
+        </h3>
       </div>
       {workingGroups.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p className="mb-4">No working groups found for this building.</p>
           <p className="text-sm text-gray-400">
-            Working groups are automatically created when a building is created. If you don't see any groups, they may need to be initialized.
+            Working groups are automatically created when a building is created. If you
+            don't see any groups, they may need to be initialized.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {workingGroups.map((group) => (
-            <div key={group.id} className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors">
+          {workingGroups.map(group => (
+            <button
+              key={group.id}
+              type="button"
+              onClick={() => openGroupDetails(group)}
+              className="text-left p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-medium text-gray-900">{group.name}</h4>
-                <span className={`px-2 py-1 text-xs font-medium rounded ${
-                  group.type === 'MANAGEMENT' 
-                    ? 'bg-blue-100 text-blue-800'
-                    : group.type === 'MAINTENANCE'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-purple-100 text-purple-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded ${
+                    group.type === 'MANAGEMENT'
+                      ? 'bg-blue-100 text-blue-800'
+                      : group.type === 'MAINTENANCE'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-purple-100 text-purple-800'
+                  }`}
+                >
                   {group.type}
                 </span>
               </div>
@@ -2201,35 +2313,153 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
               <div className="space-y-2">
                 <div className="flex items-center text-xs text-gray-500">
                   <UserGroupIcon className="h-4 w-4 mr-1" />
-                  <span>{group.stats.members} {t('members') || 'members'}</span>
+                  <span>
+                    {group.stats.members} {t('members') || 'members'}
+                  </span>
                 </div>
                 {group.members && group.members.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <p className="text-xs font-medium text-gray-700 mb-2">Team Members:</p>
                     <div className="space-y-1">
                       {group.members.slice(0, 5).map((member: any) => (
-                        <div key={member.id} className="flex items-center justify-between text-xs">
+                        <div
+                          key={member.id}
+                          className="flex items-center justify-between text-xs"
+                        >
                           <span className="text-gray-600 truncate">
                             {member.userName || member.userEmail}
                           </span>
-                          <span className={`px-1.5 py-0.5 text-xs rounded ${
-                            member.role === 'LEADER'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span
+                            className={`px-1.5 py-0.5 text-xs rounded ${
+                              member.role === 'LEADER'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
                             {member.role}
                           </span>
                         </div>
                       ))}
                       {group.members.length > 5 && (
-                        <p className="text-xs text-gray-400">+{group.members.length - 5} more</p>
+                        <p className="text-xs text-gray-400">
+                          +{group.members.length - 5} more
+                        </p>
                       )}
                     </div>
                   </div>
                 )}
               </div>
-            </div>
+            </button>
           ))}
+        </div>
+      )}
+
+      {selectedGroup && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl max-w-xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedGroup.name}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Type: {selectedGroup.type} • Members: {groupMembers.length}
+                </p>
+              </div>
+              <button
+                onClick={closeGroupDetails}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {groupLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Loading members...</p>
+                </div>
+              ) : (
+                <>
+                  {groupError && (
+                    <div className="mb-3 rounded-md bg-red-50 p-3 text-sm text-red-700">
+                      {groupError}
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Members</h4>
+                    {groupMembers.length === 0 ? (
+                      <p className="text-sm text-gray-500">No members in this team yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {groupMembers.map((member: any) => (
+                          <div
+                            key={member.id}
+                            className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2"
+                          >
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {member.user?.name || member.user?.email}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {member.user?.email}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span
+                                className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                  member.role === 'LEADER'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {member.role}
+                              </span>
+                              <button
+                                onClick={() => handleRemoveMember(member.id)}
+                                className="text-xs text-red-600 hover:text-red-800"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-100">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">
+                      Add Member by Email
+                    </h4>
+                    <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                      <input
+                        type="email"
+                        value={addEmail}
+                        onChange={e => setAddEmail(e.target.value)}
+                        placeholder="user@example.com"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddMember}
+                        disabled={addingMember || !addEmail.trim()}
+                        className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        {addingMember ? 'Adding...' : 'Add Member'}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      The user must already be a member of this community (via the
+                      Community page) before they can join the team.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

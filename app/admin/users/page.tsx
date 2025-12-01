@@ -28,6 +28,33 @@ interface User {
     name: string
     role: string
     joinedAt: string
+    building?: {
+      id: string
+      name: string
+      community?: {
+        id: string
+        name: string
+      }
+    }
+  }>
+  communities?: Array<{
+    id: string
+    name: string
+    role: string
+    joinedAt: string
+  }>
+  buildings?: Array<{
+    id: string
+    name: string
+    role: string
+    joinedAt: string
+  }>
+  workingGroups?: Array<{
+    id: string
+    name: string
+    type: string
+    role: string
+    assignedAt: string
   }>
 }
 
@@ -202,6 +229,11 @@ export default function AdminUsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserDetails, setShowUserDetails] = useState(false)
+  const [activeTab, setActiveTab] = useState<'all' | 'community' | 'building'>('all')
+  const [communities, setCommunities] = useState<Array<{ id: string; name: string }>>([])
+  const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string>('')
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>('')
 
   // Check admin access
   useEffect(() => {
@@ -213,15 +245,29 @@ export default function AdminUsersPage() {
     }
   }, [session, status, router])
 
-  // Fetch users
+  // Fetch users, communities, and buildings
   useEffect(() => {
     fetchUsers()
+    fetchCommunities()
+    fetchBuildings()
   }, [])
+
+  // Refetch users when filter changes
+  useEffect(() => {
+    fetchUsers()
+  }, [selectedCommunityId, selectedBuildingId, activeTab])
 
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/users')
+      const params = new URLSearchParams()
+      if (activeTab === 'community' && selectedCommunityId) {
+        params.append('communityId', selectedCommunityId)
+      } else if (activeTab === 'building' && selectedBuildingId) {
+        params.append('buildingId', selectedBuildingId)
+      }
+      
+      const response = await fetch(`/api/admin/users?${params.toString()}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -233,6 +279,30 @@ export default function AdminUsersPage() {
       setError('Network error')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCommunities = async () => {
+    try {
+      const response = await fetch('/api/admin/communities')
+      if (response.ok) {
+        const data = await response.json()
+        setCommunities(data.communities || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch communities:', err)
+    }
+  }
+
+  const fetchBuildings = async () => {
+    try {
+      const response = await fetch('/api/admin/buildings')
+      if (response.ok) {
+        const data = await response.json()
+        setBuildings(data.buildings || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch buildings:', err)
     }
   }
 
@@ -309,6 +379,93 @@ export default function AdminUsersPage() {
             Manage all users in the system
           </p>
         </div>
+
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => {
+                setActiveTab('all')
+                setSelectedCommunityId('')
+                setSelectedBuildingId('')
+              }}
+              className={`${
+                activeTab === 'all'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              All Users
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('community')
+                setSelectedBuildingId('')
+              }}
+              className={`${
+                activeTab === 'community'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              By Community
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('building')
+                setSelectedCommunityId('')
+              }}
+              className={`${
+                activeTab === 'building'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              By Building
+            </button>
+          </nav>
+        </div>
+
+        {/* Filter Selectors */}
+        {activeTab === 'community' && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Select Community
+            </label>
+            <select
+              value={selectedCommunityId}
+              onChange={(e) => setSelectedCommunityId(e.target.value)}
+              className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="">All Communities</option>
+              {communities.map((community) => (
+                <option key={community.id} value={community.id}>
+                  {community.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {activeTab === 'building' && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Select Building
+            </label>
+            <select
+              value={selectedBuildingId}
+              onChange={(e) => setSelectedBuildingId(e.target.value)}
+              className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="">All Buildings</option>
+              {buildings.map((building) => (
+                <option key={building.id} value={building.id}>
+                  {building.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -476,6 +633,12 @@ export default function AdminUsersPage() {
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{household.name}</p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">Role: {household.role}</p>
+                              {household.building && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Building: {household.building.name}
+                                  {household.building.community && ` (${household.building.community.name})`}
+                                </p>
+                              )}
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
                               Joined: {new Date(household.joinedAt).toLocaleDateString()}
@@ -485,6 +648,65 @@ export default function AdminUsersPage() {
                       </div>
                     )}
                   </div>
+
+                  {selectedUser.communities && selectedUser.communities.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Communities</label>
+                      <div className="space-y-2">
+                        {selectedUser.communities.map((community) => (
+                          <div key={community.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{community.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Role: {community.role}</p>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Joined: {new Date(community.joinedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUser.buildings && selectedUser.buildings.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buildings</label>
+                      <div className="space-y-2">
+                        {selectedUser.buildings.map((building) => (
+                          <div key={building.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{building.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Role: {building.role}</p>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Joined: {new Date(building.joinedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedUser.workingGroups && selectedUser.workingGroups.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Working Groups</label>
+                      <div className="space-y-2">
+                        {selectedUser.workingGroups.map((wg) => (
+                          <div key={wg.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{wg.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Type: {wg.type} | Role: {wg.role}
+                              </p>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Assigned: {new Date(wg.assignedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-6 flex justify-end">

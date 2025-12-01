@@ -17,7 +17,72 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
     }
 
+    const userId = (session.user as any).id
+    const { searchParams } = new URL(request.url)
+    const communityId = searchParams.get('communityId')
+    const buildingId = searchParams.get('buildingId')
+
+    // Check if user is super admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true, adminRole: true }
+    })
+
+    const isSuperAdmin = currentUser?.isAdmin && currentUser?.adminRole === 'SUPERUSER'
+
+    // Build query conditions
+    let whereClause: any = {}
+
+    // If filtering by community or building, and user is not super admin
+    if (!isSuperAdmin) {
+      if (communityId) {
+        // Get users who are members of this community or have households in buildings of this community
+        const communityMemberIds = await prisma.communityMember.findMany({
+          where: { communityId },
+          select: { userId: true }
+        }).then(members => members.map(m => m.userId))
+
+        const buildingIds = await prisma.building.findMany({
+          where: { communityId },
+          select: { id: true }
+        }).then(buildings => buildings.map(b => b.id))
+
+        const householdIds = await prisma.household.findMany({
+          where: { buildingId: { in: buildingIds } },
+          select: { id: true }
+        }).then(households => households.map(h => h.id))
+
+        const householdMemberIds = await prisma.householdMember.findMany({
+          where: { householdId: { in: householdIds } },
+          select: { userId: true }
+        }).then(members => members.map(m => m.userId))
+
+        const allUserIds = Array.from(new Set([...communityMemberIds, ...householdMemberIds]))
+        whereClause.id = { in: allUserIds }
+      } else if (buildingId) {
+        // Get users who are members of this building or have households in this building
+        const buildingMemberIds = await prisma.buildingMember.findMany({
+          where: { buildingId },
+          select: { userId: true }
+        }).then(members => members.map(m => m.userId))
+
+        const householdIds = await prisma.household.findMany({
+          where: { buildingId },
+          select: { id: true }
+        }).then(households => households.map(h => h.id))
+
+        const householdMemberIds = await prisma.householdMember.findMany({
+          where: { householdId: { in: householdIds } },
+          select: { userId: true }
+        }).then(members => members.map(m => m.userId))
+
+        const allUserIds = Array.from(new Set([...buildingMemberIds, ...householdMemberIds]))
+        whereClause.id = { in: allUserIds }
+      }
+    }
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -33,7 +98,63 @@ export async function GET(request: NextRequest) {
             household: {
               select: {
                 id: true,
+                name: true,
+                buildingId: true,
+                building: {
+                  select: {
+                    id: true,
+                    name: true,
+                    communityId: true,
+                    community: {
+                      select: {
+                        id: true,
+                        name: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        communityMemberships: {
+          select: {
+            id: true,
+            role: true,
+            joinedAt: true,
+            community: {
+              select: {
+                id: true,
                 name: true
+              }
+            }
+          }
+        },
+        buildingMemberships: {
+          select: {
+            id: true,
+            role: true,
+            joinedAt: true,
+            building: {
+              select: {
+                id: true,
+                name: true,
+                communityId: true
+              }
+            }
+          }
+        },
+        workingGroupMembers: {
+          select: {
+            id: true,
+            role: true,
+            assignedAt: true,
+            workingGroup: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                communityId: true
               }
             }
           }
@@ -49,8 +170,8 @@ export async function GET(request: NextRequest) {
       id: user.id,
       name: user.name,
       email: user.email,
-      phone: null, // Will be available after running add-user-fields.sql
-      contact: null, // Will be available after running add-user-fields.sql
+      phone: null,
+      contact: null,
       language: user.language,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
@@ -58,7 +179,31 @@ export async function GET(request: NextRequest) {
         id: membership.household.id,
         name: membership.household.name,
         role: membership.role,
+        joinedAt: membership.joinedAt.toISOString(),
+        building: membership.household.building ? {
+          id: membership.household.building.id,
+          name: membership.household.building.name,
+          community: membership.household.building.community
+        } : null
+      })),
+      communities: user.communityMemberships.map((membership: any) => ({
+        id: membership.community.id,
+        name: membership.community.name,
+        role: membership.role,
         joinedAt: membership.joinedAt.toISOString()
+      })),
+      buildings: user.buildingMemberships.map((membership: any) => ({
+        id: membership.building.id,
+        name: membership.building.name,
+        role: membership.role,
+        joinedAt: membership.joinedAt.toISOString()
+      })),
+      workingGroups: user.workingGroupMembers.map((membership: any) => ({
+        id: membership.workingGroup.id,
+        name: membership.workingGroup.name,
+        type: membership.workingGroup.type,
+        role: membership.role,
+        assignedAt: membership.assignedAt?.toISOString()
       }))
     }))
 

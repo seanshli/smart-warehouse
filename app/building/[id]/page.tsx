@@ -1273,8 +1273,41 @@ function FrontDoorTab({ buildingId }: { buildingId: string }) {
     return <div className="text-center py-8 text-gray-500">{t('frontDoorLoadError')}</div>
   }
 
+  const loginUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/building/${buildingId}/front-door/login?auto=true`
+    : ''
+
   return (
     <div className="space-y-6">
+      {/* QR Code for Front Door Login */}
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">Front Door Login QR Code</h3>
+            <p className="text-xs text-blue-700 mb-3">
+              Scan this QR code to quickly log in to the front door system. This will automatically log in with the frontdesk account.
+            </p>
+            {loginUrl && (
+              <div className="flex items-center space-x-4">
+                <div className="bg-white p-2 rounded">
+                  <QRCodeDisplay value={loginUrl} size={120} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-blue-600 mb-2">Login URL:</p>
+                  <p className="text-xs font-mono text-blue-800 break-all">{loginUrl}</p>
+                  <Link
+                    href={`/building/${buildingId}/front-door/login`}
+                    className="mt-2 inline-block text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Open Login Page →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gray-50 rounded-lg p-4 text-center">
           <div className="text-3xl font-bold text-gray-900">{summary.households.length}</div>

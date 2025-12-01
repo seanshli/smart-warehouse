@@ -234,6 +234,11 @@ export default function AdminUsersPage() {
   const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
   const [selectedCommunityId, setSelectedCommunityId] = useState<string>('')
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>('')
+  
+  // Get buildings filtered by selected community
+  const filteredBuildings = selectedCommunityId
+    ? buildings.filter(b => b.communityId === selectedCommunityId)
+    : buildings
 
   // Check admin access
   useEffect(() => {
@@ -257,13 +262,24 @@ export default function AdminUsersPage() {
     fetchUsers()
   }, [selectedCommunityId, selectedBuildingId, activeTab])
 
+  // Reset building selection when community changes
+  useEffect(() => {
+    if (activeTab === 'community') {
+      setSelectedBuildingId('')
+    }
+  }, [selectedCommunityId, activeTab])
+
   const fetchUsers = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (activeTab === 'community' && selectedCommunityId) {
+      
+      // Hierarchical filtering: if building is selected, use building; otherwise use community
+      if (selectedBuildingId) {
+        params.append('buildingId', selectedBuildingId)
+      } else if (selectedCommunityId && activeTab === 'community') {
         params.append('communityId', selectedCommunityId)
-      } else if (activeTab === 'building' && selectedBuildingId) {
+      } else if (selectedBuildingId && activeTab === 'building') {
         params.append('buildingId', selectedBuildingId)
       }
       
@@ -428,22 +444,44 @@ export default function AdminUsersPage() {
 
         {/* Filter Selectors */}
         {activeTab === 'community' && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Community
-            </label>
-            <select
-              value={selectedCommunityId}
-              onChange={(e) => setSelectedCommunityId(e.target.value)}
-              className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
-            >
-              <option value="">All Communities</option>
-              {communities.map((community) => (
-                <option key={community.id} value={community.id}>
-                  {community.name}
-                </option>
-              ))}
-            </select>
+          <div className="mb-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Community
+              </label>
+              <select
+                value={selectedCommunityId}
+                onChange={(e) => setSelectedCommunityId(e.target.value)}
+                className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              >
+                <option value="">All Communities</option>
+                {communities.map((community) => (
+                  <option key={community.id} value={community.id}>
+                    {community.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {selectedCommunityId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Select Building (Optional - further filter)
+                </label>
+                <select
+                  value={selectedBuildingId}
+                  onChange={(e) => setSelectedBuildingId(e.target.value)}
+                  className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                >
+                  <option value="">All Buildings in Community</option>
+                  {filteredBuildings.map((building) => (
+                    <option key={building.id} value={building.id}>
+                      {building.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
 

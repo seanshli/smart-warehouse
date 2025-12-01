@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
         longitude: b.longitude,
         householdCount: b._count.households,
         community: b.community,
+        communityId: b.communityId,
         createdAt: b.createdAt,
         updatedAt: b.updatedAt,
       })),

@@ -88,7 +88,7 @@ export async function GET(
           userName: m.user.name,
           userEmail: m.user.email,
           role: m.role,
-          joinedAt: m.joinedAt,
+          assignedAt: m.assignedAt,
         })),
         permissions: wg.permissions.map(p => ({
           id: p.id,

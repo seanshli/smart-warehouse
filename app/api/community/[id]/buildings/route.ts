@@ -124,6 +124,15 @@ export async function POST(
       },
     })
 
+    // Initialize working groups and default accounts for the new building
+    try {
+      const { initializeBuildingSetup } = await import('@/lib/working-groups-init')
+      await initializeBuildingSetup(building.id, communityId)
+    } catch (error) {
+      console.error('Error initializing working groups for building:', error)
+      // Continue even if initialization fails
+    }
+
     return NextResponse.json({
       id: building.id,
       name: building.name,

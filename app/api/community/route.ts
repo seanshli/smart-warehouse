@@ -117,6 +117,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Initialize working groups for the new community
+    try {
+      const { initializeCommunitySetup } = await import('@/lib/working-groups-init')
+      await initializeCommunitySetup(community.id)
+    } catch (error) {
+      console.error('Error initializing working groups for community:', error)
+      // Continue even if initialization fails
+    }
+
     return NextResponse.json({
       id: community.id,
       name: community.name,

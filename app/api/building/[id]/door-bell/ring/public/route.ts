@@ -103,6 +103,67 @@ export async function POST(
       },
     })
 
+    // Get building info for announcement
+    const building = await prisma.building.findUnique({
+      where: { id: buildingId },
+      include: {
+        community: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    })
+
+    // Create announcement for the household about visitor arrival
+    let announcement = null
+    try {
+      const firstMember = doorBell.household.members[0]
+      if (firstMember) {
+        announcement = await prisma.announcement.create({
+          data: {
+            source: 'BUILDING',
+            sourceId: buildingId,
+            title: 'Visitor Arrived',
+            message: `A visitor has arrived at doorbell ${doorBell.doorBellNumber}`,
+            targetType: 'SPECIFIC_HOUSEHOLD',
+            targetId: doorBell.household.id,
+            createdBy: firstMember.user.id,
+            isActive: true,
+          },
+        })
+      }
+    } catch (announcementError) {
+      console.error('Error creating announcement:', announcementError)
+      // Continue even if announcement creation fails
+    }
+
+    // Log activity for each household member
+    const activities = []
+    for (const member of doorBell.household.members) {
+      try {
+        const activity = await (prisma as any).userActivity.create({
+          data: {
+            userId: member.user.id,
+            householdId: doorBell.household.id,
+            activityType: 'navigate',
+            action: 'doorbell_ring',
+            description: `Visitor arrived at doorbell ${doorBell.doorBellNumber}`,
+            metadata: {
+              doorBellId: doorBell.id,
+              doorBellNumber: doorBell.doorBellNumber,
+              callSessionId: callSession.id,
+              timestamp: new Date().toISOString(),
+            },
+          },
+        })
+        activities.push(activity)
+      } catch (activityError) {
+        console.error('Error logging activity:', activityError)
+        // Continue even if activity logging fails
+      }
+    }
+
     // Create notifications for all household members
     const notifications = []
     for (const member of doorBell.household.members) {
@@ -149,6 +210,8 @@ export async function POST(
           lastRungAt: new Date(),
         },
         notificationsSent: notifications.length,
+        announcementCreated: !!announcement,
+        activitiesLogged: activities.length,
       },
     })
   } catch (error) {

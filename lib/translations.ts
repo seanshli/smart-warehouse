@@ -832,6 +832,34 @@ export interface Translations {
   householdInvitationCode: string
   copyHouseholdId: string
   householdActive: string
+  
+  // Doorbell
+  doorBell: string
+  doorBellRinging: string
+  doorBellConnected: string
+  doorBellEnded: string
+  doorBellNoActiveCalls: string
+  doorBellAnswer: string
+  doorBellCallAnswered: string
+  doorBellAnswerError: string
+  doorBellEndCall: string
+  doorBellCallEnded: string
+  doorBellUnlockDoor: string
+  doorBellDoorUnlocked: string
+  doorBellUnlockError: string
+  doorBellSendMessage: string
+  doorBellMessagePlaceholder: string
+  doorBellMessageSent: string
+  doorBellMessageError: string
+  doorBellCameraOn: string
+  doorBellCameraOff: string
+  doorBellMicOn: string
+  doorBellMicOff: string
+  doorBellVideoCall: string
+  doorBellCameraActive: string
+  doorBellOnlyInBuilding: string
+  doorBellVisitorArrived: string
+  doorBellVisitorAtDoor: string
   householdInactive: string
   copyError: string
   addHousehold: string
@@ -1569,6 +1597,34 @@ const en: Translations = {
   frontDoorLocker: 'Locker',
   frontDoorNoMailboxes: 'No mailboxes yet',
   frontDoorNoDoorBells: 'No door bells yet',
+  
+  // Doorbell
+  doorBell: 'Door Bell',
+  doorBellRinging: 'Ringing',
+  doorBellConnected: 'Connected',
+  doorBellEnded: 'Ended',
+  doorBellNoActiveCalls: 'No active calls',
+  doorBellAnswer: 'Answer',
+  doorBellCallAnswered: 'Call answered',
+  doorBellAnswerError: 'Failed to answer call',
+  doorBellEndCall: 'End Call',
+  doorBellCallEnded: 'Call ended',
+  doorBellUnlockDoor: 'Unlock Door',
+  doorBellDoorUnlocked: 'Door unlocked',
+  doorBellUnlockError: 'Failed to unlock door',
+  doorBellSendMessage: 'Send',
+  doorBellMessagePlaceholder: 'Type a message...',
+  doorBellMessageSent: 'Message sent',
+  doorBellMessageError: 'Failed to send message',
+  doorBellCameraOn: 'Camera On',
+  doorBellCameraOff: 'Camera Off',
+  doorBellMicOn: 'Mic On',
+  doorBellMicOff: 'Mic Off',
+  doorBellVideoCall: 'Video Call',
+  doorBellCameraActive: 'Camera Active',
+  doorBellOnlyInBuilding: 'Doorbell feature is only available for households in a building.',
+  doorBellVisitorArrived: 'Doorbell ringing',
+  doorBellVisitorAtDoor: 'Someone is at the door',
   frontDoorNoLockers: 'No package lockers yet',
   
   // Household Actions
@@ -2548,6 +2604,34 @@ const zhTW: Translations = {
   frontDoorNoDoorBells: '尚未建立門鈴',
   frontDoorNoLockers: '尚未建立包裹櫃',
   
+  // Doorbell
+  doorBell: '門鈴',
+  doorBellRinging: '響鈴中',
+  doorBellConnected: '已連接',
+  doorBellEnded: '已結束',
+  doorBellNoActiveCalls: '目前沒有來電',
+  doorBellAnswer: '接聽',
+  doorBellCallAnswered: '已接聽來電',
+  doorBellAnswerError: '接聽失敗',
+  doorBellEndCall: '結束通話',
+  doorBellCallEnded: '通話已結束',
+  doorBellUnlockDoor: '開門',
+  doorBellDoorUnlocked: '門已開啟',
+  doorBellUnlockError: '開門失敗',
+  doorBellSendMessage: '發送',
+  doorBellMessagePlaceholder: '輸入訊息...',
+  doorBellMessageSent: '訊息已發送',
+  doorBellMessageError: '發送訊息失敗',
+  doorBellCameraOn: '攝影機開啟',
+  doorBellCameraOff: '攝影機關閉',
+  doorBellMicOn: '麥克風開啟',
+  doorBellMicOff: '麥克風關閉',
+  doorBellVideoCall: '視訊通話',
+  doorBellCameraActive: '攝影機運作中',
+  doorBellOnlyInBuilding: '門鈴功能僅適用於建築物內的住戶。',
+  doorBellVisitorArrived: '門鈴響了',
+  doorBellVisitorAtDoor: '有人在門口',
+  
   // Household Actions
   householdReservation: '預定',
   householdMaintenance: '報修',
@@ -3425,6 +3509,34 @@ const zh: Translations = {
   frontDoorNoDoorBells: '尚未建立门铃',
   frontDoorNoLockers: '尚未建立包裹柜',
   
+  // Doorbell
+  doorBell: '门铃',
+  doorBellRinging: '响铃中',
+  doorBellConnected: '已连接',
+  doorBellEnded: '已结束',
+  doorBellNoActiveCalls: '目前没有来电',
+  doorBellAnswer: '接听',
+  doorBellCallAnswered: '已接听来电',
+  doorBellAnswerError: '接听失败',
+  doorBellEndCall: '结束通话',
+  doorBellCallEnded: '通话已结束',
+  doorBellUnlockDoor: '开门',
+  doorBellDoorUnlocked: '门已开启',
+  doorBellUnlockError: '开门失败',
+  doorBellSendMessage: '发送',
+  doorBellMessagePlaceholder: '输入消息...',
+  doorBellMessageSent: '消息已发送',
+  doorBellMessageError: '发送消息失败',
+  doorBellCameraOn: '摄像头开启',
+  doorBellCameraOff: '摄像头关闭',
+  doorBellMicOn: '麦克风开启',
+  doorBellMicOff: '麦克风关闭',
+  doorBellVideoCall: '视频通话',
+  doorBellCameraActive: '摄像头运作中',
+  doorBellOnlyInBuilding: '门铃功能仅适用于建筑物内的住户。',
+  doorBellVisitorArrived: '门铃响了',
+  doorBellVisitorAtDoor: '有人在门口',
+  
   // Household Actions
   householdReservation: '预定',
   householdMaintenance: '报修',
@@ -4301,6 +4413,34 @@ const ja: Translations = {
   frontDoorNoMailboxes: 'メールボックスはまだありません',
   frontDoorNoDoorBells: 'ドアベルはまだありません',
   frontDoorNoLockers: '宅配ボックスはまだありません',
+  
+  // Doorbell
+  doorBell: 'ドアベル',
+  doorBellRinging: '呼び出し中',
+  doorBellConnected: '接続済み',
+  doorBellEnded: '終了',
+  doorBellNoActiveCalls: 'アクティブな通話はありません',
+  doorBellAnswer: '応答',
+  doorBellCallAnswered: '通話に応答しました',
+  doorBellAnswerError: '応答に失敗しました',
+  doorBellEndCall: '通話終了',
+  doorBellCallEnded: '通話が終了しました',
+  doorBellUnlockDoor: 'ドアを開ける',
+  doorBellDoorUnlocked: 'ドアが開きました',
+  doorBellUnlockError: 'ドアの開錠に失敗しました',
+  doorBellSendMessage: '送信',
+  doorBellMessagePlaceholder: 'メッセージを入力...',
+  doorBellMessageSent: 'メッセージを送信しました',
+  doorBellMessageError: 'メッセージの送信に失敗しました',
+  doorBellCameraOn: 'カメラオン',
+  doorBellCameraOff: 'カメラオフ',
+  doorBellMicOn: 'マイクオン',
+  doorBellMicOff: 'マイクオフ',
+  doorBellVideoCall: 'ビデオ通話',
+  doorBellCameraActive: 'カメラ動作中',
+  doorBellOnlyInBuilding: 'ドアベル機能は建物内の世帯でのみ利用できます。',
+  doorBellVisitorArrived: 'ドアベルが鳴りました',
+  doorBellVisitorAtDoor: '誰かがドアにいます',
   
   // Household Actions
   householdReservation: '予約',

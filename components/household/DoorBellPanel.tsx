@@ -83,7 +83,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
         // Show notification for new ringing calls
         newRingingCalls.forEach((call: DoorBellCall) => {
           if (!notificationShownRef.current.has(call.id)) {
-            toast.success(`🔔 Doorbell ringing: ${call.doorBellNumber}`, {
+            toast.success(`${t('doorBellVisitorArrived')}: ${call.doorBellNumber}`, {
               duration: 5000,
               icon: '🔔',
             })
@@ -157,7 +157,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
         },
         onError: (error) => {
           console.error('WebRTC error:', error)
-          toast.error('Video/audio connection error')
+          toast.error(t('doorBellMessageError'))
         },
       })
 
@@ -165,7 +165,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       await webrtcRef.current.initializeLocalStream(cameraEnabled, micEnabled)
     } catch (error) {
       console.error('Error initializing WebRTC:', error)
-      toast.error('Failed to initialize camera/microphone')
+      toast.error(t('doorBellMessageError'))
     }
   }
 
@@ -176,7 +176,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       })
 
       if (response.ok) {
-        toast.success('Call answered')
+        toast.success(t('doorBellCallAnswered'))
         setSelectedCall(call)
         fetchActiveCalls()
         // Initialize WebRTC after answering
@@ -186,7 +186,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       }
     } catch (error) {
       console.error('Error answering call:', error)
-      toast.error('Failed to answer call')
+      toast.error(t('doorBellAnswerError'))
     }
   }
   
@@ -216,11 +216,12 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
 
       if (response.ok) {
         setMessageInput('')
+        toast.success(t('doorBellMessageSent'))
         fetchActiveCalls()
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error('Failed to send message')
+      toast.error(t('doorBellMessageError'))
     }
   }
 
@@ -233,11 +234,11 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       })
 
       if (response.ok) {
-        toast.success('Door unlocked')
+        toast.success(t('doorBellDoorUnlocked'))
       }
     } catch (error) {
       console.error('Error unlocking door:', error)
-      toast.error('Failed to unlock door')
+      toast.error(t('doorBellUnlockError'))
     }
   }
 
@@ -256,7 +257,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       })
 
       if (response.ok) {
-        toast.success('Call ended')
+        toast.success(t('doorBellCallEnded'))
         setSelectedCall(null)
         setCameraEnabled(false)
         setMicEnabled(false)
@@ -282,24 +283,24 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
           <BellIcon className="h-5 w-5 mr-2 text-indigo-600" />
-          Door Bell
+          {t('doorBell')}
         </h3>
         <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-          Doorbell feature is only available for households in a building.
+          {t('doorBellOnlyInBuilding')}
         </p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
         <BellIcon className="h-5 w-5 mr-2 text-indigo-600" />
-        Door Bell
+        {t('doorBell')}
       </h3>
 
       {activeCalls.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No active calls</p>
+        <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('doorBellNoActiveCalls')}</p>
       ) : (
         <div className="space-y-4">
           {/* Active Calls List */}
@@ -308,17 +309,18 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
               key={call.id}
               className={`border rounded-lg p-4 cursor-pointer transition-all ${
                 selectedCall?.id === call.id
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
               onClick={() => setSelectedCall(call)}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-gray-900">{call.doorBellNumber}</p>
-                  <p className="text-sm text-gray-500">
-                    {call.status === 'ringing' && 'Ringing'}
-                    {call.status === 'connected' && 'Connected'}
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{call.doorBellNumber}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {call.status === 'ringing' && t('doorBellRinging')}
+                    {call.status === 'connected' && t('doorBellConnected')}
+                    {call.status === 'ended' && t('doorBellEnded')}
                   </p>
                 </div>
                 {call.status === 'ringing' && (
@@ -330,7 +332,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
                   >
                     <PhoneIcon className="h-4 w-4" />
-                    <span>Answer</span>
+                    <span>{t('doorBellAnswer')}</span>
                   </button>
                 )}
               </div>
@@ -370,7 +372,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                           {selectedCall.doorBellNumber}
                         </span>
                       </div>
-                      <p className="text-gray-600 dark:text-gray-300">Video Call</p>
+                      <p className="text-gray-600 dark:text-gray-300">{t('doorBellVideoCall')}</p>
                     </div>
                   </div>
                 )}
@@ -393,7 +395,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                       }
                     }
                     
-                    toast(newState ? 'Camera On' : 'Camera Off', { icon: '📷' })
+                    toast(newState ? t('doorBellCameraOn') : t('doorBellCameraOff'), { icon: '📷' })
                   }}
                   className={`p-3 rounded-full ${cameraEnabled ? 'bg-green-500' : 'bg-gray-300'} text-white`}
                 >
@@ -414,7 +416,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                       }
                     }
                     
-                    toast(newState ? 'Mic On' : 'Mic Off', { icon: '🎤' })
+                    toast(newState ? t('doorBellMicOn') : t('doorBellMicOff'), { icon: '🎤' })
                   }}
                   className={`p-3 rounded-full ${micEnabled ? 'bg-green-500' : 'bg-gray-300'} text-white`}
                 >
@@ -423,7 +425,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                 <button
                   onClick={unlockDoor}
                   className="p-3 rounded-full bg-blue-500 text-white"
-                  title="Unlock Door"
+                  title={t('doorBellUnlockDoor')}
                 >
                   <LockOpenIcon className="h-5 w-5" />
                 </button>
@@ -461,14 +463,14 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type a message..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder={t('doorBellMessagePlaceholder')}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <button
                     onClick={sendMessage}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
                   >
-                    Send
+                    {t('doorBellSendMessage')}
                   </button>
                 </div>
               </div>

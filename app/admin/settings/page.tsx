@@ -9,8 +9,11 @@ import {
   CircleStackIcon,
   ShieldCheckIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  UserGroupIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
 
 interface SystemStatus {
   database: boolean
@@ -27,6 +30,7 @@ export default function AdminSettingsPage() {
   const [status, setStatus] = useState<SystemStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [initializing, setInitializing] = useState(false)
 
   useEffect(() => {
     loadSystemStatus()
@@ -72,6 +76,36 @@ export default function AdminSettingsPage() {
     ) : (
       <span className="text-red-700 font-medium">Issues Detected</span>
     )
+  }
+
+  const initializeWorkingGroups = async () => {
+    if (!confirm('This will create working groups for all existing communities and buildings. Continue?')) {
+      return
+    }
+
+    setInitializing(true)
+    try {
+      const response = await fetch('/api/admin/initialize-working-groups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to initialize working groups')
+      }
+
+      const data = await response.json()
+      toast.success('Working groups initialized successfully!')
+      console.log('Initialization results:', data.results)
+    } catch (err) {
+      console.error('Error initializing working groups:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to initialize working groups')
+    } finally {
+      setInitializing(false)
+    }
   }
 
   if (loading) {
@@ -224,6 +258,48 @@ export default function AdminSettingsPage() {
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 Latest
               </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* System Management */}
+      <div className="bg-white shadow rounded-lg mt-8">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            <CogIcon className="h-5 w-5 inline mr-2" />
+            System Management
+          </h3>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start">
+                <UserGroupIcon className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">Initialize Working Groups</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Create working groups (Management, Maintenance, Front Door) for all existing communities and buildings. 
+                    This will also create default accounts (doorbell and frontdesk) for each building and add them to the Front Door Team.
+                  </p>
+                  <button
+                    onClick={initializeWorkingGroups}
+                    disabled={initializing}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {initializing ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                        Initializing...
+                      </>
+                    ) : (
+                      <>
+                        <UserGroupIcon className="h-4 w-4 mr-2" />
+                        Initialize Working Groups
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

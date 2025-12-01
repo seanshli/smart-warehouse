@@ -20,7 +20,8 @@ import {
   CogIcon,
   ClipboardDocumentIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import PackageManager from '@/components/building/PackageManager'
@@ -69,13 +70,14 @@ export default function BuildingDetailPage() {
       | 'packages'
       | 'facilities'
       | 'announcements'
+      | 'working-groups'
       | null) || 'overview'
 
   const [building, setBuilding] = useState<Building | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'facilities' | 'announcements'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'facilities' | 'announcements' | 'working-groups'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
 
@@ -191,6 +193,7 @@ export default function BuildingDetailPage() {
               { id: 'mailboxes', name: t('buildingMailboxes'), icon: EnvelopeIcon },
               { id: 'packages', name: t('packageLocker') || 'Packages', icon: CubeIcon },
               { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
+              { id: 'working-groups', name: t('communityWorkingGroups') || 'Working Groups', icon: UserGroupIcon },
               { id: 'announcements', name: t('announcements'), icon: BellIcon },
             ].map((tab) => {
               const Icon = tab.icon
@@ -220,6 +223,7 @@ export default function BuildingDetailPage() {
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
           {activeTab === 'packages' && <PackageManager buildingId={buildingId} />}
           {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} />}
+          {activeTab === 'working-groups' && buildingId && <WorkingGroupsTab buildingId={buildingId} />}
           {activeTab === 'announcements' && buildingId && (
             <AnnouncementsTab 
               buildingId={buildingId} 
@@ -1905,3 +1909,125 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
   )
 }
 
+
+function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
+  const { t } = useLanguage()
+  const [workingGroups, setWorkingGroups] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchWorkingGroups()
+  }, [buildingId])
+
+  const fetchWorkingGroups = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch(`/api/building/${buildingId}/working-groups`)
+      if (response.ok) {
+        const data = await response.json()
+        setWorkingGroups(data.workingGroups || [])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Failed to fetch working groups')
+      }
+    } catch (err) {
+      console.error('Failed to fetch working groups:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load working groups')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">{t('loading') || 'Loading...'}</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchWorkingGroups}
+          className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+        >
+          {t('retry') || 'Retry'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-gray-900">{t('communityWorkingGroups') || 'Working Groups'}</h3>
+      </div>
+      {workingGroups.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p className="mb-4">No working groups found for this building.</p>
+          <p className="text-sm text-gray-400">
+            Working groups are automatically created when a building is created. If you don't see any groups, they may need to be initialized.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {workingGroups.map((group) => (
+            <div key={group.id} className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors">
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-medium text-gray-900">{group.name}</h4>
+                <span className={`px-2 py-1 text-xs font-medium rounded ${
+                  group.type === 'MANAGEMENT' 
+                    ? 'bg-blue-100 text-blue-800'
+                    : group.type === 'MAINTENANCE'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-purple-100 text-purple-800'
+                }`}>
+                  {group.type}
+                </span>
+              </div>
+              {group.description && (
+                <p className="text-sm text-gray-600 mt-1 mb-3">{group.description}</p>
+              )}
+              <div className="space-y-2">
+                <div className="flex items-center text-xs text-gray-500">
+                  <UserGroupIcon className="h-4 w-4 mr-1" />
+                  <span>{group.stats.members} {t('members') || 'members'}</span>
+                </div>
+                {group.members && group.members.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-medium text-gray-700 mb-2">Team Members:</p>
+                    <div className="space-y-1">
+                      {group.members.slice(0, 5).map((member: any) => (
+                        <div key={member.id} className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600 truncate">
+                            {member.userName || member.userEmail}
+                          </span>
+                          <span className={`px-1.5 py-0.5 text-xs rounded ${
+                            member.role === 'LEADER'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {member.role}
+                          </span>
+                        </div>
+                      ))}
+                      {group.members.length > 5 && (
+                        <p className="text-xs text-gray-400">+{group.members.length - 5} more</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

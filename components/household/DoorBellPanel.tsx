@@ -28,7 +28,12 @@ interface DoorBellCall {
   }>
 }
 
-export default function DoorBellPanel() {
+interface DoorBellPanelProps {
+  onActiveCallsChange?: (count: number, ringingCount: number) => void
+  onRingingCall?: (call: DoorBellCall) => void
+}
+
+export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: DoorBellPanelProps = {}) {
   const { household } = useHousehold()
   const { t } = useLanguage()
   const [activeCalls, setActiveCalls] = useState<DoorBellCall[]>([])
@@ -39,9 +44,16 @@ export default function DoorBellPanel() {
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const webrtcRef = useRef<DoorBellWebRTC | null>(null)
+  const previousCallsRef = useRef<DoorBellCall[]>([])
+  const notificationShownRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    if (!household?.id || !household?.buildingId) return
+    if (!household?.id || !household?.buildingId) {
+      if (onActiveCallsChange) {
+        onActiveCallsChange(0, 0)
+      }
+      return
+    }
 
     // Poll for active doorbell calls
     const interval = setInterval(() => {
@@ -60,16 +72,100 @@ export default function DoorBellPanel() {
       const response = await fetch(`/api/household/${household.id}/doorbell-calls`)
       if (response.ok) {
         const data = await response.json()
-        setActiveCalls(data.calls || [])
+        const newCalls = data.calls || []
+        
+        // Check for new ringing calls
+        const newRingingCalls = newCalls.filter((call: DoorBellCall) => 
+          call.status === 'ringing' && 
+          !previousCallsRef.current.find(c => c.id === call.id && c.status === 'ringing')
+        )
+        
+        // Show notification for new ringing calls
+        newRingingCalls.forEach((call: DoorBellCall) => {
+          if (!notificationShownRef.current.has(call.id)) {
+            toast.success(`🔔 Doorbell ringing: ${call.doorBellNumber}`, {
+              duration: 5000,
+              icon: '🔔',
+            })
+            notificationShownRef.current.add(call.id)
+            
+            // Notify parent component about ringing call
+            if (onRingingCall) {
+              onRingingCall(call)
+            }
+          }
+        })
+        
+        // Clean up ended calls from notification set
+        const endedCallIds = new Set(
+          previousCallsRef.current
+            .filter(c => c.status === 'ringing' || c.status === 'connected')
+            .map(c => c.id)
+        )
+        newCalls.forEach((call: DoorBellCall) => {
+          if (call.status === 'ended') {
+            notificationShownRef.current.delete(call.id)
+          } else {
+            endedCallIds.delete(call.id)
+          }
+        })
+        
+        setActiveCalls(newCalls)
+        previousCallsRef.current = newCalls
+        
+        // Update parent component with call counts
+        if (onActiveCallsChange) {
+          const ringingCount = newCalls.filter((c: DoorBellCall) => c.status === 'ringing').length
+          onActiveCallsChange(newCalls.length, ringingCount)
+        }
         
         // Auto-select first ringing call
-        const ringingCall = data.calls?.find((c: DoorBellCall) => c.status === 'ringing')
+        const ringingCall = newCalls.find((c: DoorBellCall) => c.status === 'ringing')
         if (ringingCall && !selectedCall) {
           setSelectedCall(ringingCall)
+        }
+        
+        // Auto-select first connected call if no ringing call
+        if (!ringingCall) {
+          const connectedCall = newCalls.find((c: DoorBellCall) => c.status === 'connected')
+          if (connectedCall && !selectedCall) {
+            setSelectedCall(connectedCall)
+            // Initialize WebRTC for connected call
+            initializeWebRTC()
+          }
         }
       }
     } catch (error) {
       console.error('Error fetching active calls:', error)
+    }
+  }
+
+  const initializeWebRTC = async () => {
+    if (!selectedCall || selectedCall.status !== 'connected') return
+    
+    try {
+      if (!localVideoRef.current || !remoteVideoRef.current) return
+
+      webrtcRef.current = new DoorBellWebRTC({
+        localVideoElement: localVideoRef.current,
+        remoteVideoElement: remoteVideoRef.current,
+        onLocalStream: (stream) => {
+          console.log('Local stream initialized')
+        },
+        onRemoteStream: (stream) => {
+          console.log('Remote stream received')
+        },
+        onError: (error) => {
+          console.error('WebRTC error:', error)
+          toast.error('Video/audio connection error')
+        },
+      })
+
+      // Initialize with current camera/mic settings
+      await webrtcRef.current.initializeLocalStream(cameraEnabled, micEnabled)
+    } catch (error) {
+      console.error('Error initializing WebRTC:', error)
+      toast.error('Failed to initialize camera/microphone')
     }
   }
 
@@ -83,12 +179,30 @@ export default function DoorBellPanel() {
         toast.success('Call answered')
         setSelectedCall(call)
         fetchActiveCalls()
+        // Initialize WebRTC after answering
+        setTimeout(() => {
+          initializeWebRTC()
+        }, 500)
       }
     } catch (error) {
       console.error('Error answering call:', error)
       toast.error('Failed to answer call')
     }
   }
+  
+  // Initialize WebRTC when call becomes connected
+  useEffect(() => {
+    if (selectedCall && selectedCall.status === 'connected') {
+      initializeWebRTC()
+    }
+    
+    return () => {
+      if (webrtcRef.current) {
+        webrtcRef.current.close()
+        webrtcRef.current = null
+      }
+    }
+  }, [selectedCall?.status])
 
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedCall || !household?.buildingId) return
@@ -131,6 +245,12 @@ export default function DoorBellPanel() {
     if (!selectedCall || !household?.buildingId) return
 
     try {
+      // Close WebRTC connection
+      if (webrtcRef.current) {
+        webrtcRef.current.close()
+        webrtcRef.current = null
+      }
+      
       const response = await fetch(`/api/building/${household.buildingId}/door-bell/${selectedCall.doorBellId}/end-call`, {
         method: 'POST',
       })
@@ -138,15 +258,37 @@ export default function DoorBellPanel() {
       if (response.ok) {
         toast.success('Call ended')
         setSelectedCall(null)
+        setCameraEnabled(false)
+        setMicEnabled(false)
         fetchActiveCalls()
       }
     } catch (error) {
       console.error('Error ending call:', error)
     }
   }
+  
+  // Cleanup WebRTC on unmount
+  useEffect(() => {
+    return () => {
+      if (webrtcRef.current) {
+        webrtcRef.current.close()
+        webrtcRef.current = null
+      }
+    }
+  }, [])
 
   if (!household?.buildingId) {
-    return null
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+          <BellIcon className="h-5 w-5 mr-2 text-indigo-600" />
+          Door Bell
+        </h3>
+        <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+          Doorbell feature is only available for households in a building.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -198,20 +340,38 @@ export default function DoorBellPanel() {
           {/* Call Interface */}
           {selectedCall && selectedCall.status === 'connected' && (
             <div className="border-t pt-4 mt-4">
-              <div className="bg-gray-100 rounded-lg p-4 min-h-[200px] flex items-center justify-center mb-4">
-                {cameraEnabled ? (
-                  <div className="text-center">
-                    <VideoCameraIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500">Camera Active</p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white text-2xl font-bold">
-                        {selectedCall.doorBellNumber}
-                      </span>
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 min-h-[200px] relative mb-4">
+                {/* Remote Video (Guest) */}
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full rounded-lg object-cover"
+                  style={{ minHeight: '200px' }}
+                />
+                
+                {/* Local Video (Household) - Picture in Picture */}
+                {cameraEnabled && localVideoRef.current && (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="absolute bottom-4 right-4 w-32 h-24 rounded-lg object-cover border-2 border-white shadow-lg"
+                  />
+                )}
+                
+                {/* Fallback when camera is off */}
+                {!cameraEnabled && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-white text-2xl font-bold">
+                          {selectedCall.doorBellNumber}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300">Video Call</p>
                     </div>
-                    <p className="text-gray-600">Video Call</p>
                   </div>
                 )}
               </div>
@@ -219,13 +379,43 @@ export default function DoorBellPanel() {
               {/* Controls */}
               <div className="flex justify-center space-x-4 mb-4">
                 <button
-                  onClick={() => setCameraEnabled(!cameraEnabled)}
+                  onClick={async () => {
+                    const newState = !cameraEnabled
+                    setCameraEnabled(newState)
+                    
+                    if (webrtcRef.current) {
+                      if (newState) {
+                        await webrtcRef.current.initializeLocalStream(true, micEnabled)
+                      } else {
+                        if (webrtcRef.current['localStream']) {
+                          webrtcRef.current['localStream'].getVideoTracks().forEach(track => track.stop())
+                        }
+                      }
+                    }
+                    
+                    toast(newState ? 'Camera On' : 'Camera Off', { icon: '📷' })
+                  }}
                   className={`p-3 rounded-full ${cameraEnabled ? 'bg-green-500' : 'bg-gray-300'} text-white`}
                 >
                   <VideoCameraIcon className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={() => setMicEnabled(!micEnabled)}
+                  onClick={async () => {
+                    const newState = !micEnabled
+                    setMicEnabled(newState)
+                    
+                    if (webrtcRef.current) {
+                      if (newState) {
+                        await webrtcRef.current.initializeLocalStream(cameraEnabled, true)
+                      } else {
+                        if (webrtcRef.current['localStream']) {
+                          webrtcRef.current['localStream'].getAudioTracks().forEach(track => track.stop())
+                        }
+                      }
+                    }
+                    
+                    toast(newState ? 'Mic On' : 'Mic Off', { icon: '🎤' })
+                  }}
                   className={`p-3 rounded-full ${micEnabled ? 'bg-green-500' : 'bg-gray-300'} text-white`}
                 >
                   <MicrophoneIcon className="h-5 w-5" />

@@ -334,6 +334,8 @@ export default function Dashboard() {
 
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
+  const [doorbellCallCount, setDoorbellCallCount] = useState(0)
+  const [doorbellRingingCount, setDoorbellRingingCount] = useState(0)
 
   // Memoized callback to prevent infinite re-renders
   const handleItemsListRef = useCallback((refreshFn: () => void) => {
@@ -478,11 +480,14 @@ export default function Dashboard() {
                 return null
               }
               
+              const isDoorbellTab = tab.id === 'doorbell'
+              const showBadge = isDoorbellTab && (doorbellCallCount > 0 || doorbellRingingCount > 0)
+              
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 border-b-2 font-medium ${
+                  className={`flex-shrink-0 border-b-2 font-medium relative ${
                     deviceInfo.isMobile 
                       ? 'py-1.5 px-1.5 text-xs' 
                       : deviceInfo.isTablet 
@@ -492,12 +497,21 @@ export default function Dashboard() {
                     activeTab === tab.id
                       ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
-                  }`}
+                  } ${isDoorbellTab && doorbellRingingCount > 0 ? 'animate-pulse' : ''}`}
                 >
                   <tab.icon className={`inline ${
                     deviceInfo.isMobile ? 'h-3 w-3' : deviceInfo.isTablet ? 'h-4 w-4 mr-1' : 'h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-1.5'
                   }`} />
                   <span className={deviceInfo.isMobile ? 'hidden' : ''}>{tab.name}</span>
+                  {showBadge && (
+                    <span className={`absolute -top-1 -right-1 flex items-center justify-center rounded-full text-xs font-bold ${
+                      doorbellRingingCount > 0 
+                        ? 'bg-red-500 text-white animate-ping' 
+                        : 'bg-indigo-500 text-white'
+                    } ${deviceInfo.isMobile ? 'h-3 w-3 text-[8px]' : 'h-4 w-4'}`}>
+                      {doorbellRingingCount > 0 ? doorbellRingingCount : doorbellCallCount}
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -642,7 +656,18 @@ export default function Dashboard() {
                  <HouseholdSettings />
                )}
                {activeTab === 'doorbell' && (
-                 <DoorBellPanel />
+                 <DoorBellPanel 
+                   onActiveCallsChange={(totalCount, ringingCount) => {
+                     setDoorbellCallCount(totalCount)
+                     setDoorbellRingingCount(ringingCount)
+                   }}
+                   onRingingCall={(call) => {
+                     // Auto-switch to doorbell tab if not already there
+                     if (activeTab !== 'doorbell') {
+                       setActiveTab('doorbell')
+                     }
+                   }}
+                 />
                )}
              </main>
 

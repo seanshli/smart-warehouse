@@ -30,19 +30,44 @@ export async function POST(
       return NextResponse.json({ success: true, message: 'No active session' })
     }
 
-    await prisma.doorBellCallSession.update({
-      where: { id: activeSession.id },
-      data: {
-        status: 'ended',
-        endedAt: new Date(),
-      },
-    })
+    try {
+      await prisma.doorBellCallSession.update({
+        where: { id: activeSession.id },
+        data: {
+          status: 'ended',
+          endedAt: new Date(),
+        },
+      })
+    } catch (updateError: any) {
+      console.error('Error updating call session:', updateError)
+      // If session was already deleted or doesn't exist, that's okay
+      if (updateError.code === 'P2025') {
+        return NextResponse.json({ success: true, message: 'Session already ended' })
+      }
+      throw updateError
+    }
 
     return NextResponse.json({ success: true, message: 'Call ended' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error ending call:', error)
+    console.error('Error details:', {
+      code: error?.code,
+      meta: error?.meta,
+      message: error?.message,
+    })
+    
+    // Provide more specific error messages
+    if (error?.code === 'P2025') {
+      return NextResponse.json(
+        { success: true, message: 'Session not found or already ended' }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to end call' },
+      { 
+        error: 'Failed to end call',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }

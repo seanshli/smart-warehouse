@@ -87,14 +87,52 @@ export async function POST(
       return NextResponse.json({ error: 'Door bell not linked to a household' }, { status: 400 })
     }
 
-    // Update last rung time and create call session
-    const callSession = await prisma.doorBellCallSession.create({
-      data: {
-        doorBellId: doorBell.id,
-        status: 'ringing',
-        startedAt: new Date(),
-      },
-    })
+    // End any existing active sessions for this doorbell first
+    try {
+      await prisma.doorBellCallSession.updateMany({
+        where: {
+          doorBellId: doorBell.id,
+          status: {
+            in: ['ringing', 'connected'],
+          },
+        },
+        data: {
+          status: 'ended',
+          endedAt: new Date(),
+        },
+      })
+    } catch (updateError) {
+      console.error('Error ending existing sessions:', updateError)
+      // Continue even if this fails
+    }
+
+    // Create new call session
+    let callSession
+    try {
+      callSession = await prisma.doorBellCallSession.create({
+        data: {
+          doorBellId: doorBell.id,
+          status: 'ringing',
+          startedAt: new Date(),
+        },
+      })
+    } catch (sessionError: any) {
+      console.error('Error creating call session:', sessionError)
+      // If it's a unique constraint or foreign key error, provide more details
+      if (sessionError.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'A call session already exists for this doorbell' },
+          { status: 409 }
+        )
+      }
+      if (sessionError.code === 'P2003') {
+        return NextResponse.json(
+          { error: 'Invalid doorbell reference' },
+          { status: 400 }
+        )
+      }
+      throw sessionError
+    }
 
     await prisma.doorBell.update({
       where: { id: doorBell.id },
@@ -142,7 +180,7 @@ export async function POST(
     const activities = []
     for (const member of doorBell.household.members) {
       try {
-        const activity = await (prisma as any).userActivity.create({
+        const activity = await prisma.userActivity.create({
           data: {
             userId: member.user.id,
             householdId: doorBell.household.id,
@@ -158,9 +196,9 @@ export async function POST(
           },
         })
         activities.push(activity)
-      } catch (activityError) {
+      } catch (activityError: any) {
         console.error('Error logging activity:', activityError)
-        // Continue even if activity logging fails
+        // Continue even if activity logging fails - don't block doorbell ringing
       }
     }
 
@@ -214,10 +252,33 @@ export async function POST(
         activitiesLogged: activities.length,
       },
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error ringing door bell:', error)
+    console.error('Error details:', {
+      code: error?.code,
+      meta: error?.meta,
+      message: error?.message,
+    })
+    
+    // Provide more specific error messages
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Database constraint violation - duplicate entry' },
+        { status: 409 }
+      )
+    }
+    if (error?.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid reference - doorbell or related record not found' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to ring door bell' },
+      { 
+        error: 'Failed to ring door bell',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }

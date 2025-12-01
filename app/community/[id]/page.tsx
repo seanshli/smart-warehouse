@@ -807,15 +807,14 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
       const response = await fetch(`/api/community/${communityId}/working-groups`)
       if (response.ok) {
         const data = await response.json()
-        setWorkingGroups(data.w
-          || [])
+        setWorkingGroups(data.workingGroups || [])
       } else {
         const errorData = await response.json().catch(() => ({}))
-        setError(errorData.error || '加载工作组失败')
+        setError(errorData.error || 'Failed to load working groups')
       }
     } catch (err) {
       console.error('Failed to fetch working groups:', err)
-      setError(err instanceof Error ? err.message : '加载工作组失败')
+      setError(err instanceof Error ? err.message : 'Failed to load working groups')
     } finally {
       setLoading(false)
     }
@@ -832,11 +831,11 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
         setGroupMembers(data.members || [])
       } else {
         const errorData = await memberRes.json().catch(() => ({}))
-        setGroupError(errorData.error || '加载成员失败')
+        setGroupError(errorData.error || 'Failed to load members')
       }
     } catch (err) {
       console.error('Failed to load group members:', err)
-      setGroupError(err instanceof Error ? err.message : '加载成员失败')
+      setGroupError(err instanceof Error ? err.message : 'Failed to load members')
     } finally {
       setGroupLoading(false)
     }
@@ -868,17 +867,17 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
         setGroupMembers(prev => [...prev, data])
         setAddEmail('')
         setAddRole('MEMBER')
-        toast.success('已添加成员')
+        toast.success('Member added')
         fetchWorkingGroups()
       } else {
         const errorData = await res.json().catch(() => ({}))
-        setGroupError(errorData.error || '添加成员失败')
-        toast.error(errorData.error || '添加成员失败')
+        setGroupError(errorData.error || 'Failed to add member')
+        toast.error(errorData.error || 'Failed to add member')
       }
     } catch (err) {
       console.error('Error adding member:', err)
-      setGroupError(err instanceof Error ? err.message : '添加成员失败')
-      toast.error('添加成员失败')
+      setGroupError(err instanceof Error ? err.message : 'Failed to add member')
+      toast.error('Failed to add member')
     } finally {
       setAddingMember(false)
     }
@@ -886,7 +885,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
 
   const handleRemoveMember = async (memberId: string) => {
     if (!selectedGroup) return
-    if (!confirm('确定要从工作组移除此成员吗？')) return
+    if (!confirm('Remove this member from the working group?')) return
     try {
       const res = await fetch(
         `/api/community/${communityId}/working-groups/${selectedGroup.id}/members/${memberId}`,
@@ -894,15 +893,15 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
       )
       if (res.ok) {
         setGroupMembers(prev => prev.filter(m => m.id !== memberId))
-        toast.success('已移除成员')
+        toast.success('Member removed')
         fetchWorkingGroups()
       } else {
         const errorData = await res.json().catch(() => ({}))
-        toast.error(errorData.error || '移除成员失败')
+        toast.error(errorData.error || 'Failed to remove member')
       }
     } catch (err) {
       console.error('Error removing member:', err)
-      toast.error('移除成员失败')
+      toast.error('Failed to remove member')
     }
   }
 
@@ -922,21 +921,21 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
         setGroupMembers(prev =>
           prev.map(m => (m.id === memberId ? { ...m, role: data.role } : m))
         )
-        toast.success('角色已更新')
+        toast.success('Role updated')
         fetchWorkingGroups()
       } else {
         const errorData = await res.json().catch(() => ({}))
-        toast.error(errorData.error || '更新角色失败')
+        toast.error(errorData.error || 'Failed to update role')
       }
     } catch (err) {
       console.error('Error updating role:', err)
-      toast.error('更新角色失败')
+      toast.error('Failed to update role')
     }
   }
 
   const handleCreateGroup = async () => {
     if (!newGroup.name.trim()) {
-      toast.error('请输入工作组名称')
+      toast.error('Please enter a working group name')
       return
     }
     try {
@@ -951,21 +950,21 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
         setWorkingGroups(prev => [...prev, data])
         setShowCreate(false)
         setNewGroup({ name: '', type: 'MANAGEMENT', description: '' })
-        toast.success('已创建工作组')
+        toast.success('Working group created')
       } else {
         const errorData = await res.json().catch(() => ({}))
-        toast.error(errorData.error || '创建失败')
+        toast.error(errorData.error || 'Failed to create working group')
       }
     } catch (err) {
       console.error('Error creating group:', err)
-      toast.error('创建失败')
+      toast.error('Failed to create working group')
     } finally {
       setCreating(false)
     }
   }
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!confirm('确定要删除该工作组吗？此操作不可恢复。')) return
+    if (!confirm('Delete this working group? This cannot be undone.')) return
     try {
       const res = await fetch(`/api/community/${communityId}/working-groups/${groupId}`, {
         method: 'DELETE',
@@ -975,19 +974,19 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
         if (selectedGroup?.id === groupId) {
           closeGroupDetails()
         }
-        toast.success('已删除工作组')
+        toast.success('Working group deleted')
       } else {
         const errorData = await res.json().catch(() => ({}))
-        toast.error(errorData.error || '删除失败')
+        toast.error(errorData.error || 'Failed to delete working group')
       }
     } catch (err) {
       console.error('Error deleting group:', err)
-      toast.error('删除失败')
+      toast.error('Failed to delete working group')
     }
   }
 
   if (loading) {
-    return <div className="text-center py-8">加载中...</div>
+    return <div className="text-center py-8">Loading...</div>
   }
 
   if (error) {
@@ -998,7 +997,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
           onClick={fetchWorkingGroups}
           className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
         >
-          重新加载
+          Reload
         </button>
       </div>
     )
@@ -1007,16 +1006,16 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900">工作组列表</h3>
+        <h3 className="text-lg font-medium text-gray-900">Working Groups</h3>
         <button
           onClick={() => setShowCreate(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
         >
-          创建工作组
+          Create Working Group
         </button>
       </div>
       {workingGroups.length === 0 ? (
-        <div className=" text-center py-8 text-gray-500">暂无工作组</div>
+        <div className=" text-center py-8 text-gray-500">No working groups yet</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {workingGroups.map(group => (
@@ -1046,11 +1045,11 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
       {showCreate && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold mb-4">创建新工作组</h3>
+            <h3 className="text-lg font-semibold mb-4">Create new working group</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  名称
+                  Name
                 </label>
                 <input
                   type="text"
@@ -1061,7 +1060,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  类型
+                  Type
                 </label>
                 <select
                   value={newGroup.type}
@@ -1077,7 +1076,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  描述
+                  Description
                 </label>
                 <textarea
                   rows={3}
@@ -1095,14 +1094,14 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 disabled={creating}
               >
-                取消
+                Cancel
               </button>
               <button
                 onClick={handleCreateGroup}
                 disabled={creating}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
               >
-                {creating ? '创建中...' : '创建'}
+                {creating ? 'Creating...' : 'Create'}
               </button>
             </div>
           </div>
@@ -1118,7 +1117,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                   {selectedGroup.name}
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  类型: {selectedGroup.type} • 成员: {groupMembers.length}
+                  Type: {selectedGroup.type} • Members: {groupMembers.length}
                 </p>
               </div>
               <button
@@ -1134,7 +1133,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
               {groupLoading ? (
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">加载成员中...</p>
+                  <p className="text-sm text-gray-600">Loading members...</p>
                 </div>
               ) : (
                 <>
@@ -1145,9 +1144,9 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                   )}
 
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">成员列表</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Members</h4>
                     {groupMembers.length === 0 ? (
-                      <div className="text-sm text-gray-500">暂无成员</div>
+                      <div className="text-sm text-gray-500">No members yet</div>
                     ) : (
                       <div className="space-y-2">
                         {groupMembers.map((member: any) => (
@@ -1181,7 +1180,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                                 onClick={() => handleRemoveMember(member.id)}
                                 className="text-xs text-red-600 hover:text-red-800"
                               >
-                                移除
+                                Remove
                               </button>
                             </div>
                           </div>
@@ -1192,7 +1191,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
 
                   <div className="pt-3 border-t border-gray-100">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">
-                      添加成员（通过邮箱）
+                      Add member (by email)
                     </h4>
                     <div className="flex flex-wrap gap-2 items-center">
                       <input
@@ -1207,8 +1206,8 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                         onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
                         className="border border-gray-300 rounded-md px-2 py-2 text-sm"
                       >
-                        <option value="MEMBER">成员</option>
-                        <option value="LEADER">负责人</option>
+                        <option value="MEMBER">Member</option>
+                        <option value="LEADER">Leader</option>
                       </select>
                       <button
                         type="button"
@@ -1216,11 +1215,12 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                         disabled={addingMember || !addEmail.trim()}
                         className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
                       >
-                        {addingMember ? '添加中...' : '添加'}
+                        {addingMember ? 'Adding...' : 'Add'}
                       </button>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      需要先在「成员」标签中将用户加入社区，然后再分配到具体工作组。
+                      Make sure the user has already joined this community (in the Members tab)
+                      before assigning them to a working group.
                     </p>
                   </div>
                 </>
@@ -1232,7 +1232,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                 onClick={() => handleDeleteGroup(selectedGroup.id)}
                 className="text-xs text-red-600 hover:text-red-800"
               >
-                删除工作组
+                Delete working group
               </button>
             </div>
           </div>

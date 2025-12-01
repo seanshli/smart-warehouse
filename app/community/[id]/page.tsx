@@ -784,6 +784,17 @@ function AnnouncementsTab({
 function WorkingGroupsTab({ communityId }: { communityId: string }) {
   const [workingGroups, setWorkingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null)
+  const [groupMembers, setGroupMembers] = useState<any[]>([])
+  const [groupLoading, setGroupLoading] = useState(false)
+  const [groupError, setGroupError] = useState<string | null>(null)
+  const [addEmail, setAddEmail] = useState('')
+  const [addRole, setAddRole] = useState<'LEADER' | 'MEMBER'>('MEMBER')
+  const [addingMember, setAddingMember] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
+  const [newGroup, setNewGroup] = useState({ name: '', type: 'MANAGEMENT', description: '' })
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     fetchWorkingGroups()
@@ -791,15 +802,187 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
 
   const fetchWorkingGroups = async () => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await fetch(`/api/community/${communityId}/working-groups`)
       if (response.ok) {
         const data = await response.json()
-        setWorkingGroups(data.workingGroups || [])
+        setWorkingGroups(data.w
+          || [])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || '加载工作组失败')
       }
     } catch (err) {
       console.error('Failed to fetch working groups:', err)
+      setError(err instanceof Error ? err.message : '加载工作组失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const openGroupDetails = async (group: any) => {
+    setSelectedGroup(group)
+    setGroupError(null)
+    setGroupLoading(true)
+    try {
+      const memberRes = await fetch(`/api/community/${communityId}/working-groups/${group.id}/members`)
+      if (memberRes.ok) {
+        const data = await memberRes.json()
+        setGroupMembers(data.members || [])
+      } else {
+        const errorData = await memberRes.json().catch(() => ({}))
+        setGroupError(errorData.error || '加载成员失败')
+      }
+    } catch (err) {
+      console.error('Failed to load group members:', err)
+      setGroupError(err instanceof Error ? err.message : '加载成员失败')
+    } finally {
+      setGroupLoading(false)
+    }
+  }
+
+  const closeGroupDetails = () => {
+    setSelectedGroup(null)
+    setGroupMembers([])
+    setAddEmail('')
+    setAddRole('MEMBER')
+    setGroupError(null)
+  }
+
+  const handleAddMember = async () => {
+    if (!selectedGroup || !addEmail.trim()) return
+    try {
+      setAddingMember(true)
+      setGroupError(null)
+      const res = await fetch(
+        `/api/community/${communityId}/working-groups/${selectedGroup.id}/members`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUserEmail: addEmail.trim(), role: addRole }),
+        }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setGroupMembers(prev => [...prev, data])
+        setAddEmail('')
+        setAddRole('MEMBER')
+        toast.success('已添加成员')
+        fetchWorkingGroups()
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        setGroupError(errorData.error || '添加成员失败')
+        toast.error(errorData.error || '添加成员失败')
+      }
+    } catch (err) {
+      console.error('Error adding member:', err)
+      setGroupError(err instanceof Error ? err.message : '添加成员失败')
+      toast.error('添加成员失败')
+    } finally {
+      setAddingMember(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!selectedGroup) return
+    if (!confirm('确定要从工作组移除此成员吗？')) return
+    try {
+      const res = await fetch(
+        `/api/community/${communityId}/working-groups/${selectedGroup.id}/members/${memberId}`,
+        { method: 'DELETE' }
+      )
+      if (res.ok) {
+        setGroupMembers(prev => prev.filter(m => m.id !== memberId))
+        toast.success('已移除成员')
+        fetchWorkingGroups()
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        toast.error(errorData.error || '移除成员失败')
+      }
+    } catch (err) {
+      console.error('Error removing member:', err)
+      toast.error('移除成员失败')
+    }
+  }
+
+  const handleChangeRole = async (memberId: string, newRole: 'LEADER' | 'MEMBER') => {
+    if (!selectedGroup) return
+    try {
+      const res = await fetch(
+        `/api/community/${communityId}/working-groups/${selectedGroup.id}/members/${memberId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole }),
+        }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setGroupMembers(prev =>
+          prev.map(m => (m.id === memberId ? { ...m, role: data.role } : m))
+        )
+        toast.success('角色已更新')
+        fetchWorkingGroups()
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        toast.error(errorData.error || '更新角色失败')
+      }
+    } catch (err) {
+      console.error('Error updating role:', err)
+      toast.error('更新角色失败')
+    }
+  }
+
+  const handleCreateGroup = async () => {
+    if (!newGroup.name.trim()) {
+      toast.error('请输入工作组名称')
+      return
+    }
+    try {
+      setCreating(true)
+      const res = await fetch(`/api/community/${communityId}/working-groups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newGroup),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setWorkingGroups(prev => [...prev, data])
+        setShowCreate(false)
+        setNewGroup({ name: '', type: 'MANAGEMENT', description: '' })
+        toast.success('已创建工作组')
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        toast.error(errorData.error || '创建失败')
+      }
+    } catch (err) {
+      console.error('Error creating group:', err)
+      toast.error('创建失败')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('确定要删除该工作组吗？此操作不可恢复。')) return
+    try {
+      const res = await fetch(`/api/community/${communityId}/working-groups/${groupId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setWorkingGroups(prev => prev.filter(g => g.id !== groupId))
+        if (selectedGroup?.id === groupId) {
+          closeGroupDetails()
+        }
+        toast.success('已删除工作组')
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        toast.error(errorData.error || '删除失败')
+      }
+    } catch (err) {
+      console.error('Error deleting group:', err)
+      toast.error('删除失败')
     }
   }
 
@@ -807,29 +990,252 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
     return <div className="text-center py-8">加载中...</div>
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchWorkingGroups}
+          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+        >
+          重新加载
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium text-gray-900">工作组列表</h3>
-        <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+        >
           创建工作组
         </button>
       </div>
       {workingGroups.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">暂无工作组</div>
+        <div className=" text-center py-8 text-gray-500">暂无工作组</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {workingGroups.map((group) => (
-            <div key={group.id} className="p-4 border border-gray-200 rounded-lg">
-              <h4 className="font-medium text-gray-900">{group.name}</h4>
+          {workingGroups.map(group => (
+            <button
+              key={group.id}
+              type="button"
+              onClick={() => openGroupDetails(group)}
+              className="text-left p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary-700"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="text-lg font-medium text-gray-900">{group.name}</h4>
+                <span className="px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-700">
+                  {group.type}
+                </span>
+              </div>
               {group.description && (
-                <p className="text-sm text-gray-600 mt-1">{group.description}</p>
+                <p className="text-sm text-gray-600 mt-1 mb-2">{group.description}</p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
-                类型: {group.type} | 成员: {group.memberCount || 0}
+              <p className="text-xs text-gray-500 mt-1">
+                成员: {group.stats?.members ?? group.memberCount ?? 0}
               </p>
-            </div>
+            </button>
           ))}
+        </div>
+      )}
+
+      {showCreate && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-4">创建新工作组</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  名称
+                </label>
+                <input
+                  type="text"
+                  value={newGroup.name}
+                  onChange={e => setNewGroup({ ...newGroup, name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  类型
+                </label>
+                <select
+                  value={newGroup.type}
+                  onChange={e =>
+                    setNewGroup({ ...newGroup, type: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="MANAGEMENT">MANAGEMENT</option>
+                  <option value="MAINTENANCE">MAINTENANCE</option>
+                  <option value="FRONT_DOOR">FRONT_DOOR</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  描述
+                </label>
+                <textarea
+                  rows={3}
+                  value={newGroup.description}
+                  onChange={e =>
+                    setNewGroup({ ...newGroup, description: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCreate(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                disabled={creating}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleCreateGroup}
+                disabled={creating}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+              >
+                {creating ? '创建中...' : '创建'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedGroup && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl max-w-xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedGroup.name}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  类型: {selectedGroup.type} • 成员: {groupMembers.length}
+                </p>
+              </div>
+              <button
+                onClick={closeGroupDetails}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <ClipboardDocumentIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+     
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {groupLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">加载成员中...</p>
+                </div>
+              ) : (
+                <>
+                  {groupError && (
+                    <div className="mb-3 rounded-md bg-red-50 p-3 text-sm text-red-700">
+                      {groupError}
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">成员列表</h4>
+                    {groupMembers.length === 0 ? (
+                      <div className="text-sm text-gray-500">暂无成员</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {groupMembers.map((member: any) => (
+                          <div
+                            key={member.id}
+                            className="flex items-center justify-between border border-gray-200 rounded-md px 3 py 2"
+                          >
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {member.user?.name || member.user?.email}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {member.user?.email}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <select
+                                value={member.role}
+                                onChange={e =>
+                                  handleChangeRole(
+                                    member.id,
+                                    e.target.value as 'LEADER' | 'MEMBER'
+                                  )
+                                }
+                                className="text-xs border border-gray-300 rounded-md px-2 py-1"
+                              >
+                                <option value="LEADER">LEADER</option>
+                                <option value="MEMBER">MEMBER</option>
+                              </select>
+                              <button
+                                onClick={() => handleRemoveMember(member.id)}
+                                className="text-xs text-red-600 hover:text-red-800"
+                              >
+                                移除
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-100">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">
+                      添加成员（通过邮箱）
+                    </h4>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <input
+                        type="email"
+                        value={addEmail}
+                        onChange={e => setAddEmail(e.target.value)}
+                        placeholder="user@example.com"
+                        className="flex-1 min-w-[180px] border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                      <select
+                        value={addRole}
+                        onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
+                        className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                      >
+                        <option value="MEMBER">成员</option>
+                        <option value="LEADER">负责人</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAddMember}
+                        disabled={addingMember || !addEmail.trim()}
+                        className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        {addingMember ? '添加中...' : '添加'}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      需要先在「成员」标签中将用户加入社区，然后再分配到具体工作组。
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => handleDeleteGroup(selectedGroup.id)}
+                className="text-xs text-red-600 hover:text-red-800"
+              >
+                删除工作组
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

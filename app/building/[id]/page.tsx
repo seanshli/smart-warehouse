@@ -255,7 +255,7 @@ export default function BuildingDetailPage() {
   )
 }
 
-function OverviewTab({ building, buildingId, onNavigateTab }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities') => void }) {
+function OverviewTab({ building, buildingId, onNavigateTab }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'working-groups') => void }) {
   const { t } = useLanguage()
   const [settingUp, setSettingUp] = useState(false)
   const [setupStatus, setSetupStatus] = useState<{
@@ -511,7 +511,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-md font-medium text-gray-900">Working Teams</h4>
               <button
-                onClick={() => onNavigateTab('facilities')}
+                onClick={() => onNavigateTab('working-groups')}
                 className="text-xs text-primary-600 hover:text-primary-700 underline"
               >
                 View details

@@ -63,7 +63,7 @@ export async function GET(
         connectedAt: session.connectedAt,
         messages: session.messages.map(msg => ({
           id: msg.id,
-          text: msg.text,
+          text: msg.message,
           from: msg.from,
           timestamp: msg.createdAt,
         })),

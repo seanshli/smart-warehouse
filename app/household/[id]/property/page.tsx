@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import DoorBellPanel from '@/components/household/DoorBellPanel'
 
 interface Mailbox {
   id: string
@@ -273,58 +274,69 @@ export default function HouseholdPropertyPage() {
 
           {/* Doorbells Tab */}
           {activeTab === 'doorbells' && (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                {t('doorBells') || 'Door Bells'}
-              </h2>
-              {doorbells.length > 0 ? (
-                <div className="space-y-4">
-                  {doorbells.map((doorbell) => (
-                    <div key={doorbell.id} className="border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className={`p-3 rounded-lg ${
+            <div className="space-y-6">
+              {/* Active Doorbell Calls Panel */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  {t('activeCalls') || 'Active Doorbell Calls'}
+                </h2>
+                <DoorBellPanel />
+              </div>
+
+              {/* Doorbell List */}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  {t('doorBells') || 'Door Bells'}
+                </h2>
+                {doorbells.length > 0 ? (
+                  <div className="space-y-4">
+                    {doorbells.map((doorbell) => (
+                      <div key={doorbell.id} className="border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-4">
+                            <div className={`p-3 rounded-lg ${
+                              doorbell.isEnabled
+                                ? 'bg-green-50 text-green-600'
+                                : 'bg-gray-50 text-gray-400'
+                            }`}>
+                              <BellIcon className="h-8 w-8" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {t('doorBellNumber') || 'Door Bell'} {doorbell.doorBellNumber}
+                              </h3>
+                              {doorbell.location && (
+                                <p className="text-sm text-gray-500 mt-1">{doorbell.location}</p>
+                              )}
+                              {doorbell.lastRungAt && (
+                                <div className="mt-3 flex items-center space-x-2 text-sm text-gray-600">
+                                  <ClockIcon className="h-4 w-4" />
+                                  <span>{t('lastRungAt') || 'Last rung'}: {formatDate(doorbell.lastRungAt)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
                             doorbell.isEnabled
-                              ? 'bg-green-50 text-green-600'
-                              : 'bg-gray-50 text-gray-400'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-600'
                           }`}>
-                            <BellIcon className="h-8 w-8" />
+                            {doorbell.isEnabled
+                              ? (t('enabled') || 'Enabled')
+                              : (t('disabled') || 'Disabled')
+                            }
                           </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {t('doorBellNumber') || 'Door Bell'} {doorbell.doorBellNumber}
-                            </h3>
-                            {doorbell.location && (
-                              <p className="text-sm text-gray-500 mt-1">{doorbell.location}</p>
-                            )}
-                            {doorbell.lastRungAt && (
-                              <div className="mt-3 flex items-center space-x-2 text-sm text-gray-600">
-                                <ClockIcon className="h-4 w-4" />
-                                <span>{t('lastRungAt') || 'Last rung'}: {formatDate(doorbell.lastRungAt)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          doorbell.isEnabled
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {doorbell.isEnabled
-                            ? (t('enabled') || 'Enabled')
-                            : (t('disabled') || 'Disabled')
-                          }
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <BellIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <p>{t('noDoorbellsAssigned') || 'No doorbells assigned to this household'}</p>
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <BellIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <p>{t('noDoorbellsAssigned') || 'No doorbells assigned to this household'}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

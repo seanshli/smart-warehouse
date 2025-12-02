@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { DoorBellWebRTC } from '@/lib/webrtc'
+import { useRealtime } from '@/lib/useRealtime'
 
 interface DoorBellCall {
   id: string
@@ -47,6 +48,15 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
   const previousCallsRef = useRef<DoorBellCall[]>([])
   const notificationShownRef = useRef<Set<string>>(new Set())
 
+  // Set up realtime updates for doorbell events
+  useRealtime(household?.id || '', (data) => {
+    if (data?.type === 'doorbell' || data?.event) {
+      // Refresh calls when doorbell event is received
+      console.log('Doorbell event received via realtime:', data)
+      fetchActiveCalls()
+    }
+  })
+
   useEffect(() => {
     if (!household?.id || !household?.buildingId) {
       if (onActiveCallsChange) {
@@ -55,10 +65,10 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       return
     }
 
-    // Poll for active doorbell calls
+    // Initial fetch and periodic polling as fallback
     const interval = setInterval(() => {
       fetchActiveCalls()
-    }, 2000)
+    }, 5000) // Reduced frequency since we have realtime
 
     fetchActiveCalls()
 

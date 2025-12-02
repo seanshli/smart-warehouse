@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
+import { broadcastDoorBellEvent } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,10 @@ export async function POST(
 ) {
   try {
     const buildingId = params.id
-    const { doorBellId, doorBellNumber } = await request.json()
+    const body = await request.json().catch(() => ({}))
+    const { doorBellId, doorBellNumber } = body
+
+    console.log('Doorbell ring request:', { buildingId, doorBellId, doorBellNumber })
 
     if (!doorBellId && !doorBellNumber) {
       return NextResponse.json(
@@ -72,19 +76,45 @@ export async function POST(
         })
 
     if (!doorBell) {
-      return NextResponse.json({ error: 'Door bell not found' }, { status: 404 })
+      console.error(`Doorbell not found: buildingId=${buildingId}, doorBellId=${doorBellId}, doorBellNumber=${doorBellNumber}`)
+      return NextResponse.json({ 
+        error: 'Door bell not found',
+        details: doorBellId ? `No doorbell found with ID: ${doorBellId}` : `No doorbell found with number: ${doorBellNumber}`
+      }, { status: 404 })
     }
 
+    console.log(`Found doorbell: ${doorBell.id} (${doorBell.doorBellNumber}), enabled: ${doorBell.isEnabled}, household: ${doorBell.household?.id || 'none'}`)
+
     if (doorBell.buildingId !== buildingId) {
-      return NextResponse.json({ error: 'Door bell does not belong to this building' }, { status: 400 })
+      console.error(`Doorbell ${doorBell.id} belongs to building ${doorBell.buildingId}, but request was for ${buildingId}`)
+      return NextResponse.json({ 
+        error: 'Door bell does not belong to this building',
+        details: `Doorbell ${doorBell.doorBellNumber} belongs to a different building`
+      }, { status: 400 })
     }
 
     if (!doorBell.isEnabled) {
-      return NextResponse.json({ error: 'Door bell is disabled' }, { status: 400 })
+      console.error(`Doorbell ${doorBell.id} (${doorBell.doorBellNumber}) is disabled`)
+      return NextResponse.json({ 
+        error: 'Door bell is disabled',
+        details: `Doorbell ${doorBell.doorBellNumber} is currently disabled`
+      }, { status: 400 })
     }
 
     if (!doorBell.household) {
-      return NextResponse.json({ error: 'Door bell not linked to a household' }, { status: 400 })
+      console.error(`Doorbell ${doorBell.id} (${doorBell.doorBellNumber}) is not linked to a household`)
+      return NextResponse.json({ 
+        error: 'Door bell not linked to a household',
+        details: `Doorbell ${doorBell.doorBellNumber} needs to be linked to a household before it can be rung`
+      }, { status: 400 })
+    }
+
+    if (!doorBell.household.members || doorBell.household.members.length === 0) {
+      console.error(`Doorbell ${doorBell.id} (${doorBell.doorBellNumber}) household has no members`)
+      return NextResponse.json({ 
+        error: 'Household has no members',
+        details: `The household linked to doorbell ${doorBell.doorBellNumber} has no members. Please add members to the household first.`
+      }, { status: 400 })
     }
 
     // End any existing active sessions for this doorbell first
@@ -235,6 +265,28 @@ export async function POST(
           console.error('Error creating notification via Prisma:', prismaError)
         }
       }
+    }
+
+    // Broadcast doorbell event in real-time to household and front desk
+    try {
+      broadcastDoorBellEvent(
+        doorBell.id,
+        doorBell.household?.id || null,
+        buildingId,
+        {
+          event: 'ring',
+          callSessionId: callSession?.id,
+          doorBellNumber: doorBell.doorBellNumber,
+          household: doorBell.household ? {
+            id: doorBell.household.id,
+            name: doorBell.household.name,
+            apartmentNo: doorBell.household.apartmentNo,
+          } : null,
+        }
+      )
+    } catch (broadcastError) {
+      console.error('Error broadcasting doorbell event:', broadcastError)
+      // Don't fail the request if broadcast fails
     }
 
     return NextResponse.json({

@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { DoorBellWebRTC } from '@/lib/webrtc'
+import { useBuildingRealtime } from '@/lib/useBuildingRealtime'
 
 interface DoorBell {
   id: string
@@ -51,13 +52,21 @@ export default function FrontDoorPage() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const webrtcRef = useRef<DoorBellWebRTC | null>(null)
 
+  // Set up realtime updates for doorbell events
+  useBuildingRealtime(buildingId, (data) => {
+    if (data?.type === 'doorbell' || data?.event) {
+      // Refresh calls when doorbell event is received
+      fetchActiveCalls()
+    }
+  })
+
   useEffect(() => {
     fetchBuildingData()
     
-    // Poll for incoming calls (for front desk)
+    // Initial fetch and periodic polling as fallback
     const callPollInterval = setInterval(() => {
       fetchActiveCalls()
-    }, 2000)
+    }, 5000) // Reduced frequency since we have realtime
     
     return () => clearInterval(callPollInterval)
   }, [buildingId])
@@ -180,7 +189,11 @@ export default function FrontDoorPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to ring doorbell')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        const errorMessage = errorData.error || errorData.message || 'Failed to ring doorbell'
+        console.error('Doorbell ring error:', errorMessage, errorData)
+        toast.error(errorMessage)
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

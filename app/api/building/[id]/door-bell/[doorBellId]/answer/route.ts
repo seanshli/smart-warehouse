@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { broadcastDoorBellEvent } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,13 +65,48 @@ export async function POST(
     }
 
     // Update session to connected
-    await prisma.doorBellCallSession.update({
+    const updatedSession = await prisma.doorBellCallSession.update({
       where: { id: activeSession.id },
       data: {
         status: 'connected',
         connectedAt: new Date(),
       },
+      include: {
+        doorBell: {
+          include: {
+            household: {
+              select: {
+                id: true,
+                name: true,
+                apartmentNo: true,
+              },
+            },
+          },
+        },
+      },
     })
+
+    // Broadcast call answered event in real-time
+    try {
+      broadcastDoorBellEvent(
+        doorBell.id,
+        doorBell.household?.id || null,
+        doorBell.buildingId,
+        {
+          event: 'answered',
+          callSessionId: updatedSession.id,
+          doorBellNumber: doorBell.doorBellNumber,
+          household: doorBell.household ? {
+            id: doorBell.household.id,
+            name: doorBell.household.name,
+            apartmentNo: doorBell.household.apartmentNo,
+          } : null,
+        }
+      )
+    } catch (broadcastError) {
+      console.error('Error broadcasting doorbell answer event:', broadcastError)
+      // Don't fail the request if broadcast fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { broadcastDoorBellEvent } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,11 @@ export async function POST(
             members: {
               where: { userId },
             },
+          },
+          select: {
+            id: true,
+            name: true,
+            apartmentNo: true,
           },
         },
       },
@@ -68,6 +74,28 @@ export async function POST(
         endedAt: new Date(),
       },
     })
+
+    // Broadcast call ended event in real-time
+    try {
+      broadcastDoorBellEvent(
+        doorBell.id,
+        doorBell.household?.id || null,
+        doorBell.buildingId,
+        {
+          event: 'ended',
+          callSessionId: activeSession.id,
+          doorBellNumber: doorBell.doorBellNumber,
+          household: doorBell.household ? {
+            id: doorBell.household.id,
+            name: doorBell.household.name,
+            apartmentNo: doorBell.household.apartmentNo,
+          } : null,
+        }
+      )
+    } catch (broadcastError) {
+      console.error('Error broadcasting doorbell end event:', broadcastError)
+      // Don't fail the request if broadcast fails
+    }
 
     return NextResponse.json({ success: true, message: 'Call ended' })
   } catch (error) {

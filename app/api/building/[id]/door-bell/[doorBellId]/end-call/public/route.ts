@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { broadcastDoorBellEvent } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,22 @@ export async function POST(
   { params }: { params: { id: string; doorBellId: string } }
 ) {
   try {
+    const buildingId = params.id
     const doorBellId = params.doorBellId
+
+    // Get doorbell info for broadcasting
+    const doorBell = await prisma.doorBell.findUnique({
+      where: { id: doorBellId },
+      include: {
+        household: {
+          select: {
+            id: true,
+            name: true,
+            apartmentNo: true,
+          },
+        },
+      },
+    })
 
     const activeSession = await prisma.doorBellCallSession.findFirst({
       where: {
@@ -45,6 +61,30 @@ export async function POST(
         return NextResponse.json({ success: true, message: 'Session already ended' })
       }
       throw updateError
+    }
+
+    // Broadcast call ended event in real-time
+    if (doorBell) {
+      try {
+        broadcastDoorBellEvent(
+          doorBell.id,
+          doorBell.household?.id || null,
+          buildingId,
+          {
+            event: 'ended',
+            callSessionId: activeSession.id,
+            doorBellNumber: doorBell.doorBellNumber,
+            household: doorBell.household ? {
+              id: doorBell.household.id,
+              name: doorBell.household.name,
+              apartmentNo: doorBell.household.apartmentNo,
+            } : null,
+          }
+        )
+      } catch (broadcastError) {
+        console.error('Error broadcasting doorbell end event:', broadcastError)
+        // Don't fail the request if broadcast fails
+      }
     }
 
     return NextResponse.json({ success: true, message: 'Call ended' })

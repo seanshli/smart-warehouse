@@ -61,6 +61,8 @@ export async function GET(
         status: session.status,
         startedAt: session.startedAt,
         connectedAt: session.connectedAt,
+        routedToFrontDesk: session.routedToFrontDesk,
+        routedAt: session.routedAt,
         messages: session.messages.map(msg => ({
           id: msg.id,
           text: msg.message,

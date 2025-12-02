@@ -68,8 +68,26 @@ export default function FrontDoorPage() {
       fetchActiveCalls()
     }, 5000) // Reduced frequency since we have realtime
     
-    return () => clearInterval(callPollInterval)
+    // Check for timed-out calls every 10 seconds
+    const timeoutCheckInterval = setInterval(() => {
+      checkTimedOutCalls()
+    }, 10000)
+    
+    return () => {
+      clearInterval(callPollInterval)
+      clearInterval(timeoutCheckInterval)
+    }
   }, [buildingId])
+
+  const checkTimedOutCalls = async () => {
+    try {
+      await fetch(`/api/building/${buildingId}/door-bell/check-timeout`, {
+        method: 'POST',
+      })
+    } catch (error) {
+      console.error('Error checking timed-out calls:', error)
+    }
+  }
   
   const fetchActiveCalls = async () => {
     try {

@@ -106,18 +106,19 @@ model Community {
 }
 
 model Building {
-  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  communityId    String    @map("community_id")
-  name           String
-  description    String?
-  address        String?
-  floorCount     Int?      @map("floor_count")
-  unitCount      Int?      @map("unit_count")
-  latitude       Float?
-  longitude      Float?
-  invitationCode String?   @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
-  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                    String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId          String    @map("community_id")
+  name                 String
+  description          String?
+  address              String?
+  floorCount           Int?      @map("floor_count")
+  unitCount            Int?      @map("unit_count")
+  latitude             Float?
+  longitude            Float?
+  invitationCode       String?   @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  doorbellTimeoutSeconds Int?    @default(30) @map("doorbell_timeout_seconds") // Timeout in seconds before routing to front desk
+  createdAt            DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   community      Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   households     Household[]
@@ -526,14 +527,16 @@ model DoorBell {
 
 // Door Bell Call Session - Tracks active calls between guests and households
 model DoorBellCallSession {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  doorBellId  String    @map("door_bell_id")
-  status      String    @default("ringing") // ringing, connected, ended
-  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
-  connectedAt DateTime? @map("connected_at") @db.Timestamptz(6)
-  endedAt     DateTime? @map("ended_at") @db.Timestamptz(6)
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  doorBellId        String    @map("door_bell_id")
+  status            String    @default("ringing") // ringing, connected, ended
+  startedAt         DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  connectedAt       DateTime? @map("connected_at") @db.Timestamptz(6)
+  endedAt           DateTime? @map("ended_at") @db.Timestamptz(6)
+  routedToFrontDesk Boolean   @default(false) @map("routed_to_frontdesk") // Whether call was routed to front desk
+  routedAt          DateTime? @map("routed_at") @db.Timestamptz(6) // When call was routed to front desk
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   doorBell DoorBell          @relation(fields: [doorBellId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   messages DoorBellMessage[]

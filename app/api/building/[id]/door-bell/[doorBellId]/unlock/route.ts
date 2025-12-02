@@ -51,11 +51,13 @@ export async function POST(
       return NextResponse.json({ error: 'Not a member of this household' }, { status: 403 })
     }
 
-    // Verify there's an active call
+    // Verify there's an active call (ringing or connected)
     const activeSession = await prisma.doorBellCallSession.findFirst({
       where: {
         doorBellId,
-        status: 'connected',
+        status: {
+          in: ['ringing', 'connected'],
+        },
       },
       orderBy: {
         startedAt: 'desc',
@@ -64,7 +66,7 @@ export async function POST(
 
     if (!activeSession) {
       return NextResponse.json(
-        { error: 'No active call session' },
+        { error: 'No active call session. Please ring the doorbell first.' },
         { status: 400 }
       )
     }

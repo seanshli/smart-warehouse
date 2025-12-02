@@ -297,19 +297,47 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
   }
 
   const unlockDoor = async () => {
-    if (!selectedCall || !household?.buildingId) return
+    const effectiveBuildingId = buildingId || household?.buildingId
+    
+    if (!selectedCall || !effectiveBuildingId) {
+      console.error('Cannot unlock door: missing call or buildingId', { selectedCall, buildingId, household })
+      toast.error('Building information not available. Please refresh the page.')
+      return
+    }
+
+    // Check if there's an active call session (ringing or connected)
+    if (selectedCall.status !== 'ringing' && selectedCall.status !== 'connected') {
+      toast.error('No active call session. Please answer the call first.')
+      return
+    }
 
     try {
-      const response = await fetch(`/api/building/${household.buildingId}/door-bell/${selectedCall.doorBellId}/unlock`, {
+      console.log('Unlocking door:', { 
+        doorBellId: selectedCall.doorBellId, 
+        buildingId: effectiveBuildingId,
+        callStatus: selectedCall.status 
+      })
+
+      const response = await fetch(`/api/building/${effectiveBuildingId}/door-bell/${selectedCall.doorBellId}/unlock`, {
         method: 'POST',
       })
 
-      if (response.ok) {
-        toast.success(t('doorBellDoorUnlocked'))
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Unlock door error:', errorData)
+        toast.error(errorData.error || t('doorBellUnlockError'))
+        return
       }
+
+      const data = await response.json()
+      console.log('Door unlocked successfully:', data)
+      toast.success(t('doorBellDoorUnlocked') || 'Door unlocked successfully', {
+        icon: '🔓',
+        duration: 3000,
+      })
     } catch (error) {
       console.error('Error unlocking door:', error)
-      toast.error(t('doorBellUnlockError'))
+      toast.error(t('doorBellUnlockError') || 'Failed to unlock door')
     }
   }
 
@@ -409,16 +437,30 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                   </p>
                 </div>
                 {call.status === 'ringing' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      answerCall(call)
-                    }}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
-                  >
-                    <PhoneIcon className="h-4 w-4" />
-                    <span>{t('doorBellAnswer')}</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        answerCall(call)
+                      }}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                    >
+                      <PhoneIcon className="h-4 w-4" />
+                      <span>{t('doorBellAnswer')}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCall(call)
+                        unlockDoor()
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                      title={t('doorBellUnlockDoor') || 'Open Door'}
+                    >
+                      <LockOpenIcon className="h-4 w-4" />
+                      <span>{t('doorBellUnlockDoor') || 'Open Door'}</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -509,10 +551,10 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                 </button>
                 <button
                   onClick={unlockDoor}
-                  className="p-3 rounded-full bg-blue-500 text-white"
-                  title={t('doorBellUnlockDoor')}
+                  className="p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transform hover:scale-105 transition-all"
+                  title={t('doorBellUnlockDoor') || 'Open Door'}
                 >
-                  <LockOpenIcon className="h-5 w-5" />
+                  <LockOpenIcon className="h-6 w-6" />
                 </button>
                 <button
                   onClick={endCall}

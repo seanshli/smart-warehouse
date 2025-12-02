@@ -120,6 +120,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
       if (response.ok) {
         const data = await response.json()
         const newCalls = data.calls || []
+        console.log('Doorbell calls fetched:', newCalls.length, 'calls', newCalls)
         
         // Check for new ringing calls
         const newRingingCalls = newCalls.filter((call: DoorBellCall) => 

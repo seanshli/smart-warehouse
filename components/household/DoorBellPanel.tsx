@@ -467,8 +467,22 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
           ))}
 
           {/* Call Interface */}
-          {selectedCall && selectedCall.status === 'connected' && (
+          {(selectedCall && (selectedCall.status === 'connected' || selectedCall.status === 'ringing')) && (
             <div className="border-t pt-4 mt-4">
+              {/* Prominent Open Door Button - shown for both ringing and connected */}
+              {selectedCall.status === 'ringing' || selectedCall.status === 'connected' ? (
+                <div className="mb-4 flex justify-center">
+                  <button
+                    onClick={unlockDoor}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-all flex items-center space-x-3 text-lg font-semibold"
+                  >
+                    <LockOpenIcon className="h-6 w-6" />
+                    <span>{t('doorBellUnlockDoor') || 'Open Door'}</span>
+                  </button>
+                </div>
+              ) : null}
+
+              {selectedCall.status === 'connected' && (
               <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 min-h-[200px] relative mb-4">
                 {/* Remote Video (Guest) */}
                 <video
@@ -504,8 +518,10 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Controls */}
+              {/* Controls - Only show when connected */}
+              {selectedCall.status === 'connected' && (
               <div className="flex justify-center space-x-4 mb-4">
                 <button
                   onClick={async () => {
@@ -563,8 +579,11 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                   <XMarkIcon className="h-5 w-5" />
                 </button>
               </div>
+              )}
 
-              {/* Chat Messages */}
+              {/* Chat Messages - Only show when connected */}
+              {selectedCall.status === 'connected' && (
+              <div className="border-t pt-4">
               <div className="border-t pt-4">
                 <div className="h-32 overflow-y-auto mb-2 space-y-2">
                   {selectedCall.messages.map((msg) => (
@@ -601,6 +620,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
                   </button>
                 </div>
               </div>
+              )}
             </div>
           )}
         </div>

@@ -82,6 +82,7 @@ export async function GET(
         name: wg.name,
         description: wg.description,
         type: wg.type,
+        communityId: wg.communityId,
         members: wg.members.map(m => ({
           id: m.id,
           userId: m.user.id,

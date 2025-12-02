@@ -42,11 +42,39 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
   const [messageInput, setMessageInput] = useState('')
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [micEnabled, setMicEnabled] = useState(false)
+  const [buildingId, setBuildingId] = useState<string | null>(null)
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const webrtcRef = useRef<DoorBellWebRTC | null>(null)
   const previousCallsRef = useRef<DoorBellCall[]>([])
   const notificationShownRef = useRef<Set<string>>(new Set())
+
+  // Fetch buildingId if not available in household
+  useEffect(() => {
+    const fetchBuildingId = async () => {
+      if (household?.buildingId) {
+        setBuildingId(household.buildingId)
+        return
+      }
+
+      if (household?.id) {
+        try {
+          const response = await fetch(`/api/household/${household.id}/property`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.buildingId) {
+              setBuildingId(data.buildingId)
+              console.log('Fetched buildingId from property API:', data.buildingId)
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching buildingId:', error)
+        }
+      }
+    }
+
+    fetchBuildingId()
+  }, [household?.id, household?.buildingId])
 
   // Set up realtime updates for doorbell events
   useRealtime(household?.id || '', (data) => {
@@ -58,7 +86,7 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
   })
 
   useEffect(() => {
-    if (!household?.id || !household?.buildingId) {
+    if (!household?.id) {
       if (onActiveCallsChange) {
         onActiveCallsChange(0, 0)
       }
@@ -73,12 +101,21 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
     fetchActiveCalls()
 
     return () => clearInterval(interval)
-  }, [household?.id, household?.buildingId])
+  }, [household?.id, buildingId])
 
   const fetchActiveCalls = async () => {
-    if (!household?.buildingId) return
+    if (!household?.id) {
+      console.log('DoorBellPanel: No household ID, skipping fetch')
+      return
+    }
+
+    if (!household?.buildingId) {
+      console.warn('DoorBellPanel: Household missing buildingId', { household })
+      // Still try to fetch calls - the API endpoint doesn't require buildingId
+    }
 
     try {
+      console.log('Fetching doorbell calls for household:', household.id)
       const response = await fetch(`/api/household/${household.id}/doorbell-calls`)
       if (response.ok) {
         const data = await response.json()
@@ -180,20 +217,43 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
   }
 
   const answerCall = async (call: DoorBellCall) => {
+    const effectiveBuildingId = buildingId || household?.buildingId
+    
+    if (!effectiveBuildingId) {
+      console.error('Cannot answer call: buildingId is missing', { household, buildingId })
+      toast.error('Building information not available. Please refresh the page.')
+      return
+    }
+
     try {
-      const response = await fetch(`/api/building/${household?.buildingId}/door-bell/${call.doorBellId}/answer`, {
+      console.log('Answering doorbell call:', { 
+        doorBellId: call.doorBellId, 
+        buildingId: effectiveBuildingId,
+        callId: call.id 
+      })
+
+      const response = await fetch(`/api/building/${effectiveBuildingId}/door-bell/${call.doorBellId}/answer`, {
         method: 'POST',
       })
 
-      if (response.ok) {
-        toast.success(t('doorBellCallAnswered'))
-        setSelectedCall(call)
-        fetchActiveCalls()
-        // Initialize WebRTC after answering
-        setTimeout(() => {
-          initializeWebRTC()
-        }, 500)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Answer call error:', errorData)
+        toast.error(errorData.error || t('doorBellAnswerError'))
+        return
       }
+
+      const data = await response.json()
+      console.log('Call answered successfully:', data)
+      
+      toast.success(t('doorBellCallAnswered'))
+      setSelectedCall(call)
+      fetchActiveCalls()
+      
+      // Initialize WebRTC after answering
+      setTimeout(() => {
+        initializeWebRTC()
+      }, 500)
     } catch (error) {
       console.error('Error answering call:', error)
       toast.error(t('doorBellAnswerError'))
@@ -288,7 +348,21 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
     }
   }, [])
 
-  if (!household?.buildingId) {
+  if (!household?.id) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+          <BellIcon className="h-5 w-5 mr-2 text-indigo-600" />
+          {t('doorBell')}
+        </h3>
+        <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+          Please select a household to use the doorbell.
+        </p>
+      </div>
+    )
+  }
+
+  if (!buildingId && !household?.buildingId) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">

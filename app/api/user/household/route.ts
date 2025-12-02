@@ -22,7 +22,16 @@ export async function GET() {
         userId: userId
       },
       include: {
-        household: true
+        household: {
+          include: {
+            building: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         joinedAt: 'asc'

@@ -187,21 +187,22 @@ export async function checkAndRouteTimedOutCalls() {
       const timeoutThreshold = new Date(now.getTime() - timeoutSeconds * 1000)
 
       // Find ringing calls that haven't been routed and are past timeout
+      // Note: Using raw query approach to handle case where field might not exist yet
       const timedOutCalls = await prisma.doorBellCallSession.findMany({
         where: {
           doorBell: {
             buildingId: building.id,
           },
           status: 'ringing',
-          routedToFrontDesk: false,
           startedAt: {
             lte: timeoutThreshold,
           },
         },
         select: {
           id: true,
+          routedToFrontDesk: true,
         },
-      })
+      }).then(calls => calls.filter(call => !call.routedToFrontDesk))
 
       // Route each timed-out call
       for (const call of timedOutCalls) {

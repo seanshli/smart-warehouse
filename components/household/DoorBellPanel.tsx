@@ -584,7 +584,6 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
               {/* Chat Messages - Only show when connected */}
               {selectedCall.status === 'connected' && (
               <div className="border-t pt-4">
-              <div className="border-t pt-4">
                 <div className="h-32 overflow-y-auto mb-2 space-y-2">
                   {selectedCall.messages.map((msg) => (
                     <div

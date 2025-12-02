@@ -151,7 +151,12 @@ export async function routeCallToFrontDesk(callSessionId: string) {
           title: 'Doorbell Call Routed',
           message: `Doorbell ${callSession.doorBell.doorBellNumber} (${callSession.doorBell.household?.name || 'Unknown'}) was not answered and has been routed to front desk`,
           type: 'DOOR_BELL_RUNG',
-          link: `/building/${callSession.doorBell.buildingId}/front-door`,
+          metadata: {
+            doorBellId: callSession.doorBellId,
+            buildingId: callSession.doorBell.buildingId,
+            callSessionId: callSession.id,
+            routedToFrontDesk: true,
+          },
         })
       } catch (error) {
         console.error(`Error creating notification for front desk member ${member.id}:`, error)

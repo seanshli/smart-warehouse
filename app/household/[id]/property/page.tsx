@@ -278,7 +278,7 @@ export default function HouseholdPropertyPage() {
               {/* Active Doorbell Calls Panel */}
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  {t('activeCalls') || 'Active Doorbell Calls'}
+                  {t('doorBell') || 'Doorbell'}
                 </h2>
                 <DoorBellPanel />
               </div>

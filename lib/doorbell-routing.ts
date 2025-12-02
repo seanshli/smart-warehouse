@@ -150,7 +150,7 @@ export async function routeCallToFrontDesk(callSessionId: string) {
           userId: member.id,
           title: 'Doorbell Call Routed',
           message: `Doorbell ${callSession.doorBell.doorBellNumber} (${callSession.doorBell.household?.name || 'Unknown'}) was not answered and has been routed to front desk`,
-          type: 'DOORBELL',
+          type: 'DOOR_BELL_RUNG',
           link: `/building/${callSession.doorBell.buildingId}/front-door`,
         })
       } catch (error) {

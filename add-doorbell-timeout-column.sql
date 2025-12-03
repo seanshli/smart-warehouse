@@ -15,3 +15,4 @@ CREATE INDEX IF NOT EXISTS "idx_door_bell_call_sessions_routing"
 ON "door_bell_call_sessions"("status", "started_at", "routed_to_frontdesk")
 WHERE "status" = 'ringing' AND "routed_to_frontdesk" = false;
 
+

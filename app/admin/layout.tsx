@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
@@ -18,11 +18,34 @@ import {
   BellIcon,
 } from '@heroicons/react/24/outline'
 
+interface AdminContext {
+  isSuperAdmin: boolean
+  communityAdmins: Array<{ id: string; name: string }>
+  buildingAdmins: Array<{ id: string; name: string; communityId: string; communityName: string }>
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
   const pathname = usePathname()
   // Use the language context for actual language switching
   const { currentLanguage, setLanguage, t } = useLanguage()
+  const [adminContext, setAdminContext] = useState<AdminContext | null>(null)
+  const [loadingContext, setLoadingContext] = useState(true)
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch('/api/admin/context')
+        .then(res => res.json())
+        .then(data => {
+          setAdminContext(data)
+          setLoadingContext(false)
+        })
+        .catch(err => {
+          console.error('Error fetching admin context:', err)
+          setLoadingContext(false)
+        })
+    }
+  }, [status])
 
   // If not authenticated, show login prompt
   if (status === 'unauthenticated') {
@@ -75,7 +98,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <ShieldCheckIcon className="h-8 w-8 text-red-600" />
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">{t('adminPanel')}</h1>
-                  <p className="text-sm text-gray-500">{t('adminManagement')}</p>
+                  <p className="text-sm text-gray-500">
+                    {loadingContext ? (
+                      t('adminManagement') || 'Loading...'
+                    ) : adminContext?.isSuperAdmin ? (
+                      <span className="text-red-600 font-semibold">Super Administrator</span>
+                    ) : adminContext?.communityAdmins && adminContext.communityAdmins.length > 0 ? (
+                      <span className="text-blue-600 font-semibold">
+                        Community Admin: {adminContext.communityAdmins.map(c => c.name).join(', ')}
+                      </span>
+                    ) : adminContext?.buildingAdmins && adminContext.buildingAdmins.length > 0 ? (
+                      <span className="text-green-600 font-semibold">
+                        Building Admin: {adminContext.buildingAdmins.map(b => b.name).join(', ')}
+                      </span>
+                    ) : (
+                      t('adminManagement') || 'Administrator'
+                    )}
+                  </p>
                 </div>
               </div>
             </div>

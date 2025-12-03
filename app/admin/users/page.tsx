@@ -245,6 +245,13 @@ export default function AdminUsersPage() {
   const [editingCommunityRole, setEditingCommunityRole] = useState<string | null>(null)
   const [editingBuildingRole, setEditingBuildingRole] = useState<string | null>(null)
   const [savingRole, setSavingRole] = useState(false)
+  const [showAddCommunity, setShowAddCommunity] = useState(false)
+  const [showAddBuilding, setShowAddBuilding] = useState(false)
+  const [newCommunityId, setNewCommunityId] = useState('')
+  const [newBuildingId, setNewBuildingId] = useState('')
+  const [newCommunityRole, setNewCommunityRole] = useState('MEMBER')
+  const [newBuildingRole, setNewBuildingRole] = useState('MEMBER')
+  const [addingMembership, setAddingMembership] = useState(false)
   const [filterType, setFilterType] = useState<'all' | 'community' | 'building' | 'other'>('all')
   const [communities, setCommunities] = useState<Array<{ id: string; name: string }>>([])
   const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
@@ -854,11 +861,24 @@ export default function AdminUsersPage() {
                     )}
                   </div>
 
-                  {selectedUser.communities && selectedUser.communities.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Community Memberships
                       </label>
+                      <button
+                        onClick={() => {
+                          setShowAddCommunity(true)
+                          setNewCommunityId('')
+                          setNewCommunityRole('MEMBER')
+                        }}
+                        className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                      >
+                        + Add Community
+                      </button>
+                    </div>
+                  {selectedUser.communities && selectedUser.communities.length > 0 ? (
+                    <div className="space-y-2">
                       <div className="space-y-2">
                         {selectedUser.communities.map((community) => (
                           <div key={community.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
@@ -922,11 +942,24 @@ export default function AdminUsersPage() {
                     </div>
                   )}
 
-                  {selectedUser.buildings && selectedUser.buildings.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Building Memberships
                       </label>
+                      <button
+                        onClick={() => {
+                          setShowAddBuilding(true)
+                          setNewBuildingId('')
+                          setNewBuildingRole('MEMBER')
+                        }}
+                        className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                      >
+                        + Add Building
+                      </button>
+                    </div>
+                  {selectedUser.buildings && selectedUser.buildings.length > 0 ? (
+                    <div className="space-y-2">
                       <div className="space-y-2">
                         {selectedUser.buildings.map((building) => (
                           <div key={building.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">

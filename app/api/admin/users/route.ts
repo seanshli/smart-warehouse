@@ -237,8 +237,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
     }
 
+    const userId = (session.user as any).id
     const body = await request.json()
-    const { name, email, phone, contact, password, isAdmin } = body
+    const { name, email, phone, contact, password, isAdmin, communityMembership, buildingMembership } = body
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -254,6 +255,88 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 })
     }
 
+    // Check permissions for creating memberships
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true }
+    })
+
+    const isSuperAdmin = currentUser?.isAdmin || false
+
+    // Validate membership permissions
+    if (communityMembership) {
+      if (!isSuperAdmin) {
+        // Check if user is community admin
+        const communityMember = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId,
+              communityId: communityMembership.communityId,
+            },
+          },
+        })
+        if (!communityMember || communityMember.role !== 'ADMIN') {
+          return NextResponse.json({ error: 'Insufficient permissions to create community members' }, { status: 403 })
+        }
+      }
+      // Only super admin can create community ADMIN
+      if (communityMembership.role === 'ADMIN' && !isSuperAdmin) {
+        return NextResponse.json({ error: 'Only super admin can create community admins' }, { status: 403 })
+      }
+    }
+
+    if (buildingMembership) {
+      if (!isSuperAdmin) {
+        // Check if user is community admin or building admin
+        const building = await prisma.building.findUnique({
+          where: { id: buildingMembership.buildingId },
+          select: { communityId: true },
+        })
+        if (building) {
+          const communityMember = await prisma.communityMember.findUnique({
+            where: {
+              userId_communityId: {
+                userId,
+                communityId: building.communityId,
+              },
+            },
+          })
+          const buildingMember = await prisma.buildingMember.findUnique({
+            where: {
+              userId_buildingId: {
+                userId,
+                buildingId: buildingMembership.buildingId,
+              },
+            },
+          })
+          if ((!communityMember || communityMember.role !== 'ADMIN') && 
+              (!buildingMember || buildingMember.role !== 'ADMIN')) {
+            return NextResponse.json({ error: 'Insufficient permissions to create building members' }, { status: 403 })
+          }
+        }
+      }
+      // Only super admin and community admin can create building ADMIN
+      if (buildingMembership.role === 'ADMIN' && !isSuperAdmin) {
+        const building = await prisma.building.findUnique({
+          where: { id: buildingMembership.buildingId },
+          select: { communityId: true },
+        })
+        if (building) {
+          const communityMember = await prisma.communityMember.findUnique({
+            where: {
+              userId_communityId: {
+                userId,
+                communityId: building.communityId,
+              },
+            },
+          })
+          if (!communityMember || communityMember.role !== 'ADMIN') {
+            return NextResponse.json({ error: 'Only super admin or community admin can create building admins' }, { status: 403 })
+          }
+        }
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
@@ -262,9 +345,10 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         email,
+        phone: phone || null,
+        contact: contact || null,
         isAdmin: isAdmin || false,
-        language: 'en' // Default language
-        // phone, contact, password will be available after running add-user-fields.sql
+        language: 'en', // Default language
       },
       select: {
         id: true,
@@ -274,6 +358,52 @@ export async function POST(request: NextRequest) {
         createdAt: true
       }
     })
+
+    // Store password
+    const { storeUserPassword } = await import('@/lib/credentials')
+    storeUserPassword(email, hashedPassword)
+
+    // Create community membership if specified
+    if (communityMembership) {
+      await prisma.communityMember.create({
+        data: {
+          userId: user.id,
+          communityId: communityMembership.communityId,
+          role: communityMembership.role || 'MEMBER',
+          memberClass: communityMembership.memberClass || 'community',
+        },
+      })
+
+      // If community ADMIN, auto-add to all buildings
+      if (communityMembership.role === 'ADMIN') {
+        const buildings = await prisma.building.findMany({
+          where: { communityId: communityMembership.communityId },
+          select: { id: true },
+        })
+        for (const building of buildings) {
+          await prisma.buildingMember.create({
+            data: {
+              userId: user.id,
+              buildingId: building.id,
+              role: 'ADMIN',
+              memberClass: 'community',
+            },
+          })
+        }
+      }
+    }
+
+    // Create building membership if specified
+    if (buildingMembership) {
+      await prisma.buildingMember.create({
+        data: {
+          userId: user.id,
+          buildingId: buildingMembership.buildingId,
+          role: buildingMembership.role || 'MEMBER',
+          memberClass: buildingMembership.memberClass || 'building',
+        },
+      })
+    }
 
     console.log(`[Admin] Created new user: ${user.email} (Admin: ${user.isAdmin})`)
 

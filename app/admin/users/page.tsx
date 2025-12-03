@@ -74,10 +74,48 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
     phone: '',
     contact: '',
     password: '',
-    isAdmin: false
+    isAdmin: false,
+    userType: 'household' as 'household' | 'working-team',
+    communityId: '',
+    buildingId: '',
+    role: 'MEMBER' as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [adminContext, setAdminContext] = useState<{
+    isSuperAdmin: boolean
+    communityAdmins: Array<{ id: string; name: string }>
+    buildingAdmins: Array<{ id: string; name: string; communityId: string; communityName: string }>
+  } | null>(null)
+  const [communities, setCommunities] = useState<Array<{ id: string; name: string }>>([])
+  const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
+  const [loadingContext, setLoadingContext] = useState(true)
+
+  useEffect(() => {
+    // Fetch admin context and available communities/buildings
+    const loadData = async () => {
+      try {
+        const [contextRes, communitiesRes, buildingsRes] = await Promise.all([
+          fetch('/api/admin/context'),
+          fetch('/api/admin/communities'),
+          fetch('/api/admin/buildings'),
+        ])
+        
+        const context = await contextRes.json()
+        const communitiesData = communitiesRes.ok ? await communitiesRes.json() : { communities: [] }
+        const buildingsData = buildingsRes.ok ? await buildingsRes.json() : { buildings: [] }
+        
+        setAdminContext(context)
+        setCommunities(communitiesData.communities || [])
+        setBuildings(buildingsData.buildings || [])
+        setLoadingContext(false)
+      } catch (err) {
+        console.error('Error loading context:', err)
+        setLoadingContext(false)
+      }
+    }
+    loadData()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,13 +123,40 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
     setError('')
 
     try {
+      const payload: any = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        contact: formData.contact,
+        password: formData.password,
+        isAdmin: formData.isAdmin,
+      }
+
+      // Add working team membership if selected
+      if (formData.userType === 'working-team') {
+        if (formData.communityId) {
+          payload.communityMembership = {
+            communityId: formData.communityId,
+            role: formData.role,
+            memberClass: 'community',
+          }
+        } else if (formData.buildingId) {
+          payload.buildingMembership = {
+            buildingId: formData.buildingId,
+            role: formData.role,
+            memberClass: 'building',
+          }
+        }
+      }
+
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
 
       if (response.ok) {
+        toast.success('User created successfully')
         onSuccess()
         onClose()
       } else {
@@ -104,6 +169,24 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
       setLoading(false)
     }
   }
+
+  // Filter buildings by selected community
+  const filteredBuildings = formData.communityId
+    ? buildings.filter(b => b.communityId === formData.communityId)
+    : []
+
+  // Determine available options based on admin level
+  const canCreateCommunityAdmin = adminContext?.isSuperAdmin || false
+  const canCreateBuildingAdmin = adminContext?.isSuperAdmin || (adminContext?.communityAdmins && adminContext.communityAdmins.length > 0) || false
+  const availableCommunities = adminContext?.isSuperAdmin 
+    ? communities 
+    : communities.filter(c => adminContext?.communityAdmins.some(ca => ca.id === c.id))
+  const availableBuildings = adminContext?.isSuperAdmin
+    ? buildings
+    : buildings.filter(b => {
+        if (adminContext?.communityAdmins.some(ca => ca.id === b.communityId)) return true
+        return adminContext?.buildingAdmins.some(ba => ba.id === b.id)
+      })
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -179,18 +262,123 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
               />
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isAdmin"
-                checked={formData.isAdmin}
-                onChange={(e) => setFormData(prev => ({ ...prev, isAdmin: e.target.checked }))}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                Admin User
+            {/* User Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                User Type *
               </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="household"
+                    checked={formData.userType === 'household'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, userType: 'household', communityId: '', buildingId: '', role: 'MEMBER' }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Household Member</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="working-team"
+                    checked={formData.userType === 'working-team'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, userType: 'working-team' }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Working Team Member</span>
+                </label>
+              </div>
             </div>
+
+            {/* Working Team Options */}
+            {formData.userType === 'working-team' && (
+              <>
+                {/* Community Selection (for Super Admin and Community Admin) */}
+                {canCreateCommunityAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Community {formData.buildingId ? '(optional)' : '*'}
+                    </label>
+                    <select
+                      value={formData.communityId}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, communityId: e.target.value, buildingId: '' }))
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                      required={!formData.buildingId}
+                    >
+                      <option value="">Select Community</option>
+                      {availableCommunities.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Building Selection */}
+                {canCreateBuildingAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Building {formData.communityId ? '(optional)' : '*'}
+                    </label>
+                    <select
+                      value={formData.buildingId}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, buildingId: e.target.value }))
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                      required={!formData.communityId}
+                    >
+                      <option value="">Select Building</option>
+                      {(formData.communityId ? filteredBuildings : availableBuildings).map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Role Selection */}
+                {(formData.communityId || formData.buildingId) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Role *
+                    </label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                      required
+                    >
+                      {canCreateCommunityAdmin && formData.communityId && (
+                        <option value="ADMIN">ADMIN</option>
+                      )}
+                      <option value="MANAGER">MANAGER</option>
+                      <option value="MEMBER">MEMBER</option>
+                      <option value="VIEWER">VIEWER</option>
+                    </select>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Super Admin Checkbox */}
+            {adminContext?.isSuperAdmin && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isAdmin"
+                  checked={formData.isAdmin}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isAdmin: e.target.checked }))}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                  Super Admin (Global Administrator)
+                </label>
+              </div>
+            )}
 
             {error && (
               <div className="text-red-600 text-sm">{error}</div>

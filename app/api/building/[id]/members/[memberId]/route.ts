@@ -65,13 +65,23 @@ export async function PUT(
     // 3. Building ADMIN/MANAGER can modify building members
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true },
+      select: { isAdmin: true, email: true, adminRole: true },
+    })
+
+    console.log('[Building Role Update] User check:', {
+      userId,
+      email: currentUser?.email,
+      isAdmin: currentUser?.isAdmin,
+      adminRole: currentUser?.adminRole,
+      buildingId,
+      memberId,
     })
 
     let hasPermission = false
 
     if (currentUser?.isAdmin) {
       hasPermission = true
+      console.log('[Building Role Update] ✅ Super admin detected - permission granted')
     } else {
       // Check if user is community admin/manager
       const communityMembership = await prisma.communityMember.findUnique({
@@ -103,7 +113,21 @@ export async function PUT(
     }
 
     if (!hasPermission) {
-      return NextResponse.json({ error: 'Insufficient permissions to modify building member roles' }, { status: 403 })
+      console.log('[Building Role Update] ❌ Permission denied:', {
+        userId,
+        email: currentUser?.email,
+        isAdmin: currentUser?.isAdmin,
+        buildingId,
+        memberId,
+      })
+      return NextResponse.json({ 
+        error: 'Insufficient permissions to modify building member roles',
+        debug: {
+          userId,
+          email: currentUser?.email,
+          isAdmin: currentUser?.isAdmin,
+        }
+      }, { status: 403 })
     }
 
     // Prevent removing the last ADMIN

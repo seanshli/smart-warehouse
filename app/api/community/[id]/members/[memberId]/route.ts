@@ -65,7 +65,14 @@ export async function PUT(
     // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true },
+      select: { isAdmin: true, email: true, adminRole: true },
+    })
+
+    console.log('[Community Role Update] User check:', {
+      userId,
+      email: user?.email,
+      isAdmin: user?.isAdmin,
+      adminRole: user?.adminRole,
     })
 
     // Super admins can manage all roles, otherwise check permission

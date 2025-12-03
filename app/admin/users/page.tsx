@@ -378,11 +378,16 @@ export default function AdminUsersPage() {
   const handleUpdateCommunityRole = async (communityId: string, membershipId: string, newRole: string) => {
     setSavingRole(true)
     try {
+      console.log('[Update Community Role] Request:', { communityId, membershipId, newRole })
       const response = await fetch(`/api/community/${communityId}/members/${membershipId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole })
       })
+
+      const responseData = await response.json()
+      console.log('[Update Community Role] Response:', { status: response.status, data: responseData })
 
       if (response.ok) {
         toast.success('Community role updated successfully')
@@ -396,10 +401,11 @@ export default function AdminUsersPage() {
           setSelectedUser({ ...selectedUser, communities: updatedCommunities })
         }
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to update community role')
+        toast.error(responseData.error || 'Failed to update community role')
+        console.error('[Update Community Role] Error:', responseData)
       }
     } catch (err) {
+      console.error('[Update Community Role] Network error:', err)
       toast.error('Network error')
     } finally {
       setSavingRole(false)
@@ -409,11 +415,16 @@ export default function AdminUsersPage() {
   const handleUpdateBuildingRole = async (buildingId: string, membershipId: string, newRole: string) => {
     setSavingRole(true)
     try {
+      console.log('[Update Building Role] Request:', { buildingId, membershipId, newRole })
       const response = await fetch(`/api/building/${buildingId}/members/${membershipId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole })
       })
+
+      const responseData = await response.json()
+      console.log('[Update Building Role] Response:', { status: response.status, data: responseData })
 
       if (response.ok) {
         toast.success('Building role updated successfully')
@@ -427,10 +438,11 @@ export default function AdminUsersPage() {
           setSelectedUser({ ...selectedUser, buildings: updatedBuildings })
         }
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to update building role')
+        toast.error(responseData.error || 'Failed to update building role')
+        console.error('[Update Building Role] Error:', responseData)
       }
     } catch (err) {
+      console.error('[Update Building Role] Network error:', err)
       toast.error('Network error')
     } finally {
       setSavingRole(false)

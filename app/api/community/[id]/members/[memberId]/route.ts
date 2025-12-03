@@ -135,8 +135,8 @@ export async function PUT(
       },
     })
 
-    // If user is promoted to ADMIN, automatically add them as ADMIN to all buildings in the community
-    if (role === 'ADMIN' && memberToUpdate.role !== 'ADMIN') {
+    // If user is promoted to ADMIN or MANAGER, automatically add/update them in all buildings in the community
+    if ((role === 'ADMIN' || role === 'MANAGER') && memberToUpdate.role !== role) {
       try {
         // Get all buildings in this community
         const buildings = await prisma.building.findMany({
@@ -144,7 +144,8 @@ export async function PUT(
           select: { id: true },
         })
 
-        // Add user as ADMIN to all buildings (skip if already a member)
+        // Add/update user in all buildings with the same role (ADMIN -> ADMIN, MANAGER -> MANAGER)
+        // Skip if already a member with equal or higher role
         for (const building of buildings) {
           const existingBuildingMembership = await prisma.buildingMember.findUnique({
             where: {
@@ -160,28 +161,35 @@ export async function PUT(
               data: {
                 userId: memberToUpdate.userId,
                 buildingId: building.id,
-                role: 'ADMIN',
-                memberClass: 'community', // Mark as community-level admin
+                role: role as 'ADMIN' | 'MANAGER',
+                memberClass: 'community', // Mark as community-level admin/manager
               },
             })
-          } else if (existingBuildingMembership.role !== 'ADMIN') {
-            // Update existing membership to ADMIN if not already
-            await prisma.buildingMember.update({
-              where: {
-                userId_buildingId: {
-                  userId: memberToUpdate.userId,
-                  buildingId: building.id,
+          } else {
+            // Update existing membership if current role is lower than community role
+            // Role hierarchy: ADMIN > MANAGER > MEMBER > VIEWER
+            const roleHierarchy: Record<string, number> = { 'ADMIN': 4, 'MANAGER': 3, 'MEMBER': 2, 'VIEWER': 1 }
+            const currentRoleLevel = roleHierarchy[existingBuildingMembership.role || 'MEMBER'] || 0
+            const newRoleLevel = roleHierarchy[role] || 0
+
+            if (newRoleLevel > currentRoleLevel) {
+              await prisma.buildingMember.update({
+                where: {
+                  userId_buildingId: {
+                    userId: memberToUpdate.userId,
+                    buildingId: building.id,
+                  },
                 },
-              },
-              data: {
-                role: 'ADMIN',
-                memberClass: 'community',
-              },
-            })
+                data: {
+                  role: role as 'ADMIN' | 'MANAGER',
+                  memberClass: 'community',
+                },
+              })
+            }
           }
         }
       } catch (error) {
-        console.error('Error auto-adding community admin to buildings:', error)
+        console.error('Error auto-adding community admin/manager to buildings:', error)
         // Don't fail the request if auto-adding to buildings fails
         // The community membership was already updated successfully
       }

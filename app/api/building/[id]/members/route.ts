@@ -123,12 +123,35 @@ export async function POST(
       return NextResponse.json({ error: 'User is already a member of this building' }, { status: 400 })
     }
 
+    // Get building info (we already have it from permission check, but get it again for memberClass)
+    const building = await prisma.building.findUnique({
+      where: { id: buildingId },
+      select: { communityId: true },
+    })
+
+    // Determine memberClass: if user is a community admin/manager, set to 'community', otherwise 'household'
+    let memberClass: 'household' | 'building' | 'community' = 'household'
+    if (building) {
+      const communityMembership = await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId: targetUser.id,
+            communityId: building.communityId,
+          },
+        },
+      })
+      if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
+        memberClass = 'community'
+      }
+    }
+
     // Create membership
     const membership = await prisma.buildingMember.create({
       data: {
         userId: targetUser.id,
         buildingId,
         role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+        memberClass,
       },
       include: {
         user: {
@@ -151,11 +174,26 @@ export async function POST(
   } catch (error) {
     console.error('Error adding building member:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    console.error('Error details:', {
+      errorMessage,
+      errorStack,
+      buildingId,
+      targetUserId,
+      targetUserEmail,
+      role,
+    })
     return NextResponse.json(
       { 
         error: 'Failed to add building member',
         details: errorMessage,
-        debug: process.env.NODE_ENV === 'development' ? String(error) : undefined
+        debug: process.env.NODE_ENV === 'development' ? {
+          message: errorMessage,
+          stack: errorStack,
+          buildingId,
+          targetUserId,
+          role,
+        } : undefined
       },
       { status: 500 }
     )

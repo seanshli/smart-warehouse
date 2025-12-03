@@ -240,6 +240,9 @@ export default function AdminUsersPage() {
     isAdmin: false
   })
   const [saving, setSaving] = useState(false)
+  const [editingCommunityRole, setEditingCommunityRole] = useState<string | null>(null)
+  const [editingBuildingRole, setEditingBuildingRole] = useState<string | null>(null)
+  const [savingRole, setSavingRole] = useState(false)
   const [filterType, setFilterType] = useState<'all' | 'community' | 'building' | 'other'>('all')
   const [communities, setCommunities] = useState<Array<{ id: string; name: string }>>([])
   const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
@@ -367,6 +370,68 @@ export default function AdminUsersPage() {
       }
     } catch (err) {
       alert('Network error')
+    }
+  }
+
+  const handleUpdateCommunityRole = async (communityId: string, membershipId: string, newRole: string) => {
+    setSavingRole(true)
+    try {
+      const response = await fetch(`/api/community/${communityId}/members/${membershipId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      })
+
+      if (response.ok) {
+        toast.success('Community role updated successfully')
+        setEditingCommunityRole(null)
+        fetchUsers() // Refresh the list
+        // Update selected user data
+        if (selectedUser) {
+          const updatedCommunities = selectedUser.communities?.map(c => 
+            c.membershipId === membershipId ? { ...c, role: newRole } : c
+          )
+          setSelectedUser({ ...selectedUser, communities: updatedCommunities })
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to update community role')
+      }
+    } catch (err) {
+      toast.error('Network error')
+    } finally {
+      setSavingRole(false)
+    }
+  }
+
+  const handleUpdateBuildingRole = async (buildingId: string, membershipId: string, newRole: string) => {
+    setSavingRole(true)
+    try {
+      const response = await fetch(`/api/building/${buildingId}/members/${membershipId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      })
+
+      if (response.ok) {
+        toast.success('Building role updated successfully')
+        setEditingBuildingRole(null)
+        fetchUsers() // Refresh the list
+        // Update selected user data
+        if (selectedUser) {
+          const updatedBuildings = selectedUser.buildings?.map(b => 
+            b.membershipId === membershipId ? { ...b, role: newRole } : b
+          )
+          setSelectedUser({ ...selectedUser, buildings: updatedBuildings })
+        }
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to update building role')
+      }
+    } catch (err) {
+      toast.error('Network error')
+    } finally {
+      setSavingRole(false)
     }
   }
 
@@ -786,20 +851,55 @@ export default function AdminUsersPage() {
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{community.name}</p>
                               <div className="mt-1 flex items-center space-x-3">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  community.role === 'ADMIN' 
-                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                    : community.role === 'MANAGER'
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                    : community.role === 'MEMBER'
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                }`}>
-                                  {community.role || 'MEMBER'}
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  Joined: {new Date(community.joinedAt).toLocaleDateString()}
-                                </span>
+                                {editingCommunityRole === community.membershipId ? (
+                                  <>
+                                    <select
+                                      value={community.role || 'MEMBER'}
+                                      onChange={(e) => {
+                                        handleUpdateCommunityRole(community.id, community.membershipId, e.target.value)
+                                      }}
+                                      disabled={savingRole}
+                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-600 dark:text-gray-100"
+                                    >
+                                      <option value="ADMIN">ADMIN</option>
+                                      <option value="MANAGER">MANAGER</option>
+                                      <option value="MEMBER">MEMBER</option>
+                                      <option value="VIEWER">VIEWER</option>
+                                    </select>
+                                    <button
+                                      onClick={() => setEditingCommunityRole(null)}
+                                      className="text-xs text-gray-500 hover:text-gray-700"
+                                      disabled={savingRole}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      community.role === 'ADMIN' 
+                                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                        : community.role === 'MANAGER'
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                        : community.role === 'MEMBER'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                    }`}>
+                                      {community.role || 'MEMBER'}
+                                    </span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      Joined: {new Date(community.joinedAt).toLocaleDateString()}
+                                    </span>
+                                    <button
+                                      onClick={() => setEditingCommunityRole(community.membershipId)}
+                                      className="ml-2 text-xs text-primary-600 hover:text-primary-800"
+                                      title="Edit role"
+                                      disabled={savingRole}
+                                    >
+                                      <PencilIcon className="h-3 w-3" />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -819,20 +919,55 @@ export default function AdminUsersPage() {
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{building.name}</p>
                               <div className="mt-1 flex items-center space-x-3">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  building.role === 'ADMIN' 
-                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                    : building.role === 'MANAGER'
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                    : building.role === 'MEMBER'
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                }`}>
-                                  {building.role || 'MEMBER'}
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  Joined: {new Date(building.joinedAt).toLocaleDateString()}
-                                </span>
+                                {editingBuildingRole === building.membershipId ? (
+                                  <>
+                                    <select
+                                      value={building.role || 'MEMBER'}
+                                      onChange={(e) => {
+                                        handleUpdateBuildingRole(building.id, building.membershipId, e.target.value)
+                                      }}
+                                      disabled={savingRole}
+                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-600 dark:text-gray-100"
+                                    >
+                                      <option value="ADMIN">ADMIN</option>
+                                      <option value="MANAGER">MANAGER</option>
+                                      <option value="MEMBER">MEMBER</option>
+                                      <option value="VIEWER">VIEWER</option>
+                                    </select>
+                                    <button
+                                      onClick={() => setEditingBuildingRole(null)}
+                                      className="text-xs text-gray-500 hover:text-gray-700"
+                                      disabled={savingRole}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      building.role === 'ADMIN' 
+                                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                        : building.role === 'MANAGER'
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                        : building.role === 'MEMBER'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                    }`}>
+                                      {building.role || 'MEMBER'}
+                                    </span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      Joined: {new Date(building.joinedAt).toLocaleDateString()}
+                                    </span>
+                                    <button
+                                      onClick={() => setEditingBuildingRole(building.membershipId)}
+                                      className="ml-2 text-xs text-primary-600 hover:text-primary-800"
+                                      title="Edit role"
+                                      disabled={savingRole}
+                                    >
+                                      <PencilIcon className="h-3 w-3" />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>

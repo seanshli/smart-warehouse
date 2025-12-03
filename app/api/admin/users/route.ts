@@ -195,12 +195,14 @@ export async function GET(request: NextRequest) {
         } : null
       })),
       communities: user.communityMemberships.map((membership: any) => ({
+        membershipId: membership.id, // Include membership ID for updates
         id: membership.community.id,
         name: membership.community.name,
         role: membership.role,
         joinedAt: membership.joinedAt.toISOString()
       })),
       buildings: user.buildingMemberships.map((membership: any) => ({
+        membershipId: membership.id, // Include membership ID for updates
         id: membership.building.id,
         name: membership.building.name,
         role: membership.role,

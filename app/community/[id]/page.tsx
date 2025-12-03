@@ -613,8 +613,15 @@ function BuildingsTab({ communityId }: { communityId: string }) {
 }
 
 function MembersTab({ communityId }: { communityId: string }) {
+  const { t } = useLanguage()
   const [members, setMembers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [newMemberEmail, setNewMemberEmail] = useState('')
+  const [newMemberRole, setNewMemberRole] = useState<'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER'>('MEMBER')
+  const [newMemberClass, setNewMemberClass] = useState<'household' | 'building' | 'community'>('community')
+  const [addingMember, setAddingMember] = useState(false)
+  const [assignableRoles, setAssignableRoles] = useState<string[]>([])
 
   useEffect(() => {
     fetchMembers()
@@ -622,15 +629,81 @@ function MembersTab({ communityId }: { communityId: string }) {
 
   const fetchMembers = async () => {
     try {
+      setLoading(true)
       const response = await fetch(`/api/community/${communityId}/members`)
       if (response.ok) {
         const data = await response.json()
         setMembers(data.members || [])
+        setAssignableRoles(data.assignableRoles || ['MEMBER', 'VIEWER'])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || 'Failed to load members')
       }
     } catch (err) {
       console.error('Failed to fetch members:', err)
+      toast.error('Failed to load members')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddMember = async () => {
+    if (!newMemberEmail.trim()) {
+      toast.error('Please enter an email address')
+      return
+    }
+
+    try {
+      setAddingMember(true)
+      const response = await fetch(`/api/community/${communityId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserEmail: newMemberEmail.trim(),
+          role: newMemberRole,
+          memberClass: newMemberClass,
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('Member added successfully')
+        setShowAddMember(false)
+        setNewMemberEmail('')
+        setNewMemberRole('MEMBER')
+        setNewMemberClass('community')
+        fetchMembers()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || 'Failed to add member')
+      }
+    } catch (err) {
+      console.error('Failed to add member:', err)
+      toast.error('Failed to add member')
+    } finally {
+      setAddingMember(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!confirm('Are you sure you want to remove this member?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/community/${communityId}/members/${memberId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast.success('Member removed successfully')
+        fetchMembers()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || 'Failed to remove member')
+      }
+    } catch (err) {
+      console.error('Failed to remove member:', err)
+      toast.error('Failed to remove member')
     }
   }
 
@@ -642,7 +715,11 @@ function MembersTab({ communityId }: { communityId: string }) {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium text-gray-900">成员列表</h3>
-        <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+        <button 
+          onClick={() => setShowAddMember(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+        >
+          <PlusIcon className="h-4 w-4 mr-1" />
           添加成员
         </button>
       </div>
@@ -689,8 +766,16 @@ function MembersTab({ communityId }: { communityId: string }) {
                     {new Date(member.joinedAt).toLocaleDateString('zh-TW')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-primary-600 hover:text-primary-900 mr-4">编辑</button>
-                    <button className="text-red-600 hover:text-red-900">删除</button>
+                    {member.canManage && (
+                      <>
+                        <button 
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          删除
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

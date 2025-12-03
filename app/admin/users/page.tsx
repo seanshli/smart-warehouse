@@ -13,6 +13,7 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline'
 import { useLanguage } from '@/components/LanguageProvider'
+import toast from 'react-hot-toast'
 
 interface User {
   id: string
@@ -229,6 +230,16 @@ export default function AdminUsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserDetails, setShowUserDetails] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    contact: '',
+    language: 'en',
+    isAdmin: false
+  })
+  const [saving, setSaving] = useState(false)
   const [filterType, setFilterType] = useState<'all' | 'community' | 'building' | 'other'>('all')
   const [communities, setCommunities] = useState<Array<{ id: string; name: string }>>([])
   const [buildings, setBuildings] = useState<Array<{ id: string; name: string; communityId: string }>>([])
@@ -356,6 +367,37 @@ export default function AdminUsersPage() {
       }
     } catch (err) {
       alert('Network error')
+    }
+  }
+
+  const handleSaveUser = async () => {
+    if (!selectedUser) return
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData)
+      })
+
+      if (response.ok) {
+        toast.success('User updated successfully')
+        setIsEditing(false)
+        fetchUsers() // Refresh the list
+        // Update selected user with new data
+        setSelectedUser({
+          ...selectedUser,
+          ...editFormData
+        })
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to update user')
+      }
+    } catch (err) {
+      toast.error('Network error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -544,10 +586,19 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => {
                           setSelectedUser(user)
+                          setEditFormData({
+                            name: user.name,
+                            email: user.email,
+                            phone: user.phone || '',
+                            contact: user.contact || '',
+                            language: user.language || 'en',
+                            isAdmin: user.isAdmin
+                          })
+                          setIsEditing(false)
                           setShowUserDetails(true)
                         }}
                         className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        title="View Details"
+                        title="View/Edit Details"
                       >
                         <EyeIcon className="h-4 w-4" />
                       </button>
@@ -582,37 +633,113 @@ export default function AdminUsersPage() {
               <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowUserDetails(false)}></div>
               
               <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-                  User Details: {selectedUser.name}
-                </h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    User Details: {selectedUser.name}
+                  </h3>
+                  {!isEditing && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                    >
+                      <PencilIcon className="h-4 w-4 mr-1" />
+                      Edit
+                    </button>
+                  )}
+                </div>
                 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.name}</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editFormData.name}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.name}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.email}</p>
+                      {isEditing ? (
+                        <input
+                          type="email"
+                          value={editFormData.email}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.email}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.phone || 'Not provided'}</p>
+                      {isEditing ? (
+                        <input
+                          type="tel"
+                          value={editFormData.phone}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                          placeholder="Not provided"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.phone || 'Not provided'}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.contact || 'Not provided'}</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editFormData.contact}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, contact: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                          placeholder="Not provided"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.contact || 'Not provided'}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.language}</p>
+                      {isEditing ? (
+                        <select
+                          value={editFormData.language}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, language: e.target.value }))}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                        >
+                          <option value="en">English</option>
+                          <option value="zh-TW">繁體中文</option>
+                          <option value="zh-CN">简体中文</option>
+                          <option value="ja">日本語</option>
+                        </select>
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{selectedUser.language}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">
-                        {selectedUser.isAdmin ? 'Admin' : 'User'}
-                      </p>
+                      {isEditing ? (
+                        <div className="mt-1 flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={editFormData.isAdmin}
+                            onChange={(e) => setEditFormData(prev => ({ ...prev, isAdmin: e.target.checked }))}
+                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          />
+                          <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                            Admin User
+                          </label>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedUser.isAdmin ? 'Admin' : 'User'}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
@@ -703,13 +830,42 @@ export default function AdminUsersPage() {
                   )}
                 </div>
                 
-                <div className="mt-6 flex justify-end">
-                  <button
-                    onClick={() => setShowUserDetails(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-                  >
-                    Close
-                  </button>
+                <div className="mt-6 flex justify-end space-x-3">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsEditing(false)
+                          setEditFormData({
+                            name: selectedUser.name,
+                            email: selectedUser.email,
+                            phone: selectedUser.phone || '',
+                            contact: selectedUser.contact || '',
+                            language: selectedUser.language || 'en',
+                            isAdmin: selectedUser.isAdmin
+                          })
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                        disabled={saving}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveUser}
+                        disabled={saving}
+                        className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setShowUserDetails(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                    >
+                      Close
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -33,51 +33,59 @@ export async function GET(request: NextRequest) {
     // Build query conditions
     let whereClause: any = {}
 
-    // If filtering by community or building, and user is not super admin
-    if (!isSuperAdmin) {
-      if (communityId) {
-        // Get users who are members of this community or have households in buildings of this community
-        const communityMemberIds = await prisma.communityMember.findMany({
-          where: { communityId },
-          select: { userId: true }
-        }).then(members => members.map(m => m.userId))
+    // Filter by community or building (applies to both super admin and regular admin)
+    if (communityId) {
+      // Get users who are members of this community or have households in buildings of this community
+      const communityMemberIds = await prisma.communityMember.findMany({
+        where: { communityId },
+        select: { userId: true }
+      }).then(members => members.map(m => m.userId))
 
-        const buildingIds = await prisma.building.findMany({
-          where: { communityId },
-          select: { id: true }
-        }).then(buildings => buildings.map(b => b.id))
+      const buildingIds = await prisma.building.findMany({
+        where: { communityId },
+        select: { id: true }
+      }).then(buildings => buildings.map(b => b.id))
 
-        const householdIds = await prisma.household.findMany({
-          where: { buildingId: { in: buildingIds } },
-          select: { id: true }
-        }).then(households => households.map(h => h.id))
+      const householdIds = await prisma.household.findMany({
+        where: { buildingId: { in: buildingIds } },
+        select: { id: true }
+      }).then(households => households.map(h => h.id))
 
-        const householdMemberIds = await prisma.householdMember.findMany({
-          where: { householdId: { in: householdIds } },
-          select: { userId: true }
-        }).then(members => members.map(m => m.userId))
+      const householdMemberIds = await prisma.householdMember.findMany({
+        where: { householdId: { in: householdIds } },
+        select: { userId: true }
+      }).then(members => members.map(m => m.userId))
 
-        const allUserIds = Array.from(new Set([...communityMemberIds, ...householdMemberIds]))
+      const allUserIds = Array.from(new Set([...communityMemberIds, ...householdMemberIds]))
+      if (allUserIds.length > 0) {
         whereClause.id = { in: allUserIds }
-      } else if (buildingId) {
-        // Get users who are members of this building or have households in this building
-        const buildingMemberIds = await prisma.buildingMember.findMany({
-          where: { buildingId },
-          select: { userId: true }
-        }).then(members => members.map(m => m.userId))
+      } else {
+        // No users found, return empty result
+        whereClause.id = { in: [] }
+      }
+    } else if (buildingId) {
+      // Get users who are members of this building or have households in this building
+      const buildingMemberIds = await prisma.buildingMember.findMany({
+        where: { buildingId },
+        select: { userId: true }
+      }).then(members => members.map(m => m.userId))
 
-        const householdIds = await prisma.household.findMany({
-          where: { buildingId },
-          select: { id: true }
-        }).then(households => households.map(h => h.id))
+      const householdIds = await prisma.household.findMany({
+        where: { buildingId },
+        select: { id: true }
+      }).then(households => households.map(h => h.id))
 
-        const householdMemberIds = await prisma.householdMember.findMany({
-          where: { householdId: { in: householdIds } },
-          select: { userId: true }
-        }).then(members => members.map(m => m.userId))
+      const householdMemberIds = await prisma.householdMember.findMany({
+        where: { householdId: { in: householdIds } },
+        select: { userId: true }
+      }).then(members => members.map(m => m.userId))
 
-        const allUserIds = Array.from(new Set([...buildingMemberIds, ...householdMemberIds]))
+      const allUserIds = Array.from(new Set([...buildingMemberIds, ...householdMemberIds]))
+      if (allUserIds.length > 0) {
         whereClause.id = { in: allUserIds }
+      } else {
+        // No users found, return empty result
+        whereClause.id = { in: [] }
       }
     }
 

@@ -135,6 +135,58 @@ export async function PUT(
       },
     })
 
+    // If user is promoted to ADMIN, automatically add them as ADMIN to all buildings in the community
+    if (role === 'ADMIN' && memberToUpdate.role !== 'ADMIN') {
+      try {
+        // Get all buildings in this community
+        const buildings = await prisma.building.findMany({
+          where: { communityId },
+          select: { id: true },
+        })
+
+        // Add user as ADMIN to all buildings (skip if already a member)
+        for (const building of buildings) {
+          const existingBuildingMembership = await prisma.buildingMember.findUnique({
+            where: {
+              userId_buildingId: {
+                userId: memberToUpdate.userId,
+                buildingId: building.id,
+              },
+            },
+          })
+
+          if (!existingBuildingMembership) {
+            await prisma.buildingMember.create({
+              data: {
+                userId: memberToUpdate.userId,
+                buildingId: building.id,
+                role: 'ADMIN',
+                memberClass: 'community', // Mark as community-level admin
+              },
+            })
+          } else if (existingBuildingMembership.role !== 'ADMIN') {
+            // Update existing membership to ADMIN if not already
+            await prisma.buildingMember.update({
+              where: {
+                userId_buildingId: {
+                  userId: memberToUpdate.userId,
+                  buildingId: building.id,
+                },
+              },
+              data: {
+                role: 'ADMIN',
+                memberClass: 'community',
+              },
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error auto-adding community admin to buildings:', error)
+        // Don't fail the request if auto-adding to buildings fails
+        // The community membership was already updated successfully
+      }
+    }
+
     return NextResponse.json({
       id: updatedMember.id,
       role: updatedMember.role,

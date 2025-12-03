@@ -722,7 +722,7 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Global Admin</label>
                       {isEditing ? (
                         <div className="mt-1 flex items-center">
                           <input
@@ -732,14 +732,19 @@ export default function AdminUsersPage() {
                             className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                           />
                           <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            Admin User
+                            System Administrator
                           </label>
                         </div>
                       ) : (
                         <p className="text-sm text-gray-900 dark:text-gray-100">
-                          {selectedUser.isAdmin ? 'Admin' : 'User'}
+                          {selectedUser.isAdmin ? 'System Administrator' : 'Regular User'}
                         </p>
                       )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {selectedUser.isAdmin 
+                          ? 'Has full system access' 
+                          : 'See roles below for community/building permissions'}
+                      </p>
                     </div>
                   </div>
                   
@@ -772,17 +777,31 @@ export default function AdminUsersPage() {
 
                   {selectedUser.communities && selectedUser.communities.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Communities</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Community Memberships
+                      </label>
                       <div className="space-y-2">
                         {selectedUser.communities.map((community) => (
-                          <div key={community.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                            <div>
+                          <div key={community.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                            <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{community.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Role: {community.role}</p>
+                              <div className="mt-1 flex items-center space-x-3">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  community.role === 'ADMIN' 
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                    : community.role === 'MANAGER'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                    : community.role === 'MEMBER'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                }`}>
+                                  {community.role || 'MEMBER'}
+                                </span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  Joined: {new Date(community.joinedAt).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Joined: {new Date(community.joinedAt).toLocaleDateString()}
-                            </p>
                           </div>
                         ))}
                       </div>
@@ -791,17 +810,31 @@ export default function AdminUsersPage() {
 
                   {selectedUser.buildings && selectedUser.buildings.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buildings</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Building Memberships
+                      </label>
                       <div className="space-y-2">
                         {selectedUser.buildings.map((building) => (
-                          <div key={building.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                            <div>
+                          <div key={building.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                            <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{building.name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Role: {building.role}</p>
+                              <div className="mt-1 flex items-center space-x-3">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  building.role === 'ADMIN' 
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                    : building.role === 'MANAGER'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                    : building.role === 'MEMBER'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                }`}>
+                                  {building.role || 'MEMBER'}
+                                </span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  Joined: {new Date(building.joinedAt).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Joined: {new Date(building.joinedAt).toLocaleDateString()}
-                            </p>
                           </div>
                         ))}
                       </div>

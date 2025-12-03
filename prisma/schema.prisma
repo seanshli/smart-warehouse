@@ -138,7 +138,7 @@ model CommunityMember {
   id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   userId       String    @map("user_id")
   communityId  String    @map("community_id")
-  role         String?   @default("MEMBER") // ADMIN, USER, GUEST (for working team) or ADMIN, MANAGER, MEMBER, VIEWER (legacy)
+  role         String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
   memberClass  String?   @default("household") @map("member_class") // household, building, community - distinguishes residents from working team
   joinedAt     DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
   // Auto-joined members (from Building/Household) have limited permissions
@@ -155,7 +155,7 @@ model BuildingMember {
   id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   userId       String    @map("user_id")
   buildingId   String    @map("building_id")
-  role         String?   @default("MEMBER") // ADMIN, USER, GUEST (for working team) or ADMIN, MANAGER, MEMBER, VIEWER (legacy)
+  role         String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
   memberClass  String?   @default("household") @map("member_class") // household, building, community - distinguishes residents from working team
   joinedAt     DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
   // Auto-joined members (from Household) have limited permissions

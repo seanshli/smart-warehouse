@@ -783,6 +783,100 @@ function MembersTab({ communityId }: { communityId: string }) {
           </table>
         </div>
       )}
+
+      {/* Add Member Modal */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowAddMember(false)}></div>
+            
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                添加成员
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    邮箱地址 *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    角色 *
+                  </label>
+                  <select
+                    value={newMemberRole}
+                    onChange={(e) => setNewMemberRole(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    {assignableRoles.length > 0 ? (
+                      assignableRoles.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="MEMBER">MEMBER</option>
+                        <option value="VIEWER">VIEWER</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    成员类型 *
+                  </label>
+                  <select
+                    value={newMemberClass}
+                    onChange={(e) => setNewMemberClass(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="household">Household (住户)</option>
+                    <option value="building">Building (建筑)</option>
+                    <option value="community">Community (社区)</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    选择成员类型：住户成员、建筑工作团队或社区工作团队
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMember(false)
+                      setNewMemberEmail('')
+                      setNewMemberRole('MEMBER')
+                      setNewMemberClass('community')
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddMember}
+                    disabled={addingMember || !newMemberEmail.trim()}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {addingMember ? '添加中...' : '添加'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

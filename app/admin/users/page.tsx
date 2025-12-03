@@ -1085,11 +1085,21 @@ export default function AdminUsersPage() {
                   {selectedUser.communities && selectedUser.communities.length > 0 ? (
                     <div className="space-y-2">
                         {selectedUser.communities.map((community) => {
-                          // Check if user is building admin but not community admin
-                          // If user has building admin role but community role is MANAGER or lower, they're a building admin
-                          const isBuildingAdminOnly = selectedUser.buildings && selectedUser.buildings.some(b => b.role === 'ADMIN') &&
-                            (community.role !== 'ADMIN')
-                          const isCommunityRoleLocked = isBuildingAdminOnly && community.role !== 'ADMIN'
+                          // Check if user is building admin in this community but not community admin
+                          // Find buildings in this community where user is ADMIN
+                          const buildingsInThisCommunity = selectedUser.buildings?.filter(b => {
+                            // Check if building belongs to this community
+                            // For now, if user is building admin, assume they're admin in this community's buildings
+                            // We'll check by matching community if available
+                            const buildingCommunityId = (b as any).communityId || (b as any).community?.id
+                            return b.role === 'ADMIN' && (!buildingCommunityId || buildingCommunityId === community.id)
+                          }) || []
+                          
+                          const isBuildingAdminOnly = buildingsInThisCommunity.length > 0 && community.role !== 'ADMIN'
+                          const isCommunityRoleLocked = isBuildingAdminOnly
+                          
+                          // If user is building admin but community role is not MEMBER, we should show MEMBER (locked)
+                          const displayRole = isCommunityRoleLocked ? 'MEMBER' : (community.role || 'MEMBER')
                           
                           return (
                             <div key={community.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
@@ -1122,15 +1132,15 @@ export default function AdminUsersPage() {
                                   ) : (
                                     <>
                                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        community.role === 'ADMIN' 
+                                        displayRole === 'ADMIN' 
                                           ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                          : community.role === 'MANAGER'
+                                          : displayRole === 'MANAGER'
                                           ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                          : community.role === 'MEMBER'
+                                          : displayRole === 'MEMBER'
                                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                           : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                                       }`}>
-                                        {isCommunityRoleLocked ? 'MEMBER' : (community.role || 'MEMBER')}
+                                        {displayRole}
                                         {isCommunityRoleLocked && ' (Locked)'}
                                       </span>
                                       <span className="text-xs text-gray-500 dark:text-gray-400">

@@ -126,7 +126,85 @@ export async function POST(
     })
 
     if (existingMembership) {
-      return NextResponse.json({ error: 'User is already a member of this building' }, { status: 400 })
+      // Get building info for memberClass determination
+      const building = await prisma.building.findUnique({
+        where: { id: buildingId },
+        select: { communityId: true },
+      })
+
+      // Determine memberClass: if user is a community admin/manager, set to 'community', otherwise 'household'
+      let memberClass: 'household' | 'building' | 'community' = 'household'
+      if (building) {
+        const communityMembership = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId: targetUser.id,
+              communityId: building.communityId,
+            },
+          },
+        })
+        if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
+          memberClass = 'community'
+        }
+      }
+
+      // If already a member, update the role instead of creating new
+      const updatedMembership = await prisma.buildingMember.update({
+        where: {
+          userId_buildingId: {
+            userId: targetUser.id,
+            buildingId,
+          },
+        },
+        data: {
+          role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+          memberClass: memberClass,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      })
+
+      // If user is now a building ADMIN, ensure their community role is MEMBER (not MANAGER or higher)
+      if (role === 'ADMIN' && building) {
+        const communityMembership = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId: targetUser.id,
+              communityId: building.communityId,
+            },
+          },
+        })
+
+        // If user has community role MANAGER or higher but is building admin, downgrade to MEMBER
+        if (communityMembership && communityMembership.role !== 'ADMIN' && communityMembership.role !== 'MEMBER') {
+          await prisma.communityMember.update({
+            where: {
+              userId_communityId: {
+                userId: targetUser.id,
+                communityId: building.communityId,
+              },
+            },
+            data: {
+              role: 'MEMBER',
+            },
+          })
+        }
+      }
+
+      return NextResponse.json({
+        id: updatedMembership.id,
+        role: updatedMembership.role,
+        joinedAt: updatedMembership.joinedAt,
+        user: updatedMembership.user,
+      }, { status: 200 })
     }
 
     // Get building info (we already have it from permission check, but get it again for memberClass)

@@ -67,35 +67,42 @@ export async function GET(request: NextRequest) {
       }))
 
     // Get building admin roles
-    const buildingMemberships = await prisma.buildingMember.findMany({
-      where: {
-        userId,
-        role: { in: ['ADMIN', 'MANAGER'] },
-      },
-      include: {
-        building: {
-          select: {
-            id: true,
-            name: true,
-            community: {
-              select: {
-                id: true,
-                name: true,
+    try {
+      const buildingMemberships = await prisma.buildingMember.findMany({
+        where: {
+          userId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+        },
+        include: {
+          building: {
+            select: {
+              id: true,
+              name: true,
+              communityId: true,
+              community: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      })
 
-    context.buildingAdmins = buildingMemberships
-      .filter(m => m.role === 'ADMIN')
-      .map(m => ({
-        id: m.building.id,
-        name: m.building.name,
-        communityId: m.building.community.id,
-        communityName: m.building.community.name,
-      }))
+      context.buildingAdmins = buildingMemberships
+        .filter(m => m.role === 'ADMIN' && m.building?.community)
+        .map(m => ({
+          id: m.building.id,
+          name: m.building.name,
+          communityId: m.building.community.id,
+          communityName: m.building.community.name,
+        }))
+    } catch (error) {
+      console.error('Error fetching building memberships:', error)
+      // Continue with empty array if query fails
+      context.buildingAdmins = []
+    }
 
     return NextResponse.json(context)
   } catch (error) {

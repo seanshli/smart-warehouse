@@ -143,11 +143,18 @@ export async function GET(request: NextRequest) {
             id: true,
             role: true,
             joinedAt: true,
+            memberClass: true,
             building: {
               select: {
                 id: true,
                 name: true,
-                communityId: true
+                communityId: true,
+                community: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
               }
             }
           }
@@ -206,6 +213,9 @@ export async function GET(request: NextRequest) {
         id: membership.building.id,
         name: membership.building.name,
         role: membership.role,
+        memberClass: membership.memberClass || 'household',
+        communityId: membership.building.communityId,
+        community: membership.building.community,
         joinedAt: membership.joinedAt.toISOString()
       })),
       workingGroups: user.workingGroupMembers.map((membership: any) => ({

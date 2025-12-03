@@ -120,30 +120,37 @@ export async function PUT(
     }
 
     // Prevent building admins from having community roles other than MEMBER
-    // Check if user is a building admin (but not community admin)
-    const buildingMemberships = await prisma.buildingMember.findMany({
-      where: {
-        userId: memberToUpdate.userId,
-        role: 'ADMIN',
-      },
-      include: {
-        building: {
-          select: {
-            communityId: true,
+    // Check if user is a building admin (but not community admin) in this community
+    if (memberToUpdate.role !== 'ADMIN' && role !== 'MEMBER') {
+      try {
+        const buildingMemberships = await prisma.buildingMember.findMany({
+          where: {
+            userId: memberToUpdate.userId,
+            role: 'ADMIN',
           },
-        },
-      },
-    })
+          include: {
+            building: {
+              select: {
+                communityId: true,
+              },
+            },
+          },
+        })
 
-    const isBuildingAdminInThisCommunity = buildingMemberships.some(
-      bm => bm.building.communityId === communityId
-    )
+        const isBuildingAdminInThisCommunity = buildingMemberships.some(
+          bm => bm.building?.communityId === communityId
+        )
 
-    // If user is building admin but not community admin, lock their community role to MEMBER
-    if (isBuildingAdminInThisCommunity && memberToUpdate.role !== 'ADMIN' && role !== 'MEMBER') {
-      return NextResponse.json({ 
-        error: 'Building admins can only have MEMBER role in community. Remove building admin role first to change community role.' 
-      }, { status: 400 })
+        // If user is building admin but not community admin, lock their community role to MEMBER
+        if (isBuildingAdminInThisCommunity) {
+          return NextResponse.json({ 
+            error: 'Building admins can only have MEMBER role in community. Remove building admin role first to change community role.' 
+          }, { status: 400 })
+        }
+      } catch (error) {
+        console.error('Error checking building memberships:', error)
+        // Continue if check fails - don't block the update
+      }
     }
 
     // Update the role

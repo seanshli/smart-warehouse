@@ -430,6 +430,7 @@ export default function AdminUsersPage() {
     isAdmin: false
   })
   const [saving, setSaving] = useState(false)
+  const [isCurrentUserSuperAdmin, setIsCurrentUserSuperAdmin] = useState(false)
   const [editingCommunityRole, setEditingCommunityRole] = useState<string | null>(null)
   const [editingBuildingRole, setEditingBuildingRole] = useState<string | null>(null)
   const [savingRole, setSavingRole] = useState(false)

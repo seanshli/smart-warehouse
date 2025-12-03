@@ -938,8 +938,82 @@ export default function AdminUsersPage() {
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No community memberships</p>
+                    )}
+                    {showAddCommunity && (
+                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900 rounded border border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={newCommunityId}
+                            onChange={(e) => setNewCommunityId(e.target.value)}
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                          >
+                            <option value="">Select Community</option>
+                            {communities.map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={newCommunityRole}
+                            onChange={(e) => setNewCommunityRole(e.target.value)}
+                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                          >
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="MANAGER">MANAGER</option>
+                            <option value="MEMBER">MEMBER</option>
+                            <option value="VIEWER">VIEWER</option>
+                          </select>
+                          <button
+                            onClick={async () => {
+                              if (!newCommunityId) {
+                                toast.error('Please select a community')
+                                return
+                              }
+                              setAddingMembership(true)
+                              try {
+                                const response = await fetch(`/api/community/${newCommunityId}/members`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  credentials: 'include',
+                                  body: JSON.stringify({
+                                    targetUserId: selectedUser?.id,
+                                    role: newCommunityRole
+                                  })
+                                })
+                                const data = await response.json()
+                                if (response.ok) {
+                                  toast.success('Added to community successfully')
+                                  setShowAddCommunity(false)
+                                  fetchUsers()
+                                  if (selectedUser) {
+                                    const updated = users.find(u => u.id === selectedUser.id)
+                                    if (updated) setSelectedUser(updated)
+                                  }
+                                } else {
+                                  toast.error(data.error || 'Failed to add to community')
+                                }
+                              } catch (err) {
+                                toast.error('Network error')
+                              } finally {
+                                setAddingMembership(false)
+                              }
+                            }}
+                            disabled={addingMembership || !newCommunityId}
+                            className="px-3 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() => setShowAddCommunity(false)}
+                            className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-2">

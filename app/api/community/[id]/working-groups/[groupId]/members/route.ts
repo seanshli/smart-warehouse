@@ -137,13 +137,28 @@ export async function POST(
         where: { id: targetUserId },
       })
     } else if (targetUserEmail) {
+      // Normalize email (trim and lowercase)
+      const normalizedEmail = targetUserEmail.trim().toLowerCase()
       targetUser = await prisma.user.findUnique({
-        where: { email: targetUserEmail },
+        where: { email: normalizedEmail },
       })
+      
+      // If not found with normalized email, try original email (case-sensitive)
+      if (!targetUser) {
+        targetUser = await prisma.user.findUnique({
+          where: { email: targetUserEmail.trim() },
+        })
+      }
     }
 
     if (!targetUser) {
-      return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
+      const searchEmail = targetUserEmail || 'unknown'
+      console.error(`User not found: ${searchEmail}`)
+      return NextResponse.json({ 
+        error: 'Target user not found',
+        details: `The user with email "${searchEmail}" does not exist in the system. Please ensure the user has registered an account first.`,
+        suggestion: 'The user must create an account before they can be added to a working group.'
+      }, { status: 404 })
     }
 
     // Check if user is a member of the community
@@ -157,7 +172,11 @@ export async function POST(
     })
 
     if (!isMember) {
-      return NextResponse.json({ error: 'User must be a member of the community first' }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'User must be a member of the community first',
+        details: `The user "${targetUser.email}" exists but is not a member of this community. Please add them to the community first before adding them to a working group.`,
+        suggestion: 'Go to the Community page and add this user as a community member first.'
+      }, { status: 400 })
     }
 
     // Check if user is already a member of the working group

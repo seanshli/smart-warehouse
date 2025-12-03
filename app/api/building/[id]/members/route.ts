@@ -13,6 +13,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const buildingId = params.id
+  let targetUserId: string | undefined
+  let targetUserEmail: string | undefined
+  let role: string = 'MEMBER'
+
   try {
     const session = await getServerSession(authOptions)
     
@@ -21,9 +26,10 @@ export async function POST(
     }
 
     const userId = (session.user as any).id
-    const buildingId = params.id
     const body = await request.json()
-    const { targetUserId, targetUserEmail, role = 'MEMBER' } = body
+    targetUserId = body.targetUserId
+    targetUserEmail = body.targetUserEmail
+    role = body.role || 'MEMBER'
 
     // Validate role
     const validRoles = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
@@ -190,9 +196,10 @@ export async function POST(
         debug: process.env.NODE_ENV === 'development' ? {
           message: errorMessage,
           stack: errorStack,
-          buildingId,
-          targetUserId,
-          role,
+          buildingId: buildingId || 'unknown',
+          targetUserId: targetUserId || 'unknown',
+          targetUserEmail: targetUserEmail || 'unknown',
+          role: role || 'unknown',
         } : undefined
       },
       { status: 500 }

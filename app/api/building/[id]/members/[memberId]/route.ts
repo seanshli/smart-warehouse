@@ -21,10 +21,17 @@ export async function PUT(
     }
 
     const userId = (session.user as any).id
+    const userEmail = (session.user as any).email
     const buildingId = params.id
     const memberId = params.memberId
     const body = await request.json()
     const { role } = body
+
+    console.log('[Building Role Update] Session info:', {
+      userId,
+      userEmail,
+      sessionUser: session.user,
+    })
 
     // Validate role
     const validRoles = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']

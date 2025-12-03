@@ -74,11 +74,12 @@ export async function GET(
       members: members.map(member => ({
         id: member.id,
         role: member.role,
+        memberClass: member.memberClass || 'household',
         joinedAt: member.joinedAt,
         user: member.user,
         canManage: user?.isAdmin || canManageCommunityRole(userRole, (member.role || 'MEMBER') as CommunityRole),
       })),
-      assignableRoles: user?.isAdmin ? ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER'] : getAssignableCommunityRoles(userRole),
+      assignableRoles: user?.isAdmin ? ['ADMIN', 'USER', 'GUEST', 'MANAGER', 'MEMBER', 'VIEWER'] : getAssignableCommunityRoles(userRole),
     })
   } catch (error) {
     console.error('Error fetching community members:', error)
@@ -107,7 +108,7 @@ export async function POST(
     const userId = (session.user as any).id
     const communityId = params.id
     const body = await request.json()
-    const { targetUserId, targetUserEmail, role = 'MEMBER' } = body
+    const { targetUserId, targetUserEmail, role = 'MEMBER', memberClass = 'household' } = body
 
     // Check if user is super admin
     const currentUser = await prisma.user.findUnique({
@@ -115,10 +116,16 @@ export async function POST(
       select: { isAdmin: true },
     })
 
-    // Validate role
-    const validRoles: CommunityRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
+    // Validate role - support both new (ADMIN, USER, GUEST) and legacy (ADMIN, MANAGER, MEMBER, VIEWER)
+    const validRoles: CommunityRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', 'USER', 'GUEST']
     if (!validRoles.includes(role as CommunityRole)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    // Validate memberClass
+    const validClasses = ['household', 'building', 'community']
+    if (!validClasses.includes(memberClass)) {
+      return NextResponse.json({ error: 'Invalid member class. Must be: household, building, or community' }, { status: 400 })
     }
 
     // Super admins can add members, otherwise check permission
@@ -174,6 +181,7 @@ export async function POST(
         userId: targetUser.id,
         communityId,
         role: role as CommunityRole,
+        memberClass: memberClass as 'household' | 'building' | 'community',
       },
       include: {
         user: {

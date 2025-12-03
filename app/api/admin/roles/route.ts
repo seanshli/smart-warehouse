@@ -133,3 +133,93 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email || !(session.user as any)?.id) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const currentUserId = (session.user as any).id
+
+    // Check if user is superuser
+    const currentUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, isAdmin: true, adminRole: true }
+    })
+
+    if (!currentUser?.isAdmin || currentUser.adminRole !== 'SUPERUSER') {
+      return NextResponse.json({ error: 'Superuser privileges required' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    }
+
+    // Prevent deleting yourself
+    if (userId === currentUserId) {
+      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 })
+    }
+
+    // Get the user to delete
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, isAdmin: true, adminRole: true }
+    })
+
+    if (!userToDelete) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Prevent deleting the last superuser
+    if (userToDelete.isAdmin && userToDelete.adminRole === 'SUPERUSER') {
+      const superuserCount = await prisma.user.count({
+        where: {
+          isAdmin: true,
+          adminRole: 'SUPERUSER'
+        }
+      })
+
+      if (superuserCount <= 1) {
+        return NextResponse.json({ error: 'Cannot delete the last superuser' }, { status: 400 })
+      }
+    }
+
+    // Remove admin privileges (set isAdmin to false) instead of deleting the user
+    // This preserves the user account but removes admin access
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isAdmin: false,
+        adminRole: null
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isAdmin: true,
+        adminRole: true
+      }
+    })
+
+    console.log(`[Admin] Removed admin privileges from user: ${updatedUser.email}`)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Admin privileges removed successfully',
+      user: updatedUser
+    })
+
+  } catch (error) {
+    console.error('Error removing admin privileges:', error)
+    return NextResponse.json(
+      { error: 'Failed to remove admin privileges', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
+}

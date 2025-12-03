@@ -9,7 +9,8 @@ import {
   CogIcon,
   CheckCircleIcon,
   XCircleIcon,
-  PencilIcon
+  PencilIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminUser {
@@ -36,6 +37,7 @@ export default function AdminRolesPage() {
   const [error, setError] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ adminRole: '', language: '' })
+  const [deletingUser, setDeletingUser] = useState<string | null>(null)
 
   useEffect(() => {
     loadRoles()
@@ -93,6 +95,30 @@ export default function AdminRolesPage() {
   const handleCancelEdit = () => {
     setEditingUser(null)
     setEditForm({ adminRole: '', language: '' })
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to remove admin privileges from this user? They will no longer have admin access.')) {
+      return
+    }
+
+    try {
+      setDeletingUser(userId)
+      const res = await fetch(`/api/admin/roles?userId=${userId}`, {
+        method: 'DELETE'
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to remove admin privileges')
+      }
+
+      await loadRoles()
+      setDeletingUser(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      setDeletingUser(null)
+    }
   }
 
   const getRoleColor = (role: string) => {
@@ -267,13 +293,24 @@ export default function AdminRolesPage() {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => handleEditUser(user)}
-                        className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50"
-                      >
-                        <PencilIcon className="h-3 w-3 mr-1" />
-                        Edit
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50"
+                        >
+                          <PencilIcon className="h-3 w-3 mr-1" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={deletingUser === user.id}
+                          className="inline-flex items-center px-3 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Remove admin privileges"
+                        >
+                          <TrashIcon className="h-3 w-3 mr-1" />
+                          {deletingUser === user.id ? 'Removing...' : 'Remove'}
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

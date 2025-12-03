@@ -79,7 +79,7 @@ export async function GET(
         user: member.user,
         canManage: user?.isAdmin || canManageCommunityRole(userRole, (member.role || 'MEMBER') as CommunityRole),
       })),
-      assignableRoles: user?.isAdmin ? ['ADMIN', 'USER', 'GUEST', 'MANAGER', 'MEMBER', 'VIEWER'] : getAssignableCommunityRoles(userRole),
+      assignableRoles: user?.isAdmin ? ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER'] : getAssignableCommunityRoles(userRole),
     })
   } catch (error) {
     console.error('Error fetching community members:', error)
@@ -116,10 +116,10 @@ export async function POST(
       select: { isAdmin: true },
     })
 
-    // Validate role - support both new (ADMIN, USER, GUEST) and legacy (ADMIN, MANAGER, MEMBER, VIEWER)
-    const validRoles: CommunityRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', 'USER', 'GUEST']
+    // Validate role - ADMIN, MANAGER, MEMBER, VIEWER
+    const validRoles: CommunityRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
     if (!validRoles.includes(role as CommunityRole)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid role. Must be: ADMIN, MANAGER, MEMBER, or VIEWER' }, { status: 400 })
     }
 
     // Validate memberClass

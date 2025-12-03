@@ -39,12 +39,14 @@ interface User {
     }
   }>
   communities?: Array<{
+    membershipId: string
     id: string
     name: string
     role: string
     joinedAt: string
   }>
   buildings?: Array<{
+    membershipId: string
     id: string
     name: string
     role: string

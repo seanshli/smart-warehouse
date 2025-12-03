@@ -119,6 +119,33 @@ export async function PUT(
       }
     }
 
+    // Prevent building admins from having community roles other than MEMBER
+    // Check if user is a building admin (but not community admin)
+    const buildingMemberships = await prisma.buildingMember.findMany({
+      where: {
+        userId: memberToUpdate.userId,
+        role: 'ADMIN',
+      },
+      include: {
+        building: {
+          select: {
+            communityId: true,
+          },
+        },
+      },
+    })
+
+    const isBuildingAdminInThisCommunity = buildingMemberships.some(
+      bm => bm.building.communityId === communityId
+    )
+
+    // If user is building admin but not community admin, lock their community role to MEMBER
+    if (isBuildingAdminInThisCommunity && memberToUpdate.role !== 'ADMIN' && role !== 'MEMBER') {
+      return NextResponse.json({ 
+        error: 'Building admins can only have MEMBER role in community. Remove building admin role first to change community role.' 
+      }, { status: 400 })
+    }
+
     // Update the role
     const updatedMember = await prisma.communityMember.update({
       where: { id: memberId },

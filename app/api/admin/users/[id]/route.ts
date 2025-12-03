@@ -19,6 +19,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
     }
 
+    const currentUserId = (session.user as any).id
     const { id: userId } = params
     const body = await request.json()
     const { name, email, phone, contact, language, isAdmin } = body
@@ -26,11 +27,33 @@ export async function PUT(
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true }
+      select: { id: true, email: true, isAdmin: true }
     })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if current user is super admin (required to change isAdmin status)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { isAdmin: true }
+    })
+
+    // Only super admin can change isAdmin status
+    if (isAdmin !== undefined && isAdmin !== user.isAdmin) {
+      if (!currentUser?.isAdmin) {
+        return NextResponse.json({ error: 'Only super admin can change admin status' }, { status: 403 })
+      }
+      // Prevent removing the last super admin
+      if (isAdmin === false && user.isAdmin) {
+        const adminCount = await prisma.user.count({
+          where: { isAdmin: true }
+        })
+        if (adminCount <= 1) {
+          return NextResponse.json({ error: 'Cannot remove the last super admin' }, { status: 400 })
+        }
+      }
     }
 
     // Check if email is being changed and if it's already taken
@@ -52,7 +75,7 @@ export async function PUT(
         ...(phone !== undefined && { phone }),
         ...(contact !== undefined && { contact }),
         ...(language && { language }),
-        ...(isAdmin !== undefined && { isAdmin })
+        ...(isAdmin !== undefined && currentUser?.isAdmin ? { isAdmin } : {})
       },
       select: {
         id: true,

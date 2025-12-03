@@ -461,6 +461,18 @@ export default function AdminUsersPage() {
     }
   }, [session, status, router])
 
+  // Fetch admin context to check if current user is super admin
+  useEffect(() => {
+    fetch('/api/admin/context')
+      .then(res => res.json())
+      .then(data => {
+        setIsCurrentUserSuperAdmin(data.isSuperAdmin || false)
+      })
+      .catch(err => {
+        console.error('Error fetching admin context:', err)
+      })
+  }, [])
+
   // Fetch users, communities, and buildings
   useEffect(() => {
     fetchUsers()
@@ -1003,10 +1015,14 @@ export default function AdminUsersPage() {
                             type="checkbox"
                             checked={editFormData.isAdmin}
                             onChange={(e) => setEditFormData(prev => ({ ...prev, isAdmin: e.target.checked }))}
-                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                            disabled={!isCurrentUserSuperAdmin}
+                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                             System Administrator
+                            {!isCurrentUserSuperAdmin && (
+                              <span className="ml-2 text-xs text-gray-500">(Only super admin can change)</span>
+                            )}
                           </label>
                         </div>
                       ) : (
@@ -1067,64 +1083,80 @@ export default function AdminUsersPage() {
                     </div>
                   {selectedUser.communities && selectedUser.communities.length > 0 ? (
                     <div className="space-y-2">
-                        {selectedUser.communities.map((community) => (
-                          <div key={community.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{community.name}</p>
-                              <div className="mt-1 flex items-center space-x-3">
-                                {editingCommunityRole === community.membershipId ? (
-                                  <>
-                                    <select
-                                      value={community.role || 'MEMBER'}
-                                      onChange={(e) => {
-                                        handleUpdateCommunityRole(community.id, community.membershipId, e.target.value)
-                                      }}
-                                      disabled={savingRole}
-                                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-600 dark:text-gray-100"
-                                    >
-                                      <option value="ADMIN">ADMIN</option>
-                                      <option value="MANAGER">MANAGER</option>
-                                      <option value="MEMBER">MEMBER</option>
-                                      <option value="VIEWER">VIEWER</option>
-                                    </select>
-                                    <button
-                                      onClick={() => setEditingCommunityRole(null)}
-                                      className="text-xs text-gray-500 hover:text-gray-700"
-                                      disabled={savingRole}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                      community.role === 'ADMIN' 
-                                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        : community.role === 'MANAGER'
-                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                        : community.role === 'MEMBER'
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                    }`}>
-                                      {community.role || 'MEMBER'}
-                                    </span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      Joined: {new Date(community.joinedAt).toLocaleDateString()}
-                                    </span>
-                                    <button
-                                      onClick={() => setEditingCommunityRole(community.membershipId)}
-                                      className="ml-2 text-xs text-primary-600 hover:text-primary-800"
-                                      title="Edit role"
-                                      disabled={savingRole}
-                                    >
-                                      <PencilIcon className="h-3 w-3" />
-                                    </button>
-                                  </>
-                                )}
+                        {selectedUser.communities.map((community) => {
+                          // Check if user is building admin but not community admin
+                          // If user has building admin role but community role is MANAGER or lower, they're a building admin
+                          const isBuildingAdminOnly = selectedUser.buildings && selectedUser.buildings.some(b => b.role === 'ADMIN') &&
+                            (community.role !== 'ADMIN')
+                          const isCommunityRoleLocked = isBuildingAdminOnly && community.role !== 'ADMIN'
+                          
+                          return (
+                            <div key={community.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{community.name}</p>
+                                <div className="mt-1 flex items-center space-x-3">
+                                  {editingCommunityRole === community.membershipId && !isCommunityRoleLocked ? (
+                                    <>
+                                      <select
+                                        value={community.role || 'MEMBER'}
+                                        onChange={(e) => {
+                                          handleUpdateCommunityRole(community.id, community.membershipId, e.target.value)
+                                        }}
+                                        disabled={savingRole}
+                                        className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-600 dark:text-gray-100"
+                                      >
+                                        <option value="ADMIN">ADMIN</option>
+                                        <option value="MANAGER">MANAGER</option>
+                                        <option value="MEMBER">MEMBER</option>
+                                        <option value="VIEWER">VIEWER</option>
+                                      </select>
+                                      <button
+                                        onClick={() => setEditingCommunityRole(null)}
+                                        className="text-xs text-gray-500 hover:text-gray-700"
+                                        disabled={savingRole}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        community.role === 'ADMIN' 
+                                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                          : community.role === 'MANAGER'
+                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                          : community.role === 'MEMBER'
+                                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                      }`}>
+                                        {isCommunityRoleLocked ? 'MEMBER' : (community.role || 'MEMBER')}
+                                        {isCommunityRoleLocked && ' (Locked)'}
+                                      </span>
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        Joined: {new Date(community.joinedAt).toLocaleDateString()}
+                                      </span>
+                                      {!isCommunityRoleLocked && (
+                                        <button
+                                          onClick={() => setEditingCommunityRole(community.membershipId)}
+                                          className="ml-2 text-xs text-primary-600 hover:text-primary-800"
+                                          title="Edit role"
+                                          disabled={savingRole}
+                                        >
+                                          <PencilIcon className="h-3 w-3" />
+                                        </button>
+                                      )}
+                                      {isCommunityRoleLocked && (
+                                        <span className="ml-2 text-xs text-gray-400 italic">
+                                          Building admin - community role locked to MEMBER
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500 dark:text-gray-400">No community memberships</p>

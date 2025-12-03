@@ -879,7 +879,6 @@ export default function AdminUsersPage() {
                     </div>
                   {selectedUser.communities && selectedUser.communities.length > 0 ? (
                     <div className="space-y-2">
-                      <div className="space-y-2">
                         {selectedUser.communities.map((community) => (
                           <div key={community.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                             <div className="flex-1">
@@ -960,7 +959,6 @@ export default function AdminUsersPage() {
                     </div>
                   {selectedUser.buildings && selectedUser.buildings.length > 0 ? (
                     <div className="space-y-2">
-                      <div className="space-y-2">
                         {selectedUser.buildings.map((building) => (
                           <div key={building.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                             <div className="flex-1">
@@ -1019,9 +1017,84 @@ export default function AdminUsersPage() {
                             </div>
                           </div>
                         ))}
-                      </div>
                     </div>
-                  )}
+                  ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No building memberships</p>
+                    )}
+                    {showAddBuilding && (
+                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900 rounded border border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={newBuildingId}
+                            onChange={(e) => setNewBuildingId(e.target.value)}
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                          >
+                            <option value="">Select Building</option>
+                            {buildings.map((b) => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={newBuildingRole}
+                            onChange={(e) => setNewBuildingRole(e.target.value)}
+                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                          >
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="MANAGER">MANAGER</option>
+                            <option value="MEMBER">MEMBER</option>
+                            <option value="VIEWER">VIEWER</option>
+                          </select>
+                          <button
+                            onClick={async () => {
+                              if (!newBuildingId) {
+                                toast.error('Please select a building')
+                                return
+                              }
+                              setAddingMembership(true)
+                              try {
+                                const response = await fetch(`/api/building/${newBuildingId}/members`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  credentials: 'include',
+                                  body: JSON.stringify({
+                                    targetUserId: selectedUser?.id,
+                                    role: newBuildingRole
+                                  })
+                                })
+                                const data = await response.json()
+                                if (response.ok) {
+                                  toast.success('Added to building successfully')
+                                  setShowAddBuilding(false)
+                                  fetchUsers()
+                                  if (selectedUser) {
+                                    const updated = users.find(u => u.id === selectedUser.id)
+                                    if (updated) setSelectedUser(updated)
+                                  }
+                                } else {
+                                  toast.error(data.error || 'Failed to add to building')
+                                }
+                              } catch (err) {
+                                toast.error('Network error')
+                              } finally {
+                                setAddingMembership(false)
+                              }
+                            }}
+                            disabled={addingMembership || !newBuildingId}
+                            className="px-3 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() => setShowAddBuilding(false)}
+                            className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  }
 
                   {selectedUser.workingGroups && selectedUser.workingGroups.length > 0 && (
                     <div>

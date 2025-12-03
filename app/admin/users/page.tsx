@@ -1094,7 +1094,6 @@ export default function AdminUsersPage() {
                       </div>
                     )}
                   </div>
-                  }
 
                   {selectedUser.workingGroups && selectedUser.workingGroups.length > 0 && (
                     <div>

@@ -150,8 +150,13 @@ export async function POST(
     }, { status: 201 })
   } catch (error) {
     console.error('Error adding building member:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to add building member' },
+      { 
+        error: 'Failed to add building member',
+        details: errorMessage,
+        debug: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
       { status: 500 }
     )
   }

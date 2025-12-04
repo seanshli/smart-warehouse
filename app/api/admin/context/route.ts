@@ -44,27 +44,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Get community admin roles
-    const communityMemberships = await prisma.communityMember.findMany({
-      where: {
-        userId,
-        role: { in: ['ADMIN', 'MANAGER'] },
-      },
-      include: {
-        community: {
-          select: {
-            id: true,
-            name: true,
+    try {
+      const communityMemberships = await prisma.communityMember.findMany({
+        where: {
+          userId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+        },
+        include: {
+          community: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    })
+      })
 
-    context.communityAdmins = communityMemberships
-      .filter(m => m.role === 'ADMIN')
-      .map(m => ({
-        id: m.community.id,
-        name: m.community.name,
-      }))
+      context.communityAdmins = communityMemberships
+        .filter(m => m.role === 'ADMIN' && m.community)
+        .map(m => ({
+          id: m.community.id,
+          name: m.community.name,
+        }))
+    } catch (error) {
+      console.error('Error fetching community memberships:', error)
+      context.communityAdmins = []
+    }
 
     // Get building admin roles
     try {

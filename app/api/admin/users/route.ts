@@ -89,96 +89,202 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const users = await prisma.user.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        language: true,
-        isAdmin: true,
-        createdAt: true,
-        householdMemberships: {
-          select: {
-            id: true,
-            role: true,
-            joinedAt: true,
-            household: {
-              select: {
-                id: true,
-                name: true,
-                buildingId: true,
-                building: {
-                  select: {
-                    id: true,
-                    name: true,
-                    communityId: true,
-                    community: {
-                      select: {
-                        id: true,
-                        name: true
+    let users
+    try {
+      users = await prisma.user.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          language: true,
+          isAdmin: true,
+          createdAt: true,
+          householdMemberships: {
+            select: {
+              id: true,
+              role: true,
+              joinedAt: true,
+              household: {
+                select: {
+                  id: true,
+                  name: true,
+                  buildingId: true,
+                  building: {
+                    select: {
+                      id: true,
+                      name: true,
+                      communityId: true,
+                      community: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
                       }
                     }
                   }
                 }
               }
             }
-          }
-        },
-        communityMemberships: {
-          select: {
-            id: true,
-            role: true,
-            joinedAt: true,
-            community: {
-              select: {
-                id: true,
-                name: true
+          },
+          communityMemberships: {
+            select: {
+              id: true,
+              role: true,
+              joinedAt: true,
+              community: {
+                select: {
+                  id: true,
+                  name: true
+                }
               }
             }
-          }
-        },
-        buildingMemberships: {
-          select: {
-            id: true,
-            role: true,
-            joinedAt: true,
-            memberClass: true,
-            building: {
-              select: {
-                id: true,
-                name: true,
-                communityId: true,
-                community: {
-                  select: {
-                    id: true,
-                    name: true
+          },
+          buildingMemberships: {
+            select: {
+              id: true,
+              role: true,
+              joinedAt: true,
+              memberClass: true,
+              building: {
+                select: {
+                  id: true,
+                  name: true,
+                  communityId: true,
+                  community: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
                   }
+                }
+              }
+            }
+          },
+          workingGroupMembers: {
+            select: {
+              id: true,
+              role: true,
+              assignedAt: true,
+              workingGroup: {
+                select: {
+                  id: true,
+                  name: true,
+                  type: true,
+                  communityId: true
                 }
               }
             }
           }
         },
-        workingGroupMembers: {
+        orderBy: {
+          createdAt: 'desc'
+        }
+      })
+    } catch (prismaError: any) {
+      console.error('Prisma error fetching users:', prismaError)
+      // If nested relations fail, try simpler query
+      try {
+        users = await prisma.user.findMany({
+          where: whereClause,
           select: {
             id: true,
-            role: true,
-            assignedAt: true,
-            workingGroup: {
-              select: {
-                id: true,
-                name: true,
-                type: true,
-                communityId: true
+            name: true,
+            email: true,
+            language: true,
+            isAdmin: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+        // Fetch relations separately
+        const userIds = users.map(u => u.id)
+        
+        const [householdMemberships, communityMemberships, buildingMemberships, workingGroupMembers] = await Promise.all([
+          prisma.householdMember.findMany({
+            where: { userId: { in: userIds } },
+            include: {
+              household: {
+                include: {
+                  building: {
+                    include: {
+                      community: {
+                        select: { id: true, name: true }
+                      }
+                    }
+                  }
+                }
               }
             }
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
+          }).catch(() => []),
+          prisma.communityMember.findMany({
+            where: { userId: { in: userIds } },
+            include: {
+              community: {
+                select: { id: true, name: true }
+              }
+            }
+          }).catch(() => []),
+          prisma.buildingMember.findMany({
+            where: { userId: { in: userIds } },
+            include: {
+              building: {
+                include: {
+                  community: {
+                    select: { id: true, name: true }
+                  }
+                }
+              }
+            }
+          }).catch(() => []),
+          prisma.workingGroupMember.findMany({
+            where: { userId: { in: userIds } },
+            include: {
+              workingGroup: {
+                select: { id: true, name: true, type: true, communityId: true }
+              }
+            }
+          }).catch(() => [])
+        ])
+
+        // Group memberships by userId
+        const householdMap = new Map<string, any[]>()
+        const communityMap = new Map<string, any[]>()
+        const buildingMap = new Map<string, any[]>()
+        const workingGroupMap = new Map<string, any[]>()
+
+        householdMemberships.forEach(m => {
+          if (!householdMap.has(m.userId)) householdMap.set(m.userId, [])
+          householdMap.get(m.userId)!.push(m)
+        })
+        communityMemberships.forEach(m => {
+          if (!communityMap.has(m.userId)) communityMap.set(m.userId, [])
+          communityMap.get(m.userId)!.push(m)
+        })
+        buildingMemberships.forEach(m => {
+          if (!buildingMap.has(m.userId)) buildingMap.set(m.userId, [])
+          buildingMap.get(m.userId)!.push(m)
+        })
+        workingGroupMembers.forEach(m => {
+          if (!workingGroupMap.has(m.userId)) workingGroupMap.set(m.userId, [])
+          workingGroupMap.get(m.userId)!.push(m)
+        })
+
+        // Attach memberships to users
+        users = users.map(user => ({
+          ...user,
+          householdMemberships: householdMap.get(user.id) || [],
+          communityMemberships: communityMap.get(user.id) || [],
+          buildingMemberships: buildingMap.get(user.id) || [],
+          workingGroupMembers: workingGroupMap.get(user.id) || [],
+        }))
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError)
+        throw prismaError // Throw original error
       }
-    })
+    }
 
     // Transform the data to match the expected format
     const transformedUsers = users.map(user => ({
@@ -190,7 +296,7 @@ export async function GET(request: NextRequest) {
       language: user.language,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
-      households: user.householdMemberships.map((membership: any) => ({
+      households: (user.householdMemberships || []).filter((m: any) => m.household).map((membership: any) => ({
         id: membership.household.id,
         name: membership.household.name,
         role: membership.role,
@@ -201,14 +307,14 @@ export async function GET(request: NextRequest) {
           community: membership.household.building.community
         } : null
       })),
-      communities: user.communityMemberships.map((membership: any) => ({
+      communities: (user.communityMemberships || []).filter((m: any) => m.community).map((membership: any) => ({
         membershipId: membership.id, // Include membership ID for updates
         id: membership.community.id,
         name: membership.community.name,
         role: membership.role,
         joinedAt: membership.joinedAt.toISOString()
       })),
-      buildings: user.buildingMemberships.map((membership: any) => ({
+      buildings: (user.buildingMemberships || []).filter((m: any) => m.building).map((membership: any) => ({
         membershipId: membership.id, // Include membership ID for updates
         id: membership.building.id,
         name: membership.building.name,
@@ -218,7 +324,7 @@ export async function GET(request: NextRequest) {
         community: membership.building.community,
         joinedAt: membership.joinedAt.toISOString()
       })),
-      workingGroups: user.workingGroupMembers.map((membership: any) => ({
+      workingGroups: (user.workingGroupMembers || []).filter((m: any) => m.workingGroup).map((membership: any) => ({
         id: membership.workingGroup.id,
         name: membership.workingGroup.name,
         type: membership.workingGroup.type,

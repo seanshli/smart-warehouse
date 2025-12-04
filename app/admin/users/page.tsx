@@ -871,16 +871,57 @@ export default function AdminUsersPage() {
                     
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => {
-                          setSelectedUser(user)
-                          setEditFormData({
-                            name: user.name,
-                            email: user.email,
-                            phone: user.phone || '',
-                            contact: user.contact || '',
-                            language: user.language || 'en',
-                            isAdmin: user.isAdmin
-                          })
+                        onClick={async () => {
+                          // Fetch fresh user data with all memberships
+                          try {
+                            const response = await fetch(`/api/admin/users`)
+                            if (response.ok) {
+                              const data = await response.json()
+                              const freshUser = data.users.find((u: User) => u.id === user.id)
+                              if (freshUser) {
+                                setSelectedUser(freshUser)
+                                setEditFormData({
+                                  name: freshUser.name,
+                                  email: freshUser.email,
+                                  phone: freshUser.phone || '',
+                                  contact: freshUser.contact || '',
+                                  language: freshUser.language || 'en',
+                                  isAdmin: freshUser.isAdmin
+                                })
+                              } else {
+                                setSelectedUser(user)
+                                setEditFormData({
+                                  name: user.name,
+                                  email: user.email,
+                                  phone: user.phone || '',
+                                  contact: user.contact || '',
+                                  language: user.language || 'en',
+                                  isAdmin: user.isAdmin
+                                })
+                              }
+                            } else {
+                              setSelectedUser(user)
+                              setEditFormData({
+                                name: user.name,
+                                email: user.email,
+                                phone: user.phone || '',
+                                contact: user.contact || '',
+                                language: user.language || 'en',
+                                isAdmin: user.isAdmin
+                              })
+                            }
+                          } catch (err) {
+                            console.error('Error fetching fresh user data:', err)
+                            setSelectedUser(user)
+                            setEditFormData({
+                              name: user.name,
+                              email: user.email,
+                              phone: user.phone || '',
+                              contact: user.contact || '',
+                              language: user.language || 'en',
+                              isAdmin: user.isAdmin
+                            })
+                          }
                           setIsEditing(false)
                           setShowUserDetails(true)
                         }}

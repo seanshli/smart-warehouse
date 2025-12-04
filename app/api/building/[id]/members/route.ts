@@ -14,10 +14,6 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const buildingId = params.id
-  let targetUserId: string | undefined
-  let targetUserEmail: string | undefined
-  let role: string = 'MEMBER'
-  let memberClass: 'household' | 'building' | 'community' | undefined
 
   try {
     const session = await getServerSession(authOptions)
@@ -28,10 +24,10 @@ export async function POST(
 
     const userId = (session.user as any).id
     const body = await request.json()
-    targetUserId = body.targetUserId
-    targetUserEmail = body.targetUserEmail
-    role = body.role || 'MEMBER'
-    memberClass = body.memberClass // Allow explicit memberClass from request
+    const targetUserId: string | undefined = body.targetUserId
+    const targetUserEmail: string | undefined = body.targetUserEmail
+    const role: string = body.role || 'MEMBER'
+    const memberClass: 'household' | 'building' | 'community' | undefined = body.memberClass // Allow explicit memberClass from request
 
     // Validate role
     const validRoles = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
@@ -217,9 +213,9 @@ export async function POST(
       select: { communityId: true },
     })
 
-    // Determine memberClass: if user is a community admin/manager, set to 'community', otherwise 'household'
-    let memberClass: 'household' | 'building' | 'community' = 'household'
-    if (building) {
+    // Determine memberClass: use provided value, or if user is a community admin/manager, set to 'community', otherwise 'household'
+    let finalMemberClass: 'household' | 'building' | 'community' = memberClass || 'household'
+    if (!memberClass && building) {
       const communityMembership = await prisma.communityMember.findUnique({
         where: {
           userId_communityId: {
@@ -229,8 +225,10 @@ export async function POST(
         },
       })
       if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
-        memberClass = 'community'
+        finalMemberClass = 'community'
       }
+    } else if (memberClass) {
+      finalMemberClass = memberClass
     }
 
     // Create membership
@@ -239,7 +237,7 @@ export async function POST(
         userId: targetUser.id,
         buildingId,
         role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-        memberClass,
+        memberClass: finalMemberClass,
       },
       include: {
         user: {
@@ -267,9 +265,6 @@ export async function POST(
       errorMessage,
       errorStack,
       buildingId,
-      targetUserId,
-      targetUserEmail,
-      role,
     })
     return NextResponse.json(
       { 
@@ -279,9 +274,6 @@ export async function POST(
           message: errorMessage,
           stack: errorStack,
           buildingId: buildingId || 'unknown',
-          targetUserId: targetUserId || 'unknown',
-          targetUserEmail: targetUserEmail || 'unknown',
-          role: role || 'unknown',
         } : undefined
       },
       { status: 500 }

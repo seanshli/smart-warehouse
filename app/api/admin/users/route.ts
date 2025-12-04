@@ -357,9 +357,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, email, phone, contact, password, isAdmin, communityMembership, buildingMembership } = body
 
+    console.log('[Create User] Request body:', {
+      name,
+      email,
+      hasPassword: !!password,
+      isAdmin,
+      communityMembership,
+      buildingMembership
+    })
+
     // Validate required fields
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
     }
 
     // Check if user already exists
@@ -381,6 +396,23 @@ export async function POST(request: NextRequest) {
 
     // Validate membership permissions
     if (communityMembership) {
+      // Validate communityMembership structure
+      if (!communityMembership.communityId) {
+        return NextResponse.json({ error: 'Community ID is required for community membership' }, { status: 400 })
+      }
+      if (!communityMembership.role || !['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER'].includes(communityMembership.role)) {
+        return NextResponse.json({ error: 'Invalid role. Must be ADMIN, MANAGER, MEMBER, or VIEWER' }, { status: 400 })
+      }
+      
+      // Verify community exists
+      const communityExists = await prisma.community.findUnique({
+        where: { id: communityMembership.communityId },
+        select: { id: true }
+      })
+      if (!communityExists) {
+        return NextResponse.json({ error: 'Community not found' }, { status: 404 })
+      }
+
       if (!isSuperAdmin) {
         // Check if user is community admin
         const communityMember = await prisma.communityMember.findUnique({
@@ -457,68 +489,138 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        phone: phone || null,
-        contact: contact || null,
-        isAdmin: isAdmin || false,
-        language: 'en', // Default language
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isAdmin: true,
-        createdAt: true
+    let user
+    try {
+      user = await prisma.user.create({
+        data: {
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          phone: phone?.trim() || null,
+          contact: contact?.trim() || null,
+          isAdmin: isAdmin || false,
+          language: 'en', // Default language
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isAdmin: true,
+          createdAt: true
+        }
+      })
+      console.log('[Create User] User created successfully:', user.id)
+    } catch (createError: any) {
+      console.error('[Create User] Error creating user:', createError)
+      if (createError.code === 'P2002') {
+        return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 })
       }
-    })
+      return NextResponse.json({ 
+        error: 'Failed to create user',
+        details: createError.message 
+      }, { status: 500 })
+    }
 
     // Store password
     const { storeUserPassword } = await import('@/lib/credentials')
-    storeUserPassword(email, hashedPassword)
+    storeUserPassword(email.toLowerCase().trim(), hashedPassword)
 
     // Create community membership if specified
     if (communityMembership) {
-      await prisma.communityMember.create({
-        data: {
+      try {
+        console.log('[Create User] Creating community membership:', {
           userId: user.id,
           communityId: communityMembership.communityId,
-          role: communityMembership.role || 'MEMBER',
-          memberClass: communityMembership.memberClass || 'community',
-        },
-      })
-
-      // If community ADMIN, auto-add to all buildings
-      if (communityMembership.role === 'ADMIN') {
-        const buildings = await prisma.building.findMany({
-          where: { communityId: communityMembership.communityId },
-          select: { id: true },
+          role: communityMembership.role,
+          memberClass: communityMembership.memberClass || 'community'
         })
-        for (const building of buildings) {
-          await prisma.buildingMember.create({
-            data: {
-              userId: user.id,
-              buildingId: building.id,
-              role: 'ADMIN',
-              memberClass: 'community',
-            },
+        
+        await prisma.communityMember.create({
+          data: {
+            userId: user.id,
+            communityId: communityMembership.communityId,
+            role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+            memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
+          },
+        })
+
+        // If community ADMIN, auto-add to all buildings
+        if (communityMembership.role === 'ADMIN') {
+          const buildings = await prisma.building.findMany({
+            where: { communityId: communityMembership.communityId },
+            select: { id: true },
           })
+          for (const building of buildings) {
+            try {
+              await prisma.buildingMember.upsert({
+                where: {
+                  userId_buildingId: {
+                    userId: user.id,
+                    buildingId: building.id,
+                  },
+                },
+                update: {
+                  role: 'ADMIN',
+                  memberClass: 'community',
+                },
+                create: {
+                  userId: user.id,
+                  buildingId: building.id,
+                  role: 'ADMIN',
+                  memberClass: 'community',
+                },
+              })
+            } catch (buildingError: any) {
+              console.error('[Create User] Error adding to building:', building.id, buildingError)
+              // Continue with other buildings
+            }
+          }
         }
+      } catch (communityError: any) {
+        console.error('[Create User] Error creating community membership:', communityError)
+        return NextResponse.json({ 
+          error: 'User created but failed to add community membership',
+          details: communityError.message,
+          userId: user.id
+        }, { status: 500 })
       }
     }
 
     // Create building membership if specified
     if (buildingMembership) {
-      await prisma.buildingMember.create({
-        data: {
+      try {
+        console.log('[Create User] Creating building membership:', {
           userId: user.id,
           buildingId: buildingMembership.buildingId,
-          role: buildingMembership.role || 'MEMBER',
-          memberClass: buildingMembership.memberClass || 'building',
-        },
-      })
+          role: buildingMembership.role,
+          memberClass: buildingMembership.memberClass || 'building'
+        })
+
+        await prisma.buildingMember.upsert({
+          where: {
+            userId_buildingId: {
+              userId: user.id,
+              buildingId: buildingMembership.buildingId,
+            },
+          },
+          update: {
+            role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+            memberClass: (buildingMembership.memberClass || 'building') as 'household' | 'building' | 'community',
+          },
+          create: {
+            userId: user.id,
+            buildingId: buildingMembership.buildingId,
+            role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+            memberClass: (buildingMembership.memberClass || 'building') as 'household' | 'building' | 'community',
+          },
+        })
+      } catch (buildingError: any) {
+        console.error('[Create User] Error creating building membership:', buildingError)
+        return NextResponse.json({ 
+          error: 'User created but failed to add building membership',
+          details: buildingError.message,
+          userId: user.id
+        }, { status: 500 })
+      }
     }
 
     console.log(`[Admin] Created new user: ${user.email} (Admin: ${user.isAdmin})`)

@@ -48,10 +48,40 @@ export async function GET(
       }
     }
 
-    const members = await prisma.communityMember.findMany({
-      where: { communityId },
-      include: {
-        user: {
+    let members
+    try {
+      members = await prisma.communityMember.findMany({
+        where: { communityId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: {
+          joinedAt: 'asc',
+        },
+      })
+    } catch (prismaError: any) {
+      console.error('Prisma error fetching community members:', prismaError)
+      // If there's a foreign key constraint issue, try fetching without user relation
+      // This can happen if some users were deleted but memberships remain
+      try {
+        members = await prisma.communityMember.findMany({
+          where: { communityId },
+          orderBy: {
+            joinedAt: 'asc',
+          },
+        })
+        // Fetch users separately for valid memberships
+        const userIds = members.map(m => m.userId).filter(Boolean)
+        const users = await prisma.user.findMany({
+          where: { id: { in: userIds } },
           select: {
             id: true,
             email: true,
@@ -59,26 +89,36 @@ export async function GET(
             image: true,
             createdAt: true,
           },
-        },
-      },
-      orderBy: {
-        joinedAt: 'asc',
-      },
-    })
+        })
+        const userMap = new Map(users.map(u => [u.id, u]))
+        members = members.map(m => ({
+          ...m,
+          user: userMap.get(m.userId) || null,
+        }))
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError)
+        throw prismaError // Throw original error
+      }
+    }
 
     // Get user role for permission checks (super admin has all permissions)
     const effectiveRole = user?.isAdmin ? 'ADMIN' : await getUserCommunityRole(userId, communityId)
     const userRole = (effectiveRole || 'MEMBER') as CommunityRole
 
-    return NextResponse.json({
-      members: members.map(member => ({
+    // Filter out members with deleted users and map the rest
+    const validMembers = members
+      .filter(member => member.user !== null) // Filter out members with deleted users
+      .map(member => ({
         id: member.id,
         role: member.role,
         memberClass: member.memberClass || 'household',
         joinedAt: member.joinedAt,
         user: member.user,
         canManage: user?.isAdmin || canManageCommunityRole(userRole, (member.role || 'MEMBER') as CommunityRole),
-      })),
+      }))
+
+    return NextResponse.json({
+      members: validMembers,
       assignableRoles: user?.isAdmin ? ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER'] : getAssignableCommunityRoles(userRole),
     })
   } catch (error) {
@@ -152,13 +192,25 @@ export async function POST(
         where: { id: targetUserId },
       })
     } else if (targetUserEmail) {
+      // Normalize email (trim and lowercase)
+      const normalizedEmail = targetUserEmail.trim().toLowerCase()
       targetUser = await prisma.user.findUnique({
-        where: { email: targetUserEmail },
+        where: { email: normalizedEmail },
       })
+      
+      // If not found with normalized email, try original email
+      if (!targetUser && normalizedEmail !== targetUserEmail) {
+        targetUser = await prisma.user.findUnique({
+          where: { email: targetUserEmail },
+        })
+      }
     }
 
     if (!targetUser) {
-      return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
+      const emailToSearch = targetUserEmail || targetUserId || 'unknown'
+      return NextResponse.json({ 
+        error: `User not found. The user with email "${emailToSearch}" must exist in the system before they can be added as a community member. Please create the user first in the Admin Users page.` 
+      }, { status: 404 })
     }
 
     // Check if user is already a member

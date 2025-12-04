@@ -1209,7 +1209,8 @@ export default function AdminUsersPage() {
                                   credentials: 'include',
                                   body: JSON.stringify({
                                     targetUserId: selectedUser?.id,
-                                    role: newCommunityRole
+                                    role: newCommunityRole,
+                                    memberClass: 'community' // Working team member
                                   })
                                 })
                                 const data = await response.json()
@@ -1363,7 +1364,8 @@ export default function AdminUsersPage() {
                                   credentials: 'include',
                                   body: JSON.stringify({
                                     targetUserId: selectedUser?.id,
-                                    role: newBuildingRole
+                                    role: newBuildingRole,
+                                    memberClass: 'building' // Working team member
                                   })
                                 })
                                 const data = await response.json()

@@ -17,6 +17,7 @@ export async function POST(
   let targetUserId: string | undefined
   let targetUserEmail: string | undefined
   let role: string = 'MEMBER'
+  let memberClass: 'household' | 'building' | 'community' | undefined
 
   try {
     const session = await getServerSession(authOptions)
@@ -30,6 +31,7 @@ export async function POST(
     targetUserId = body.targetUserId
     targetUserEmail = body.targetUserEmail
     role = body.role || 'MEMBER'
+    memberClass = body.memberClass // Allow explicit memberClass from request
 
     // Validate role
     const validRoles = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
@@ -132,9 +134,9 @@ export async function POST(
         select: { communityId: true },
       })
 
-      // Determine memberClass: if user is a community admin/manager, set to 'community', otherwise 'household'
-      let memberClass: 'household' | 'building' | 'community' = 'household'
-      if (building) {
+      // Determine memberClass: use provided value, or if user is a community admin/manager, set to 'community', otherwise 'household'
+      let finalMemberClass: 'household' | 'building' | 'community' = memberClass || 'household'
+      if (!memberClass && building) {
         const communityMembership = await prisma.communityMember.findUnique({
           where: {
             userId_communityId: {
@@ -144,8 +146,10 @@ export async function POST(
           },
         })
         if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
-          memberClass = 'community'
+          finalMemberClass = 'community'
         }
+      } else if (memberClass) {
+        finalMemberClass = memberClass
       }
 
       // If already a member, update the role instead of creating new
@@ -158,7 +162,7 @@ export async function POST(
         },
         data: {
           role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-          memberClass: memberClass,
+          memberClass: finalMemberClass,
         },
         include: {
           user: {

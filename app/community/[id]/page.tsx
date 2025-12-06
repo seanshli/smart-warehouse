@@ -679,7 +679,27 @@ function MembersTab({ communityId }: { communityId: string }) {
         fetchMembers()
       } else {
         const errorData = await response.json().catch(() => ({}))
-        toast.error(errorData.error || 'Failed to add member')
+        const errorMessage = errorData.error || 'Failed to add member'
+        
+        // If user not found, provide helpful message with link to create user
+        if (errorMessage.includes('User not found') || errorMessage.includes('must exist')) {
+          toast.error(
+            <div className="flex flex-col gap-2">
+              <span>{errorMessage}</span>
+              <a 
+                href="/admin/users" 
+                className="text-blue-600 hover:text-blue-800 underline text-sm"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Go to Admin Users page to create user →
+              </a>
+            </div>,
+            { duration: 8000 }
+          )
+        } else {
+          toast.error(errorMessage)
+        }
       }
     } catch (err) {
       console.error('Failed to add member:', err)

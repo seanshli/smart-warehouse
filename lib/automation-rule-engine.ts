@@ -339,7 +339,7 @@ async function executeAction(
         await mqttClient.connect()
       }
 
-      const { AdapterFactory } = await import('@/lib/mqtt-adapters')
+      const { AdapterFactory, TuyaAdapter, ESPAdapter, MideaAdapter } = await import('@/lib/mqtt-adapters')
       const mqttAdapter = AdapterFactory.getAdapter(device.vendor as any)
       
       let commandMessage
@@ -348,7 +348,16 @@ async function executeAction(
       } else if (action.action === 'power_off') {
         commandMessage = mqttAdapter.commands.powerOff(device.deviceId)
       } else if (action.action === 'set_temperature' && action.value !== undefined) {
-        commandMessage = mqttAdapter.commands.setTemperature(device.deviceId, action.value)
+        // setTemperature is only available on Tuya, ESP, and Midea adapters
+        if (device.vendor === 'tuya') {
+          commandMessage = TuyaAdapter.commands.setTemperature(device.deviceId, action.value)
+        } else if (device.vendor === 'esp') {
+          commandMessage = ESPAdapter.commands.setTemperature(device.deviceId, action.value)
+        } else if (device.vendor === 'midea') {
+          commandMessage = MideaAdapter.commands.setTemperature(device.deviceId, action.value)
+        } else {
+          throw new Error(`set_temperature not supported for vendor: ${device.vendor}`)
+        }
       } else {
         commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
           action: action.action,

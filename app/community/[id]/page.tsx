@@ -1050,8 +1050,25 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
         fetchWorkingGroups()
       } else {
         const errorData = await res.json().catch(() => ({}))
-        setGroupError(errorData.error || 'Failed to add member')
-        toast.error(errorData.error || 'Failed to add member')
+        const errorMessage = errorData.error || 'Failed to add member'
+        const errorDetails = errorData.details || ''
+        const errorSteps = errorData.steps || []
+        const helpUrl = errorData.helpUrl || ''
+        
+        // Build detailed error message
+        let fullErrorMessage = errorMessage
+        if (errorDetails) {
+          fullErrorMessage += `\n\n${errorDetails}`
+        }
+        if (errorSteps && errorSteps.length > 0) {
+          fullErrorMessage += `\n\n${errorSteps.join('\n')}`
+        }
+        if (helpUrl) {
+          fullErrorMessage += `\n\nGo to: ${helpUrl}`
+        }
+        
+        setGroupError(fullErrorMessage)
+        toast.error(errorMessage, { duration: 5000 })
       }
     } catch (err) {
       console.error('Error adding member:', err)
@@ -1318,7 +1335,25 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                 <>
                   {groupError && (
                     <div className="mb-3 rounded-md bg-red-50 p-3 text-sm text-red-700">
-                      {groupError}
+                      <div className="font-medium mb-2">{groupError.split('\n')[0]}</div>
+                      {groupError.includes('\n') && (
+                        <div className="mt-2 space-y-1 text-xs">
+                          {groupError.split('\n').slice(1).map((line, idx) => (
+                            line.trim() && (
+                              <div key={idx} className={line.startsWith('Go to:') ? 'mt-2 pt-2 border-t border-red-200' : ''}>
+                                {line.startsWith('1.') || line.startsWith('2.') || line.startsWith('3.') || line.startsWith('4.') || line.startsWith('5.') ? (
+                                  <div className="flex items-start">
+                                    <span className="mr-2 font-medium">{line.split('.')[0]}.</span>
+                                    <span>{line.substring(line.indexOf('.') + 1).trim()}</span>
+                                  </div>
+                                ) : (
+                                  <div>{line}</div>
+                                )}
+                              </div>
+                            )
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 

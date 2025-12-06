@@ -156,8 +156,13 @@ export async function POST(
       console.error(`User not found: ${searchEmail}`)
       return NextResponse.json({ 
         error: 'Target user not found',
-        details: `The user with email "${searchEmail}" does not exist in the system. Please ensure the user has registered an account first.`,
-        suggestion: 'The user must create an account before they can be added to a working group.'
+        details: `The user with email "${searchEmail}" does not exist in the system.`,
+        steps: [
+          '1. Ensure the user has created an account (via signup page or Admin → Users)',
+          '2. Add the user to the Community first (Community page → Members tab → Add Member)',
+          '3. Then add them to this working group'
+        ],
+        helpUrl: '/community/' + communityId + '?tab=members'
       }, { status: 404 })
     }
 
@@ -174,8 +179,15 @@ export async function POST(
     if (!isMember) {
       return NextResponse.json({ 
         error: 'User must be a member of the community first',
-        details: `The user "${targetUser.email}" exists but is not a member of this community. Please add them to the community first before adding them to a working group.`,
-        suggestion: 'Go to the Community page and add this user as a community member first.'
+        details: `The user "${targetUser.email}" exists but is not a member of this community.`,
+        steps: [
+          '1. Go to the Community page',
+          '2. Click on the "Members" tab',
+          '3. Click "Add Member" button',
+          '4. Enter the email: ' + targetUser.email,
+          '5. After adding to community, return here to add to working group'
+        ],
+        helpUrl: '/community/' + communityId + '?tab=members'
       }, { status: 400 })
     }
 

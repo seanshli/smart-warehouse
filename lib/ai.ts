@@ -11,22 +11,41 @@ let openai: OpenAI | null = null
 // 獲取 OpenAI 客戶端實例（單例模式）
 export function getOpenAI(): OpenAI {
   if (!openai) {
-    // During build time, allow missing API key (will fail gracefully at runtime if actually used)
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey || apiKey === 'your-openai-api-key') {
-      // During build, return a dummy client that will fail gracefully if used
-      // This prevents build failures when API key is not set
-      if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_PHASE === 'phase-development-build') {
-        console.warn('[Build] OPENAI_API_KEY not set - using dummy client for build')
-        return new OpenAI({
-          apiKey: 'dummy-key-for-build-only',
+    
+    // Check if API key is missing or is a placeholder
+    if (!apiKey || apiKey.trim() === '' || apiKey === 'your-openai-api-key') {
+      // During build time (Next.js build phase), allow missing API key
+      // The NEXT_PHASE env var is set during Next.js build
+      const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                          process.env.NEXT_PHASE === 'phase-development-build' ||
+                          process.env.NEXT_PHASE === 'phase-export' ||
+                          // Also check for Vercel build environment - during build, env vars might not be available
+                          (process.env.VERCEL === '1' && !apiKey)
+      
+      if (isBuildTime) {
+        // Return a dummy client during build - actual API calls will fail at runtime if key is missing
+        // Use a valid-looking dummy key format to prevent OpenAI SDK validation errors
+        console.warn('[Build] OPENAI_API_KEY not available during build - using placeholder. Ensure it is set in Vercel environment variables.')
+        openai = new OpenAI({
+          apiKey: 'sk-dummy-key-for-build-only-do-not-use-at-runtime',
         })
+        return openai
       }
+      
       // At runtime, throw error if API key is missing
-      throw new Error('OPENAI_API_KEY environment variable is not set')
+      throw new Error('OPENAI_API_KEY environment variable is not set. Please configure it in your environment variables.')
     }
+    
+    // Initialize OpenAI client with the actual API key
+    // Trim whitespace and validate format
+    const trimmedKey = apiKey.trim()
+    if (!trimmedKey.startsWith('sk-')) {
+      console.warn('[OpenAI] API key format may be invalid (should start with "sk-")')
+    }
+    
     openai = new OpenAI({
-      apiKey: apiKey,
+      apiKey: trimmedKey,
     })
   }
   return openai

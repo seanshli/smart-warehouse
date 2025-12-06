@@ -10,21 +10,32 @@ let openai: OpenAI | null = null
 // 獲取 OpenAI 客戶端實例
 function getOpenAIClient(): OpenAI {
   if (!openai) {
-    // During build time, allow missing API key (will fail gracefully at runtime if actually used)
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey || apiKey === 'your-openai-api-key') {
-      // During build, return a dummy client that will fail gracefully if used
-      if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_PHASE === 'phase-development-build') {
-        console.warn('[Build] OPENAI_API_KEY not set - using dummy client for build')
+    
+    // Check if API key is missing or is a placeholder
+    if (!apiKey || apiKey.trim() === '' || apiKey === 'your-openai-api-key') {
+      // During build time (Next.js build phase), allow missing API key
+      const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                          process.env.NEXT_PHASE === 'phase-development-build' ||
+                          process.env.NEXT_PHASE === 'phase-export' ||
+                          // Also check for Vercel build environment
+                          process.env.VERCEL === '1' && process.env.VERCEL_ENV === 'production' && !apiKey
+      
+      if (isBuildTime) {
+        // Return a dummy client during build - actual API calls will fail at runtime if key is missing
+        console.warn('[Build] OPENAI_API_KEY not configured - build will continue but API features will not work at runtime')
         return new OpenAI({
-          apiKey: 'dummy-key-for-build-only',
+          apiKey: 'dummy-key-for-build-only-do-not-use',
         })
       }
+      
       // At runtime, throw error if API key is missing
-      throw new Error('OPENAI_API_KEY environment variable is not set')
+      throw new Error('OPENAI_API_KEY environment variable is not set. Please configure it in your environment variables.')
     }
+    
+    // Initialize OpenAI client with the actual API key
     openai = new OpenAI({
-      apiKey: apiKey,
+      apiKey: apiKey.trim(),
     })
   }
   return openai

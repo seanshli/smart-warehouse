@@ -18,17 +18,22 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !(session.user as any)?.id) {
+      console.error('[Community Members API] Unauthorized - no session or user ID')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const userId = (session.user as any).id
-    const communityId = params.id
+    // Handle both Promise and direct params (Next.js 14 vs 15)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const communityId = resolvedParams.id
+    
+    console.log('[Community Members API] Request:', { userId, communityId })
 
     // Check if user is super admin
     const user = await prisma.user.findUnique({
@@ -129,8 +134,16 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error fetching community members:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error details:', {
+      errorMessage,
+      error: error instanceof Error ? error.stack : String(error)
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch community members' },
+      { 
+        error: 'Failed to fetch community members',
+        details: errorMessage
+      },
       { status: 500 }
     )
   }

@@ -28,7 +28,7 @@ import type { TuyaStartProvisioningOptions } from '@/lib/plugins/tuya'
 type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'
 
 // 支持的品牌
-type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant'
+type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant' | 'shelly' | 'aqara'
 
 interface ProvisioningModalProps {
   isOpen: boolean

@@ -60,13 +60,26 @@ export class AdapterFactory {
     }
 
     const Adapter = this.getAdapter(vendor)
-    const deviceId = Adapter.parseDeviceId(topic)
+    const parseResult = Adapter.parseDeviceId(topic)
     
-    if (!deviceId) {
+    // ShellyAdapter returns an object, others return string | null
+    if (!parseResult) {
       return null
     }
 
-    return Adapter.createDevice(deviceId, name)
+    if (vendor === 'shelly' && typeof parseResult === 'object') {
+      // Shelly adapter returns { deviceId, channel, generation }
+      const { deviceId, channel, generation } = parseResult
+      if (!deviceId) {
+        return null
+      }
+      return Adapter.createDevice(deviceId, name, channel, generation)
+    } else if (typeof parseResult === 'string') {
+      // Other adapters return string | null
+      return Adapter.createDevice(parseResult, name)
+    }
+
+    return null
   }
 }
 

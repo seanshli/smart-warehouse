@@ -11,11 +11,22 @@ let openai: OpenAI | null = null
 // 獲取 OpenAI 客戶端實例（單例模式）
 export function getOpenAI(): OpenAI {
   if (!openai) {
-    if (!process.env.OPENAI_API_KEY) {
+    // During build time, allow missing API key (will fail gracefully at runtime if actually used)
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey || apiKey === 'your-openai-api-key') {
+      // During build, return a dummy client that will fail gracefully if used
+      // This prevents build failures when API key is not set
+      if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_PHASE === 'phase-development-build') {
+        console.warn('[Build] OPENAI_API_KEY not set - using dummy client for build')
+        return new OpenAI({
+          apiKey: 'dummy-key-for-build-only',
+        })
+      }
+      // At runtime, throw error if API key is missing
       throw new Error('OPENAI_API_KEY environment variable is not set')
     }
     openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
     })
   }
   return openai

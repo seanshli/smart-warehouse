@@ -99,7 +99,7 @@ export async function POST(
       }
 
       // 使用適配器生成命令（需要從 mqtt-adapters 導入）
-      const { AdapterFactory, ShellyAdapter } = await import('@/lib/mqtt-adapters')
+      const { AdapterFactory, ShellyAdapter, TuyaAdapter, ESPAdapter, MideaAdapter } = await import('@/lib/mqtt-adapters')
       const mqttAdapter = AdapterFactory.getAdapter(device.vendor as any)
       
       // 獲取設備元資料（用於 Shelly 的 channel 等）
@@ -124,7 +124,19 @@ export async function POST(
         // For toggle, use ShellyAdapter directly since only Shelly supports it
         commandMessage = ShellyAdapter.commands.toggle(device.deviceId, channel, generation)
       } else if (action === 'set_temperature' && value !== undefined) {
-        commandMessage = mqttAdapter.commands.setTemperature(device.deviceId, value)
+        // setTemperature is only available on Tuya, ESP, and Midea adapters
+        if (device.vendor === 'tuya') {
+          commandMessage = TuyaAdapter.commands.setTemperature(device.deviceId, value)
+        } else if (device.vendor === 'esp') {
+          commandMessage = ESPAdapter.commands.setTemperature(device.deviceId, value)
+        } else if (device.vendor === 'midea') {
+          commandMessage = MideaAdapter.commands.setTemperature(device.deviceId, value)
+        } else {
+          return NextResponse.json(
+            { error: `set_temperature not supported for vendor: ${device.vendor}` },
+            { status: 400 }
+          )
+        }
       } else {
         // 通用命令：根據不同的適配器類型構建正確的命令格式
         if (device.vendor === 'esp') {

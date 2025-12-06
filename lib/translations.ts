@@ -3801,6 +3801,8 @@ const ja: Translations = {
   mqttVendorTuya: 'Tuya',
   mqttVendorESP: 'ESP',
   mqttVendorMidea: 'Midea',
+  mqttVendorShelly: 'Shelly',
+  mqttVendorAqara: 'Aqara',
   
   // Admin
   adminPanel: '管理パネル',

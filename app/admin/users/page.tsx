@@ -893,13 +893,19 @@ export default function AdminUsersPage() {
                     <div className="flex items-center space-x-1 sm:space-x-2 w-full sm:w-auto justify-end sm:justify-start">
                       <button
                         onClick={async () => {
-                          // Fetch fresh user data with all memberships
+                          // Fetch fresh user data with all memberships using dedicated endpoint
                           try {
-                            const response = await fetch(`/api/admin/users`)
+                            const response = await fetch(`/api/admin/users/${user.id}`)
                             if (response.ok) {
                               const data = await response.json()
-                              const freshUser = data.users.find((u: User) => u.id === user.id)
+                              const freshUser = data.user
                               if (freshUser) {
+                                console.log('[View User] Fetched user data:', {
+                                  id: freshUser.id,
+                                  name: freshUser.name,
+                                  buildings: freshUser.buildings?.length || 0,
+                                  communities: freshUser.communities?.length || 0
+                                })
                                 setSelectedUser(freshUser)
                                 setEditFormData({
                                   name: freshUser.name,
@@ -910,6 +916,7 @@ export default function AdminUsersPage() {
                                   isAdmin: freshUser.isAdmin
                                 })
                               } else {
+                                console.warn('[View User] User not found in response')
                                 setSelectedUser(user)
                                 setEditFormData({
                                   name: user.name,
@@ -921,6 +928,9 @@ export default function AdminUsersPage() {
                                 })
                               }
                             } else {
+                              const errorData = await response.json().catch(() => ({}))
+                              console.error('[View User] Failed to fetch user:', errorData)
+                              toast.error(errorData.error || 'Failed to fetch user details')
                               setSelectedUser(user)
                               setEditFormData({
                                 name: user.name,
@@ -932,7 +942,8 @@ export default function AdminUsersPage() {
                               })
                             }
                           } catch (err) {
-                            console.error('Error fetching fresh user data:', err)
+                            console.error('[View User] Error fetching user data:', err)
+                            toast.error('Network error while fetching user details')
                             setSelectedUser(user)
                             setEditFormData({
                               name: user.name,

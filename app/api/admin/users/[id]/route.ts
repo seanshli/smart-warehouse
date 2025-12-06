@@ -3,80 +3,37 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-// PUT /api/admin/users/[id] - Update user
-export async function PUT(
+/**
+ * GET /api/admin/users/[id] - Get a single user with all memberships
+ */
+export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // Check if user is admin
-    if (!session?.user || !(session.user as any)?.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
-    }
-
-    const currentUserId = (session.user as any).id
-    const { id: userId } = params
-    const body = await request.json()
-    const { name, email, phone, contact, language, isAdmin } = body
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, isAdmin: true }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Check if current user is super admin (required to change isAdmin status)
     const currentUser = await prisma.user.findUnique({
-      where: { id: currentUserId },
+      where: { id: (session.user as any).id },
       select: { isAdmin: true }
     })
 
-    // Only super admin can change isAdmin status
-    if (isAdmin !== undefined && isAdmin !== user.isAdmin) {
-      if (!currentUser?.isAdmin) {
-        return NextResponse.json({ error: 'Only super admin can change admin status' }, { status: 403 })
-      }
-      // Prevent removing the last super admin
-      if (isAdmin === false && user.isAdmin) {
-        const adminCount = await prisma.user.count({
-          where: { isAdmin: true }
-        })
-        if (adminCount <= 1) {
-          return NextResponse.json({ error: 'Cannot remove the last super admin' }, { status: 400 })
-        }
-      }
+    if (!currentUser?.isAdmin) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    // Check if email is being changed and if it's already taken
-    if (email && email !== user.email) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      })
-      if (existingUser) {
-        return NextResponse.json({ error: 'Email already in use' }, { status: 409 })
-      }
-    }
+    const { id: userId } = params
 
-    // Update user
-    const updatedUser = await prisma.user.update({
+    // Fetch user with all memberships
+    const user = await prisma.user.findUnique({
       where: { id: userId },
-      data: {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(phone !== undefined && { phone }),
-        ...(contact !== undefined && { contact }),
-        ...(language && { language }),
-        ...(isAdmin !== undefined && currentUser?.isAdmin ? { isAdmin } : {})
-      },
       select: {
         id: true,
         name: true,
@@ -84,67 +41,131 @@ export async function PUT(
         phone: true,
         contact: true,
         language: true,
-        isAdmin: true
+        isAdmin: true,
+        createdAt: true,
+        updatedAt: true,
       }
-    })
-
-    console.log(`[Admin] Updated user: ${updatedUser.email}`)
-
-    return NextResponse.json({ 
-      message: 'User updated successfully',
-      user: updatedUser
-    })
-  } catch (error) {
-    console.error('Error updating user:', error)
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    )
-  }
-}
-
-// DELETE /api/admin/users/[id] - Delete user
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    // Check if user is admin
-    if (!session?.user || !(session.user as any)?.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
-    }
-
-    const { id: userId } = params
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, isAdmin: true }
     })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Prevent admin from deleting themselves
-    if (user.id === (session.user as any)?.id) {
-      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 })
+    // Fetch all memberships in parallel
+    const [
+      householdMemberships,
+      communityMemberships,
+      buildingMemberships,
+      workingGroupMembers
+    ] = await Promise.all([
+      prisma.householdMember.findMany({
+        where: { userId },
+        include: {
+          household: {
+            include: {
+              building: {
+                select: {
+                  id: true,
+                  name: true,
+                  community: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }).catch(() => []),
+      prisma.communityMember.findMany({
+        where: { userId },
+        include: {
+          community: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }).catch(() => []),
+      prisma.buildingMember.findMany({
+        where: { userId },
+        include: {
+          building: {
+            include: {
+              community: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      }).catch(() => []),
+      prisma.workingGroupMember.findMany({
+        where: { userId },
+        include: {
+          workingGroup: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              communityId: true
+            }
+          }
+        }
+      }).catch(() => [])
+    ])
+
+    // Transform the response to match the User interface
+    const transformedUser = {
+      ...user,
+      households: householdMemberships.map(membership => ({
+        id: membership.household.id,
+        name: membership.household.name,
+        role: membership.role,
+        joinedAt: membership.joinedAt.toISOString(),
+        building: membership.household.building ? {
+          id: membership.household.building.id,
+          name: membership.household.building.name,
+          community: membership.household.building.community
+        } : undefined
+      })),
+      communities: communityMemberships.map(membership => ({
+        membershipId: membership.id,
+        id: membership.community.id,
+        name: membership.community.name,
+        role: membership.role || 'MEMBER',
+        memberClass: membership.memberClass || 'household',
+        joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()
+      })),
+      buildings: buildingMemberships.map(membership => ({
+        membershipId: membership.id,
+        id: membership.building.id,
+        name: membership.building.name,
+        role: membership.role || 'MEMBER',
+        memberClass: membership.memberClass || 'household',
+        communityId: membership.building.communityId,
+        community: membership.building.community,
+        joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()
+      })),
+      workingGroups: workingGroupMembers.map(membership => ({
+        id: membership.workingGroup.id,
+        name: membership.workingGroup.name,
+        type: membership.workingGroup.type,
+        role: membership.role,
+        assignedAt: membership.assignedAt?.toISOString() || new Date().toISOString()
+      }))
     }
 
-    // Delete user (cascade will handle related records)
-    await prisma.user.delete({
-      where: { id: userId }
-    })
-
-    console.log(`[Admin] Deleted user: ${user.email}`)
-
-    return NextResponse.json({ message: 'User deleted successfully' })
+    return NextResponse.json({ user: transformedUser })
   } catch (error) {
-    console.error('Error deleting user:', error)
+    console.error('Error fetching user:', error)
     return NextResponse.json(
-      { error: 'Failed to delete user' },
+      { error: 'Failed to fetch user', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

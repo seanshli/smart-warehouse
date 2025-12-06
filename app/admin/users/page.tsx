@@ -193,10 +193,10 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-2 sm:p-4">
         <div className="fixed inset-0 bg-black opacity-30" onClick={onClose}></div>
         
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-full sm:max-w-md w-full p-4 sm:p-6 mx-2 sm:mx-4">
           <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
             Create New User
           </h3>
@@ -734,26 +734,26 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Manage all users in the system
           </p>
         </div>
 
         {/* Filter */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Filter Users
           </label>
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 items-stretch sm:items-end">
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="all">All Users</option>
               <option value="community">By Community</option>
@@ -765,7 +765,7 @@ export default function AdminUsersPage() {
               <select
                 value={selectedCommunityId}
                 onChange={(e) => setSelectedCommunityId(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">Select Community</option>
                 {communities.map((community) => (
@@ -780,7 +780,7 @@ export default function AdminUsersPage() {
               <select
                 value={selectedBuildingId}
                 onChange={(e) => setSelectedBuildingId(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">Select Building</option>
                 {buildings.map((building) => (
@@ -794,7 +794,7 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Controls */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4">
           <div className="flex-1">
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -808,11 +808,11 @@ export default function AdminUsersPage() {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="all">All Users</option>
               <option value="admin">Admins Only</option>
@@ -821,7 +821,7 @@ export default function AdminUsersPage() {
             
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
             >
               <UserPlusIcon className="h-5 w-5 mr-2" />
               Add User
@@ -838,10 +838,10 @@ export default function AdminUsersPage() {
           ) : (
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.map((user) => (
-                <li key={user.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3">
+                <li key={user.id} className="px-2 sm:px-4 md:px-6 py-3 sm:py-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                    <div className="flex-1 min-w-0 w-full sm:w-auto">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
                         <div className="flex-shrink-0">
                           <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
                             <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
@@ -863,7 +863,7 @@ export default function AdminUsersPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                             {user.email}
                           </p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-gray-400">
                             {user.phone && <span>📞 {user.phone}</span>}
                             <span>🏠 {user.households.length} household(s)</span>
                             <span>📅 Joined {new Date(user.createdAt).toLocaleDateString()}</span>
@@ -872,7 +872,7 @@ export default function AdminUsersPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 sm:space-x-2 w-full sm:w-auto justify-end sm:justify-start">
                       <button
                         onClick={async () => {
                           // Fetch fresh user data with all memberships
@@ -960,10 +960,10 @@ export default function AdminUsersPage() {
         {/* User Details Modal */}
         {showUserDetails && selectedUser && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="flex min-h-screen items-center justify-center p-2 sm:p-4">
               <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowUserDetails(false)}></div>
               
-              <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
+              <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-full sm:max-w-lg md:max-w-2xl w-full p-4 sm:p-6 mx-2 sm:mx-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     User Details: {selectedUser.name}
@@ -980,7 +980,7 @@ export default function AdminUsersPage() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
                       {isEditing ? (

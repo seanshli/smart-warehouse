@@ -98,6 +98,7 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
           BUILDING: prev.BUILDING.map(a => a.id === announcementId ? { ...a, isRead: true } : a)
         }))
         setUnreadCount(prev => Math.max(0, prev - 1))
+        // Visual feedback: blue dot will disappear, checkmark will appear
       }
     } catch (err) {
       console.error('Failed to mark announcement as read:', err)
@@ -265,10 +266,11 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
                 {displayedAnnouncements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer ${
                       !announcement.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                     }`}
                     onClick={() => {
+                      // Always mark as read when clicking on announcement
                       if (!announcement.isRead) {
                         markAsRead(announcement.id)
                       }
@@ -312,10 +314,12 @@ export default function AnnouncementBanner({ householdId }: AnnouncementBannerPr
                           </div>
                           <button
                             onClick={(e) => {
-                              e.stopPropagation()
+                              e.stopPropagation() // Prevent marking as read when clicking delete button
                               setDismissedIds(prev => new Set([...Array.from(prev), announcement.id]))
+                              // Note: This dismisses/hides the announcement from view, but doesn't delete it from database
                             }}
-                            className="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 ml-2"
+                            className="flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 ml-2 transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                            title="Dismiss announcement"
                           >
                             <XMarkIcon className="h-4 w-4" />
                           </button>

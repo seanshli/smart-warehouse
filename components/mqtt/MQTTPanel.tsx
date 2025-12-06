@@ -25,7 +25,7 @@ interface MQTTDevice {
   id: string // 設備 ID
   deviceId: string // 設備 ID
   name: string // 設備名稱
-  vendor: 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant' // 供應商
+  vendor: 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant' | 'shelly' | 'aqara' // 供應商
   connectionType?: 'mqtt' | 'restful' | 'websocket' // 連接類型
   topic?: string // MQTT 主題（MQTT 設備）
   commandTopic?: string // 命令主題（MQTT 設備）
@@ -59,7 +59,7 @@ export default function MQTTPanel() {
   const [activeTab, setActiveTab] = useState<'devices' | 'scenes' | 'automation'>('devices') // 當前標籤
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
-  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant' | undefined>(undefined) // 配網品牌
+  const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant' | 'shelly' | 'aqara' | undefined>(undefined) // 配網品牌
   const [isDiscovering, setIsDiscovering] = useState(false) // 是否正在掃描設備
   const [discoveredDevices, setDiscoveredDevices] = useState<any[]>([]) // 發現的設備列表
   const [bridgeStatus, setBridgeStatus] = useState<'running' | 'stopped' | 'unknown'>('unknown') // Bridge 狀態
@@ -67,7 +67,7 @@ export default function MQTTPanel() {
   const [newDevice, setNewDevice] = useState({
     deviceId: '',
     name: '',
-    vendor: 'tuya' as 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant',
+    vendor: 'tuya' as 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant' | 'shelly' | 'aqara',
     roomId: '',
     baseUrl: '', // RESTful API 基礎 URL
     apiKey: '', // API 金鑰
@@ -199,6 +199,10 @@ export default function MQTTPanel() {
         return t('mqttVendorESP')
       case 'midea':
         return t('mqttVendorMidea')
+      case 'shelly':
+        return t('mqttVendorShelly')
+      case 'aqara':
+        return t('mqttVendorAqara')
       case 'philips':
         return 'Philips Hue'
       case 'panasonic':
@@ -211,7 +215,7 @@ export default function MQTTPanel() {
   }
 
   // 掃描 MQTT Broker 發現設備
-  const handleDiscoverDevices = async (vendor?: 'tuya' | 'midea' | 'esp' | 'all') => {
+  const handleDiscoverDevices = async (vendor?: 'tuya' | 'midea' | 'esp' | 'shelly' | 'aqara' | 'all') => {
     setIsDiscovering(true)
     setDiscoveredDevices([])
     
@@ -384,7 +388,7 @@ export default function MQTTPanel() {
       <div>
         <h2 className="text-xl font-semibold">MQTT 設備管理</h2>
         <p className="text-sm text-gray-500">
-          MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')} • 
+          MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')}, {t('mqttVendorShelly')}, {t('mqttVendorAqara')} • 
           RESTful: Philips Hue, Panasonic, Home Assistant
         </p>
       </div>
@@ -545,7 +549,7 @@ export default function MQTTPanel() {
                 type="text"
                 value={newDevice.deviceId}
                 onChange={(e) => setNewDevice({ ...newDevice, deviceId: e.target.value })}
-                placeholder={newDevice.vendor === 'philips' ? "e.g., 1 (Hue light ID)" : newDevice.vendor === 'panasonic' ? "e.g., ac_001" : newDevice.vendor === 'homeassistant' ? "e.g., light.living_room" : "e.g., tuya_device_001"}
+                placeholder={newDevice.vendor === 'philips' ? "e.g., 1 (Hue light ID)" : newDevice.vendor === 'panasonic' ? "e.g., ac_001" : newDevice.vendor === 'homeassistant' ? "e.g., light.living_room" : newDevice.vendor === 'shelly' ? "e.g., shelly1-1234 or shellyplus1-5678" : newDevice.vendor === 'aqara' ? "e.g., door_sensor (Zigbee2MQTT friendly name)" : "e.g., tuya_device_001"}
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
@@ -570,6 +574,8 @@ export default function MQTTPanel() {
                   <option value="tuya">{t('mqttVendorTuya')}</option>
                   <option value="esp">{t('mqttVendorESP')}</option>
                   <option value="midea">{t('mqttVendorMidea')}</option>
+                  <option value="shelly">{t('mqttVendorShelly')}</option>
+                  <option value="aqara">{t('mqttVendorAqara')}</option>
                 </optgroup>
                 <optgroup label="RESTful API">
                   <option value="philips">Philips Hue</option>

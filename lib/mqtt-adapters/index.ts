@@ -4,11 +4,15 @@
 export { TuyaAdapter, type TuyaDeviceState, type TuyaControlCommand } from './tuya-adapter'
 export { ESPAdapter, type ESPDeviceState, type ESPControlCommand } from './esp-adapter'
 export { MideaAdapter, type MideaDeviceState, type MideaControlCommand } from './midea-adapter'
+export { ShellyAdapter, type ShellyDeviceState, type ShellyControlCommand } from './shelly-adapter'
+export { AqaraAdapter, type AqaraDeviceState, type AqaraControlCommand } from './aqara-adapter'
 
 import { DeviceVendor, IoTDevice } from '../mqtt-client'
 import { TuyaAdapter } from './tuya-adapter'
 import { ESPAdapter } from './esp-adapter'
 import { MideaAdapter } from './midea-adapter'
+import { ShellyAdapter } from './shelly-adapter'
+import { AqaraAdapter } from './aqara-adapter'
 
 /**
  * 適配器工廠
@@ -23,6 +27,10 @@ export class AdapterFactory {
         return ESPAdapter
       case 'midea':
         return MideaAdapter
+      case 'shelly':
+        return ShellyAdapter
+      case 'aqara':
+        return AqaraAdapter
       default:
         throw new Error(`Unsupported vendor: ${vendor}`)
     }
@@ -36,6 +44,10 @@ export class AdapterFactory {
       return 'esp'
     } else if (topic.startsWith('midea/')) {
       return 'midea'
+    } else if (topic.startsWith('shellies/') || topic.match(/^[^/]+\/(?:status|command)\/switch:/)) {
+      return 'shelly'
+    } else if (topic.startsWith('zigbee2mqtt/')) {
+      return 'aqara'
     }
     return null
   }

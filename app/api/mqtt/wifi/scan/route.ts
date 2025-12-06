@@ -13,9 +13,9 @@ async function getWifiModule() {
   
   try {
     // 只在有網卡環境中載入，使用動態導入避免阻塞
-    const module = await import('node-wifi')
+    const wifiLib = await import('node-wifi')
     // node-wifi 可能是 CommonJS 或 ES module，需要處理兩種情況
-    wifiModule = (module as any).default || module
+    wifiModule = (wifiLib as any).default || wifiLib
     return wifiModule
   } catch (error) {
     console.error('Failed to load node-wifi:', error)

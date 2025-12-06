@@ -102,11 +102,26 @@ export async function POST(
       const { AdapterFactory } = await import('@/lib/mqtt-adapters')
       const mqttAdapter = AdapterFactory.getAdapter(device.vendor as any)
       
+      // 獲取設備元資料（用於 Shelly 的 channel 等）
+      const metadata = (device.metadata as any) || {}
+      const channel = metadata.channel ?? 0
+      const generation = metadata.generation // 'gen1' or 'gen2' for Shelly
+      
       let commandMessage
       if (action === 'power_on') {
-        commandMessage = mqttAdapter.commands.powerOn(device.deviceId)
+        if (device.vendor === 'shelly') {
+          commandMessage = mqttAdapter.commands.powerOn(device.deviceId, channel, generation)
+        } else {
+          commandMessage = mqttAdapter.commands.powerOn(device.deviceId)
+        }
       } else if (action === 'power_off') {
-        commandMessage = mqttAdapter.commands.powerOff(device.deviceId)
+        if (device.vendor === 'shelly') {
+          commandMessage = mqttAdapter.commands.powerOff(device.deviceId, channel, generation)
+        } else {
+          commandMessage = mqttAdapter.commands.powerOff(device.deviceId)
+        }
+      } else if (action === 'toggle' && device.vendor === 'shelly') {
+        commandMessage = mqttAdapter.commands.toggle(device.deviceId, channel, generation)
       } else if (action === 'set_temperature' && value !== undefined) {
         commandMessage = mqttAdapter.commands.setTemperature(device.deviceId, value)
       } else {
@@ -117,6 +132,13 @@ export async function POST(
             command: action,
             value
           } as any)
+        } else if (device.vendor === 'shelly') {
+          // Shelly 適配器使用 action 字段和 channel
+          commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+            action,
+            channel,
+            generation
+          } as any, generation)
         } else {
           // Tuya 和 Midea 適配器使用 action 字段
           commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {

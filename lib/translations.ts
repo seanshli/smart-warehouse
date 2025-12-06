@@ -92,6 +92,8 @@ export interface Translations {
   mqttVendorTuya: string // Tuya
   mqttVendorESP: string // ESP
   mqttVendorMidea: string // Midea
+  mqttVendorShelly: string // Shelly
+  mqttVendorAqara: string // Aqara
   householdSettings: string // 家庭設定
   
   // Facility Reservations
@@ -1049,6 +1051,8 @@ const en: Translations = {
   mqttVendorTuya: 'Tuya',
   mqttVendorESP: 'ESP',
   mqttVendorMidea: 'Midea',
+  mqttVendorShelly: 'Shelly',
+  mqttVendorAqara: 'Aqara',
   
   // Admin
   adminPanel: 'Admin Panel',
@@ -1979,6 +1983,8 @@ const zhTW: Translations = {
   mqttVendorTuya: 'Tuya（塗鴉）',
   mqttVendorESP: 'ESP',
   mqttVendorMidea: 'Midea（美的）',
+  mqttVendorShelly: 'Shelly',
+  mqttVendorAqara: 'Aqara（綠米）',
   
   // Admin
   adminPanel: '管理面板',
@@ -2888,6 +2894,8 @@ const zh: Translations = {
   mqttVendorTuya: 'Tuya（涂鸦）',
   mqttVendorESP: 'ESP',
   mqttVendorMidea: 'Midea（美的）',
+  mqttVendorShelly: 'Shelly',
+  mqttVendorAqara: 'Aqara（绿米）',
   
   // Admin
   adminPanel: '管理面板',

@@ -969,15 +969,35 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
   const [groupLoading, setGroupLoading] = useState(false)
   const [groupError, setGroupError] = useState<string | null>(null)
   const [addEmail, setAddEmail] = useState('')
+  const [addUserId, setAddUserId] = useState<string>('')
   const [addRole, setAddRole] = useState<'LEADER' | 'MEMBER'>('MEMBER')
   const [addingMember, setAddingMember] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [newGroup, setNewGroup] = useState({ name: '', type: 'MANAGEMENT', description: '' })
   const [creating, setCreating] = useState(false)
+  const [communityMembers, setCommunityMembers] = useState<any[]>([])
+  const [loadingMembers, setLoadingMembers] = useState(false)
+  const [addMethod, setAddMethod] = useState<'email' | 'select'>('select')
 
   useEffect(() => {
     fetchWorkingGroups()
+    fetchCommunityMembers()
   }, [communityId])
+
+  const fetchCommunityMembers = async () => {
+    try {
+      setLoadingMembers(true)
+      const response = await fetch(`/api/community/${communityId}/members`)
+      if (response.ok) {
+        const data = await response.json()
+        setCommunityMembers(data.members || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch community members:', err)
+    } finally {
+      setLoadingMembers(false)
+    }
+  }
 
   const fetchWorkingGroups = async () => {
     try {
@@ -1024,30 +1044,49 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
     setSelectedGroup(null)
     setGroupMembers([])
     setAddEmail('')
+    setAddUserId('')
     setAddRole('MEMBER')
     setGroupError(null)
+    setAddMethod('select')
   }
 
+  // Get available members (community members not already in the working group)
+  const availableMembers = communityMembers.filter(
+    (member) => !groupMembers.some((gm) => gm.user?.id === member.user?.id)
+  )
+
   const handleAddMember = async () => {
-    if (!selectedGroup || !addEmail.trim()) return
+    if (!selectedGroup) return
+    if (addMethod === 'email' && !addEmail.trim()) return
+    if (addMethod === 'select' && !addUserId) return
+    
     try {
       setAddingMember(true)
       setGroupError(null)
+      const body: any = { role: addRole }
+      if (addMethod === 'email') {
+        body.targetUserEmail = addEmail.trim()
+      } else {
+        body.targetUserId = addUserId
+      }
+      
       const res = await fetch(
         `/api/community/${communityId}/working-groups/${selectedGroup.id}/members`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUserEmail: addEmail.trim(), role: addRole }),
+          body: JSON.stringify(body),
         }
       )
       if (res.ok) {
         const data = await res.json()
         setGroupMembers(prev => [...prev, data])
         setAddEmail('')
+        setAddUserId('')
         setAddRole('MEMBER')
         toast.success('Member added')
         fetchWorkingGroups()
+        fetchCommunityMembers() // Refresh community members list
       } else {
         const errorData = await res.json().catch(() => ({}))
         const errorMessage = errorData.error || 'Failed to add member'
@@ -1405,37 +1444,120 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
 
                   <div className="pt-3 border-t border-gray-100">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">
-                      Add member (by email)
+                      Add Member
                     </h4>
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <input
-                        type="email"
-                        value={addEmail}
-                        onChange={e => setAddEmail(e.target.value)}
-                        placeholder="user@example.com"
-                        className="flex-1 min-w-[180px] border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                      <select
-                        value={addRole}
-                        onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
-                        className="border border-gray-300 rounded-md px-2 py-2 text-sm"
-                      >
-                        <option value="MEMBER">Member</option>
-                        <option value="LEADER">Leader</option>
-                      </select>
+                    
+                    {/* Method selector */}
+                    <div className="mb-3 flex gap-2">
                       <button
                         type="button"
-                        onClick={handleAddMember}
-                        disabled={addingMember || !addEmail.trim()}
-                        className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                        onClick={() => {
+                          setAddMethod('select')
+                          setAddEmail('')
+                        }}
+                        className={`px-3 py-1 text-xs font-medium rounded-md ${
+                          addMethod === 'select'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
                       >
-                        {addingMember ? 'Adding...' : 'Add'}
+                        Select from Members
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddMethod('email')
+                          setAddUserId('')
+                        }}
+                        className={`px-3 py-1 text-xs font-medium rounded-md ${
+                          addMethod === 'email'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Enter Email
                       </button>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Make sure the user has already joined this community (in the Members tab)
-                      before assigning them to a working group.
-                    </p>
+
+                    {addMethod === 'select' ? (
+                      <div className="space-y-2">
+                        {loadingMembers ? (
+                          <div className="text-sm text-gray-500">Loading members...</div>
+                        ) : availableMembers.length === 0 ? (
+                          <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded">
+                            {communityMembers.length === 0
+                              ? 'No community members available. Add members in the Members tab first.'
+                              : 'All community members are already in this working group.'}
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              value={addUserId}
+                              onChange={e => setAddUserId(e.target.value)}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                            >
+                              <option value="">Select a member...</option>
+                              {availableMembers.map((member) => (
+                                <option key={member.user?.id} value={member.user?.id}>
+                                  {member.user?.name || member.user?.email} ({member.user?.email})
+                                  {member.role && ` - ${member.role}`}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="flex gap-2 items-center">
+                              <select
+                                value={addRole}
+                                onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
+                                className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                              >
+                                <option value="MEMBER">Member</option>
+                                <option value="LEADER">Leader</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={handleAddMember}
+                                disabled={addingMember || !addUserId}
+                                className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                              >
+                                {addingMember ? 'Adding...' : 'Add'}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <input
+                            type="email"
+                            value={addEmail}
+                            onChange={e => setAddEmail(e.target.value)}
+                            placeholder="user@example.com"
+                            className="flex-1 min-w-[180px] border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                          />
+                          <select
+                            value={addRole}
+                            onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
+                            className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                          >
+                            <option value="MEMBER">Member</option>
+                            <option value="LEADER">Leader</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={handleAddMember}
+                            disabled={addingMember || !addEmail.trim()}
+                            className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                          >
+                            {addingMember ? 'Adding...' : 'Add'}
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Make sure the user has already joined this community (in the Members tab)
+                          before assigning them to a working group.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

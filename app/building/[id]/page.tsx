@@ -150,18 +150,28 @@ export default function BuildingDetailPage() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
-            <Link href={`/community/${building.community.id}`} className="hover:text-gray-700">
+            <Link href={`/community/${building.community.id}`} className="hover:text-gray-700 flex items-center">
+              <ArrowLeftIcon className="h-4 w-4 mr-1" />
               {building.community.name}
             </Link>
             <span>/</span>
             <span>{t('adminBuildings')}</span>
           </div>
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{building.name}</h1>
-              {building.description && (
-                <p className="mt-2 text-sm text-gray-600">{building.description}</p>
-              )}
+            <div className="flex items-center space-x-3">
+              <Link
+                href={`/community/${building.community.id}`}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                title="Back to Community"
+              >
+                <ArrowLeftIcon className="h-6 w-6" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">{building.name}</h1>
+                {building.description && (
+                  <p className="mt-2 text-sm text-gray-600">{building.description}</p>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               {/* Language Selection */}
@@ -223,7 +233,9 @@ export default function BuildingDetailPage() {
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
           {activeTab === 'packages' && <PackageManager buildingId={buildingId} />}
           {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} />}
-          {activeTab === 'working-groups' && buildingId && <WorkingGroupsTab buildingId={buildingId} />}
+          {activeTab === 'working-groups' && buildingId && building && (
+            <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} />
+          )}
           {activeTab === 'announcements' && buildingId && (
             <AnnouncementsTab 
               buildingId={buildingId} 
@@ -2114,7 +2126,7 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
 }
 
 
-function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
+function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; communityId: string }) {
   const { t } = useLanguage()
   const [workingGroups, setWorkingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -2125,10 +2137,34 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
   const [groupError, setGroupError] = useState<string | null>(null)
   const [addEmail, setAddEmail] = useState('')
   const [addingMember, setAddingMember] = useState(false)
+  const [communityMembers, setCommunityMembers] = useState<any[]>([]) // Community members for dropdown
+  const [addMethod, setAddMethod] = useState<'select' | 'email'>('select') // Add method: select from members or email
+  const [selectedCommunityMemberId, setSelectedCommunityMemberId] = useState<string | undefined>(undefined)
+  const [addRole, setAddRole] = useState<'LEADER' | 'MEMBER'>('MEMBER')
+  const [loadingMembers, setLoadingMembers] = useState(false)
 
   useEffect(() => {
     fetchWorkingGroups()
-  }, [buildingId])
+    fetchCommunityMembers()
+  }, [buildingId, communityId])
+
+  const fetchCommunityMembers = async () => {
+    if (!communityId) return
+    try {
+      setLoadingMembers(true)
+      const response = await fetch(`/api/community/${communityId}/members`)
+      if (response.ok) {
+        const data = await response.json()
+        setCommunityMembers(data.members || [])
+      } else {
+        console.error('Failed to load community members')
+      }
+    } catch (err) {
+      console.error('Error fetching community members:', err)
+    } finally {
+      setLoadingMembers(false)
+    }
+  }
 
   const fetchWorkingGroups = async () => {
     try {
@@ -2182,10 +2218,31 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
     setGroupMembers([])
     setAddEmail('')
     setGroupError(null)
+    setSelectedCommunityMemberId(undefined)
+    setAddMethod('select')
+    setAddRole('MEMBER')
   }
 
   const handleAddMember = async () => {
-    if (!selectedGroup || !addEmail.trim()) return
+    if (!selectedGroup) return
+    
+    let targetUserId: string | undefined
+    let targetUserEmail: string | undefined
+
+    if (addMethod === 'select') {
+      if (!selectedCommunityMemberId) {
+        toast.error('Please select a member')
+        return
+      }
+      targetUserId = selectedCommunityMemberId
+    } else { // addMethod === 'email'
+      if (!addEmail.trim()) {
+        toast.error('Please enter an email address')
+        return
+      }
+      targetUserEmail = addEmail.trim()
+    }
+
     if (!selectedGroup.communityId) {
       toast.error('Missing community information for this group')
       return
@@ -2194,12 +2251,20 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
     try {
       setAddingMember(true)
       setGroupError(null)
+      
+      const body: any = { role: addRole }
+      if (targetUserId) {
+        body.targetUserId = targetUserId
+      } else {
+        body.targetUserEmail = targetUserEmail
+      }
+
       const response = await fetch(
         `/api/community/${selectedGroup.communityId}/working-groups/${selectedGroup.id}/members`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUserEmail: addEmail.trim(), role: 'MEMBER' }),
+          body: JSON.stringify(body),
         }
       )
 
@@ -2207,6 +2272,7 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
         const newMember = await response.json()
         setGroupMembers(prev => [...prev, newMember])
         setAddEmail('')
+        setSelectedCommunityMemberId(undefined)
         toast.success('Member added to team')
         fetchWorkingGroups()
       } else {
@@ -2432,28 +2498,88 @@ function WorkingGroupsTab({ buildingId }: { buildingId: string }) {
 
                   <div className="pt-3 border-t border-gray-100">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">
-                      Add Member by Email
+                      Add member to working group
                     </h4>
-                    <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
-                      <input
-                        type="email"
-                        value={addEmail}
-                        onChange={e => setAddEmail(e.target.value)}
-                        placeholder="user@example.com"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                      />
+                    <div className="flex gap-2 mb-3">
                       <button
-                        type="button"
-                        onClick={handleAddMember}
-                        disabled={addingMember || !addEmail.trim()}
-                        className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                        onClick={() => setAddMethod('select')}
+                        className={`px-3 py-1 text-sm rounded-md ${addMethod === 'select' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                       >
-                        {addingMember ? 'Adding...' : 'Add Member'}
+                        Select from Members
+                      </button>
+                      <button
+                        onClick={() => setAddMethod('email')}
+                        className={`px-3 py-1 text-sm rounded-md ${addMethod === 'email' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                      >
+                        Add by Email
                       </button>
                     </div>
+
+                    {addMethod === 'select' && (
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <select
+                          value={selectedCommunityMemberId || ''}
+                          onChange={e => setSelectedCommunityMemberId(e.target.value)}
+                          className="flex-1 min-w-[180px] border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                        >
+                          <option value="">Select a member</option>
+                          {communityMembers
+                            .filter(cm => !groupMembers.some(gm => gm.user.id === cm.user.id)) // Filter out already added members
+                            .map(cm => (
+                              <option key={cm.user.id} value={cm.user.id}>
+                                {cm.user.name || cm.user.email} ({cm.role})
+                              </option>
+                            ))}
+                        </select>
+                        <select
+                          value={addRole}
+                          onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
+                          className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                        >
+                          <option value="MEMBER">Member</option>
+                          <option value="LEADER">Leader</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleAddMember}
+                          disabled={addingMember || !selectedCommunityMemberId}
+                          className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          {addingMember ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    )}
+
+                    {addMethod === 'email' && (
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <input
+                          type="email"
+                          value={addEmail}
+                          onChange={e => setAddEmail(e.target.value)}
+                          placeholder="user@example.com"
+                          className="flex-1 min-w-[180px] border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                        <select
+                          value={addRole}
+                          onChange={e => setAddRole(e.target.value as 'LEADER' | 'MEMBER')}
+                          className="border border-gray-300 rounded-md px-2 py-2 text-sm"
+                        >
+                          <option value="MEMBER">Member</option>
+                          <option value="LEADER">Leader</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleAddMember}
+                          disabled={addingMember || !addEmail.trim()}
+                          className="px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          {addingMember ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    )}
                     <p className="mt-1 text-xs text-gray-500">
-                      The user must already be a member of this community (via the
-                      Community page) before they can join the team.
+                      Make sure the user has already joined this community (in the Members tab)
+                      before assigning them to a working group.
                     </p>
                   </div>
                 </>

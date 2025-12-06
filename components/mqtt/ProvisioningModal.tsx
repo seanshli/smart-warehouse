@@ -1492,8 +1492,12 @@ export default function ProvisioningModal({
                     </p>
                   </div>
                 )}
+              </>
+            )}
 
-                {/* Shelly 設備添加說明 */}
+            {/* Shelly 設備添加說明 */}
+            {(vendor === 'shelly' || vendor === 'aqara') && (
+              <>
                 {vendor === 'shelly' && (
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h3 className="text-sm font-semibold text-blue-900 mb-2">Shelly 設備添加說明</h3>
@@ -1557,36 +1561,36 @@ export default function ProvisioningModal({
                     </div>
                   </div>
                 )}
-
-                {/* 設備發現按鈕 */}
-                <div>
-                  <button
-                    onClick={handleDiscoverDevices}
-                    disabled={isDiscovering || ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey))}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    <MagnifyingGlassIcon className="h-5 w-5" />
-                    <span>{isDiscovering ? '發現中...' : '發現設備'}</span>
-                  </button>
-                </div>
-
-                {/* 發現的設備列表 */}
-                {discoveredDevices.length > 0 && (
-                  <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
-                    <p className="text-sm font-medium text-gray-700 mb-2">發現的設備：</p>
-                    {discoveredDevices.map((device, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSelectDevice(device)}
-                        className="w-full text-left p-2 mb-1 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200"
-                      >
-                        <p className="font-medium text-sm">{device.deviceName}</p>
-                        <p className="text-xs text-gray-500">ID: {device.deviceId}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </>
+            )}
+
+            {/* 設備發現按鈕 */}
+            <div>
+              <button
+                onClick={handleDiscoverDevices}
+                disabled={isDiscovering || ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey))}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                <MagnifyingGlassIcon className="h-5 w-5" />
+                <span>{isDiscovering ? '發現中...' : '發現設備'}</span>
+              </button>
+            </div>
+
+            {/* 發現的設備列表 */}
+            {discoveredDevices.length > 0 && (
+              <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto mt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">發現的設備：</p>
+                {discoveredDevices.map((device, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSelectDevice(device)}
+                    className="w-full text-left p-2 mb-1 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200"
+                  >
+                    <p className="font-medium text-sm">{device.deviceName}</p>
+                    <p className="text-xs text-gray-500">ID: {device.deviceId}</p>
+                  </button>
+                ))}
+              </div>
             )}
 
             {/* 操作按鈕 */}

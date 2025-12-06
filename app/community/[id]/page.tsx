@@ -630,18 +630,23 @@ function MembersTab({ communityId }: { communityId: string }) {
   const fetchMembers = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/community/${communityId}/members`)
+      const response = await fetch(`/api/community/${communityId}/members`, {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
         setMembers(data.members || [])
         setAssignableRoles(data.assignableRoles || ['MEMBER', 'VIEWER'])
       } else {
         const errorData = await response.json().catch(() => ({}))
-        toast.error(errorData.error || 'Failed to load members')
+        const errorMessage = errorData.error || `Failed to fetch community members (${response.status})`
+        console.error('Failed to fetch community members:', errorMessage, errorData)
+        toast.error(errorMessage)
       }
     } catch (err) {
       console.error('Failed to fetch members:', err)
-      toast.error('Failed to load members')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch community members'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }

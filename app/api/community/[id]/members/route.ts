@@ -38,13 +38,19 @@ export async function GET(
 
     // Super admins can view all members, otherwise check permission
     if (!user?.isAdmin) {
-      if (!(await checkCommunityPermission(userId, communityId, 'canViewMembers'))) {
-        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-      }
-
+      // Check if user is a member first
       const userRole = await getUserCommunityRole(userId, communityId)
       if (!userRole) {
-        return NextResponse.json({ error: 'User is not a member' }, { status: 403 })
+        return NextResponse.json({ 
+          error: 'You are not a member of this community. Please join the community first.' 
+        }, { status: 403 })
+      }
+
+      // Then check if user has permission to view members
+      if (!(await checkCommunityPermission(userId, communityId, 'canViewMembers'))) {
+        return NextResponse.json({ 
+          error: 'Insufficient permissions. You do not have permission to view community members.' 
+        }, { status: 403 })
       }
     }
 

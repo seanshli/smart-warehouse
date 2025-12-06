@@ -69,10 +69,24 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!appId || !appKey || !mqttBrokerUrl) {
+      const missingVars = []
+      if (!appId) missingVars.push('MIDEA_CLIENT_ID')
+      if (!appKey) missingVars.push('MIDEA_CLIENT_SECRET')
+      if (!mqttBrokerUrl) missingVars.push('MQTT_BROKER_URL')
+      
       return NextResponse.json(
         {
           error: 'Missing required configuration',
-          message: 'appId, appKey, and mqttBrokerUrl are required',
+          message: `Missing required environment variables: ${missingVars.join(', ')}`,
+          details: 'The Midea MQTT Bridge requires Midea Cloud API credentials and MQTT broker configuration.',
+          required: {
+            MIDEA_CLIENT_ID: 'Midea Cloud API Client ID (from Midea IoT Platform)',
+            MIDEA_CLIENT_SECRET: 'Midea Cloud API Client Secret',
+            MQTT_BROKER_URL: 'MQTT Broker URL (e.g., mqtt://broker.example.com:1883 or mqtts://broker.example.com:8883)',
+            MQTT_USERNAME: 'MQTT Username (optional)',
+            MQTT_PASSWORD: 'MQTT Password (optional)',
+          },
+          helpUrl: '/docs/MIDEA_MQTT_BRIDGE_GUIDE.md',
         },
         { status: 400 }
       )

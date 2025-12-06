@@ -324,11 +324,28 @@ export default function MQTTPanel() {
           handleDiscoverDevices('midea')
         }, 3000)
       } else {
-        toast.error(data.error || '啟動 Bridge 失敗')
+        const errorMessage = data.error || '啟動 Bridge 失敗'
+        const errorDetails = data.message || ''
+        const required = data.required || {}
+        
+        // Show detailed error message
+        let fullMessage = errorMessage
+        if (errorDetails) {
+          fullMessage += `\n\n${errorDetails}`
+        }
+        if (Object.keys(required).length > 0) {
+          fullMessage += '\n\n需要設置的環境變數:'
+          Object.entries(required).forEach(([key, desc]) => {
+            fullMessage += `\n- ${key}: ${desc}`
+          })
+        }
+        
+        toast.error(errorMessage, { duration: 6000 })
+        console.error('Bridge error details:', { error: data.error, message: data.message, required: data.required })
       }
     } catch (error: any) {
       console.error('Error starting bridge:', error)
-      toast.error(error.message || '啟動 Bridge 時發生錯誤')
+      toast.error(error.message || '啟動 Bridge 時發生錯誤', { duration: 5000 })
     } finally {
       setIsStartingBridge(false)
     }

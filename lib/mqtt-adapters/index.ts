@@ -73,7 +73,7 @@ export class AdapterFactory {
       if (!deviceId) {
         return null
       }
-      return Adapter.createDevice(deviceId, name, channel, generation)
+      return (Adapter as typeof ShellyAdapter).createDevice(deviceId, name, channel, generation)
     } else if (typeof parseResult === 'string') {
       // Other adapters return string | null
       return Adapter.createDevice(parseResult, name)

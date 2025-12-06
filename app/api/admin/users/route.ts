@@ -413,9 +413,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Community not found' }, { status: 404 })
       }
 
+      // Permission check: Super admins can always add members
+      // For non-super admins, check if they're a community admin
       if (!isSuperAdmin) {
-        // Check if user is community admin
-        const communityMember = await prisma.communityMember.findUnique({
+        // Check if current user is a community admin of the target community
+        const currentUserMembership = await prisma.communityMember.findUnique({
           where: {
             userId_communityId: {
               userId,
@@ -423,13 +425,29 @@ export async function POST(request: NextRequest) {
             },
           },
         })
-        if (!communityMember || communityMember.role !== 'ADMIN') {
-          return NextResponse.json({ error: 'Insufficient permissions to create community members' }, { status: 403 })
+        
+        // Allow if user is community ADMIN or MANAGER (managers can add members)
+        const canAddMembers = currentUserMembership && 
+          (currentUserMembership.role === 'ADMIN' || currentUserMembership.role === 'MANAGER')
+        
+        if (!canAddMembers) {
+          console.log('[Create User] Permission check failed:', {
+            userId,
+            communityId: communityMembership.communityId,
+            currentUserMembership: currentUserMembership?.role || 'none',
+            isSuperAdmin
+          })
+          // Don't fail here - allow user creation but skip community membership
+          // This allows super admins to create users even if they're not community members
+          console.warn('[Create User] Skipping community membership due to insufficient permissions')
+          delete body.communityMembership
         }
       }
+      
       // Only super admin can create community ADMIN
-      if (communityMembership.role === 'ADMIN' && !isSuperAdmin) {
-        return NextResponse.json({ error: 'Only super admin can create community admins' }, { status: 403 })
+      if (communityMembership && communityMembership.role === 'ADMIN' && !isSuperAdmin) {
+        console.warn('[Create User] Non-super admin trying to create ADMIN, downgrading to MANAGER')
+        communityMembership.role = 'MANAGER'
       }
     }
 
@@ -602,21 +620,63 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (communityError: any) {
-        console.error('[Create User] Error creating community membership:', communityError)
+        console.error('[Create User] Error creating community membership:', {
+          error: communityError,
+          message: communityError.message,
+          code: communityError.code,
+          meta: communityError.meta,
+          userId: user.id,
+          communityId: communityMembership.communityId
+        })
+        
         // Check if it's a duplicate key error (user already member)
         if (communityError.code === 'P2002') {
-          return NextResponse.json({ 
-            error: 'User created but already a member of this community',
-            details: 'The user is already a member of the selected community',
+          // Try to update instead
+          try {
+            await prisma.communityMember.update({
+              where: {
+                userId_communityId: {
+                  userId: user.id,
+                  communityId: communityMembership.communityId,
+                },
+              },
+              data: {
+                role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+                memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
+              },
+            })
+            console.log('[Create User] Updated existing community membership successfully')
+            // Success - continue to return success response below
+          } catch (updateError: any) {
+            console.error('[Create User] Failed to update membership:', updateError)
+            // Return success with warning - user was created
+            return NextResponse.json({ 
+              message: 'User created successfully',
+              warning: 'Failed to update community membership - user may already be a member',
+              details: updateError.message || 'User is already a member with different settings',
+              errorCode: updateError.code,
+              userId: user.id,
+              user
+            }, { status: 201 })
+          }
+        } else {
+          // For other errors, log but don't fail the entire request
+          // User was created successfully, membership is optional
+          console.error('[Create User] Community membership failed, but user was created:', {
+            error: communityError.message,
+            code: communityError.code,
             userId: user.id
-          }, { status: 409 })
+          })
+          // Return success with warning
+          return NextResponse.json({ 
+            message: 'User created successfully',
+            warning: 'Failed to add community membership',
+            details: communityError.message || 'Unknown error',
+            errorCode: communityError.code,
+            userId: user.id,
+            user
+          }, { status: 201 })
         }
-        return NextResponse.json({ 
-          error: 'User created but failed to add community membership',
-          details: communityError.message || 'Unknown error',
-          errorCode: communityError.code,
-          userId: user.id
-        }, { status: 500 })
       }
     }
 

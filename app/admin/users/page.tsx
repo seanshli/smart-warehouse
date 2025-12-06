@@ -154,16 +154,29 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
         body: JSON.stringify(payload)
       })
 
-      if (response.ok) {
+      if (response.ok || response.status === 201) {
         const result = await response.json()
-        toast.success(result.message || 'User created successfully')
+        if (result.warning) {
+          toast.success(result.message || 'User created successfully', {
+            duration: 5000
+          })
+          toast.error(result.warning + (result.details ? `: ${result.details}` : ''), {
+            duration: 8000,
+            icon: '⚠️'
+          })
+        } else {
+          toast.success(result.message || 'User created successfully')
+        }
         // Small delay to ensure database is updated
         await new Promise(resolve => setTimeout(resolve, 500))
         onSuccess()
         onClose()
       } else {
         const errorData = await response.json()
-        setError(errorData.error || errorData.details || 'Failed to create user')
+        const errorMessage = errorData.error || errorData.details || 'Failed to create user'
+        const fullMessage = errorData.details ? `${errorMessage}\n${errorData.details}` : errorMessage
+        setError(fullMessage)
+        toast.error(errorMessage)
       }
     } catch (err) {
       setError('Network error')

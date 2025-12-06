@@ -132,20 +132,19 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
         isAdmin: formData.isAdmin,
       }
 
-      // Add working team membership if selected
-      if (formData.userType === 'working-team') {
-        if (formData.communityId) {
-          payload.communityMembership = {
-            communityId: formData.communityId,
-            role: formData.role,
-            memberClass: 'community',
-          }
-        } else if (formData.buildingId) {
-          payload.buildingMembership = {
-            buildingId: formData.buildingId,
-            role: formData.role,
-            memberClass: 'building',
-          }
+      // Add community or building membership if selected
+      if (formData.communityId) {
+        payload.communityMembership = {
+          communityId: formData.communityId,
+          role: formData.role,
+          memberClass: formData.userType === 'working-team' ? 'community' : 'household',
+        }
+      }
+      if (formData.buildingId) {
+        payload.buildingMembership = {
+          buildingId: formData.buildingId,
+          role: formData.role,
+          memberClass: formData.userType === 'working-team' ? 'building' : 'household',
         }
       }
 
@@ -296,75 +295,81 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
               </div>
             </div>
 
-            {/* Working Team Options */}
-            {formData.userType === 'working-team' && (
-              <>
-                {/* Community Selection (for Super Admin and Community Admin) */}
-                {canCreateCommunityAdmin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Community {formData.buildingId ? '(optional)' : '*'}
-                    </label>
-                    <select
-                      value={formData.communityId}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, communityId: e.target.value, buildingId: '' }))
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
-                      required={!formData.buildingId}
-                    >
-                      <option value="">Select Community</option>
-                      {availableCommunities.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+            {/* Community and Building Selection - Available for all user types */}
+            {/* Community Selection */}
+            {availableCommunities.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Add to Community (optional)
+                </label>
+                <select
+                  value={formData.communityId}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, communityId: e.target.value, buildingId: '' }))
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                >
+                  <option value="">None (don't add to community)</option>
+                  {availableCommunities.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Select a community to automatically add this user as a member
+                </p>
+              </div>
+            )}
 
-                {/* Building Selection */}
-                {canCreateBuildingAdmin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Building {formData.communityId ? '(optional)' : '*'}
-                    </label>
-                    <select
-                      value={formData.buildingId}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, buildingId: e.target.value }))
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
-                      required={!formData.communityId}
-                    >
-                      <option value="">Select Building</option>
-                      {(formData.communityId ? filteredBuildings : availableBuildings).map((b) => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
+            {/* Building Selection - Only show if community is selected or user is super admin */}
+            {canCreateBuildingAdmin && (formData.communityId || availableBuildings.length > 0) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Add to Building (optional)
+                </label>
+                <select
+                  value={formData.buildingId}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, buildingId: e.target.value }))
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  disabled={!formData.communityId && filteredBuildings.length === 0}
+                >
+                  <option value="">None (don't add to building)</option>
+                  {(formData.communityId ? filteredBuildings : availableBuildings).map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                {!formData.communityId && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select a community first to see buildings
+                  </p>
                 )}
+              </div>
+            )}
 
-                {/* Role Selection */}
-                {(formData.communityId || formData.buildingId) && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Role *
-                    </label>
-                    <select
-                      value={formData.role}
-                      onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
-                      required
-                    >
-                      {canCreateCommunityAdmin && formData.communityId && (
-                        <option value="ADMIN">ADMIN</option>
-                      )}
-                      <option value="MANAGER">MANAGER</option>
-                      <option value="MEMBER">MEMBER</option>
-                      <option value="VIEWER">VIEWER</option>
-                    </select>
-                  </div>
-                )}
-              </>
+            {/* Role Selection - Only show if community or building is selected */}
+            {(formData.communityId || formData.buildingId) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Role *
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  required
+                >
+                  {canCreateCommunityAdmin && formData.communityId && (
+                    <option value="ADMIN">ADMIN</option>
+                  )}
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="MEMBER">MEMBER</option>
+                  <option value="VIEWER">VIEWER</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Role for {formData.communityId ? 'community' : 'building'} membership
+                </p>
+              </div>
             )}
 
             {/* Super Admin Checkbox */}

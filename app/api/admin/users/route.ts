@@ -534,14 +534,40 @@ export async function POST(request: NextRequest) {
           memberClass: communityMembership.memberClass || 'community'
         })
         
-        await prisma.communityMember.create({
-          data: {
-            userId: user.id,
-            communityId: communityMembership.communityId,
-            role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-            memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
+        // Check if membership already exists
+        const existingMembership = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId: user.id,
+              communityId: communityMembership.communityId,
+            },
           },
         })
+
+        if (existingMembership) {
+          console.log('[Create User] User already a member, updating role')
+          await prisma.communityMember.update({
+            where: {
+              userId_communityId: {
+                userId: user.id,
+                communityId: communityMembership.communityId,
+              },
+            },
+            data: {
+              role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+              memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
+            },
+          })
+        } else {
+          await prisma.communityMember.create({
+            data: {
+              userId: user.id,
+              communityId: communityMembership.communityId,
+              role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+              memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
+            },
+          })
+        }
 
         // If community ADMIN, auto-add to all buildings
         if (communityMembership.role === 'ADMIN') {
@@ -577,9 +603,18 @@ export async function POST(request: NextRequest) {
         }
       } catch (communityError: any) {
         console.error('[Create User] Error creating community membership:', communityError)
+        // Check if it's a duplicate key error (user already member)
+        if (communityError.code === 'P2002') {
+          return NextResponse.json({ 
+            error: 'User created but already a member of this community',
+            details: 'The user is already a member of the selected community',
+            userId: user.id
+          }, { status: 409 })
+        }
         return NextResponse.json({ 
           error: 'User created but failed to add community membership',
-          details: communityError.message,
+          details: communityError.message || 'Unknown error',
+          errorCode: communityError.code,
           userId: user.id
         }, { status: 500 })
       }

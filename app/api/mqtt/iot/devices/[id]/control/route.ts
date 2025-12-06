@@ -99,7 +99,7 @@ export async function POST(
       }
 
       // 使用適配器生成命令（需要從 mqtt-adapters 導入）
-      const { AdapterFactory } = await import('@/lib/mqtt-adapters')
+      const { AdapterFactory, ShellyAdapter } = await import('@/lib/mqtt-adapters')
       const mqttAdapter = AdapterFactory.getAdapter(device.vendor as any)
       
       // 獲取設備元資料（用於 Shelly 的 channel 等）
@@ -121,7 +121,8 @@ export async function POST(
           commandMessage = mqttAdapter.commands.powerOff(device.deviceId)
         }
       } else if (action === 'toggle' && device.vendor === 'shelly') {
-        commandMessage = mqttAdapter.commands.toggle(device.deviceId, channel, generation)
+        // For toggle, use ShellyAdapter directly since only Shelly supports it
+        commandMessage = ShellyAdapter.commands.toggle(device.deviceId, channel, generation)
       } else if (action === 'set_temperature' && value !== undefined) {
         commandMessage = mqttAdapter.commands.setTemperature(device.deviceId, value)
       } else {

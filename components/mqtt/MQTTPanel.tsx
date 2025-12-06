@@ -13,6 +13,7 @@ import {
   WifiIcon,
   SparklesIcon,
   Cog6ToothIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from '../LanguageProvider'
@@ -544,6 +545,28 @@ export default function MQTTPanel() {
           >
             <WifiIcon className="h-4 w-4" />
             Home Assistant
+          </button>
+          <button
+            onClick={() => {
+              handleDiscoverDevices('shelly')
+              toast.success('正在掃描 Shelly 設備...', { duration: 3000 })
+            }}
+            className="px-3 py-2 text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg flex items-center gap-2"
+            title="Shelly 設備發現（通過 MQTT 掃描）"
+          >
+            <MagnifyingGlassIcon className="h-4 w-4" />
+            Shelly 發現
+          </button>
+          <button
+            onClick={() => {
+              handleDiscoverDevices('aqara')
+              toast.success('正在掃描 Aqara 設備...', { duration: 3000 })
+            }}
+            className="px-3 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg flex items-center gap-2"
+            title="Aqara 設備發現（通過 zigbee2mqtt MQTT 掃描）"
+          >
+            <MagnifyingGlassIcon className="h-4 w-4" />
+            Aqara 發現
           </button>
           <button
             onClick={() => setIsAddingDevice(!isAddingDevice)}

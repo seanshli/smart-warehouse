@@ -685,6 +685,8 @@ export default function ProvisioningModal({
             {vendor === 'philips' && 'Philips Hue 配網'}
             {vendor === 'panasonic' && 'Panasonic 設備配網'}
             {vendor === 'homeassistant' && 'Home Assistant 設備添加'}
+            {vendor === 'shelly' && 'Shelly 設備添加'}
+            {vendor === 'aqara' && 'Aqara 設備添加'}
           </h2>
           <button
             onClick={handleClose}
@@ -1491,6 +1493,71 @@ export default function ProvisioningModal({
                   </div>
                 )}
 
+                {/* Shelly 設備添加說明 */}
+                {vendor === 'shelly' && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">Shelly 設備添加說明</h3>
+                    <p className="text-sm text-blue-800 mb-3">
+                      Shelly 設備使用 MQTT 協議，不需要傳統配網流程。設備已經連接到網絡並通過 MQTT Broker 通信。
+                    </p>
+                    <div className="space-y-2 text-sm text-blue-700">
+                      <p><strong>方法 1: 自動發現（推薦）</strong></p>
+                      <p>• 點擊「掃描設備」按鈕，系統會自動掃描 MQTT Broker 發現所有 Shelly 設備</p>
+                      <p>• 確保 Shelly 設備已配置 MQTT 並連接到同一個 MQTT Broker</p>
+                      <p className="mt-3"><strong>方法 2: 手動添加</strong></p>
+                      <p>• 如果知道設備 ID，可以在下方輸入設備 ID 手動添加</p>
+                      <p>• Shelly 設備 ID 格式：shelly-{'{device-type}'}-{'{device-id}'}</p>
+                    </div>
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        設備 ID (可選，用於手動添加)
+                      </label>
+                      <input
+                        type="text"
+                        value={deviceId}
+                        onChange={(e) => setDeviceId(e.target.value)}
+                        placeholder="例如：shelly-plus-1pm-ABC123"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Aqara 設備添加說明 */}
+                {vendor === 'aqara' && (
+                  <div className="p-4 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <h3 className="text-sm font-semibold text-cyan-900 mb-2">Aqara 設備添加說明</h3>
+                    <p className="text-sm text-cyan-800 mb-3">
+                      Aqara 設備使用 Zigbee 協議，通過 zigbee2mqtt 網關連接到 MQTT。設備需要先與 zigbee2mqtt 網關配對。
+                    </p>
+                    <div className="space-y-2 text-sm text-cyan-700">
+                      <p><strong>前提條件：</strong></p>
+                      <p>• 已設置 zigbee2mqtt 網關並連接到 MQTT Broker</p>
+                      <p>• Aqara 設備已與 zigbee2mqtt 網關配對</p>
+                      <p className="mt-3"><strong>方法 1: 自動發現（推薦）</strong></p>
+                      <p>• 點擊「掃描設備」按鈕，系統會自動掃描 MQTT Broker 發現所有 Aqara 設備</p>
+                      <p>• 設備會出現在 zigbee2mqtt MQTT 主題中（zigbee2mqtt/+/+）</p>
+                      <p className="mt-3"><strong>方法 2: 手動添加</strong></p>
+                      <p>• 如果知道設備 ID，可以在下方輸入設備 ID 手動添加</p>
+                      <p>• Aqara 設備 ID 格式：{'{friendly_name}'}（在 zigbee2mqtt 中配置的名稱）</p>
+                    </div>
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        設備 ID (可選，用於手動添加)
+                      </label>
+                      <input
+                        type="text"
+                        value={deviceId}
+                        onChange={(e) => setDeviceId(e.target.value)}
+                        placeholder="例如：Aqara Motion Sensor"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* 設備發現按鈕 */}
                 <div>
                   <button
@@ -1524,18 +1591,29 @@ export default function ProvisioningModal({
 
             {/* 操作按鈕 */}
             <div className="flex space-x-3 pt-4">
-              <button
-                onClick={handleStartProvisioning}
-                disabled={
-                  (isMQTTDevice && (!ssid || !password)) ||
-                  (isRESTfulDevice && (!baseUrl || !apiKey)) ||
-                  status !== 'idle'
-                }
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                <WifiIcon className="h-5 w-5" />
-                <span>開始配網</span>
-              </button>
+              {(vendor === 'shelly' || vendor === 'aqara') ? (
+                <button
+                  onClick={handleDiscoverDevices}
+                  disabled={isDiscovering}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <MagnifyingGlassIcon className="h-5 w-5" />
+                  <span>{isDiscovering ? '掃描中...' : '掃描 MQTT 設備'}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleStartProvisioning}
+                  disabled={
+                    (isMQTTDevice && (!ssid || !password)) ||
+                    (isRESTfulDevice && (!baseUrl || !apiKey)) ||
+                    status !== 'idle'
+                  }
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <WifiIcon className="h-5 w-5" />
+                  <span>開始配網</span>
+                </button>
+              )}
               <button
                 onClick={handleClose}
                 className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"

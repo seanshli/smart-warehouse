@@ -134,7 +134,6 @@ model Building {
   facilities     Facility[]
   doorUnlockLogs DoorUnlockLog[]
   conversations  Conversation[]
-  Conversation   Conversation[]
 
   @@map("buildings")
 }

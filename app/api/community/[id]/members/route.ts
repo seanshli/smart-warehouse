@@ -305,9 +305,32 @@ export async function POST(
             communityId,
           },
         },
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          memberClass: true,
+          joinedAt: true,
+        },
       })
     } catch (dbError: any) {
-      console.error('[Add Community Member] Database error checking existing membership:', dbError)
+      console.error('[Add Community Member] Database error checking existing membership:', {
+        error: dbError.message,
+        code: dbError.code,
+        meta: dbError.meta,
+        userId: targetUser.id,
+        communityId,
+      })
+      
+      // Check if it's a connection error
+      if (dbError.message?.includes('connect') || dbError.message?.includes('timeout') || dbError.message?.includes('ECONNREFUSED')) {
+        return NextResponse.json({ 
+          error: 'Database connection failed',
+          details: 'Unable to connect to the database. Please check your database connection settings.'
+        }, { status: 503 })
+      }
+      
       return NextResponse.json({ 
         error: 'Database error while checking membership',
         details: dbError.message || 'Failed to query database'

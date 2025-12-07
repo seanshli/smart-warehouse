@@ -109,7 +109,13 @@ export async function GET(
       }),
       prisma.buildingMember.findMany({
         where: { userId },
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          buildingId: true,
+          role: true,
+          memberClass: true,
+          joinedAt: true,
           building: {
             select: {
               id: true,
@@ -130,7 +136,12 @@ export async function GET(
       }),
       prisma.workingGroupMember.findMany({
         where: { userId },
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          workingGroupId: true,
+          role: true,
+          assignedAt: true,
           workingGroup: {
             select: {
               id: true,

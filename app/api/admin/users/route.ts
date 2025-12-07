@@ -229,7 +229,13 @@ export async function GET(request: NextRequest) {
           }).catch(() => []),
           prisma.buildingMember.findMany({
             where: { userId: { in: userIds } },
-            include: {
+            select: {
+              id: true,
+              userId: true,
+              buildingId: true,
+              role: true,
+              memberClass: true,
+              joinedAt: true,
               building: {
                 select: {
                   id: true,

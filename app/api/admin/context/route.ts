@@ -78,7 +78,13 @@ export async function GET(request: NextRequest) {
           userId,
           role: { in: ['ADMIN', 'MANAGER'] },
         },
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          buildingId: true,
+          role: true,
+          memberClass: true,
+          joinedAt: true,
           building: {
             select: {
               id: true,

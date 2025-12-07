@@ -1957,7 +1957,6 @@ const zhTW: Translations = {
   general: '一般',
   mail: '郵件',
   package: '包裹',
-  doorBell: '門鈴',
   reservation: '預約',
   noMailboxAssigned: '此家庭尚未分配信箱',
   noDoorbellsAssigned: '此家庭尚未分配門鈴',

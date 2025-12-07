@@ -234,7 +234,6 @@ export async function GET(request: NextRequest) {
               userId: true,
               buildingId: true,
               role: true,
-              memberClass: true,
               joinedAt: true,
               building: {
                 select: {
@@ -650,18 +649,38 @@ export async function POST(request: NextRequest) {
         if (communityError.code === 'P2002') {
           // Try to update instead
           try {
-            await prisma.communityMember.update({
-              where: {
-                userId_communityId: {
-                  userId: user.id,
-                  communityId: communityMembership.communityId,
+            // Try with memberClass first, fallback without it if column doesn't exist
+            try {
+              await prisma.communityMember.update({
+                where: {
+                  userId_communityId: {
+                    userId: user.id,
+                    communityId: communityMembership.communityId,
+                  },
                 },
-              },
-              data: {
-                role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-                memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
-              },
-            })
+                data: {
+                  role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+                  memberClass: (communityMembership.memberClass || 'community') as 'household' | 'building' | 'community',
+                },
+              })
+            } catch (memberClassError: any) {
+              // If memberClass column doesn't exist, update without it
+              if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+                await prisma.communityMember.update({
+                  where: {
+                    userId_communityId: {
+                      userId: user.id,
+                      communityId: communityMembership.communityId,
+                    },
+                  },
+                  data: {
+                    role: (communityMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+                  },
+                })
+              } else {
+                throw memberClassError
+              }
+            }
             console.log('[Create User] Updated existing community membership successfully')
             // Success - continue to return success response below
           } catch (updateError: any) {

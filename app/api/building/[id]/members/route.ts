@@ -323,14 +323,16 @@ export async function POST(
       finalMemberClass = memberClass
     }
 
-    // Create membership
-    const membership = await prisma.buildingMember.create({
-      data: {
-        userId: targetUser.id,
-        buildingId,
-        role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-        memberClass: finalMemberClass,
-      },
+    // Create membership - try with memberClass first, fallback without it if column doesn't exist
+    let membership
+    try {
+      membership = await prisma.buildingMember.create({
+        data: {
+          userId: targetUser.id,
+          buildingId,
+          role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+          memberClass: finalMemberClass,
+        },
       include: {
         user: {
           select: {
@@ -357,14 +359,30 @@ export async function POST(
       if (!communityMembership) {
         // Building admin should be a community member - create membership if missing
         try {
-          await prisma.communityMember.create({
-            data: {
-              userId: targetUser.id,
-              communityId: building.communityId,
-              role: 'MEMBER',
-              memberClass: 'building',
-            },
-          })
+          // Try with memberClass first, fallback without it if column doesn't exist
+          try {
+            await prisma.communityMember.create({
+              data: {
+                userId: targetUser.id,
+                communityId: building.communityId,
+                role: 'MEMBER',
+                memberClass: 'building',
+              },
+            })
+          } catch (memberClassError: any) {
+            // If memberClass column doesn't exist, create without it
+            if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+              await prisma.communityMember.create({
+                data: {
+                  userId: targetUser.id,
+                  communityId: building.communityId,
+                  role: 'MEMBER',
+                },
+              })
+            } else {
+              throw memberClassError
+            }
+          }
           console.log('[Add Building Member] Created community membership for building admin:', {
             userId: targetUser.id,
             communityId: building.communityId,

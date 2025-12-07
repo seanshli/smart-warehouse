@@ -418,24 +418,50 @@ export async function POST(
     // Create membership
     let membership
     try {
-      membership = await prisma.communityMember.create({
-        data: {
-          userId: targetUser.id,
-          communityId,
-          role: role as CommunityRole,
-          memberClass: memberClass as 'household' | 'building' | 'community',
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              image: true,
+      // Create membership - try with memberClass first, fallback without it if column doesn't exist
+      try {
+        membership = await prisma.communityMember.create({
+          data: {
+            userId: targetUser.id,
+            communityId,
+            role: role as CommunityRole,
+            memberClass: memberClass as 'household' | 'building' | 'community',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
             },
           },
-        },
-      })
+        })
+      } catch (memberClassError: any) {
+        // If memberClass column doesn't exist, create without it
+        if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+          membership = await prisma.communityMember.create({
+            data: {
+              userId: targetUser.id,
+              communityId,
+              role: role as CommunityRole,
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  image: true,
+                },
+              },
+            },
+          })
+        } else {
+          throw memberClassError
+        }
+      }
     } catch (createError: any) {
       console.error('[Add Community Member] Database error creating membership:', createError)
       const errorMessage = createError.message || 'Unknown error'

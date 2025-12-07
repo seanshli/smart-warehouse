@@ -114,7 +114,6 @@ export async function GET(
           userId: true,
           buildingId: true,
           role: true,
-          memberClass: true,
           joinedAt: true,
           building: {
             select: {

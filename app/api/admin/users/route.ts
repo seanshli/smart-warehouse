@@ -145,7 +145,6 @@ export async function GET(request: NextRequest) {
               id: true,
               role: true,
               joinedAt: true,
-              memberClass: true,
               building: {
                 select: {
                   id: true,

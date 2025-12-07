@@ -63,7 +63,12 @@ export async function GET(
     try {
       members = await prisma.communityMember.findMany({
         where: { communityId },
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          joinedAt: true,
           user: {
             select: {
               id: true,

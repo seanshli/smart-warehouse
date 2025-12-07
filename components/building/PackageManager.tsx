@@ -42,6 +42,9 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
   const [households, setHouseholds] = useState<Household[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showSetupModal, setShowSetupModal] = useState(false)
+  const [lockerCount, setLockerCount] = useState(10)
+  const [updatingLockers, setUpdatingLockers] = useState(false)
   const [selectedLocker, setSelectedLocker] = useState<PackageLocker | null>(null)
   const [formData, setFormData] = useState({
     lockerId: '',
@@ -144,18 +147,32 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
             {t('packageLockerDescription') || 'Click on an empty locker to assign a package to a household'}
           </p>
         </div>
-        <button
-          onClick={fetchData}
-          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          {t('refresh') || 'Refresh'}
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowSetupModal(true)}
+            className="px-4 py-2 text-sm font-medium text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30"
+          >
+            {t('setup') || 'Setup'}
+          </button>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            {t('refresh') || 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {lockers.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <CubeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">{t('noPackageLockers') || 'No package lockers configured'}</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">{t('noPackageLockers') || 'Package lockers not yet set up'}</p>
+          <button
+            onClick={() => setShowSetupModal(true)}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+          >
+            {t('setupPackageLockers') || 'Setup Package Lockers'}
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -299,6 +316,88 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
               >
                 {t('assign') || 'Assign Package'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Setup Package Lockers Modal */}
+      {showSetupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {t('setupPackageLockers') || 'Setup Package Lockers'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowSetupModal(false)
+                  setLockerCount(lockers.length || 10)
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('numberOfLockers') || 'Number of Package Lockers'}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={lockerCount}
+                  onChange={(e) => setLockerCount(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  placeholder="Enter number of lockers"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t('packageLockerCountHint') || 'Set the total number of package lockers for this building (0-100)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowSetupModal(false)
+                  setLockerCount(lockers.length || 10)
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                {t('cancel') || 'Cancel'}
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setUpdatingLockers(true)
+                    const response = await fetch(`/api/building/${buildingId}/package-locker`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ count: lockerCount }),
+                    })
+                    if (!response.ok) {
+                      const errorData = await response.json().catch(() => ({}))
+                      throw new Error(errorData.error || 'Failed to update locker count')
+                    }
+                    toast.success(t('packageLockerSetupSuccess') || 'Package lockers setup successfully')
+                    setShowSetupModal(false)
+                    fetchData()
+                  } catch (error) {
+                    console.error('Error setting up package lockers:', error)
+                    toast.error(error instanceof Error ? error.message : 'Failed to setup package lockers')
+                  } finally {
+                    setUpdatingLockers(false)
+                  }
+                }}
+                disabled={updatingLockers}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:bg-gray-400"
+              >
+                {updatingLockers ? (t('saving') || 'Saving...') : (t('save') || 'Save')}
               </button>
             </div>
           </div>

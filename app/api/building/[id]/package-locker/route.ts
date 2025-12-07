@@ -80,7 +80,13 @@ export async function GET(
       },
     })
 
-    return NextResponse.json({ success: true, data: lockers })
+    // Map lockers to include isOccupied field
+    const lockersWithStatus = lockers.map(locker => ({
+      ...locker,
+      isOccupied: locker.packages.length > 0,
+    }))
+
+    return NextResponse.json({ success: true, data: lockersWithStatus })
   } catch (error) {
     console.error('Error fetching package lockers:', error)
     return NextResponse.json(

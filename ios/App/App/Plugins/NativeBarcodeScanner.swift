@@ -334,6 +334,13 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
     }
     
     private func mapMetadataObjectTypeToString(_ type: AVMetadataObject.ObjectType) -> String {
+        // Handle codabar separately due to iOS 15.4+ requirement
+        if #available(iOS 15.4, *) {
+            if type == .codabar {
+                return "CODABAR"
+            }
+        }
+        
         switch type {
         case .ean13:
             return "EAN_13"
@@ -347,12 +354,6 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
             return "CODE_39"
         case .code93:
             return "CODE_93"
-        case .codabar:
-            if #available(iOS 15.4, *) {
-                return "CODABAR"
-            } else {
-                return "UNKNOWN"
-            }
         case .interleaved2of5:
             return "ITF"
         case .itf14:
@@ -366,6 +367,13 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
         case .qr:
             return "QR_CODE"
         default:
+            // Handle codabar for iOS < 15.4
+            if #available(iOS 15.4, *) {
+                // This should not happen as we check above, but just in case
+                if type == .codabar {
+                    return "CODABAR"
+                }
+            }
             return "UNKNOWN"
         }
     }

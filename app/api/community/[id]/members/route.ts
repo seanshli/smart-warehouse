@@ -536,11 +536,25 @@ export async function POST(
               await prisma.buildingMember.create({
                 data: {
                   userId: targetUser.id,
-                buildingId: building.id,
-                role: 'ADMIN', // Always ADMIN for community admins
-                memberClass: 'community', // Mark as community-level admin
-              },
-            })
+                  buildingId: building.id,
+                  role: 'ADMIN', // Always ADMIN for community admins
+                  memberClass: 'community', // Mark as community-level admin
+                },
+              })
+            } catch (memberClassError: any) {
+              // If memberClass column doesn't exist, create without it
+              if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+                await prisma.buildingMember.create({
+                  data: {
+                    userId: targetUser.id,
+                    buildingId: building.id,
+                    role: 'ADMIN', // Always ADMIN for community admins
+                  },
+                })
+              } else {
+                throw memberClassError
+              }
+            }
           } else if (existingBuildingMembership.role !== 'ADMIN') {
             // Update existing membership to ADMIN if not already ADMIN
             // Role hierarchy: ADMIN > MANAGER > MEMBER > VIEWER

@@ -65,17 +65,32 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
         fetch(`/api/building/${buildingId}/households`),
       ])
 
-      if (!lockersRes.ok || !householdsRes.ok) {
-        throw new Error('Failed to fetch data')
+      // Handle lockers response
+      if (lockersRes.ok) {
+        const lockersData = await lockersRes.json()
+        setLockers(lockersData.data || [])
+      } else {
+        // If API returns error, set empty array to show setup button
+        console.error('Failed to fetch package lockers:', lockersRes.status, await lockersRes.text().catch(() => ''))
+        setLockers([])
+        if (lockersRes.status !== 404) {
+          toast.error('Failed to load package lockers')
+        }
       }
 
-      const lockersData = await lockersRes.json()
-      const householdsData = await householdsRes.json()
-
-      setLockers(lockersData.data || [])
-      setHouseholds(householdsData.households || [])
+      // Handle households response
+      if (householdsRes.ok) {
+        const householdsData = await householdsRes.json()
+        setHouseholds(householdsData.households || [])
+      } else {
+        console.error('Failed to fetch households:', householdsRes.status)
+        setHouseholds([])
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
+      // Set empty arrays to show setup button
+      setLockers([])
+      setHouseholds([])
       toast.error('Failed to load package lockers')
     } finally {
       setLoading(false)

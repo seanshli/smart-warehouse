@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const buildingId = params.id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
 
     // Verify user has access to this building
     const userId = (session.user as any)?.id
@@ -99,8 +100,22 @@ export async function GET(
     })
   } catch (error: any) {
     console.error('Error in building realtime SSE:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = error?.code || 'UNKNOWN'
+    
+    // Log Prisma-specific errors
+    if (error?.code) {
+      console.error('Prisma error code:', error.code)
+      console.error('Prisma error meta:', error.meta)
+      console.error('Prisma error message:', error.message)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to establish realtime connection' },
+      { 
+        error: 'Failed to establish realtime connection',
+        details: errorMessage,
+        code: errorCode
+      },
       { status: 500 }
     )
   }

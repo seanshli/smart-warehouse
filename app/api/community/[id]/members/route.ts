@@ -127,7 +127,7 @@ export async function GET(
       .map(member => ({
         id: member.id,
         role: member.role,
-        memberClass: member.memberClass || 'household',
+        memberClass: (member as any).memberClass || 'household', // Use any cast since column might not exist
         joinedAt: member.joinedAt,
         user: member.user,
         canManage: user?.isAdmin || canManageCommunityRole(userRole, (member.role || 'MEMBER') as CommunityRole),

@@ -210,8 +210,55 @@ async function joinBuilding(
         role: role || 'MEMBER',
         isAutoJoined: false, // 手动加入
         // Note: memberClass might not exist in database schema
-    },
-  })
+      },
+      include: {
+        building: {
+          select: {
+            id: true,
+            name: true,
+            communityId: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+    })
+  } catch (memberClassError: any) {
+    // If memberClass column doesn't exist, create without it
+    if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+      membership = await prisma.buildingMember.create({
+        data: {
+          userId,
+          buildingId: building.id,
+          role: role || 'MEMBER',
+          isAutoJoined: false, // 手动加入
+        },
+        include: {
+          building: {
+            select: {
+              id: true,
+              name: true,
+              communityId: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
+      })
+    } else {
+      throw memberClassError
+    }
+  }
 
   // 自动加入 Community（如果 Building 属于某个 Community）
   const communityResult = await cascadeAutoJoin(userId, building.id).then(

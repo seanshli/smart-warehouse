@@ -202,6 +202,7 @@ export default function BuildingDetailPage() {
               { id: 'frontdoor', name: t('frontDoorCommonArea'), icon: BuildingStorefrontIcon },
               { id: 'mailboxes', name: t('buildingMailboxes'), icon: EnvelopeIcon },
               { id: 'packages', name: t('packageLocker') || 'Packages', icon: CubeIcon },
+              { id: 'messages', name: t('messages') || 'Messages', icon: ChatBubbleLeftRightIcon },
               { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
               { id: 'working-groups', name: t('communityWorkingGroups') || 'Working Groups', icon: UserGroupIcon },
               { id: 'announcements', name: t('announcements'), icon: BellIcon },

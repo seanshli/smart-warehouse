@@ -42,6 +42,9 @@ model User {
   activities           UserActivity[]
   announcements        Announcement[]
   announcementReads    AnnouncementRead[]
+  conversationsCreated Conversation[]       @relation("ConversationCreator")
+  messagesSent         Message[]            @relation("MessageSender")
+  callsInitiated       CallSession[]        @relation("CallInitiator")
 
   @@map("users")
 }
@@ -106,19 +109,19 @@ model Community {
 }
 
 model Building {
-  id                    String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  communityId          String    @map("community_id")
-  name                 String
-  description          String?
-  address              String?
-  floorCount           Int?      @map("floor_count")
-  unitCount            Int?      @map("unit_count")
-  latitude             Float?
-  longitude            Float?
-  invitationCode       String?   @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
-  doorbellTimeoutSeconds Int?    @default(30) @map("doorbell_timeout_seconds") // Timeout in seconds before routing to front desk
-  createdAt            DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                     String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  communityId            String    @map("community_id")
+  name                   String
+  description            String?
+  address                String?
+  floorCount             Int?      @map("floor_count")
+  unitCount              Int?      @map("unit_count")
+  latitude               Float?
+  longitude              Float?
+  invitationCode         String?   @unique @default(dbgenerated("(gen_random_uuid())::text")) @map("invitation_code")
+  doorbellTimeoutSeconds Int?      @default(30) @map("doorbell_timeout_seconds") // Timeout in seconds before routing to front desk
+  createdAt              DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   community      Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   households     Household[]
@@ -130,6 +133,9 @@ model Building {
   packages       Package[]
   facilities     Facility[]
   doorUnlockLogs DoorUnlockLog[]
+  conversations  Conversation[]
+  conversations  Conversation[]
+  Conversation   Conversation[]
 
   @@map("buildings")
 }
@@ -258,6 +264,7 @@ model Household {
   automationRules      AutomationRule[] // 跨生态链控制规则
   scenes               Scene[] // 场景管理
   announcementReads    AnnouncementRead[] // Announcements read by this household
+  conversations        Conversation[] // Conversations with frontdesk/admin
 
   @@map("households")
 }
@@ -561,12 +568,12 @@ model DoorBellMessage {
 
 // Door Unlock Log - Track door unlock events
 model DoorUnlockLog {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  buildingId  String    @map("building_id")
-  doorBellId  String?   @map("door_bell_id")
-  unlockedBy  String    @map("unlocked_by") // User ID
-  unlockedAt  DateTime  @default(now()) @map("unlocked_at") @db.Timestamptz(6)
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId String    @map("building_id")
+  doorBellId String?   @map("door_bell_id")
+  unlockedBy String    @map("unlocked_by") // User ID
+  unlockedAt DateTime  @default(now()) @map("unlocked_at") @db.Timestamptz(6)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
   building Building @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -859,4 +866,72 @@ model AnnouncementRead {
   @@index([userId, householdId])
   @@index([announcementId])
   @@map("announcement_reads")
+}
+
+// Conversation - Chat conversation between frontdesk/admin and household
+model Conversation {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  householdId String    @map("household_id")
+  buildingId  String?   @map("building_id") // Optional: for building-level conversations
+  createdBy   String    @map("created_by") // User ID who created the conversation (frontdesk/admin)
+  type        String    @default("general") // 'general' | 'mail' | 'package' | 'doorbell' | 'meal' | 'taxi' | 'reservation'
+  relatedId   String?   @map("related_id") // Related entity ID (package ID, reservation ID, etc.)
+  status      String    @default("active") // 'active' | 'archived' | 'closed'
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  building  Building?     @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  creator   User          @relation("ConversationCreator", fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages  Message[]
+  calls     CallSession[]
+
+  @@index([householdId])
+  @@index([buildingId])
+  @@index([createdBy])
+  @@index([type, relatedId])
+  @@index([status, updatedAt])
+  @@map("conversations")
+}
+
+// Message - Individual message in a conversation
+model Message {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId String    @map("conversation_id")
+  senderId       String    @map("sender_id") // User ID
+  content        String
+  messageType    String    @default("text") // 'text' | 'image' | 'file' | 'system'
+  metadata       Json? // Additional data (file URL, image URL, etc.)
+  readAt         DateTime? @map("read_at") @db.Timestamptz(6) // When message was read
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sender       User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([readAt])
+  @@map("messages")
+}
+
+// CallSession - Video/audio call session
+model CallSession {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId String    @map("conversation_id")
+  initiatorId    String    @map("initiator_id") // User ID who started the call
+  callType       String    @default("audio") // 'audio' | 'video'
+  status         String    @default("ringing") // 'ringing' | 'answered' | 'ended' | 'missed' | 'rejected'
+  startedAt      DateTime? @map("started_at") @db.Timestamptz(6)
+  answeredAt     DateTime? @map("answered_at") @db.Timestamptz(6)
+  endedAt        DateTime? @map("ended_at") @db.Timestamptz(6)
+  duration       Int?      @default(0) // Duration in seconds
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  initiator    User         @relation("CallInitiator", fields: [initiatorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversationId])
+  @@index([initiatorId])
+  @@index([status, createdAt])
+  @@map("call_sessions")
 }

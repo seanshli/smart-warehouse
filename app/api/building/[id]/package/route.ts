@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,21 +21,35 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const buildingId = params.id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') // Filter by status: pending, picked_up, expired
 
     // Check if user has access to this building
+    // Use select instead of include to avoid implicit memberClass queries
     const building = await prisma.building.findUnique({
       where: { id: buildingId },
-      include: {
+      select: {
+        id: true,
         members: {
           where: { userId: (session.user as any).id },
+          select: {
+            id: true,
+            userId: true,
+            buildingId: true,
+          },
         },
         community: {
-          include: {
+          select: {
+            id: true,
             members: {
               where: { userId: (session.user as any).id },
+              select: {
+                id: true,
+                userId: true,
+                communityId: true,
+              },
             },
           },
         },
@@ -98,7 +112,7 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -108,7 +122,8 @@ export async function POST(
     }
 
     const userId = (session.user as any).id
-    const buildingId = params.id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
     const body = await request.json()
     const { lockerId, householdId, packageNumber, description } = body
 
@@ -120,16 +135,31 @@ export async function POST(
     }
 
     // Check if user has management access to this building
+    // Use select instead of include to avoid implicit memberClass queries
     const building = await prisma.building.findUnique({
       where: { id: buildingId },
-      include: {
+      select: {
+        id: true,
         members: {
           where: { userId },
+          select: {
+            id: true,
+            userId: true,
+            buildingId: true,
+            role: true,
+          },
         },
         community: {
-          include: {
+          select: {
+            id: true,
             members: {
               where: { userId },
+              select: {
+                id: true,
+                userId: true,
+                communityId: true,
+                role: true,
+              },
             },
           },
         },
@@ -313,10 +343,24 @@ export async function POST(
       notificationsSent: notifications.length,
       errors: errors.length > 0 ? errors : undefined,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating package:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = error?.code || 'UNKNOWN'
+    
+    // Log Prisma-specific errors
+    if (error?.code) {
+      console.error('Prisma error code:', error.code)
+      console.error('Prisma error meta:', error.meta)
+      console.error('Prisma error message:', error.message)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create package' },
+      { 
+        error: 'Failed to create package',
+        details: errorMessage,
+        code: errorCode
+      },
       { status: 500 }
     )
   }

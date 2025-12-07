@@ -1714,7 +1714,6 @@ const en: Translations = {
   general: 'General',
   mail: 'Mail',
   package: 'Package',
-  doorBell: 'Door Bell',
   reservation: 'Reservation',
   pending: 'Pending',
   householdNotFound: 'Household not found',

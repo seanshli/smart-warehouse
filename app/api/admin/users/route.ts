@@ -221,7 +221,12 @@ export async function GET(request: NextRequest) {
           }).catch(() => []),
           prisma.communityMember.findMany({
             where: { userId: { in: userIds } },
-            include: {
+            select: {
+              id: true,
+              userId: true,
+              communityId: true,
+              role: true,
+              joinedAt: true,
               community: {
                 select: { id: true, name: true }
               }
@@ -440,6 +445,13 @@ export async function POST(request: NextRequest) {
               communityId: communityMembership.communityId,
             },
           },
+          select: {
+            id: true,
+            userId: true,
+            communityId: true,
+            role: true,
+            joinedAt: true,
+          },
         })
         
         // Allow if user is community ADMIN or MANAGER (managers can add members)
@@ -482,6 +494,13 @@ export async function POST(request: NextRequest) {
                 communityId: building.communityId,
               },
             },
+            select: {
+              id: true,
+              userId: true,
+              communityId: true,
+              role: true,
+              joinedAt: true,
+            },
           })
           const buildingMember = await prisma.buildingMember.findUnique({
             where: {
@@ -510,6 +529,13 @@ export async function POST(request: NextRequest) {
                 userId,
                 communityId: building.communityId,
               },
+            },
+            select: {
+              id: true,
+              userId: true,
+              communityId: true,
+              role: true,
+              joinedAt: true,
             },
           })
           if (!communityMember || communityMember.role !== 'ADMIN') {
@@ -575,6 +601,13 @@ export async function POST(request: NextRequest) {
               userId: user.id,
               communityId: communityMembership.communityId,
             },
+          },
+          select: {
+            id: true,
+            userId: true,
+            communityId: true,
+            role: true,
+            joinedAt: true,
           },
         })
 
@@ -763,6 +796,13 @@ export async function POST(request: NextRequest) {
                     userId: user.id,
                     communityId: building.communityId,
                   },
+                },
+                select: {
+                  id: true,
+                  userId: true,
+                  communityId: true,
+                  role: true,
+                  joinedAt: true,
                 },
               })
 

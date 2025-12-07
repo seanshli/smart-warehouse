@@ -318,6 +318,13 @@ export async function POST(
             communityId,
           },
         },
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          joinedAt: true,
+        },
       })
     } catch (dbError: any) {
       console.error('[Add Community Member] Database error checking existing membership:', {
@@ -347,6 +354,13 @@ export async function POST(
                 userId: targetUser.id,
                 communityId,
               },
+            },
+            select: {
+              id: true,
+              userId: true,
+              communityId: true,
+              role: true,
+              joinedAt: true,
             },
           })
         } catch (fetchError: any) {

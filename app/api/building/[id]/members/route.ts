@@ -80,6 +80,13 @@ export async function POST(
               communityId: building.communityId,
             },
           },
+          select: {
+            id: true,
+            userId: true,
+            communityId: true,
+            role: true,
+            joinedAt: true,
+          },
         })
 
         if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
@@ -346,6 +353,13 @@ export async function POST(
             communityId: building.communityId,
           },
         },
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          joinedAt: true,
+        },
       })
       if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
         finalMemberClass = 'community'
@@ -408,6 +422,13 @@ export async function POST(
             userId: targetUser.id,
             communityId: building.communityId,
           },
+        },
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          joinedAt: true,
         },
       })
 

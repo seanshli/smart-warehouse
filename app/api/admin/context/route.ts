@@ -45,12 +45,17 @@ export async function GET(request: NextRequest) {
 
     // Get community admin roles
     try {
-      const communityMemberships = await prisma.communityMember.findMany({
+      const       communityMemberships = await prisma.communityMember.findMany({
         where: {
           userId,
           role: { in: ['ADMIN', 'MANAGER'] },
         },
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          joinedAt: true,
           community: {
             select: {
               id: true,

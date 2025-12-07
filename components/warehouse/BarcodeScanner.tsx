@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { XMarkIcon, PencilIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { Capacitor } from '@capacitor/core'
-import { BarcodeScanner as CapacitorBarcodeScanner } from '@capacitor-community/barcode-scanner'
+import { NativeBarcodeScanner } from '@/lib/native-barcode-scanner'
 
 // 條碼掃描器屬性介面
 interface BarcodeScannerProps {
@@ -35,7 +35,7 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
         try {
           // 檢查相機權限（先不強制，僅檢查）
           // 適用於手機和平板（iOS/Android）
-          const permission = await CapacitorBarcodeScanner.checkPermission({ force: false })
+          const permission = await NativeBarcodeScanner.checkPermission({ force: false })
           if (permission.granted) {
             setIsNative(true) // 已授權，使用原生掃描
           } else if (permission.asked) {
@@ -68,32 +68,35 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
         setError(null)
 
         // Check permission first
-        const permission = await CapacitorBarcodeScanner.checkPermission({ force: true })
+        const permission = await NativeBarcodeScanner.checkPermission({ force: true })
         if (!permission.granted) {
-          setError('Camera permission denied. Please allow camera access in settings.')
-          setIsScanning(false)
-          setIsNative(false)
-          return
+          // Request permission if not granted
+          const requested = await NativeBarcodeScanner.requestPermission()
+          if (!requested.granted) {
+            setError('Camera permission denied. Please allow camera access in settings.')
+            setIsScanning(false)
+            setIsNative(false)
+            return
+          }
         }
 
         // Prepare the scanner (hide background, show camera)
-        await CapacitorBarcodeScanner.prepare()
-        await CapacitorBarcodeScanner.hideBackground()
+        await NativeBarcodeScanner.hideBackground()
 
         // Start scanning - this will resolve when a barcode is detected
-        const result = await CapacitorBarcodeScanner.startScan()
+        const result = await NativeBarcodeScanner.startScan()
 
         if (isActive && result.hasContent && result.content) {
           console.log('Native barcode detected:', result.content, 'Format:', result.format)
           onScan(result.content)
           
           // Clean up
-          await CapacitorBarcodeScanner.stopScan()
-          await CapacitorBarcodeScanner.showBackground()
+          await NativeBarcodeScanner.stopScan()
+          await NativeBarcodeScanner.showBackground()
         } else if (isActive) {
           // User cancelled or no content
-          await CapacitorBarcodeScanner.stopScan()
-          await CapacitorBarcodeScanner.showBackground()
+          await NativeBarcodeScanner.stopScan()
+          await NativeBarcodeScanner.showBackground()
           onClose()
         }
       } catch (err: any) {
@@ -114,8 +117,8 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
           
           // Clean up
           try {
-            await CapacitorBarcodeScanner.stopScan()
-            await CapacitorBarcodeScanner.showBackground()
+            await NativeBarcodeScanner.stopScan()
+            await NativeBarcodeScanner.showBackground()
           } catch (cleanupErr) {
             // Ignore cleanup errors
           }
@@ -128,8 +131,8 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
     return () => {
       isActive = false
       // Cleanup native scanner
-      CapacitorBarcodeScanner.stopScan().catch(() => {})
-      CapacitorBarcodeScanner.showBackground().catch(() => {})
+      NativeBarcodeScanner.stopScan().catch(() => {})
+      NativeBarcodeScanner.showBackground().catch(() => {})
     }
   }, [isNative, onScan, onClose])
 

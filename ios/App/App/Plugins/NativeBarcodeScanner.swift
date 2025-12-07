@@ -2,6 +2,7 @@ import Foundation
 import Capacitor
 import AVFoundation
 import UIKit
+import AudioToolbox
 
 /**
  * Native Barcode Scanner Plugin
@@ -11,6 +12,7 @@ import UIKit
 public class NativeBarcodeScanner: CAPPlugin {
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var scannerContainerView: UIView?
     private var currentCall: CAPPluginCall?
     private var isScanning = false
     
@@ -159,9 +161,35 @@ public class NativeBarcodeScanner: CAPPlugin {
                 return
             }
             
-            preview.frame = viewController.view.bounds
+            // Create a container view for the scanner overlay
+            let containerView = UIView(frame: viewController.view.bounds)
+            containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            containerView.backgroundColor = .black
+            
+            preview.frame = containerView.bounds
             self.previewLayer = preview
-            viewController.view.layer.insertSublayer(preview, at: 0)
+            containerView.layer.insertSublayer(preview, at: 0)
+            
+            // Add cancel button
+            let cancelButton = UIButton(type: .system)
+            cancelButton.setTitle("Cancel", for: .normal)
+            cancelButton.setTitleColor(.white, for: .normal)
+            cancelButton.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+            cancelButton.layer.cornerRadius = 5
+            cancelButton.translatesAutoresizingMaskIntoConstraints = false
+            cancelButton.addTarget(self, action: #selector(self.didTapCancelButton), for: .touchUpInside)
+            containerView.addSubview(cancelButton)
+            
+            NSLayoutConstraint.activate([
+                cancelButton.topAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.topAnchor, constant: 20),
+                cancelButton.trailingAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+                cancelButton.widthAnchor.constraint(equalToConstant: 80),
+                cancelButton.heightAnchor.constraint(equalToConstant: 40)
+            ])
+            
+            // Add container to view controller
+            viewController.view.addSubview(containerView)
+            self.scannerContainerView = containerView
             
             // Start session
             session.startRunning()
@@ -197,7 +225,25 @@ public class NativeBarcodeScanner: CAPPlugin {
             previewLayer = nil
         }
         
-        currentCall = nil
+        // Remove container view
+        DispatchQueue.main.async { [weak self] in
+            if let containerView = self?.scannerContainerView {
+                containerView.removeFromSuperview()
+                self?.scannerContainerView = nil
+            }
+        }
+        
+        // Resolve with cancelled if there's a pending call
+        if let call = currentCall {
+            call.resolve([
+                "cancelled": true
+            ])
+            currentCall = nil
+        }
+    }
+    
+    @objc private func didTapCancelButton() {
+        stopScanning()
     }
     
     /**

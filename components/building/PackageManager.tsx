@@ -68,7 +68,10 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
       // Handle lockers response
       if (lockersRes.ok) {
         const lockersData = await lockersRes.json()
-        setLockers(lockersData.data || [])
+        console.log('Fetched lockers data:', lockersData)
+        const lockersArray = lockersData.data || lockersData || []
+        console.log('Setting lockers:', lockersArray.length, lockersArray)
+        setLockers(Array.isArray(lockersArray) ? lockersArray : [])
       } else {
         // If API returns error, set empty array to show setup button
         console.error('Failed to fetch package lockers:', lockersRes.status, await lockersRes.text().catch(() => ''))

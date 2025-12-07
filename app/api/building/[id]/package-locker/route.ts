@@ -26,16 +26,29 @@ export async function GET(
     const buildingId = resolvedParams.id
 
     // Check if user has access to this building
+    // Use select instead of include to avoid implicit memberClass queries
     const building = await prisma.building.findUnique({
       where: { id: buildingId },
-      include: {
+      select: {
+        id: true,
         members: {
           where: { userId: (session.user as any).id },
+          select: {
+            id: true,
+            userId: true,
+            buildingId: true,
+          },
         },
         community: {
-          include: {
+          select: {
+            id: true,
             members: {
               where: { userId: (session.user as any).id },
+              select: {
+                id: true,
+                userId: true,
+                communityId: true,
+              },
             },
           },
         },

@@ -399,9 +399,14 @@ export default function PackageManager({ buildingId }: PackageManagerProps) {
                       const errorData = await response.json().catch(() => ({}))
                       throw new Error(errorData.error || 'Failed to update locker count')
                     }
+                    const responseData = await response.json()
+                    console.log('Setup response:', responseData)
                     toast.success(t('packageLockerSetupSuccess') || 'Package lockers setup successfully')
                     setShowSetupModal(false)
-                    fetchData()
+                    // Wait a bit before fetching to ensure database is updated
+                    setTimeout(() => {
+                      fetchData()
+                    }, 500)
                   } catch (error) {
                     console.error('Error setting up package lockers:', error)
                     toast.error(error instanceof Error ? error.message : 'Failed to setup package lockers')

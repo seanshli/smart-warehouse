@@ -509,7 +509,6 @@ export interface Translations {
   general: string
   mail: string
   package: string
-  doorBell: string
   reservation: string
   locker: string
   empty: string

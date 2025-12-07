@@ -70,7 +70,6 @@ PODS:
   - MMKV (101.2.13.2):
     - MMKVCore (~> 101.2.14)
   - MMKVCore (101.2.14.1)
-  - MSmartSDK (0.1.0)
   - OEMBusiness/NetworkFramework (0.1.0):
     - DolphinRouter
     - FMDB (~> 2.7.5)
@@ -931,7 +930,6 @@ DEPENDENCIES:
   - "CapacitorCommunityBarcodeScanner (from `../../node_modules/@capacitor-community/barcode-scanner`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - DolphinRouter (from `../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter`)
-  - MSmartSDK (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
   - OEMBusiness/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
   - OEMFoundation/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
   - OEMLogger (from `../MideaSDK/OEMSDK/OEMPods_Source/OEMLogger`)
@@ -1114,8 +1112,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   DolphinRouter:
     :path: "../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter"
-  MSmartSDK:
-    :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
   OEMBusiness:
     :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
   OEMFoundation:
@@ -1142,7 +1138,6 @@ SPEC CHECKSUMS:
   MJRefresh: ff9e531227924c84ce459338414550a05d2aea78
   MMKV: 1a98e8d019dd06023091ea48b49b7506fee381a8
   MMKVCore: c24975f7f2532fa96567ae9d2e91bea1256f4a84
-  MSmartSDK: a75fe0ab15e78b3afdbdb9260b58f7e29c84f068
   OEMBusiness: 5fd6343d77a69c80fec0d240bb13445329b3d612
   OEMFoundation: 283d8eb99f2a437dce1703755b5621c53f4b392f
   OEMLogger: 5aaf2ca1f255d4d9dcdf03d7729aa2b3da4462fc
@@ -1298,6 +1293,6 @@ SPEC CHECKSUMS:
   TRCTResourceManager: 8dbe838bb252de23f84c62c3838f6fd6c2f39cf0
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: 9bafcd89c61add9853aecc8623af262de54138b3
+PODFILE CHECKSUM: 930a3265844b38d1b442ac6d6beb528e64051137
 
 COCOAPODS: 1.16.2

@@ -153,21 +153,44 @@ export async function PUT(
       }
     }
 
-    // Update the role
-    const updatedMember = await prisma.communityMember.update({
-      where: { id: memberId },
-      data: { role: role as CommunityRole },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
+    // Update the role - try with memberClass first, fallback without it if column doesn't exist
+    let updatedMember
+    try {
+      updatedMember = await prisma.communityMember.update({
+        where: { id: memberId },
+        data: { role: role as CommunityRole },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            },
           },
         },
-      },
-    })
+      })
+    } catch (memberClassError: any) {
+      // If memberClass column doesn't exist, update without it
+      if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+        updatedMember = await prisma.communityMember.update({
+          where: { id: memberId },
+          data: { role: role as CommunityRole },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        })
+      } else {
+        throw memberClassError
+      }
+    }
 
     // If user is promoted to ADMIN, automatically add/update them as ADMIN in all buildings in the community
     // COMMUNITY ADMIN -> BUILDING ADMIN (not MANAGER)

@@ -59,7 +59,7 @@ public class NativeBarcodeScannerPlugin extends Plugin {
         executorService = Executors.newSingleThreadExecutor();
         
         // Initialize ML Kit Barcode Scanner
-        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+            BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
             .setBarcodeFormats(
                 Barcode.FORMAT_QR_CODE,
                 Barcode.FORMAT_EAN_13,
@@ -73,8 +73,7 @@ public class NativeBarcodeScannerPlugin extends Plugin {
                 Barcode.FORMAT_AZTEC,
                 Barcode.FORMAT_DATA_MATRIX,
                 Barcode.FORMAT_CODABAR,
-                Barcode.FORMAT_ITF,
-                Barcode.FORMAT_INTERLEAVED_2_OF_5
+                Barcode.FORMAT_ITF
             )
             .build();
         barcodeScanner = BarcodeScanning.getClient(options);
@@ -386,8 +385,6 @@ public class NativeBarcodeScannerPlugin extends Plugin {
                 return "CODABAR";
             case Barcode.FORMAT_ITF:
                 return "ITF";
-            case Barcode.FORMAT_INTERLEAVED_2_OF_5:
-                return "INTERLEAVED_2_OF_5";
             default:
                 return "UNKNOWN";
         }

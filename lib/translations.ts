@@ -492,6 +492,25 @@ export interface Translations {
   enterTrackingNumber: string
   assign: string
   tracking: string
+  // Messaging
+  messages: string
+  chat: string
+  conversations: string
+  noConversations: string
+  noMessages: string
+  typeMessage: string
+  selectConversation: string
+  selectConversationHint: string
+  messagesDescription: string
+  audioCall: string
+  videoCall: string
+  meal: string
+  taxi: string
+  general: string
+  mail: string
+  package: string
+  doorBell: string
+  reservation: string
   locker: string
   empty: string
   enabled: string
@@ -1694,6 +1713,10 @@ const en: Translations = {
   meal: 'Meal',
   taxi: 'Taxi',
   general: 'General',
+  mail: 'Mail',
+  package: 'Package',
+  doorBell: 'Door Bell',
+  reservation: 'Reservation',
   pending: 'Pending',
   householdNotFound: 'Household not found',
   householdVisitorTag: 'Visitor Tag',
@@ -1934,6 +1957,10 @@ const zhTW: Translations = {
   meal: '餐點',
   taxi: '計程車',
   general: '一般',
+  mail: '郵件',
+  package: '包裹',
+  doorBell: '門鈴',
+  reservation: '預約',
   noMailboxAssigned: '此家庭尚未分配信箱',
   noDoorbellsAssigned: '此家庭尚未分配門鈴',
   noPackages: '目前沒有待領取的包裹',
@@ -3722,6 +3749,25 @@ const ja: Translations = {
   tracking: '追跡',
   locker: 'ロッカー',
   empty: '空',
+  // Messaging
+  messages: 'メッセージ',
+  chat: 'チャット',
+  conversations: '会話',
+  noConversations: '会話はまだありません',
+  noMessages: 'メッセージはまだありません。会話を始めましょう！',
+  typeMessage: 'メッセージを入力...',
+  selectConversation: '会話を選択',
+  selectConversationHint: 'リストから会話を選択してメッセージを開始',
+  messagesDescription: '世帯とコミュニケーション',
+  audioCall: '音声通話',
+  videoCall: 'ビデオ通話',
+  meal: '食事',
+  taxi: 'タクシー',
+  general: '一般',
+  mail: 'メール',
+  package: 'パッケージ',
+  doorBell: 'ドアベル',
+  reservation: '予約',
   openReservations: '共用施設を予約',
   openBuildingServices: '郵便 / 荷物 / ドアベルを表示',
   buildingNotLinked: 'この世帯はまだ建物にリンクされていません',

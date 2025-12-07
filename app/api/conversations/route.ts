@@ -23,16 +23,27 @@ export async function GET(request: NextRequest) {
     const householdId = searchParams.get('householdId')
     const buildingId = searchParams.get('buildingId')
 
+    // Build where clause
+    const where: any = {
+      OR: [
+        { createdBy: userId }, // User created the conversation (frontdesk/admin)
+      ],
+    }
+
+    // If householdId is provided, add it to OR condition and filter
+    if (householdId) {
+      where.OR.push({ householdId })
+      where.householdId = householdId
+    }
+
+    // Add buildingId filter if provided
+    if (buildingId) {
+      where.buildingId = buildingId
+    }
+
     // Get conversations where user is creator (frontdesk/admin) or household member
     const conversations = await prisma.conversation.findMany({
-      where: {
-        OR: [
-          { createdBy: userId }, // User created the conversation (frontdesk/admin)
-          { householdId }, // User is member of household
-        ],
-        ...(householdId ? { householdId } : {}),
-        ...(buildingId ? { buildingId } : {}),
-      },
+      where,
       include: {
         household: {
           select: {

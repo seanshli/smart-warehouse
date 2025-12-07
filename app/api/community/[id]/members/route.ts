@@ -373,17 +373,41 @@ export async function POST(
           role: role as CommunityRole,
           memberClass: memberClass as 'household' | 'building' | 'community',
         },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            },
           },
         },
-      },
-    })
+      })
+    } catch (createError: any) {
+      console.error('[Add Community Member] Database error creating membership:', createError)
+      const errorMessage = createError.message || 'Unknown error'
+      
+      // Check for specific Prisma errors
+      if (createError.code === 'P2002') {
+        return NextResponse.json({ 
+          error: 'User is already a member of this community',
+          details: 'A membership with this user and community already exists'
+        }, { status: 400 })
+      }
+      
+      if (createError.code === 'P2003') {
+        return NextResponse.json({ 
+          error: 'Invalid user or community ID',
+          details: 'The user or community does not exist'
+        }, { status: 400 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Database error while creating membership',
+        details: errorMessage
+      }, { status: 500 })
+    }
 
     // If user is added as ADMIN, automatically add them as ADMIN to all buildings in the community
     // COMMUNITY ADMIN -> BUILDING ADMIN (not MANAGER)

@@ -41,10 +41,11 @@ def midea_pods
   # Dependencies from OEMPods_Source (required by OEMBusiness)
   pod 'OEMLogger', :path => "#{midea_source_path}/OEMLogger"
   pod 'DolphinRouter', :path => "#{midea_source_path}/Dolphinrouter"
-  # Note: OEMTheme and OEMEnvirement may be needed if OEMBusiness requires them
+  # OEMEnvirement is required by OEMBusiness (contains OEMEnvConfig and OEMEnvirementManager)
+  pod 'OEMEnvirement', :path => "#{midea_source_path}/OEMEnvirement"
+  # Note: OEMTheme may be needed if OEMBusiness Core subspec is used
   # Uncomment if needed:
   # pod 'OEMTheme', :path => "#{midea_source_path}/OEMTheme"
-  # pod 'OEMEnvirement', :path => "#{midea_source_path}/OEMEnvirement"
   
   # Main Midea SDK pods from OEMPods_Framework
   pod 'OEMFoundation/NetworkFramework', :path => midea_framework_path

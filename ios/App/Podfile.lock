@@ -75,6 +75,7 @@ PODS:
     - FMDB (~> 2.7.5)
     - OEMFoundation/NetworkFramework
     - OEMLogger
+  - OEMEnvirement (0.1.0)
   - OEMFoundation/NetworkFramework (0.1.0)
   - OEMLogger (0.0.1)
   - ThingActivatorModule (5.23.1):
@@ -931,6 +932,7 @@ DEPENDENCIES:
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - DolphinRouter (from `../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter`)
   - OEMBusiness/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
+  - OEMEnvirement (from `../MideaSDK/OEMSDK/OEMPods_Source/OEMEnvirement`)
   - OEMFoundation/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
   - OEMLogger (from `../MideaSDK/OEMSDK/OEMPods_Source/OEMLogger`)
   - ThingSmartActivatorBizBundle (~> 6.11.0)
@@ -1114,6 +1116,8 @@ EXTERNAL SOURCES:
     :path: "../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter"
   OEMBusiness:
     :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
+  OEMEnvirement:
+    :path: "../MideaSDK/OEMSDK/OEMPods_Source/OEMEnvirement"
   OEMFoundation:
     :path: "../MideaSDK/OEMSDK/OEMPods_Framework"
   OEMLogger:
@@ -1139,6 +1143,7 @@ SPEC CHECKSUMS:
   MMKV: 1a98e8d019dd06023091ea48b49b7506fee381a8
   MMKVCore: c24975f7f2532fa96567ae9d2e91bea1256f4a84
   OEMBusiness: 5fd6343d77a69c80fec0d240bb13445329b3d612
+  OEMEnvirement: 168ca8485bc9827eb38f918a608e331592bacd55
   OEMFoundation: 283d8eb99f2a437dce1703755b5621c53f4b392f
   OEMLogger: 5aaf2ca1f255d4d9dcdf03d7729aa2b3da4462fc
   ThingActivatorModule: 18d67731052fdb1e55c04a1ea472969ded10dd30
@@ -1293,6 +1298,6 @@ SPEC CHECKSUMS:
   TRCTResourceManager: 8dbe838bb252de23f84c62c3838f6fd6c2f39cf0
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: 930a3265844b38d1b442ac6d6beb528e64051137
+PODFILE CHECKSUM: 7a1f339337ae9f132f976d1e2efc5b85c8b32349
 
 COCOAPODS: 1.16.2

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkBuildingManagement } from '@/lib/middleware/community-permissions'
 import { createNotification } from '@/lib/notifications'
+import { createReceptionAnnouncement, logReceptionActivity, findReceptionHousehold } from '@/lib/reception-household'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,20 +75,64 @@ export async function POST(
       },
     })
 
-    // Create notifications for all household members
+    // Create announcement for reception household only (not broadcast to mailbox owner)
+    let announcement = null
+    try {
+      const receptionHouseholdId = await findReceptionHousehold(buildingId)
+      if (receptionHouseholdId) {
+        announcement = await createReceptionAnnouncement(
+          buildingId,
+          '📬 郵件通知',
+          `郵箱 ${mailbox.mailboxNumber}${mailbox.household.apartmentNo ? ` (${mailbox.household.apartmentNo})` : ''} 有新的郵件。住戶：${mailbox.household.name}`,
+          userId,
+          {
+            mailboxId: mailbox.id,
+            mailboxNumber: mailbox.mailboxNumber,
+            householdId: mailbox.household.id,
+            householdName: mailbox.household.name,
+            apartmentNo: mailbox.household.apartmentNo,
+            buildingName: mailbox.building.name,
+          }
+        )
+        
+        // Log activity for reception household
+        await logReceptionActivity(
+          userId,
+          receptionHouseholdId,
+          'mail',
+          'mail_received',
+          `Mail received for mailbox ${mailbox.mailboxNumber}${mailbox.household.apartmentNo ? ` (${mailbox.household.apartmentNo})` : ''} - ${mailbox.household.name}`,
+          {
+            mailboxId: mailbox.id,
+            mailboxNumber: mailbox.mailboxNumber,
+            householdId: mailbox.household.id,
+            householdName: mailbox.household.name,
+            apartmentNo: mailbox.household.apartmentNo,
+            buildingName: mailbox.building.name,
+          }
+        )
+      } else {
+        console.warn(`[Mailbox] Reception household not found for building ${buildingId}, skipping announcement`)
+      }
+    } catch (announcementError) {
+      console.error('Error creating reception announcement:', announcementError)
+      // Continue even if announcement creation fails
+    }
+
+    // Create notifications for mailbox owner household members (not broadcast)
     const notifications = []
     for (const member of mailbox.household.members) {
       try {
         const notification = await createNotification({
-          type: 'SYSTEM_ALERT',
+          type: 'MAIL_RECEIVED',
           title: '📬 您有郵件',
           message: `您的郵箱 ${mailbox.mailboxNumber} 有新的郵件。請到公共區域領取。`,
           userId: member.userId,
+          householdId: mailbox.household.id,
           metadata: {
             mailboxId: mailbox.id,
             mailboxNumber: mailbox.mailboxNumber,
             buildingName: mailbox.building.name,
-            householdId: mailbox.household.id,
           },
         })
         notifications.push(notification)
@@ -98,9 +143,10 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Notifications sent to ${notifications.length} household member(s)`,
+      message: `Announcement sent to reception and notifications sent to ${notifications.length} household member(s)`,
       data: {
         mailbox: updatedMailbox,
+        announcementCreated: !!announcement,
         notificationsSent: notifications.length,
       },
     })

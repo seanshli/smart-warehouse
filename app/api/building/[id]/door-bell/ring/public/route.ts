@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { broadcastDoorBellEvent } from '@/lib/realtime'
+import { createReceptionAnnouncement, logReceptionActivity, findReceptionHousehold } from '@/lib/reception-household'
 
 export const dynamic = 'force-dynamic'
 
@@ -183,26 +184,50 @@ export async function POST(
       },
     })
 
-    // Create announcement for the household about visitor arrival
+    // Create announcement for reception household only (not broadcast)
     let announcement = null
     try {
       const firstMember = doorBell.household.members[0]
       if (firstMember) {
-        announcement = await prisma.announcement.create({
-          data: {
-            source: 'BUILDING',
-            sourceId: buildingId,
-            title: 'Visitor Arrived',
-            message: `A visitor has arrived at doorbell ${doorBell.doorBellNumber}`,
-            targetType: 'SPECIFIC_HOUSEHOLD',
-            targetId: doorBell.household.id,
-            createdBy: firstMember.user.id,
-            isActive: true,
-          },
-        })
+        // Find reception household and create announcement there
+        const receptionHouseholdId = await findReceptionHousehold(buildingId)
+        if (receptionHouseholdId) {
+          announcement = await createReceptionAnnouncement(
+            buildingId,
+            'Visitor Arrived',
+            `A visitor has arrived at doorbell ${doorBell.doorBellNumber}${doorBell.household.apartmentNo ? ` (${doorBell.household.apartmentNo})` : ''}`,
+            firstMember.user.id,
+            {
+              doorBellId: doorBell.id,
+              doorBellNumber: doorBell.doorBellNumber,
+              householdId: doorBell.household.id,
+              householdName: doorBell.household.name,
+              apartmentNo: doorBell.household.apartmentNo,
+            }
+          )
+          
+          // Log activity for reception household
+          await logReceptionActivity(
+            firstMember.user.id,
+            receptionHouseholdId,
+            'doorbell',
+            'visitor_arrived',
+            `Visitor arrived at doorbell ${doorBell.doorBellNumber}${doorBell.household.apartmentNo ? ` (${doorBell.household.apartmentNo})` : ''}`,
+            {
+              doorBellId: doorBell.id,
+              doorBellNumber: doorBell.doorBellNumber,
+              householdId: doorBell.household.id,
+              householdName: doorBell.household.name,
+              apartmentNo: doorBell.household.apartmentNo,
+              callSessionId: callSession?.id,
+            }
+          )
+        } else {
+          console.warn(`[Doorbell] Reception household not found for building ${buildingId}, skipping announcement`)
+        }
       }
     } catch (announcementError) {
-      console.error('Error creating announcement:', announcementError)
+      console.error('Error creating reception announcement:', announcementError)
       // Continue even if announcement creation fails
     }
 

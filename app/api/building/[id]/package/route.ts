@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createReceptionAnnouncement, logReceptionActivity, findReceptionHousehold } from '@/lib/reception-household'
 
 export const dynamic = 'force-dynamic'
 
@@ -225,7 +226,55 @@ export async function POST(
       data: { isOccupied: true },
     })
 
-    // Create notifications for all household members
+    // Create announcement for reception household only (not broadcast)
+    let announcement = null
+    try {
+      const receptionHouseholdId = await findReceptionHousehold(buildingId)
+      if (receptionHouseholdId) {
+        announcement = await createReceptionAnnouncement(
+          buildingId,
+          '📦 包裹通知',
+          `包裹已登記：儲物櫃 #${locker.lockerNumber}${packageNumber ? ` (追蹤號碼: ${packageNumber})` : ''}${packageRecord.household.apartmentNo ? ` - ${packageRecord.household.apartmentNo}` : ''} - ${packageRecord.household.name}${description ? ` (${description})` : ''}`,
+          userId,
+          {
+            packageId: packageRecord.id,
+            lockerId: locker.id,
+            lockerNumber: locker.lockerNumber,
+            householdId: packageRecord.household.id,
+            householdName: packageRecord.household.name,
+            apartmentNo: packageRecord.household.apartmentNo,
+            packageNumber,
+            description,
+          }
+        )
+        
+        // Log activity for reception household
+        await logReceptionActivity(
+          userId,
+          receptionHouseholdId,
+          'package',
+          'package_received',
+          `Package received: Locker #${locker.lockerNumber}${packageNumber ? ` (${packageNumber})` : ''}${packageRecord.household.apartmentNo ? ` - ${packageRecord.household.apartmentNo}` : ''} - ${packageRecord.household.name}`,
+          {
+            packageId: packageRecord.id,
+            lockerId: locker.id,
+            lockerNumber: locker.lockerNumber,
+            householdId: packageRecord.household.id,
+            householdName: packageRecord.household.name,
+            apartmentNo: packageRecord.household.apartmentNo,
+            packageNumber,
+            description,
+          }
+        )
+      } else {
+        console.warn(`[Package] Reception household not found for building ${buildingId}, skipping announcement`)
+      }
+    } catch (announcementError) {
+      console.error('Error creating reception announcement:', announcementError)
+      // Continue even if announcement creation fails
+    }
+
+    // Create notifications for package owner household members (not broadcast)
     const { createNotification } = await import('@/lib/notifications')
     const notifications = []
     const errors = []
@@ -260,6 +309,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: packageRecord,
+      announcementCreated: !!announcement,
       notificationsSent: notifications.length,
       errors: errors.length > 0 ? errors : undefined,
     })

@@ -105,10 +105,11 @@ post_install do |installer|
        target.name.include?('OEM') || 
        target.name.include?('MSmart')
       target.build_configurations.each do |config|
-        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
-        # Or more selectively, just suppress nullability warnings:
-        config.build_settings['GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS'] = 'NO'
+        # Suppress nullability warnings specifically (not all warnings)
+        config.build_settings['CLANG_WARN_NULLABLE_TO_NONNULL_CONVERSION'] = 'NO'
         config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+        # Suppress deprecated function declaration warnings
+        config.build_settings['GCC_WARN_64_TO_32_BIT_CONVERSION'] = 'NO'
       end
     end
   end

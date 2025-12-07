@@ -13,11 +13,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  try {
-    // Handle both Promise and direct params (Next.js 14 vs 15)
-    const resolvedParams = params instanceof Promise ? await params : params
-    const buildingId = resolvedParams.id
+  // Handle both Promise and direct params (Next.js 14 vs 15)
+  const resolvedParams = params instanceof Promise ? await params : params
+  const buildingId = resolvedParams.id
 
+  // Declare variables outside try block for error logging
+  let targetUserId: string | undefined
+  let targetUserEmail: string | undefined
+
+  try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !(session.user as any)?.id) {
@@ -27,8 +31,8 @@ export async function POST(
 
     const userId = (session.user as any).id
     const body = await request.json()
-    const targetUserId: string | undefined = body.targetUserId
-    const targetUserEmail: string | undefined = body.targetUserEmail
+    targetUserId = body.targetUserId
+    targetUserEmail = body.targetUserEmail
     const role: string = body.role || 'MEMBER'
     const memberClass: 'household' | 'building' | 'community' | undefined = body.memberClass // Allow explicit memberClass from request
 

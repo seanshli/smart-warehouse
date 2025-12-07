@@ -224,6 +224,15 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid member class. Must be: household, building, or community' }, { status: 400 })
     }
 
+    // Validate UUID format for communityId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(communityId)) {
+      return NextResponse.json({ 
+        error: 'Invalid community ID format',
+        details: 'Community ID must be a valid UUID'
+      }, { status: 400 })
+    }
+
     // Super admins can add members, otherwise check permission
     if (!currentUser?.isAdmin) {
       if (!(await checkCommunityPermission(userId, communityId, 'canAddMembers'))) {
@@ -244,10 +253,27 @@ export async function POST(
     // Find target user
     let targetUser = null
     if (targetUserId) {
+      // Validate UUID format for targetUserId
+      if (!uuidRegex.test(targetUserId)) {
+        return NextResponse.json({ 
+          error: 'Invalid user ID format',
+          details: 'User ID must be a valid UUID'
+        }, { status: 400 })
+      }
+      
       targetUser = await prisma.user.findUnique({
         where: { id: targetUserId },
       })
     } else if (targetUserEmail) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(targetUserEmail.trim())) {
+        return NextResponse.json({ 
+          error: 'Invalid email format',
+          details: 'Please provide a valid email address'
+        }, { status: 400 })
+      }
+      
       // Normalize email (trim and lowercase)
       const normalizedEmail = targetUserEmail.trim().toLowerCase()
       targetUser = await prisma.user.findUnique({

@@ -113,15 +113,41 @@ export async function POST(
       }, { status: 403 })
     }
 
+    // Validate UUID format for buildingId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(buildingId)) {
+      return NextResponse.json({ 
+        error: 'Invalid building ID format',
+        details: 'Building ID must be a valid UUID'
+      }, { status: 400 })
+    }
+
     // Find target user
     let targetUser = null
     if (targetUserId) {
+      // Validate UUID format for targetUserId
+      if (!uuidRegex.test(targetUserId)) {
+        return NextResponse.json({ 
+          error: 'Invalid user ID format',
+          details: 'User ID must be a valid UUID'
+        }, { status: 400 })
+      }
+      
       targetUser = await prisma.user.findUnique({
         where: { id: targetUserId },
       })
     } else if (targetUserEmail) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(targetUserEmail.trim())) {
+        return NextResponse.json({ 
+          error: 'Invalid email format',
+          details: 'Please provide a valid email address'
+        }, { status: 400 })
+      }
+      
       targetUser = await prisma.user.findUnique({
-        where: { email: targetUserEmail },
+        where: { email: targetUserEmail.trim().toLowerCase() },
       })
     }
 

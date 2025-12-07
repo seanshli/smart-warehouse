@@ -231,14 +231,20 @@ export async function GET(request: NextRequest) {
             where: { userId: { in: userIds } },
             include: {
               building: {
-                include: {
+                select: {
+                  id: true,
+                  name: true,
+                  communityId: true,
                   community: {
                     select: { id: true, name: true }
                   }
                 }
               }
             }
-          }).catch(() => []),
+          }).catch((err) => {
+            console.error('[Get Users] Error fetching building memberships:', err)
+            return []
+          }),
           prisma.workingGroupMember.findMany({
             where: { userId: { in: userIds } },
             include: {

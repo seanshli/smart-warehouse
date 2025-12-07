@@ -628,12 +628,24 @@ export default function AdminUsersPage() {
         toast.success('Community role updated successfully')
         setEditingCommunityRole(null)
         fetchUsers() // Refresh the list
-        // Update selected user data
+        // Refresh selected user data from API to ensure consistency
         if (selectedUser) {
-          const updatedCommunities = selectedUser.communities?.map(c => 
-            c.membershipId === membershipId ? { ...c, role: newRole } : c
-          )
-          setSelectedUser({ ...selectedUser, communities: updatedCommunities })
+          try {
+            const userResponse = await fetch(`/api/admin/users/${selectedUser.id}`)
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              if (userData.user) {
+                setSelectedUser(userData.user)
+              }
+            }
+          } catch (err) {
+            console.error('[Update Community Role] Failed to refresh user data:', err)
+            // Fallback to local update if API refresh fails
+            const updatedCommunities = selectedUser.communities?.map(c => 
+              c.membershipId === membershipId ? { ...c, role: newRole } : c
+            )
+            setSelectedUser({ ...selectedUser, communities: updatedCommunities })
+          }
         }
       } else {
         toast.error(responseData.error || 'Failed to update community role')
@@ -665,12 +677,24 @@ export default function AdminUsersPage() {
         toast.success('Building role updated successfully')
         setEditingBuildingRole(null)
         fetchUsers() // Refresh the list
-        // Update selected user data
+        // Refresh selected user data from API to ensure consistency
         if (selectedUser) {
-          const updatedBuildings = selectedUser.buildings?.map(b => 
-            b.membershipId === membershipId ? { ...b, role: newRole } : b
-          )
-          setSelectedUser({ ...selectedUser, buildings: updatedBuildings })
+          try {
+            const userResponse = await fetch(`/api/admin/users/${selectedUser.id}`)
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              if (userData.user) {
+                setSelectedUser(userData.user)
+              }
+            }
+          } catch (err) {
+            console.error('[Update Building Role] Failed to refresh user data:', err)
+            // Fallback to local update if API refresh fails
+            const updatedBuildings = selectedUser.buildings?.map(b => 
+              b.membershipId === membershipId ? { ...b, role: newRole } : b
+            )
+            setSelectedUser({ ...selectedUser, buildings: updatedBuildings })
+          }
         }
       } else {
         toast.error(responseData.error || 'Failed to update building role')

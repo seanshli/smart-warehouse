@@ -11,14 +11,17 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
-  const buildingId = params.id
-
   try {
+    // Handle both Promise and direct params (Next.js 14 vs 15)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
+
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !(session.user as any)?.id) {
+      console.error('[Add Building Member] Unauthorized - no session or user ID')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -28,6 +31,15 @@ export async function POST(
     const targetUserEmail: string | undefined = body.targetUserEmail
     const role: string = body.role || 'MEMBER'
     const memberClass: 'household' | 'building' | 'community' | undefined = body.memberClass // Allow explicit memberClass from request
+
+    console.log('[Add Building Member] Request:', {
+      userId,
+      buildingId,
+      targetUserId,
+      targetUserEmail,
+      role,
+      memberClass
+    })
 
     // Validate role
     const validRoles = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
@@ -251,6 +263,13 @@ export async function POST(
       },
     })
 
+    console.log('[Add Building Member] Success:', {
+      membershipId: membership.id,
+      userId: targetUser.id,
+      buildingId,
+      role
+    })
+
     return NextResponse.json({
       id: membership.id,
       role: membership.role,
@@ -258,23 +277,33 @@ export async function POST(
       user: membership.user,
     }, { status: 201 })
   } catch (error) {
-    console.error('Error adding building member:', error)
+    console.error('[Add Building Member] Error:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorStack = error instanceof Error ? error.stack : undefined
-    console.error('Error details:', {
+    const errorDetails = error instanceof Error ? error.stack : String(error)
+    console.error('[Add Building Member] Error details:', {
       errorMessage,
-      errorStack,
-      buildingId,
+      errorDetails
     })
+    
+    // Return more specific error messages
+    if (errorMessage.includes('Unique constraint')) {
+      return NextResponse.json(
+        { error: 'User is already a member of this building' },
+        { status: 400 }
+      )
+    }
+    
+    if (errorMessage.includes('Foreign key constraint')) {
+      return NextResponse.json(
+        { error: 'Invalid building or user ID' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to add building member',
-        details: errorMessage,
-        debug: process.env.NODE_ENV === 'development' ? {
-          message: errorMessage,
-          stack: errorStack,
-          buildingId: buildingId || 'unknown',
-        } : undefined
+        details: errorMessage
       },
       { status: 500 }
     )

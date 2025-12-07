@@ -1290,16 +1290,37 @@ export default function AdminUsersPage() {
                                 if (response.ok) {
                                   toast.success('Added to community successfully')
                                   setShowAddCommunity(false)
-                                  fetchUsers()
+                                  setNewCommunityId('')
+                                  setNewCommunityRole('MEMBER')
+                                  // Fetch fresh user data
+                                  await fetchUsers()
+                                  // Refresh selected user details
                                   if (selectedUser) {
-                                    const updated = users.find(u => u.id === selectedUser.id)
-                                    if (updated) setSelectedUser(updated)
+                                    try {
+                                      const userResponse = await fetch(`/api/admin/users/${selectedUser.id}`)
+                                      if (userResponse.ok) {
+                                        const userData = await userResponse.json()
+                                        setSelectedUser(userData.user)
+                                      } else {
+                                        // Fallback to finding in updated users list
+                                        const updated = users.find(u => u.id === selectedUser.id)
+                                        if (updated) setSelectedUser(updated)
+                                      }
+                                    } catch (err) {
+                                      console.error('Error refreshing user data:', err)
+                                      // Fallback to finding in updated users list
+                                      const updated = users.find(u => u.id === selectedUser.id)
+                                      if (updated) setSelectedUser(updated)
+                                    }
                                   }
                                 } else {
-                                  toast.error(data.error || 'Failed to add to community')
+                                  const errorMsg = data.error || data.details || 'Failed to add to community'
+                                  console.error('[Add Community Member] Error:', data)
+                                  toast.error(errorMsg)
                                 }
-                              } catch (err) {
-                                toast.error('Network error')
+                              } catch (err: any) {
+                                console.error('[Add Community Member] Network error:', err)
+                                toast.error(err.message || 'Network error')
                               } finally {
                                 setAddingMembership(false)
                               }
@@ -1445,16 +1466,37 @@ export default function AdminUsersPage() {
                                 if (response.ok) {
                                   toast.success('Added to building successfully')
                                   setShowAddBuilding(false)
-                                  fetchUsers()
+                                  setNewBuildingId('')
+                                  setNewBuildingRole('MEMBER')
+                                  // Fetch fresh user data
+                                  await fetchUsers()
+                                  // Refresh selected user details
                                   if (selectedUser) {
-                                    const updated = users.find(u => u.id === selectedUser.id)
-                                    if (updated) setSelectedUser(updated)
+                                    try {
+                                      const userResponse = await fetch(`/api/admin/users/${selectedUser.id}`)
+                                      if (userResponse.ok) {
+                                        const userData = await userResponse.json()
+                                        setSelectedUser(userData.user)
+                                      } else {
+                                        // Fallback to finding in updated users list
+                                        const updated = users.find(u => u.id === selectedUser.id)
+                                        if (updated) setSelectedUser(updated)
+                                      }
+                                    } catch (err) {
+                                      console.error('Error refreshing user data:', err)
+                                      // Fallback to finding in updated users list
+                                      const updated = users.find(u => u.id === selectedUser.id)
+                                      if (updated) setSelectedUser(updated)
+                                    }
                                   }
                                 } else {
-                                  toast.error(data.error || 'Failed to add to building')
+                                  const errorMsg = data.error || data.details || 'Failed to add to building'
+                                  console.error('[Add Building Member] Error:', data)
+                                  toast.error(errorMsg)
                                 }
-                              } catch (err) {
-                                toast.error('Network error')
+                              } catch (err: any) {
+                                console.error('[Add Building Member] Network error:', err)
+                                toast.error(err.message || 'Network error')
                               } finally {
                                 setAddingMembership(false)
                               }

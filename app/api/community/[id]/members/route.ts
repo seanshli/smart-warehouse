@@ -155,19 +155,31 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user || !(session.user as any)?.id) {
+      console.error('[Add Community Member] Unauthorized - no session or user ID')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const userId = (session.user as any).id
-    const communityId = params.id
+    // Handle both Promise and direct params (Next.js 14 vs 15)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const communityId = resolvedParams.id
     const body = await request.json()
     const { targetUserId, targetUserEmail, role = 'MEMBER', memberClass = 'household' } = body
+
+    console.log('[Add Community Member] Request:', {
+      userId,
+      communityId,
+      targetUserId,
+      targetUserEmail,
+      role,
+      memberClass
+    })
 
     // Check if user is super admin
     const currentUser = await prisma.user.findUnique({
@@ -327,6 +339,13 @@ export async function POST(
       }
     }
 
+    console.log('[Add Community Member] Success:', {
+      membershipId: membership.id,
+      userId: targetUser.id,
+      communityId,
+      role
+    })
+
     return NextResponse.json({
       id: membership.id,
       role: membership.role,
@@ -334,9 +353,34 @@ export async function POST(
       user: membership.user,
     }, { status: 201 })
   } catch (error) {
-    console.error('Error adding community member:', error)
+    console.error('[Add Community Member] Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : String(error)
+    console.error('[Add Community Member] Error details:', {
+      errorMessage,
+      errorDetails
+    })
+    
+    // Return more specific error messages
+    if (errorMessage.includes('Unique constraint')) {
+      return NextResponse.json(
+        { error: 'User is already a member of this community' },
+        { status: 400 }
+      )
+    }
+    
+    if (errorMessage.includes('Foreign key constraint')) {
+      return NextResponse.json(
+        { error: 'Invalid community or user ID' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to add community member' },
+      { 
+        error: 'Failed to add community member',
+        details: errorMessage
+      },
       { status: 500 }
     )
   }

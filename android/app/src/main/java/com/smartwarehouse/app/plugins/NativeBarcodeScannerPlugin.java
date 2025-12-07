@@ -180,12 +180,11 @@ public class NativeBarcodeScannerPlugin extends Plugin {
     }
 
     private void setupCamera(FragmentActivity activity) {
-        try {
-            com.google.common.util.concurrent.ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(activity);
-            
-            cameraProviderFuture.addListener(() -> {
-                try {
-                    cameraProvider = cameraProviderFuture.get();
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(activity);
+        
+        cameraProviderFuture.addListener(() -> {
+            try {
+                cameraProvider = cameraProviderFuture.get();
                     
                     // Create preview view
                     previewView = new PreviewView(activity);
@@ -306,22 +305,14 @@ public class NativeBarcodeScannerPlugin extends Plugin {
                     isScanning = true;
                     Log.d(TAG, "Camera started successfully");
 
-                } catch (ExecutionException | InterruptedException e) {
-                    Log.e(TAG, "Error setting up camera", e);
-                    if (currentCall != null) {
-                        currentCall.reject("Failed to start camera: " + e.getMessage());
-                        currentCall = null;
-                    }
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e(TAG, "Error setting up camera", e);
+                if (currentCall != null) {
+                    currentCall.reject("Failed to start camera: " + e.getMessage());
+                    currentCall = null;
                 }
-            }, ContextCompat.getMainExecutor(activity));
-
-        } catch (ExecutionException | InterruptedException e) {
-            Log.e(TAG, "Error getting camera provider", e);
-            if (currentCall != null) {
-                currentCall.reject("Failed to get camera provider: " + e.getMessage());
-                currentCall = null;
             }
-        }
+        }, ContextCompat.getMainExecutor(activity));
     }
 
     private void stopScanning() {

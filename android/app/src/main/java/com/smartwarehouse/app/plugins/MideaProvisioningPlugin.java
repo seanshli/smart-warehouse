@@ -258,7 +258,7 @@ public class MideaProvisioningPlugin extends Plugin {
                         }
 
                         @Override
-                        public void onProgress(MSDeviceConfigStep step, MSDevice device) {
+                        public void onProgressUpdate(MSDeviceConfigStep step) {
                             Log.d(TAG, "Midea provisioning progress: " + step);
                             
                             // Optionally send progress updates
@@ -267,34 +267,6 @@ public class MideaProvisioningPlugin extends Plugin {
                                 progress.put("step", step != null ? step.toString() : "unknown");
                                 progress.put("status", "provisioning");
                                 progress.put("token", currentToken);
-                                
-                                // Try to get device ID if device is available
-                                if (device != null) {
-                                    try {
-                                        String deviceId = null;
-                                        try {
-                                            java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getDeviceId");
-                                            deviceId = (String) getIdMethod.invoke(device);
-                                        } catch (Exception e1) {
-                                            try {
-                                                java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getDeviceID");
-                                                deviceId = (String) getIdMethod.invoke(device);
-                                            } catch (Exception e2) {
-                                                try {
-                                                    java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getId");
-                                                    deviceId = (String) getIdMethod.invoke(device);
-                                                } catch (Exception e3) {
-                                                    // Ignore - device ID not available
-                                                }
-                                            }
-                                        }
-                                        if (deviceId != null) {
-                                            progress.put("deviceId", deviceId);
-                                        }
-                                    } catch (Exception e) {
-                                        // Ignore - device info not available
-                                    }
-                                }
                                 
                                 // Note: Capacitor doesn't support streaming responses
                                 // Progress updates would need to be handled differently

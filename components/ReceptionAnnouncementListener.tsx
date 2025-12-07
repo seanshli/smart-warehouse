@@ -123,10 +123,6 @@ export default function ReceptionAnnouncementListener() {
           setCurrentAnnouncement(unreadAnnouncement)
         }
       }
-
-      if (unreadAnnouncement && !currentAnnouncement) {
-        setCurrentAnnouncement(unreadAnnouncement)
-      }
     } catch (error) {
       console.error('Error fetching reception announcements:', error)
     }

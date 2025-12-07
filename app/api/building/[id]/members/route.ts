@@ -497,19 +497,29 @@ export async function POST(
               memberClass: 'building',
             },
           })
-        } else if (communityMembership.memberClass !== 'building') {
-          // Update memberClass to 'building' if it's different
-          await prisma.communityMember.update({
-            where: {
-              userId_communityId: {
-                userId: targetUser.id,
-                communityId: building.communityId,
-              },
-            },
-            data: {
-              memberClass: 'building',
-            },
-          })
+        } else {
+          // Try to update memberClass if column exists
+          try {
+            const currentMemberClass = (communityMembership as any).memberClass
+            if (currentMemberClass !== 'building') {
+              await prisma.communityMember.update({
+                where: {
+                  userId_communityId: {
+                    userId: targetUser.id,
+                    communityId: building.communityId,
+                  },
+                },
+                data: {
+                  memberClass: 'building',
+                },
+              })
+            }
+          } catch (memberClassError: any) {
+            // If memberClass column doesn't exist, ignore the update
+            if (!memberClassError.message?.includes('member_class') && memberClassError.code !== 'P2022') {
+              throw memberClassError
+            }
+          }
         }
       }
     }

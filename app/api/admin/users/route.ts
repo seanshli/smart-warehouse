@@ -253,7 +253,12 @@ export async function GET(request: NextRequest) {
           }),
           prisma.workingGroupMember.findMany({
             where: { userId: { in: userIds } },
-            include: {
+            select: {
+              id: true,
+              userId: true,
+              workingGroupId: true,
+              role: true,
+              assignedAt: true,
               workingGroup: {
                 select: { id: true, name: true, type: true, communityId: true }
               }

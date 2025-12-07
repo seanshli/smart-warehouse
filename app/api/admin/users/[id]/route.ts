@@ -216,6 +216,119 @@ export async function GET(
 }
 
 /**
+ * PUT /api/admin/users/[id] - Update a user
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: { isAdmin: true }
+    })
+
+    if (!currentUser?.isAdmin) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    // Handle both Promise and direct params (Next.js 14 vs 15)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const userId = resolvedParams.id
+
+    // Validate userId format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(userId)) {
+      return NextResponse.json({ 
+        error: 'Invalid user ID format',
+        details: 'User ID must be a valid UUID'
+      }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { name, email, phone, contact, language, isAdmin } = body
+
+    console.log('[Update User] Request:', { userId, updates: { name, email, phone, contact, language, isAdmin } })
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Prepare update data (only include fields that are provided)
+    const updateData: any = {}
+    if (name !== undefined) updateData.name = name
+    if (email !== undefined) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+      }
+      updateData.email = email.toLowerCase().trim()
+    }
+    if (phone !== undefined) updateData.phone = phone || null
+    if (contact !== undefined) updateData.contact = contact || null
+    if (language !== undefined) updateData.language = language
+    if (isAdmin !== undefined) updateData.isAdmin = isAdmin
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        contact: true,
+        language: true,
+        isAdmin: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
+
+    console.log('[Update User] Success:', { userId, email: updatedUser.email })
+
+    return NextResponse.json({ 
+      message: 'User updated successfully',
+      user: updatedUser
+    })
+  } catch (error) {
+    console.error('[Update User] Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    
+    // Check for unique constraint violation (duplicate email)
+    if (errorMessage.includes('Unique constraint') || errorMessage.includes('P2002')) {
+      return NextResponse.json(
+        { error: 'Email already exists. Please use a different email address.' },
+        { status: 400 }
+      )
+    }
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to update user',
+        details: errorMessage
+      },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * DELETE /api/admin/users/[id] - Delete a user
  */
 export async function DELETE(

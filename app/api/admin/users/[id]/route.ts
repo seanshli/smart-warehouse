@@ -175,7 +175,7 @@ export async function GET(
         id: membership.community.id,
         name: membership.community.name,
         role: membership.role || 'MEMBER',
-        memberClass: membership.memberClass || 'household',
+        memberClass: (membership as any).memberClass || 'household', // Use any cast since column might not exist
         joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()
       })),
       buildings: buildingMemberships
@@ -185,7 +185,7 @@ export async function GET(
           id: membership.building!.id,
           name: membership.building!.name,
           role: membership.role || 'MEMBER',
-          memberClass: membership.memberClass || 'household',
+          memberClass: (membership as any).memberClass || 'household', // Use any cast since column might not exist
           communityId: membership.building!.communityId,
           community: membership.building!.community || null,
           joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()

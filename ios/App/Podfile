@@ -64,17 +64,59 @@ end
 post_install do |installer|
   assertDeploymentTarget(installer)
   
-  # Fix CocoaPods "[CP] Copy XCFrameworks" warnings
-  # Add output dependencies to script phases to prevent running on every build
   installer.pods_project.targets.each do |target|
+    # Fix EXCLUDED_ARCHS for M1 Mac simulator builds
+    # This allows simulator builds to work on Apple Silicon Macs
+    target.build_configurations.each do |config|
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+    end
+    
+    # Fix CocoaPods script phase warnings
+    # Add output dependencies to script phases to prevent running on every build
     target.build_phases.each do |phase|
-      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase) && phase.name == '[CP] Copy XCFrameworks'
-        # Add output files to the script phase to fix warnings
-        # This tells Xcode when the script actually needs to run
-        phase.output_paths = [
-          "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/#{target.name}.framework"
-        ].compact
+      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        case phase.name
+        when '[CP] Copy XCFrameworks'
+          phase.output_paths = [
+            "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/#{target.name}.framework"
+          ].compact
+        when '[CP] Copy Pods Resources'
+          # Add output paths for Copy Pods Resources
+          phase.output_paths = [
+            "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)"
+          ].compact
+        when '[CP] Embed Pods Frameworks'
+          # Add output paths for Embed Pods Frameworks
+          phase.output_paths = [
+            "$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/#{target.name}.framework"
+          ].compact
+        when 'Strip Unsupported Framework Architectures'
+          # Add output paths for Strip Unsupported Framework Architectures
+          phase.output_paths = [
+            "$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/#{target.name}.framework/#{target.name}"
+          ].compact
+        end
       end
     end
+    
+    # Suppress nullability warnings for DolphinRouter and other Midea SDK pods
+    # These are third-party SDKs and we can't modify their source code
+    if target.name.include?('DolphinRouter') || 
+       target.name.include?('OEM') || 
+       target.name.include?('MSmart')
+      target.build_configurations.each do |config|
+        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+        # Or more selectively, just suppress nullability warnings:
+        config.build_settings['GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS'] = 'NO'
+        config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      end
+    end
+  end
+  
+  # Fix build setting overrides warning
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings.delete('OTHER_LDFLAGS')
+    config.build_settings.delete('FRAMEWORK_SEARCH_PATHS')
+    config.build_settings.delete('LIBRARY_SEARCH_PATHS')
   end
 end

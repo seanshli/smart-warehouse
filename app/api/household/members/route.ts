@@ -76,6 +76,13 @@ export async function GET(request: NextRequest) {
             userId: userId,
             buildingId: household.buildingId
           }
+        },
+        select: {
+          id: true,
+          userId: true,
+          buildingId: true,
+          role: true,
+          joinedAt: true,
         }
       })
 
@@ -171,8 +178,25 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching household members:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    } : {}
+    
+    // Log Prisma-specific errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('Prisma error code:', (error as any).code)
+      console.error('Prisma error meta:', (error as any).meta)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch household members' },
+      { 
+        error: 'Failed to fetch household members',
+        details: errorMessage,
+        ...errorDetails
+      },
       { status: 500 }
     )
   }

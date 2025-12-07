@@ -916,50 +916,57 @@ export default function AdminUsersPage() {
                                 })
                                 setSelectedUser(freshUser)
                                 setEditFormData({
-                                  name: freshUser.name,
-                                  email: freshUser.email,
+                                  name: freshUser.name || '',
+                                  email: freshUser.email || '',
                                   phone: freshUser.phone || '',
                                   contact: freshUser.contact || '',
                                   language: freshUser.language || 'en',
-                                  isAdmin: freshUser.isAdmin
+                                  isAdmin: freshUser.isAdmin || false
                                 })
                               } else {
-                                console.warn('[View User] User not found in response')
+                                console.warn('[View User] User not found in response, using cached data')
                                 setSelectedUser(user)
                                 setEditFormData({
-                                  name: user.name,
-                                  email: user.email,
+                                  name: user.name || '',
+                                  email: user.email || '',
                                   phone: user.phone || '',
                                   contact: user.contact || '',
                                   language: user.language || 'en',
-                                  isAdmin: user.isAdmin
+                                  isAdmin: user.isAdmin || false
                                 })
                               }
                             } else {
                               const errorData = await response.json().catch(() => ({}))
-                              console.error('[View User] Failed to fetch user:', errorData)
-                              toast.error(errorData.error || 'Failed to fetch user details')
+                              console.error('[View User] Failed to fetch user:', {
+                                status: response.status,
+                                statusText: response.statusText,
+                                error: errorData
+                              })
+                              const errorMsg = errorData.error || errorData.details || `Failed to fetch user details (${response.status})`
+                              toast.error(errorMsg)
+                              // Use cached user data as fallback
                               setSelectedUser(user)
                               setEditFormData({
-                                name: user.name,
-                                email: user.email,
+                                name: user.name || '',
+                                email: user.email || '',
                                 phone: user.phone || '',
                                 contact: user.contact || '',
                                 language: user.language || 'en',
-                                isAdmin: user.isAdmin
+                                isAdmin: user.isAdmin || false
                               })
                             }
                           } catch (err: any) {
                             console.error('[View User] Error fetching user data:', err)
                             toast.error(err.message || 'Failed to fetch user details. Please check your connection and try again.')
+                            // Use cached user data as fallback
                             setSelectedUser(user)
                             setEditFormData({
-                              name: user.name,
-                              email: user.email,
+                              name: user.name || '',
+                              email: user.email || '',
                               phone: user.phone || '',
                               contact: user.contact || '',
                               language: user.language || 'en',
-                              isAdmin: user.isAdmin
+                              isAdmin: user.isAdmin || false
                             })
                           }
                           setIsEditing(false)

@@ -21,7 +21,8 @@ import {
   ClipboardDocumentIcon,
   CheckCircleIcon,
   XCircleIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import PackageManager from '@/components/building/PackageManager'
@@ -68,6 +69,7 @@ export default function BuildingDetailPage() {
       | 'mailboxes'
       | 'frontdoor'
       | 'packages'
+      | 'messages'
       | 'facilities'
       | 'announcements'
       | 'working-groups'
@@ -77,7 +79,7 @@ export default function BuildingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'facilities' | 'announcements' | 'working-groups'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
 
@@ -233,6 +235,15 @@ export default function BuildingDetailPage() {
           {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} />}
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
           {activeTab === 'packages' && <PackageManager buildingId={buildingId} />}
+          {activeTab === 'messages' && buildingId && (
+            <div className="h-[600px]">
+              <iframe
+                src={`/building/${buildingId}/messages`}
+                className="w-full h-full border-0 rounded-lg"
+                title="Messages"
+              />
+            </div>
+          )}
           {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} />}
           {activeTab === 'working-groups' && buildingId && building && (
             <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} />

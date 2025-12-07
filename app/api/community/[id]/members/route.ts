@@ -157,6 +157,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  // Handle both Promise and direct params (Next.js 14 vs 15)
+  const resolvedParams = params instanceof Promise ? await params : params
+  const communityId = resolvedParams.id
+
+  // Declare variables outside try block for error logging
+  let targetUserId: string | undefined
+  let targetUserEmail: string | undefined
+
   try {
     const session = await getServerSession(authOptions)
     
@@ -166,9 +174,6 @@ export async function POST(
     }
 
     const userId = (session.user as any).id
-    // Handle both Promise and direct params (Next.js 14 vs 15)
-    const resolvedParams = params instanceof Promise ? await params : params
-    const communityId = resolvedParams.id
     
     let body
     try {
@@ -178,7 +183,10 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
     
-    const { targetUserId, targetUserEmail, role = 'MEMBER', memberClass = 'household' } = body
+    targetUserId = body.targetUserId
+    targetUserEmail = body.targetUserEmail
+    const role = body.role || 'MEMBER'
+    const memberClass = body.memberClass || 'household'
 
     console.log('[Add Community Member] Request:', {
       userId,

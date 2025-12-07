@@ -83,7 +83,6 @@ export async function GET(request: NextRequest) {
           userId: true,
           buildingId: true,
           role: true,
-          memberClass: true,
           joinedAt: true,
           building: {
             select: {

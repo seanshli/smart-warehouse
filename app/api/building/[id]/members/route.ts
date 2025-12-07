@@ -191,28 +191,59 @@ export async function POST(
       }
 
       // If already a member, update the role instead of creating new
-      const updatedMembership = await prisma.buildingMember.update({
-        where: {
-          userId_buildingId: {
-            userId: targetUser.id,
-            buildingId,
-          },
-        },
-        data: {
-          role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-          memberClass: finalMemberClass,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              image: true,
+      // Try with memberClass first, fallback without it if column doesn't exist
+      let updatedMembership
+      try {
+        updatedMembership = await prisma.buildingMember.update({
+          where: {
+            userId_buildingId: {
+              userId: targetUser.id,
+              buildingId,
             },
           },
-        },
-      })
+          data: {
+            role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+            memberClass: finalMemberClass,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        })
+      } catch (memberClassError: any) {
+        // If memberClass column doesn't exist, update without it
+        if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+          updatedMembership = await prisma.buildingMember.update({
+            where: {
+              userId_buildingId: {
+                userId: targetUser.id,
+                buildingId,
+              },
+            },
+            data: {
+              role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  image: true,
+                },
+              },
+            },
+          })
+        } else {
+          throw memberClassError
+        }
+      }
 
       // If user is now a building ADMIN, ensure they have community membership
       if (role === 'ADMIN' && building) {
@@ -333,17 +364,41 @@ export async function POST(
           role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
           memberClass: finalMemberClass,
         },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            },
           },
         },
-      },
-    })
+      })
+    } catch (memberClassError: any) {
+      // If memberClass column doesn't exist, create without it
+      if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+        membership = await prisma.buildingMember.create({
+          data: {
+            userId: targetUser.id,
+            buildingId,
+            role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        })
+      } else {
+        throw memberClassError
+      }
+    }
 
     // If user is a building member with memberClass='building' (working team) or ADMIN role, ensure they have community membership
     if (building && (role === 'ADMIN' || finalMemberClass === 'building')) {

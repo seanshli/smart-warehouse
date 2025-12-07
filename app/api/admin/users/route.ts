@@ -335,7 +335,7 @@ export async function GET(request: NextRequest) {
         id: membership.building.id,
         name: membership.building.name,
         role: membership.role,
-        memberClass: membership.memberClass || 'household',
+        memberClass: (membership as any).memberClass || 'household', // Use any cast since column might not exist
         communityId: membership.building.communityId,
         community: membership.building.community,
         joinedAt: membership.joinedAt.toISOString()
@@ -767,33 +767,59 @@ export async function POST(request: NextRequest) {
               })
 
               if (!existingCommunityMembership) {
-                await prisma.communityMember.create({
-                  data: {
-                    userId: user.id,
-                    communityId: building.communityId,
-                    role: buildingRole === 'ADMIN' ? 'MEMBER' : 'MEMBER',
-                    memberClass: 'building',
-                  },
-                })
+                // Try with memberClass first, fallback without it if column doesn't exist
+                try {
+                  await prisma.communityMember.create({
+                    data: {
+                      userId: user.id,
+                      communityId: building.communityId,
+                      role: buildingRole === 'ADMIN' ? 'MEMBER' : 'MEMBER',
+                      memberClass: 'building',
+                    },
+                  })
+                } catch (memberClassError: any) {
+                  // If memberClass column doesn't exist, create without it
+                  if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+                    await prisma.communityMember.create({
+                      data: {
+                        userId: user.id,
+                        communityId: building.communityId,
+                        role: buildingRole === 'ADMIN' ? 'MEMBER' : 'MEMBER',
+                      },
+                    })
+                  } else {
+                    throw memberClassError
+                  }
+                }
                 console.log('[Create User] Created community membership for building member:', {
                   userId: user.id,
                   communityId: building.communityId,
                   role: buildingRole,
                   memberClass: buildingMemberClass,
                 })
-              } else if (existingCommunityMembership.memberClass !== 'building') {
-                // Update memberClass if different
-                await prisma.communityMember.update({
-                  where: {
-                    userId_communityId: {
-                      userId: user.id,
-                      communityId: building.communityId,
-                    },
-                  },
-                  data: {
-                    memberClass: 'building',
-                  },
-                })
+              } else {
+                // Try to update memberClass if column exists
+                try {
+                  const currentMemberClass = (existingCommunityMembership as any).memberClass
+                  if (currentMemberClass !== 'building') {
+                    await prisma.communityMember.update({
+                      where: {
+                        userId_communityId: {
+                          userId: user.id,
+                          communityId: building.communityId,
+                        },
+                      },
+                      data: {
+                        memberClass: 'building',
+                      },
+                    })
+                  }
+                } catch (memberClassError: any) {
+                  // If memberClass column doesn't exist, ignore the update
+                  if (!memberClassError.message?.includes('member_class') && memberClassError.code !== 'P2022') {
+                    throw memberClassError
+                  }
+                }
               }
             }
           } catch (communityError: any) {

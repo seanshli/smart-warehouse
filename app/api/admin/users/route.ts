@@ -644,24 +644,49 @@ export async function POST(request: NextRequest) {
           })
           for (const building of buildings) {
             try {
-              await prisma.buildingMember.upsert({
-                where: {
-                  userId_buildingId: {
+              // Try with memberClass first, fallback without it if column doesn't exist
+              try {
+                await prisma.buildingMember.upsert({
+                  where: {
+                    userId_buildingId: {
+                      userId: user.id,
+                      buildingId: building.id,
+                    },
+                  },
+                  update: {
+                    role: 'ADMIN',
+                    memberClass: 'community',
+                  },
+                  create: {
                     userId: user.id,
                     buildingId: building.id,
+                    role: 'ADMIN',
+                    memberClass: 'community',
                   },
-                },
-                update: {
-                  role: 'ADMIN',
-                  memberClass: 'community',
-                },
-                create: {
-                  userId: user.id,
-                  buildingId: building.id,
-                  role: 'ADMIN',
-                  memberClass: 'community',
-                },
-              })
+                })
+              } catch (memberClassError: any) {
+                // If memberClass column doesn't exist, upsert without it
+                if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+                  await prisma.buildingMember.upsert({
+                    where: {
+                      userId_buildingId: {
+                        userId: user.id,
+                        buildingId: building.id,
+                      },
+                    },
+                    update: {
+                      role: 'ADMIN',
+                    },
+                    create: {
+                      userId: user.id,
+                      buildingId: building.id,
+                      role: 'ADMIN',
+                    },
+                  })
+                } else {
+                  throw memberClassError
+                }
+              }
             } catch (buildingError: any) {
               console.error('[Create User] Error adding to building:', building.id, buildingError)
               // Continue with other buildings
@@ -759,24 +784,49 @@ export async function POST(request: NextRequest) {
           memberClass: buildingMembership.memberClass || 'building'
         })
 
-        await prisma.buildingMember.upsert({
-          where: {
-            userId_buildingId: {
+        // Try with memberClass first, fallback without it if column doesn't exist
+        try {
+          await prisma.buildingMember.upsert({
+            where: {
+              userId_buildingId: {
+                userId: user.id,
+                buildingId: buildingMembership.buildingId,
+              },
+            },
+            update: {
+              role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+              memberClass: ((buildingMembership as any).memberClass || 'building') as 'household' | 'building' | 'community',
+            },
+            create: {
               userId: user.id,
               buildingId: buildingMembership.buildingId,
+              role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+              memberClass: ((buildingMembership as any).memberClass || 'building') as 'household' | 'building' | 'community',
             },
-          },
-          update: {
-            role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-            memberClass: (buildingMembership.memberClass || 'building') as 'household' | 'building' | 'community',
-          },
-          create: {
-            userId: user.id,
-            buildingId: buildingMembership.buildingId,
-            role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
-            memberClass: (buildingMembership.memberClass || 'building') as 'household' | 'building' | 'community',
-          },
-        })
+          })
+        } catch (memberClassError: any) {
+          // If memberClass column doesn't exist, upsert without it
+          if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+            await prisma.buildingMember.upsert({
+              where: {
+                userId_buildingId: {
+                  userId: user.id,
+                  buildingId: buildingMembership.buildingId,
+                },
+              },
+              update: {
+                role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+              },
+              create: {
+                userId: user.id,
+                buildingId: buildingMembership.buildingId,
+                role: (buildingMembership.role || 'MEMBER') as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+              },
+            })
+          } else {
+            throw memberClassError
+          }
+        }
 
         // If building admin or working team member (memberClass='building'), ensure community membership
         const buildingRole = buildingMembership.role || 'MEMBER'

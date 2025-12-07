@@ -200,13 +200,16 @@ async function joinBuilding(
     )
   }
 
-  // 添加用户到 Building
-  const membership = await prisma.buildingMember.create({
-    data: {
-      userId,
-      buildingId: building.id,
-      role: role || 'MEMBER',
-      isAutoJoined: false, // 手动加入
+  // 添加用户到 Building - try with memberClass first, fallback without it if column doesn't exist
+  let membership
+  try {
+    membership = await prisma.buildingMember.create({
+      data: {
+        userId,
+        buildingId: building.id,
+        role: role || 'MEMBER',
+        isAutoJoined: false, // 手动加入
+        // Note: memberClass might not exist in database schema
     },
   })
 

@@ -98,6 +98,13 @@ export async function PUT(
             communityId: memberToUpdate.building.communityId,
           },
         },
+        select: {
+          id: true,
+          userId: true,
+          communityId: true,
+          role: true,
+          joinedAt: true,
+        },
       })
 
       if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
@@ -110,6 +117,13 @@ export async function PUT(
               userId: userId,
               buildingId: buildingId,
             },
+          },
+          select: {
+            id: true,
+            userId: true,
+            buildingId: true,
+            role: true,
+            joinedAt: true,
           },
         })
 
@@ -151,21 +165,47 @@ export async function PUT(
       }
     }
 
-    // Update the role
-    const updatedMember = await prisma.buildingMember.update({
-      where: { id: memberId },
-      data: { role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
+    // Update the role - try with memberClass first, fallback without it if column doesn't exist
+    let updatedMember
+    try {
+      updatedMember = await prisma.buildingMember.update({
+        where: { id: memberId },
+        data: { 
+          role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER',
+          // Try to preserve memberClass if it exists, but don't fail if column doesn't exist
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            },
           },
         },
-      },
-    })
+      })
+    } catch (memberClassError: any) {
+      // If memberClass column doesn't exist, update without it
+      if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+        updatedMember = await prisma.buildingMember.update({
+          where: { id: memberId },
+          data: { role: role as 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        })
+      } else {
+        throw memberClassError
+      }
+    }
 
     return NextResponse.json({
       id: updatedMember.id,

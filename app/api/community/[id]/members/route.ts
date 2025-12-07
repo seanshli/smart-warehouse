@@ -521,12 +521,21 @@ export async function POST(
                 buildingId: building.id,
               },
             },
+            select: {
+              id: true,
+              userId: true,
+              buildingId: true,
+              role: true,
+              joinedAt: true,
+            },
           })
 
           if (!existingBuildingMembership) {
-            await prisma.buildingMember.create({
-              data: {
-                userId: targetUser.id,
+            // Try with memberClass first, fallback without it if column doesn't exist
+            try {
+              await prisma.buildingMember.create({
+                data: {
+                  userId: targetUser.id,
                 buildingId: building.id,
                 role: 'ADMIN', // Always ADMIN for community admins
                 memberClass: 'community', // Mark as community-level admin

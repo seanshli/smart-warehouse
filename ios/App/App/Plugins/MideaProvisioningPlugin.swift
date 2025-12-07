@@ -1,6 +1,6 @@
 import Foundation
 import Capacitor
-import MSmartSDK
+import OEMBusiness
 
 @objc(MideaProvisioningPlugin)
 public class MideaProvisioningPlugin: CAPPlugin {

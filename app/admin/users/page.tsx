@@ -552,8 +552,10 @@ export default function AdminUsersPage() {
       } else {
         setError('Failed to fetch users')
       }
-    } catch (err) {
-      setError('Network error')
+    } catch (err: any) {
+      console.error('[Fetch Users] Request failed:', err)
+      const errorMessage = err.message || 'Failed to fetch users. Please check your connection and try again.'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -599,8 +601,9 @@ export default function AdminUsersPage() {
         const errorData = await response.json()
         alert(errorData.error || 'Failed to delete user')
       }
-    } catch (err) {
-      alert('Network error')
+    } catch (err: any) {
+      console.error('[Delete User] Request failed:', err)
+      alert(err.message || 'Failed to delete user. Please check your connection and try again.')
     }
   }
 
@@ -633,9 +636,9 @@ export default function AdminUsersPage() {
         toast.error(responseData.error || 'Failed to update community role')
         console.error('[Update Community Role] Error:', responseData)
       }
-    } catch (err) {
-      console.error('[Update Community Role] Network error:', err)
-      toast.error('Network error')
+    } catch (err: any) {
+      console.error('[Update Community Role] Request failed:', err)
+      toast.error(err.message || 'Failed to update community role. Please check your connection and try again.')
     } finally {
       setSavingRole(false)
     }
@@ -670,9 +673,9 @@ export default function AdminUsersPage() {
         toast.error(responseData.error || 'Failed to update building role')
         console.error('[Update Building Role] Error:', responseData)
       }
-    } catch (err) {
-      console.error('[Update Building Role] Network error:', err)
-      toast.error('Network error')
+    } catch (err: any) {
+      console.error('[Update Building Role] Request failed:', err)
+      toast.error(err.message || 'Failed to update building role. Please check your connection and try again.')
     } finally {
       setSavingRole(false)
     }
@@ -702,8 +705,9 @@ export default function AdminUsersPage() {
         const errorData = await response.json()
         toast.error(errorData.error || 'Failed to update user')
       }
-    } catch (err) {
-      toast.error('Network error')
+    } catch (err: any) {
+      console.error('[Save User] Request failed:', err)
+      toast.error(err.message || 'Failed to update user. Please check your connection and try again.')
     } finally {
       setSaving(false)
     }
@@ -726,8 +730,9 @@ export default function AdminUsersPage() {
         const errorData = await response.json()
         alert(errorData.error || 'Failed to reset password')
       }
-    } catch (err) {
-      alert('Network error')
+    } catch (err: any) {
+      console.error('[Reset Password] Request failed:', err)
+      alert(err.message || 'Failed to reset password. Please check your connection and try again.')
     }
   }
 
@@ -941,9 +946,9 @@ export default function AdminUsersPage() {
                                 isAdmin: user.isAdmin
                               })
                             }
-                          } catch (err) {
+                          } catch (err: any) {
                             console.error('[View User] Error fetching user data:', err)
-                            toast.error('Network error while fetching user details')
+                            toast.error(err.message || 'Failed to fetch user details. Please check your connection and try again.')
                             setSelectedUser(user)
                             setEditFormData({
                               name: user.name,
@@ -1319,8 +1324,9 @@ export default function AdminUsersPage() {
                                   toast.error(errorMsg)
                                 }
                               } catch (err: any) {
-                                console.error('[Add Community Member] Network error:', err)
-                                toast.error(err.message || 'Network error')
+                                console.error('[Add Community Member] Request failed:', err)
+                                const errorMessage = err.message || 'Failed to add community member. Please check your connection and try again.'
+                                toast.error(errorMessage)
                               } finally {
                                 setAddingMembership(false)
                               }
@@ -1495,8 +1501,9 @@ export default function AdminUsersPage() {
                                   toast.error(errorMsg)
                                 }
                               } catch (err: any) {
-                                console.error('[Add Building Member] Network error:', err)
-                                toast.error(err.message || 'Network error')
+                                console.error('[Add Building Member] Request failed:', err)
+                                const errorMessage = err.message || 'Failed to add building member. Please check your connection and try again.'
+                                toast.error(errorMessage)
                               } finally {
                                 setAddingMembership(false)
                               }

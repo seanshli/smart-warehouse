@@ -282,20 +282,34 @@ export async function POST(
     const errorDetails = error instanceof Error ? error.stack : String(error)
     console.error('[Add Building Member] Error details:', {
       errorMessage,
-      errorDetails
+      errorDetails,
+      buildingId,
+      targetUserId,
+      targetUserEmail
     })
     
+    // Check if it's a database connection error
+    if (errorMessage.includes('connect') || errorMessage.includes('timeout') || errorMessage.includes('ECONNREFUSED')) {
+      return NextResponse.json(
+        { 
+          error: 'Database connection failed. Please check your database configuration.',
+          details: 'Unable to connect to Supabase database. Please verify DATABASE_URL is correct in Vercel environment variables.'
+        },
+        { status: 503 }
+      )
+    }
+    
     // Return more specific error messages
-    if (errorMessage.includes('Unique constraint')) {
+    if (errorMessage.includes('Unique constraint') || errorMessage.includes('P2002')) {
       return NextResponse.json(
         { error: 'User is already a member of this building' },
         { status: 400 }
       )
     }
     
-    if (errorMessage.includes('Foreign key constraint')) {
+    if (errorMessage.includes('Foreign key constraint') || errorMessage.includes('P2003')) {
       return NextResponse.json(
-        { error: 'Invalid building or user ID' },
+        { error: 'Invalid building or user ID. Please verify the IDs are correct.' },
         { status: 400 }
       )
     }

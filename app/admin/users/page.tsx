@@ -178,8 +178,11 @@ function CreateUserModal({ onClose, onSuccess }: CreateUserModalProps) {
         setError(fullMessage)
         toast.error(errorMessage)
       }
-    } catch (err) {
-      setError('Network error')
+    } catch (err: any) {
+      console.error('[Create User] Request failed:', err)
+      const errorMessage = err.message || 'Failed to create user. Please check your connection and try again.'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }

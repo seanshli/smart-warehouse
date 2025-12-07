@@ -226,7 +226,7 @@ export async function POST(
 
     // Validate UUID format for communityId
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(communityId)) {
+    if (communityId && !uuidRegex.test(communityId)) {
       return NextResponse.json({ 
         error: 'Invalid community ID format',
         details: 'Community ID must be a valid UUID'
@@ -296,27 +296,83 @@ export async function POST(
     }
 
     // Check if user is already a member
-    const existingMembership = await prisma.communityMember.findUnique({
-      where: {
-        userId_communityId: {
-          userId: targetUser.id,
-          communityId,
+    let existingMembership
+    try {
+      existingMembership = await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId: targetUser.id,
+            communityId,
+          },
         },
-      },
-    })
+      })
+    } catch (dbError: any) {
+      console.error('[Add Community Member] Database error checking existing membership:', dbError)
+      return NextResponse.json({ 
+        error: 'Database error while checking membership',
+        details: dbError.message || 'Failed to query database'
+      }, { status: 500 })
+    }
 
     if (existingMembership) {
-      return NextResponse.json({ error: 'User is already a member' }, { status: 400 })
+      // Update existing membership instead of failing
+      try {
+        const updatedMembership = await prisma.communityMember.update({
+          where: {
+            userId_communityId: {
+              userId: targetUser.id,
+              communityId,
+            },
+          },
+          data: {
+            role: role as CommunityRole,
+            memberClass: memberClass as 'household' | 'building' | 'community',
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        })
+        
+        console.log('[Add Community Member] Updated existing membership:', {
+          membershipId: updatedMembership.id,
+          userId: targetUser.id,
+          communityId,
+          role
+        })
+        
+        return NextResponse.json({
+          id: updatedMembership.id,
+          role: updatedMembership.role,
+          joinedAt: updatedMembership.joinedAt,
+          user: updatedMembership.user,
+          message: 'Membership updated successfully'
+        }, { status: 200 })
+      } catch (updateError: any) {
+        console.error('[Add Community Member] Error updating membership:', updateError)
+        return NextResponse.json({ 
+          error: 'User is already a member and failed to update',
+          details: updateError.message || 'Unknown error'
+        }, { status: 400 })
+      }
     }
 
     // Create membership
-    const membership = await prisma.communityMember.create({
-      data: {
-        userId: targetUser.id,
-        communityId,
-        role: role as CommunityRole,
-        memberClass: memberClass as 'household' | 'building' | 'community',
-      },
+    let membership
+    try {
+      membership = await prisma.communityMember.create({
+        data: {
+          userId: targetUser.id,
+          communityId,
+          role: role as CommunityRole,
+          memberClass: memberClass as 'household' | 'building' | 'community',
+        },
       include: {
         user: {
           select: {

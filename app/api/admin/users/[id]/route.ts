@@ -94,7 +94,10 @@ export async function GET(
         where: { userId },
         include: {
           building: {
-            include: {
+            select: {
+              id: true,
+              name: true,
+              communityId: true,
               community: {
                 select: {
                   id: true,
@@ -104,7 +107,10 @@ export async function GET(
             }
           }
         }
-      }).catch(() => []),
+      }).catch((err) => {
+        console.error('[Get User] Error fetching building memberships:', err)
+        return []
+      }),
       prisma.workingGroupMember.findMany({
         where: { userId },
         include: {
@@ -142,16 +148,18 @@ export async function GET(
         memberClass: membership.memberClass || 'household',
         joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()
       })),
-      buildings: buildingMemberships.map(membership => ({
-        membershipId: membership.id,
-        id: membership.building.id,
-        name: membership.building.name,
-        role: membership.role || 'MEMBER',
-        memberClass: membership.memberClass || 'household',
-        communityId: membership.building.communityId,
-        community: membership.building.community,
-        joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()
-      })),
+      buildings: buildingMemberships
+        .filter(membership => membership.building) // Filter out any null buildings
+        .map(membership => ({
+          membershipId: membership.id,
+          id: membership.building!.id,
+          name: membership.building!.name,
+          role: membership.role || 'MEMBER',
+          memberClass: membership.memberClass || 'household',
+          communityId: membership.building!.communityId,
+          community: membership.building!.community || null,
+          joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString()
+        })),
       workingGroups: workingGroupMembers.map(membership => ({
         id: membership.workingGroup.id,
         name: membership.workingGroup.name,

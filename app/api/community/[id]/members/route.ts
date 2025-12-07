@@ -169,7 +169,15 @@ export async function POST(
     // Handle both Promise and direct params (Next.js 14 vs 15)
     const resolvedParams = params instanceof Promise ? await params : params
     const communityId = resolvedParams.id
-    const body = await request.json()
+    
+    let body
+    try {
+      body = await request.json()
+    } catch (err) {
+      console.error('[Add Community Member] Invalid JSON in request body:', err)
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+    
     const { targetUserId, targetUserEmail, role = 'MEMBER', memberClass = 'household' } = body
 
     console.log('[Add Community Member] Request:', {
@@ -180,6 +188,15 @@ export async function POST(
       role,
       memberClass
     })
+    
+    // Validate required fields
+    if (!targetUserId && !targetUserEmail) {
+      return NextResponse.json({ error: 'Either targetUserId or targetUserEmail is required' }, { status: 400 })
+    }
+    
+    if (!communityId) {
+      return NextResponse.json({ error: 'Community ID is required' }, { status: 400 })
+    }
 
     // Check if user is super admin
     const currentUser = await prisma.user.findUnique({

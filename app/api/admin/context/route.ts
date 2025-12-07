@@ -96,15 +96,20 @@ export async function GET(request: NextRequest) {
       })
 
       context.buildingAdmins = buildingMemberships
-        .filter(m => m.role === 'ADMIN' && m.building?.community)
+        .filter(m => m.role === 'ADMIN' && m.building && m.building.community)
         .map(m => ({
-          id: m.building.id,
-          name: m.building.name,
-          communityId: m.building.community.id,
-          communityName: m.building.community.name,
+          id: m.building!.id,
+          name: m.building!.name,
+          communityId: m.building!.community!.id,
+          communityName: m.building!.community!.name,
         }))
     } catch (error) {
       console.error('Error fetching building memberships:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('Error details:', {
+        errorMessage,
+        error: error instanceof Error ? error.stack : String(error)
+      })
       // Continue with empty array if query fails
       context.buildingAdmins = []
     }

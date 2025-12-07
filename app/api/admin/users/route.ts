@@ -725,6 +725,63 @@ export async function POST(request: NextRequest) {
             memberClass: (buildingMembership.memberClass || 'building') as 'household' | 'building' | 'community',
           },
         })
+
+        // If building admin or working team member (memberClass='building'), ensure community membership
+        const buildingRole = buildingMembership.role || 'MEMBER'
+        const buildingMemberClass = buildingMembership.memberClass || 'building'
+        if (buildingRole === 'ADMIN' || buildingMemberClass === 'building') {
+          try {
+            // Get building to find community
+            const building = await prisma.building.findUnique({
+              where: { id: buildingMembership.buildingId },
+              select: { communityId: true },
+            })
+
+            if (building?.communityId) {
+              const existingCommunityMembership = await prisma.communityMember.findUnique({
+                where: {
+                  userId_communityId: {
+                    userId: user.id,
+                    communityId: building.communityId,
+                  },
+                },
+              })
+
+              if (!existingCommunityMembership) {
+                await prisma.communityMember.create({
+                  data: {
+                    userId: user.id,
+                    communityId: building.communityId,
+                    role: buildingRole === 'ADMIN' ? 'MEMBER' : 'MEMBER',
+                    memberClass: 'building',
+                  },
+                })
+                console.log('[Create User] Created community membership for building member:', {
+                  userId: user.id,
+                  communityId: building.communityId,
+                  role: buildingRole,
+                  memberClass: buildingMemberClass,
+                })
+              } else if (existingCommunityMembership.memberClass !== 'building') {
+                // Update memberClass if different
+                await prisma.communityMember.update({
+                  where: {
+                    userId_communityId: {
+                      userId: user.id,
+                      communityId: building.communityId,
+                    },
+                  },
+                  data: {
+                    memberClass: 'building',
+                  },
+                })
+              }
+            }
+          } catch (communityError: any) {
+            console.error('[Create User] Error ensuring community membership for building member:', communityError)
+            // Don't fail the request - building membership was created successfully
+          }
+        }
       } catch (buildingError: any) {
         console.error('[Create User] Error creating building membership:', buildingError)
         return NextResponse.json({ 

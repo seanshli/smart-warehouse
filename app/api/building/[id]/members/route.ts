@@ -343,8 +343,8 @@ export async function POST(
       },
     })
 
-    // If user is now a building ADMIN, ensure they have community membership
-    if (role === 'ADMIN' && building) {
+    // If user is a building member with memberClass='building' (working team) or ADMIN role, ensure they have community membership
+    if (building && (role === 'ADMIN' || finalMemberClass === 'building')) {
       const communityMembership = await prisma.communityMember.findUnique({
         where: {
           userId_communityId: {

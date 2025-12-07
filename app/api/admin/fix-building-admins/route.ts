@@ -27,10 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    // Find all building admins
+    // Find all building admins and working team members (memberClass='building')
     const buildingAdmins = await prisma.buildingMember.findMany({
       where: {
-        role: 'ADMIN',
+        OR: [
+          { role: 'ADMIN' },
+          { memberClass: 'building' },
+        ],
       },
       include: {
         building: {
@@ -56,6 +59,8 @@ export async function POST(request: NextRequest) {
     let errors = 0
 
     for (const buildingAdmin of buildingAdmins) {
+      const isAdmin = buildingAdmin.role === 'ADMIN'
+      const isWorkingTeam = buildingAdmin.memberClass === 'building'
       if (!buildingAdmin.building?.communityId) {
         skipped++
         results.push({
@@ -63,8 +68,26 @@ export async function POST(request: NextRequest) {
           userEmail: buildingAdmin.user.email,
           buildingId: buildingAdmin.building?.id,
           buildingName: buildingAdmin.building?.name,
+          role: buildingAdmin.role,
+          memberClass: buildingAdmin.memberClass,
           status: 'skipped',
           reason: 'Building has no community',
+        })
+        continue
+      }
+
+      // Only fix admins and working team members (memberClass='building')
+      if (!isAdmin && !isWorkingTeam) {
+        skipped++
+        results.push({
+          userId: buildingAdmin.user.id,
+          userEmail: buildingAdmin.user.email,
+          buildingId: buildingAdmin.building.id,
+          buildingName: buildingAdmin.building.name,
+          role: buildingAdmin.role,
+          memberClass: buildingAdmin.memberClass,
+          status: 'skipped',
+          reason: 'Not an admin or working team member',
         })
         continue
       }
@@ -153,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Fixed ${fixed} building admins, skipped ${skipped}, errors: ${errors}`,
+      message: `Fixed ${fixed} building admins/working team members, skipped ${skipped}, errors: ${errors}`,
       summary: {
         total: buildingAdmins.length,
         fixed,

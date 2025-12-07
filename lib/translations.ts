@@ -3781,7 +3781,6 @@ const ja: Translations = {
   general: '一般',
   mail: 'メール',
   package: 'パッケージ',
-  doorBell: 'ドアベル',
   reservation: '予約',
   openReservations: '共用施設を予約',
   openBuildingServices: '郵便 / 荷物 / ドアベルを表示',

@@ -126,14 +126,13 @@ public class NativeBarcodeScanner: CAPPlugin {
             session.addOutput(metadataOutput)
             
             // Set metadata object types to scan
-            metadataOutput.metadataObjectTypes = [
+            var objectTypes: [AVMetadataObject.ObjectType] = [
                 .ean13,           // EAN-13 barcode
                 .ean8,            // EAN-8 barcode
                 .upce,            // UPC-E barcode
                 .code128,         // Code 128
                 .code39,          // Code 39
                 .code93,          // Code 93
-                .codabar,         // Codabar
                 .interleaved2of5, // Interleaved 2 of 5
                 .itf14,           // ITF-14
                 .dataMatrix,      // Data Matrix
@@ -141,6 +140,13 @@ public class NativeBarcodeScanner: CAPPlugin {
                 .pdf417,          // PDF417
                 .qr               // QR Code
             ]
+            
+            // Codabar is only available in iOS 15.4+
+            if #available(iOS 15.4, *) {
+                objectTypes.append(.codabar)
+            }
+            
+            metadataOutput.metadataObjectTypes = objectTypes
             
             // Set delegate to receive detected barcodes
             metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
@@ -342,7 +348,11 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
         case .code93:
             return "CODE_93"
         case .codabar:
-            return "CODABAR"
+            if #available(iOS 15.4, *) {
+                return "CODABAR"
+            } else {
+                return "UNKNOWN"
+            }
         case .interleaved2of5:
             return "ITF"
         case .itf14:

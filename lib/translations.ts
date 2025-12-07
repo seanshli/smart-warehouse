@@ -483,6 +483,11 @@ export interface Translations {
   assignPackage: string
   packageLockerDescription: string
   noPackageLockers: string
+  setup: string
+  setupPackageLockers: string
+  numberOfLockers: string
+  packageLockerCountHint: string
+  packageLockerSetupSuccess: string
   selectHousehold: string
   enterTrackingNumber: string
   assign: string
@@ -1661,6 +1666,11 @@ const en: Translations = {
   assignPackage: 'Assign Package',
   packageLockerDescription: 'Click on an empty locker to assign a package to a household',
   noPackageLockers: 'No package lockers configured',
+  setup: 'Setup',
+  setupPackageLockers: 'Setup Package Lockers',
+  numberOfLockers: 'Number of Package Lockers',
+  packageLockerCountHint: 'Set the total number of package lockers for this building (0-100)',
+  packageLockerSetupSuccess: 'Package lockers setup successfully',
   selectHousehold: 'Select household',
   enterTrackingNumber: 'Enter tracking number',
   assign: 'Assign Package',
@@ -2769,6 +2779,11 @@ const zh: Translations = {
   assignPackage: '分配包裹',
   packageLockerDescription: '点击空置的包裹柜以分配包裹给住户',
   noPackageLockers: '尚未设置包裹柜',
+  setup: '设置',
+  setupPackageLockers: '设置包裹柜',
+  numberOfLockers: '包裹柜数量',
+  packageLockerCountHint: '设置此大楼的包裹柜总数（0-100）',
+  packageLockerSetupSuccess: '包裹柜设置成功',
   selectHousehold: '选择住户',
   enterTrackingNumber: '输入追踪号码',
   assign: '分配包裹',
@@ -3666,6 +3681,11 @@ const ja: Translations = {
   assignPackage: '荷物を割り当て',
   packageLockerDescription: '空いているロッカーをクリックして、世帯に荷物を割り当てます',
   noPackageLockers: '荷物ロッカーが設定されていません',
+  setup: '設定',
+  setupPackageLockers: 'パッケージロッカーの設定',
+  numberOfLockers: 'パッケージロッカーの数',
+  packageLockerCountHint: 'この建物のパッケージロッカーの総数を設定します（0-100）',
+  packageLockerSetupSuccess: 'パッケージロッカーの設定が完了しました',
   selectHousehold: '世帯を選択',
   enterTrackingNumber: '追跡番号を入力',
   assign: '荷物を割り当て',

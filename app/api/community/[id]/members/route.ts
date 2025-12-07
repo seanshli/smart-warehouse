@@ -339,9 +339,24 @@ export async function POST(
       
       // Check for Prisma query errors
       if (dbError.code === 'P2002' || dbError.message?.includes('Unique constraint')) {
-        // This means the membership already exists, which is fine - we'll update it
-        console.log('[Add Community Member] Membership already exists, will update')
-        existingMembership = { id: 'exists' } // Set a flag to trigger update
+        // This means the membership already exists, try to fetch it
+        try {
+          existingMembership = await prisma.communityMember.findUnique({
+            where: {
+              userId_communityId: {
+                userId: targetUser.id,
+                communityId,
+              },
+            },
+          })
+        } catch (fetchError: any) {
+          console.error('[Add Community Member] Failed to fetch existing membership:', fetchError)
+          return NextResponse.json({ 
+            error: 'Database error while checking membership',
+            details: fetchError.message || 'Failed to query database',
+            code: fetchError.code || 'UNKNOWN'
+          }, { status: 500 })
+        }
       } else {
         return NextResponse.json({ 
           error: 'Database error while checking membership',
@@ -351,7 +366,7 @@ export async function POST(
       }
     }
 
-    if (existingMembership) {
+    if (existingMembership && existingMembership.id) {
       // Update existing membership instead of failing
       try {
         const updatedMembership = await prisma.communityMember.update({

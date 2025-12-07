@@ -127,7 +127,7 @@ export async function GET(
         id: membership.household.id,
         name: membership.household.name,
         role: membership.role,
-        joinedAt: membership.joinedAt.toISOString(),
+        joinedAt: membership.joinedAt?.toISOString() || new Date().toISOString(),
         building: membership.household.building ? {
           id: membership.household.building.id,
           name: membership.household.building.name,

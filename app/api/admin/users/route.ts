@@ -591,7 +591,7 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           communityId: communityMembership.communityId,
           role: communityMembership.role,
-          memberClass: communityMembership.memberClass || 'community'
+          memberClass: (communityMembership as any).memberClass || 'community'
         })
         
         // Check if membership already exists

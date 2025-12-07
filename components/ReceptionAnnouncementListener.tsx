@@ -160,7 +160,11 @@ export default function ReceptionAnnouncementListener() {
       })
 
       if (response.ok) {
-        setReadAnnouncementIds(prev => new Set([...prev, announcementId]))
+        setReadAnnouncementIds(prev => {
+          const newSet = new Set(prev)
+          newSet.add(announcementId)
+          return newSet
+        })
       }
     } catch (error) {
       console.error('Error marking announcement as read:', error)

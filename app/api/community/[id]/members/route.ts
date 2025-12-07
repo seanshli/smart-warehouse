@@ -549,18 +549,38 @@ export async function POST(
             const adminRoleLevel = roleHierarchy['ADMIN'] || 0
 
             if (adminRoleLevel > currentRoleLevel) {
-              await prisma.buildingMember.update({
-                where: {
-                  userId_buildingId: {
-                    userId: targetUser.id,
-                    buildingId: building.id,
+              // Try with memberClass first, fallback without it if column doesn't exist
+              try {
+                await prisma.buildingMember.update({
+                  where: {
+                    userId_buildingId: {
+                      userId: targetUser.id,
+                      buildingId: building.id,
+                    },
                   },
-                },
-                data: {
-                  role: 'ADMIN',
-                  memberClass: 'community',
-                },
-              })
+                  data: {
+                    role: 'ADMIN',
+                    memberClass: 'community',
+                  },
+                })
+              } catch (memberClassError: any) {
+                // If memberClass column doesn't exist, update without it
+                if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+                  await prisma.buildingMember.update({
+                    where: {
+                      userId_buildingId: {
+                        userId: targetUser.id,
+                        buildingId: building.id,
+                      },
+                    },
+                    data: {
+                      role: 'ADMIN',
+                    },
+                  })
+                } else {
+                  throw memberClassError
+                }
+              }
             }
           }
         }

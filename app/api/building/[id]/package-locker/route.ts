@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -22,7 +22,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const buildingId = params.id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
 
     // Check if user has access to this building
     const building = await prisma.building.findUnique({
@@ -87,10 +88,23 @@ export async function GET(
     }))
 
     return NextResponse.json({ success: true, data: lockersWithStatus })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching package lockers:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = error?.code || 'UNKNOWN'
+    
+    // Log Prisma-specific errors
+    if (error?.code) {
+      console.error('Prisma error code:', error.code)
+      console.error('Prisma error meta:', error.meta)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch package lockers' },
+      { 
+        error: 'Failed to fetch package lockers',
+        details: errorMessage,
+        code: errorCode
+      },
       { status: 500 }
     )
   }
@@ -98,7 +112,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -108,7 +122,8 @@ export async function PUT(
     }
 
     const userId = (session.user as any).id
-    const buildingId = params.id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
     const { count } = await request.json()
 
     if (typeof count !== 'number' || count < 0 || count > 100) {

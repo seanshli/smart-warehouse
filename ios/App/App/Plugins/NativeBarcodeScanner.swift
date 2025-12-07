@@ -291,10 +291,31 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
         }
         
         // Stop scanning
-        stopScanning()
+        isScanning = false
+        
+        if let session = captureSession {
+            session.stopRunning()
+            captureSession = nil
+        }
+        
+        if let preview = previewLayer {
+            preview.removeFromSuperlayer()
+            previewLayer = nil
+        }
+        
+        // Remove container view
+        DispatchQueue.main.async { [weak self] in
+            if let containerView = self?.scannerContainerView {
+                containerView.removeFromSuperview()
+                self?.scannerContainerView = nil
+            }
+        }
         
         // Map AVMetadataObject.ObjectType to string format
         let format = mapMetadataObjectTypeToString(metadataObject.type)
+        
+        // Vibrate on success
+        AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
         
         // Resolve with detected barcode
         call.resolve([
@@ -302,6 +323,8 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
             "content": stringValue,
             "format": format
         ])
+        
+        currentCall = nil
     }
     
     private func mapMetadataObjectTypeToString(_ type: AVMetadataObject.ObjectType) -> String {

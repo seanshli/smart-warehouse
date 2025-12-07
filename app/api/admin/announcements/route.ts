@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const source = searchParams.get('source') // Optional filter
     const sourceId = searchParams.get('sourceId') // Optional filter
+    const targetType = searchParams.get('targetType') // Optional filter
+    const targetId = searchParams.get('targetId') // Optional filter
+    const isActive = searchParams.get('isActive') // Optional filter
 
     // Check permissions based on source
     const isAdmin = await isSuperAdmin(userId)
@@ -64,6 +67,15 @@ export async function GET(request: NextRequest) {
     }
     if (sourceId) {
       where.sourceId = sourceId
+    }
+    if (targetType) {
+      where.targetType = targetType
+    }
+    if (targetId) {
+      where.targetId = targetId
+    }
+    if (isActive !== null && isActive !== undefined) {
+      where.isActive = isActive === 'true'
     }
 
     const announcements = await prisma.announcement.findMany({

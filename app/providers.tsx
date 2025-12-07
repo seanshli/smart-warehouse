@@ -7,6 +7,7 @@ import LanguageProvider from '@/components/LanguageProvider'
 import { HouseholdProvider } from '@/components/HouseholdProvider'
 import SettingsLoader from '@/components/SettingsLoader'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import ReceptionAnnouncementListener from '@/components/ReceptionAnnouncementListener'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <HouseholdProvider>
               <SettingsLoader />
               {children}
+              <ReceptionAnnouncementListener />
               <Toaster position="top-right" />
             </HouseholdProvider>
           </LanguageProvider>

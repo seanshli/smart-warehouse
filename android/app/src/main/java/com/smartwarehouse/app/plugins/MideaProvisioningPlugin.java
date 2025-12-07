@@ -177,22 +177,80 @@ public class MideaProvisioningPlugin extends Plugin {
 
                         @Override
                         public void onComplete(MSDevice device) {
-                            Log.d(TAG, "Midea provisioning complete: " + device.getDeviceId());
+                            // MSDevice may not have getDeviceId() method
+                            // Try to get device info using available methods
+                            String deviceId = null;
+                            String deviceName = null;
+                            String deviceType = null;
+                            
+                            try {
+                                // Try different possible method names
+                                if (device != null) {
+                                    // Try reflection to find the correct method
+                                    try {
+                                        java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getDeviceId");
+                                        deviceId = (String) getIdMethod.invoke(device);
+                                    } catch (Exception e1) {
+                                        try {
+                                            java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getDeviceID");
+                                            deviceId = (String) getIdMethod.invoke(device);
+                                        } catch (Exception e2) {
+                                            try {
+                                                java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getId");
+                                                deviceId = (String) getIdMethod.invoke(device);
+                                            } catch (Exception e3) {
+                                                // Use toString as fallback
+                                                deviceId = device.toString();
+                                            }
+                                        }
+                                    }
+                                    
+                                    try {
+                                        java.lang.reflect.Method getNameMethod = device.getClass().getMethod("getDeviceName");
+                                        deviceName = (String) getNameMethod.invoke(device);
+                                    } catch (Exception e) {
+                                        deviceName = "Unknown";
+                                    }
+                                    
+                                    try {
+                                        java.lang.reflect.Method getTypeMethod = device.getClass().getMethod("getDeviceType");
+                                        deviceType = (String) getTypeMethod.invoke(device);
+                                    } catch (Exception e) {
+                                        deviceType = "Unknown";
+                                    }
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error getting device info", e);
+                            }
+                            
+                            Log.d(TAG, "Midea provisioning complete: " + deviceId);
                             
                             if (currentProvisioningCall != null) {
                                 JSObject result = new JSObject();
                                 result.put("success", true);
-                                result.put("deviceId", device.getDeviceId());
-                                result.put("deviceName", device.getDeviceName());
+                                if (deviceId != null) {
+                                    result.put("deviceId", deviceId);
+                                }
+                                if (deviceName != null) {
+                                    result.put("deviceName", deviceName);
+                                }
                                 result.put("status", "success");
                                 result.put("token", currentToken);
                                 
                                 // Add device info
-                                JSObject deviceInfo = new JSObject();
-                                deviceInfo.put("deviceId", device.getDeviceId());
-                                deviceInfo.put("deviceName", device.getDeviceName());
-                                deviceInfo.put("deviceType", device.getDeviceType());
-                                result.put("deviceInfo", deviceInfo);
+                                if (deviceId != null || deviceName != null || deviceType != null) {
+                                    JSObject deviceInfo = new JSObject();
+                                    if (deviceId != null) {
+                                        deviceInfo.put("deviceId", deviceId);
+                                    }
+                                    if (deviceName != null) {
+                                        deviceInfo.put("deviceName", deviceName);
+                                    }
+                                    if (deviceType != null) {
+                                        deviceInfo.put("deviceType", deviceType);
+                                    }
+                                    result.put("deviceInfo", deviceInfo);
+                                }
                                 
                                 currentProvisioningCall.resolve(result);
                                 currentProvisioningCall = null;
@@ -206,12 +264,36 @@ public class MideaProvisioningPlugin extends Plugin {
                             // Optionally send progress updates
                             if (currentProvisioningCall != null) {
                                 JSObject progress = new JSObject();
-                                progress.put("step", step.toString());
+                                progress.put("step", step != null ? step.toString() : "unknown");
                                 progress.put("status", "provisioning");
                                 progress.put("token", currentToken);
                                 
+                                // Try to get device ID if device is available
                                 if (device != null) {
-                                    progress.put("deviceId", device.getDeviceId());
+                                    try {
+                                        String deviceId = null;
+                                        try {
+                                            java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getDeviceId");
+                                            deviceId = (String) getIdMethod.invoke(device);
+                                        } catch (Exception e1) {
+                                            try {
+                                                java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getDeviceID");
+                                                deviceId = (String) getIdMethod.invoke(device);
+                                            } catch (Exception e2) {
+                                                try {
+                                                    java.lang.reflect.Method getIdMethod = device.getClass().getMethod("getId");
+                                                    deviceId = (String) getIdMethod.invoke(device);
+                                                } catch (Exception e3) {
+                                                    // Ignore - device ID not available
+                                                }
+                                            }
+                                        }
+                                        if (deviceId != null) {
+                                            progress.put("deviceId", deviceId);
+                                        }
+                                    } catch (Exception e) {
+                                        // Ignore - device info not available
+                                    }
                                 }
                                 
                                 // Note: Capacitor doesn't support streaming responses

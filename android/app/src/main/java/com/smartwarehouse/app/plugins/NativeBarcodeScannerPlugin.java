@@ -37,6 +37,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 @CapacitorPlugin(name = "NativeBarcodeScanner")
 public class NativeBarcodeScannerPlugin extends Plugin {
     private static final String TAG = "NativeBarcodeScanner";

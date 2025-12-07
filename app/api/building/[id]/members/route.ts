@@ -214,7 +214,7 @@ export async function POST(
         },
       })
 
-      // If user is now a building ADMIN, ensure their community role is MEMBER (not MANAGER or higher)
+      // If user is now a building ADMIN, ensure they have community membership
       if (role === 'ADMIN' && building) {
         const communityMembership = await prisma.communityMember.findUnique({
           where: {
@@ -225,19 +225,69 @@ export async function POST(
           },
         })
 
-        // If user has community role MANAGER or higher but is building admin, downgrade to MEMBER
-        if (communityMembership && communityMembership.role !== 'ADMIN' && communityMembership.role !== 'MEMBER') {
-          await prisma.communityMember.update({
-            where: {
-              userId_communityId: {
+        if (!communityMembership) {
+          // Building admin should be a community member - create membership if missing
+          try {
+            await prisma.communityMember.create({
+              data: {
                 userId: targetUser.id,
                 communityId: building.communityId,
+                role: 'MEMBER',
+                memberClass: 'building',
               },
-            },
-            data: {
-              role: 'MEMBER',
-            },
-          })
+            })
+            console.log('[Add Building Member] Created community membership for building admin:', {
+              userId: targetUser.id,
+              communityId: building.communityId,
+            })
+          } catch (createError: any) {
+            // If creation fails (e.g., unique constraint), try to update instead
+            console.error('[Add Building Member] Error creating community membership:', createError)
+            if (createError.code === 'P2002') {
+              // Membership already exists, update it
+              await prisma.communityMember.update({
+                where: {
+                  userId_communityId: {
+                    userId: targetUser.id,
+                    communityId: building.communityId,
+                  },
+                },
+                data: {
+                  role: 'MEMBER',
+                  memberClass: 'building',
+                },
+              })
+            }
+          }
+        } else {
+          // If user has community role MANAGER or higher but is building admin, downgrade to MEMBER
+          if (communityMembership.role !== 'ADMIN' && communityMembership.role !== 'MEMBER') {
+            await prisma.communityMember.update({
+              where: {
+                userId_communityId: {
+                  userId: targetUser.id,
+                  communityId: building.communityId,
+                },
+              },
+              data: {
+                role: 'MEMBER',
+                memberClass: 'building',
+              },
+            })
+          } else if (communityMembership.memberClass !== 'building') {
+            // Update memberClass to 'building' if it's different
+            await prisma.communityMember.update({
+              where: {
+                userId_communityId: {
+                  userId: targetUser.id,
+                  communityId: building.communityId,
+                },
+              },
+              data: {
+                memberClass: 'building',
+              },
+            })
+          }
         }
       }
 
@@ -292,6 +342,83 @@ export async function POST(
         },
       },
     })
+
+    // If user is now a building ADMIN, ensure they have community membership
+    if (role === 'ADMIN' && building) {
+      const communityMembership = await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId: targetUser.id,
+            communityId: building.communityId,
+          },
+        },
+      })
+
+      if (!communityMembership) {
+        // Building admin should be a community member - create membership if missing
+        try {
+          await prisma.communityMember.create({
+            data: {
+              userId: targetUser.id,
+              communityId: building.communityId,
+              role: 'MEMBER',
+              memberClass: 'building',
+            },
+          })
+          console.log('[Add Building Member] Created community membership for building admin:', {
+            userId: targetUser.id,
+            communityId: building.communityId,
+          })
+        } catch (createError: any) {
+          // If creation fails (e.g., unique constraint), try to update instead
+          console.error('[Add Building Member] Error creating community membership:', createError)
+          if (createError.code === 'P2002') {
+            // Membership already exists, update it
+            await prisma.communityMember.update({
+              where: {
+                userId_communityId: {
+                  userId: targetUser.id,
+                  communityId: building.communityId,
+                },
+              },
+              data: {
+                role: 'MEMBER',
+                memberClass: 'building',
+              },
+            })
+          }
+        }
+      } else {
+        // If user has community role MANAGER or higher but is building admin, downgrade to MEMBER
+        if (communityMembership.role !== 'ADMIN' && communityMembership.role !== 'MEMBER') {
+          await prisma.communityMember.update({
+            where: {
+              userId_communityId: {
+                userId: targetUser.id,
+                communityId: building.communityId,
+              },
+            },
+            data: {
+              role: 'MEMBER',
+              memberClass: 'building',
+            },
+          })
+        } else if (communityMembership.memberClass !== 'building') {
+          // Update memberClass to 'building' if it's different
+          await prisma.communityMember.update({
+            where: {
+              userId_communityId: {
+                userId: targetUser.id,
+                communityId: building.communityId,
+              },
+            },
+            data: {
+              memberClass: 'building',
+            },
+          })
+        }
+      }
+    }
 
     console.log('[Add Building Member] Success:', {
       membershipId: membership.id,

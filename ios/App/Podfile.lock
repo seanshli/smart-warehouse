@@ -1,8 +1,6 @@
 PODS:
   - Capacitor (7.4.3):
     - CapacitorCordova
-  - CapacitorCommunityBarcodeScanner (4.0.1):
-    - Capacitor
   - CapacitorCordova (7.4.3)
   - DACircularProgress (2.3.1)
   - DolphinRouter (1.0.1):
@@ -928,7 +926,6 @@ PODS:
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
-  - "CapacitorCommunityBarcodeScanner (from `../../node_modules/@capacitor-community/barcode-scanner`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - DolphinRouter (from `../MideaSDK/OEMSDK/OEMPods_Source/Dolphinrouter`)
   - OEMBusiness/NetworkFramework (from `../MideaSDK/OEMSDK/OEMPods_Framework`)
@@ -1108,8 +1105,6 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
-  CapacitorCommunityBarcodeScanner:
-    :path: "../../node_modules/@capacitor-community/barcode-scanner"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   DolphinRouter:
@@ -1127,7 +1122,6 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Capacitor: b4741ca7affb32c1b70debd03df92cbf522d8a80
-  CapacitorCommunityBarcodeScanner: 7feb206489c8555a8ca0c74c57ddf49ead774eb8
   CapacitorCordova: 435121e81a2df4d0034f0fb11fcefab5104cfdb5
   DACircularProgress: 4dd437c0fc3da5161cb289e07ac449493d41db71
   DolphinRouter: 343a53843138de14de5ce7305e6c075a7b8a8122
@@ -1298,6 +1292,6 @@ SPEC CHECKSUMS:
   TRCTResourceManager: 8dbe838bb252de23f84c62c3838f6fd6c2f39cf0
   YYModel: 2a7fdd96aaa4b86a824e26d0c517de8928c04b30
 
-PODFILE CHECKSUM: bc5779041032bde43e9eba978feb9ad4faa053d3
+PODFILE CHECKSUM: dcc6aec5c321222fbeab04998c826b821c1eb6e6
 
 COCOAPODS: 1.16.2

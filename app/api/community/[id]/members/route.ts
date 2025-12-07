@@ -296,22 +296,27 @@ export async function POST(
     }
 
     // Check if user is already a member
-    let existingMembership
+    let existingMembership = null
     try {
+      // Validate UUIDs before querying
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(targetUser.id) || !uuidRegex.test(communityId)) {
+        console.error('[Add Community Member] Invalid UUID format:', {
+          userId: targetUser.id,
+          communityId,
+        })
+        return NextResponse.json({ 
+          error: 'Invalid user or community ID format',
+          details: 'IDs must be valid UUIDs'
+        }, { status: 400 })
+      }
+
       existingMembership = await prisma.communityMember.findUnique({
         where: {
           userId_communityId: {
             userId: targetUser.id,
             communityId,
           },
-        },
-        select: {
-          id: true,
-          userId: true,
-          communityId: true,
-          role: true,
-          memberClass: true,
-          joinedAt: true,
         },
       })
     } catch (dbError: any) {
@@ -321,20 +326,29 @@ export async function POST(
         meta: dbError.meta,
         userId: targetUser.id,
         communityId,
+        stack: dbError.stack,
       })
       
       // Check if it's a connection error
-      if (dbError.message?.includes('connect') || dbError.message?.includes('timeout') || dbError.message?.includes('ECONNREFUSED')) {
+      if (dbError.message?.includes('connect') || dbError.message?.includes('timeout') || dbError.message?.includes('ECONNREFUSED') || dbError.message?.includes('P1001')) {
         return NextResponse.json({ 
           error: 'Database connection failed',
           details: 'Unable to connect to the database. Please check your database connection settings.'
         }, { status: 503 })
       }
       
-      return NextResponse.json({ 
-        error: 'Database error while checking membership',
-        details: dbError.message || 'Failed to query database'
-      }, { status: 500 })
+      // Check for Prisma query errors
+      if (dbError.code === 'P2002' || dbError.message?.includes('Unique constraint')) {
+        // This means the membership already exists, which is fine - we'll update it
+        console.log('[Add Community Member] Membership already exists, will update')
+        existingMembership = { id: 'exists' } // Set a flag to trigger update
+      } else {
+        return NextResponse.json({ 
+          error: 'Database error while checking membership',
+          details: dbError.message || 'Failed to query database',
+          code: dbError.code || 'UNKNOWN'
+        }, { status: 500 })
+      }
     }
 
     if (existingMembership) {

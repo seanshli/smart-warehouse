@@ -120,33 +120,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             
             <div className="flex items-center space-x-4">
-            {/* Language Selection */}
-            <div className="flex items-center space-x-2">
-              <label htmlFor="language-select" className="text-sm text-gray-500">{t('commonLanguage')}:</label>
-              <select
-                id="language-select"
-                value={currentLanguage}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-              >
-                <option value="en">English</option>
-                <option value="zh-TW">繁體中文</option>
-                <option value="zh">简体中文</option>
-                <option value="ja">日文</option>
-              </select>
-            </div>
+              {/* Language Selection */}
+              <div className="flex items-center space-x-2">
+                <label htmlFor="language-select" className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{t('commonLanguage') || '語言'}:</label>
+                <select
+                  id="language-select"
+                  value={currentLanguage}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="block w-36 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                >
+                  <option value="en">English</option>
+                  <option value="zh-TW">繁體中文</option>
+                  <option value="zh">简体中文</option>
+                  <option value="ja">日文</option>
+                </select>
+              </div>
               
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{session?.user?.name || session?.user?.email}</p>
-                  <p className="text-xs text-gray-500">{t('adminAdministrator')}</p>
-                  <p className="text-xs text-gray-400">{t('commonCurrentLanguage')}: {currentLanguage}</p>
-                </div>
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{session?.user?.name || session?.user?.email}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('adminAdministrator') || 'Administrator'}</p>
+              </div>
               <button
                 onClick={handleSignOut}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 <ArrowRightOnRectangleIcon className="h-4 w-4 mr-1" />
-                {t('commonSignOut')}
+                {t('commonSignOut') || 'Sign Out'}
               </button>
             </div>
           </div>

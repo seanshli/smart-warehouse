@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon, BellIcon, EnvelopeIcon, CubeIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from './LanguageProvider'
-import { useHousehold } from './HouseholdProvider'
 
 interface Announcement {
   id: string
@@ -26,8 +25,7 @@ export default function ReceptionAnnouncementDialog({
   onClose,
   onMarkAsRead
 }: ReceptionAnnouncementDialogProps) {
-  const { t } = useLanguage()
-  const { household } = useHousehold()
+  const { t, currentLanguage } = useLanguage()
   const [isClosing, setIsClosing] = useState(false)
 
   useEffect(() => {
@@ -130,9 +128,9 @@ export default function ReceptionAnnouncementDialog({
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>
                   {new Date(announcement.createdAt).toLocaleString(
-                    t('locale') === 'zh-TW' ? 'zh-TW' : 
-                    t('locale') === 'zh' ? 'zh-CN' : 
-                    t('locale') === 'ja' ? 'ja-JP' : 'en-US',
+                    currentLanguage === 'zh-TW' ? 'zh-TW' : 
+                    currentLanguage === 'zh' ? 'zh-CN' : 
+                    currentLanguage === 'ja' ? 'ja-JP' : 'en-US',
                     {
                       year: 'numeric',
                       month: 'short',

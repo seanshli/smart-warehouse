@@ -156,6 +156,7 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
         setRole(null)
         setPermissions(null)
         setLoading(false)
+        setError(null) // Clear error for invalid response
         return
       }
       
@@ -165,6 +166,19 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
         membershipsCount: data.memberships?.length || 0,
         householdId: data.householdId
       })
+      
+      // If no memberships, user needs to create or join a household
+      if (!data.memberships || data.memberships.length === 0) {
+        console.log('[HouseholdProvider] No household memberships found for user')
+        setMemberships([])
+        setActiveHouseholdId(null)
+        setHousehold(null)
+        setRole(null)
+        setPermissions(null)
+        setLoading(false)
+        setError(null) // This is not an error, just no households yet
+        return
+      }
 
       const apiMemberships: Membership[] = (data.memberships || []).map((m: any) => {
         if (!m || !m.household) {
@@ -232,13 +246,15 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   }
 
   // Simplified household switching
-  const setActiveHousehold = (householdId: string) => {
+  const setActiveHousehold = useCallback((householdId: string) => {
     console.log('🔄 ===== HOUSEHOLD SWITCHING STARTED =====')
     console.log('🔄 Switching to household:', householdId)
     console.log('📋 Available memberships:', memberships.map(m => ({ id: m.household.id, name: m.household.name, role: m.role })))
     console.log('🏠 Current activeHouseholdId:', activeHouseholdId)
     console.log('🏠 Current household:', household ? { id: household.id, name: household.name } : 'None')
     
+    // Set switching flag to prevent fetchHousehold from running
+    isSwitchingRef.current = true
     setSwitching(true)
     setError(null)
     
@@ -249,12 +265,13 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       console.error('❌ Household not found in memberships:', householdId)
       setError(`Household ${householdId} not found in your memberships`)
       setSwitching(false)
+      isSwitchingRef.current = false
       return
     }
 
     console.log('✅ Found target membership:', { id: targetMembership.household.id, name: targetMembership.household.name, role: targetMembership.role })
 
-    // Store the selection in localStorage
+    // Store the selection in localStorage FIRST before applying
     if (mounted && typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem('activeHouseholdId', householdId)
@@ -285,10 +302,13 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       })
     }
 
-    // Mark switching as complete immediately
-    setSwitching(false)
-    console.log('✅ ===== HOUSEHOLD SWITCHING COMPLETED =====')
-  }
+    // Mark switching as complete after a short delay to ensure state updates
+    setTimeout(() => {
+      setSwitching(false)
+      isSwitchingRef.current = false
+      console.log('✅ ===== HOUSEHOLD SWITCHING COMPLETED =====')
+    }, 200)
+  }, [memberships, activeHouseholdId, household, mounted])
 
   // Refetch function for external use
   const refetch = async () => {

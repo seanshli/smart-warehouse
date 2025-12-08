@@ -64,8 +64,13 @@ function HouseholdSwitcher() {
 
   // 處理家庭變更
   const handleHouseholdChange = (householdId: string) => {
-    if (householdId === activeHouseholdId) return // 無變更
+    console.log('🔄 handleHouseholdChange called:', { householdId, currentActive: activeHouseholdId })
+    if (householdId === activeHouseholdId) {
+      console.log('🔄 Same household selected, no change needed')
+      return // 無變更
+    }
     
+    console.log('🔄 Setting pending household:', householdId)
     setPendingHouseholdId(householdId)
     setShowSwitchConfirm(true) // 顯示確認對話框
   }
@@ -73,7 +78,10 @@ function HouseholdSwitcher() {
   // 確認切換
   const confirmSwitch = () => {
     if (pendingHouseholdId) {
+      console.log('🔄 confirmSwitch called, switching to:', pendingHouseholdId)
       setActiveHousehold(pendingHouseholdId)
+    } else {
+      console.warn('🔄 confirmSwitch called but no pendingHouseholdId')
     }
     setShowSwitchConfirm(false)
     setPendingHouseholdId(null)

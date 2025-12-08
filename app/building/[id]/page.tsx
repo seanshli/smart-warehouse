@@ -2171,10 +2171,14 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
         const data = await response.json()
         setCommunityMembers(data.members || [])
       } else {
-        console.error('Failed to load community members')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Failed to load community members:', errorData.error || 'Unknown error')
+        // Don't show error to user if it's just a permission issue - working groups can still function
+        // The error will be handled gracefully in the UI
       }
     } catch (err) {
       console.error('Error fetching community members:', err)
+      // Don't throw error - allow working groups to load even if community members fail
     } finally {
       setLoadingMembers(false)
     }

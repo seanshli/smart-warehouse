@@ -45,17 +45,48 @@ export async function GET(
     if (!user?.isAdmin) {
       // Check if user is a member first
       const userRole = await getUserCommunityRole(userId, communityId)
+      
+      // If user is not a community member, check if they are a building admin
+      // Building admins should be able to view community members to manage working groups
       if (!userRole) {
-        return NextResponse.json({ 
-          error: 'You are not a member of this community. Please join the community first.' 
-        }, { status: 403 })
-      }
-
-      // Then check if user has permission to view members
-      if (!(await checkCommunityPermission(userId, communityId, 'canViewMembers'))) {
-        return NextResponse.json({ 
-          error: 'Insufficient permissions. You do not have permission to view community members.' 
-        }, { status: 403 })
+        // Check if user is a building admin in any building in this community
+        const buildings = await prisma.building.findMany({
+          where: { communityId },
+          select: { id: true },
+        })
+        
+        let isBuildingAdmin = false
+        for (const building of buildings) {
+          const buildingMembership = await prisma.buildingMember.findUnique({
+            where: {
+              userId_buildingId: {
+                userId,
+                buildingId: building.id,
+              },
+            },
+            select: {
+              role: true,
+            },
+          })
+          
+          if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
+            isBuildingAdmin = true
+            break
+          }
+        }
+        
+        if (!isBuildingAdmin) {
+          return NextResponse.json({ 
+            error: 'You are not a member of this community. Please join the community first.' 
+          }, { status: 403 })
+        }
+      } else {
+        // User is a community member, check if they have permission to view members
+        if (!(await checkCommunityPermission(userId, communityId, 'canViewMembers'))) {
+          return NextResponse.json({ 
+            error: 'Insufficient permissions. You do not have permission to view community members.' 
+          }, { status: 403 })
+        }
       }
     }
 

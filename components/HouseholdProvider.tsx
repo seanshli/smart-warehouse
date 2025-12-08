@@ -61,6 +61,8 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   const [activeHouseholdId, setActiveHouseholdId] = useState<string | null>(null)
   const [switching, setSwitching] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  // Use a ref to track if we're currently switching households
+  const isSwitchingRef = useRef(false)
 
   // Set mounted to true after hydration to prevent SSR/client mismatches
   useEffect(() => {

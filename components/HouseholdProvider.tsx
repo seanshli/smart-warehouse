@@ -331,6 +331,12 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
       return
     }
 
+    // Don't refetch if we're currently switching households
+    if (isSwitchingRef.current) {
+      console.log('[HouseholdProvider] Skipping fetchHousehold - currently switching')
+      return
+    }
+
     fetchHousehold()
   }, [session, status])
 

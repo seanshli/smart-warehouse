@@ -512,6 +512,8 @@ export interface Translations {
   reservation: string
   locker: string
   empty: string
+  createWorkingGroup: string
+  editWorkingGroup: string
   enabled: string
   disabled: string
   pending: string

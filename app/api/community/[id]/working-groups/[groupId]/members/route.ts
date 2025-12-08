@@ -167,7 +167,7 @@ export async function POST(
     }
 
     // Check if user is a member of the community
-    const isMember = await prisma.communityMember.findUnique({
+    let isMember = await prisma.communityMember.findUnique({
       where: {
         userId_communityId: {
           userId: targetUser.id,
@@ -176,19 +176,49 @@ export async function POST(
       },
     })
 
+    // If user is not a community member, automatically create community membership
+    // This ensures consistency when adding working group members from building admin
     if (!isMember) {
-      return NextResponse.json({ 
-        error: 'User must be a member of the community first',
-        details: `The user "${targetUser.email}" exists but is not a member of this community.`,
-        steps: [
-          '1. Go to the Community page',
-          '2. Click on the "Members" tab',
-          '3. Click "Add Member" button',
-          '4. Enter the email: ' + targetUser.email,
-          '5. After adding to community, return here to add to working group'
-        ],
-        helpUrl: '/community/' + communityId + '?tab=members'
-      }, { status: 400 })
+      try {
+        // Get building from working group's community to determine memberClass
+        const building = await prisma.building.findFirst({
+          where: { communityId },
+          select: { id: true },
+        })
+
+        // Try to create community membership with memberClass
+        try {
+          isMember = await prisma.communityMember.create({
+            data: {
+              userId: targetUser.id,
+              communityId,
+              role: 'MEMBER',
+              memberClass: 'building', // Default to 'building' for working group members
+            },
+          })
+          console.log('[Add Working Group Member] Auto-created community membership:', {
+            userId: targetUser.id,
+            communityId,
+          })
+        } catch (memberClassError: any) {
+          // If memberClass column doesn't exist, create without it
+          if (memberClassError.message?.includes('member_class') || memberClassError.code === 'P2022') {
+            isMember = await prisma.communityMember.create({
+              data: {
+                userId: targetUser.id,
+                communityId,
+                role: 'MEMBER',
+              },
+            })
+          } else {
+            throw memberClassError
+          }
+        }
+      } catch (createError: any) {
+        console.error('[Add Working Group Member] Error auto-creating community membership:', createError)
+        // If creation fails, still allow adding to working group but warn user
+        // Don't block the operation - the user can be added to working group even if community membership fails
+      }
     }
 
     // Check if user is already a member of the working group

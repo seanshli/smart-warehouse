@@ -22,7 +22,9 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   UserGroupIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  PencilIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import PackageManager from '@/components/building/PackageManager'
@@ -2347,12 +2349,139 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
     )
   }
 
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<any | null>(null)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupDescription, setNewGroupDescription] = useState('')
+  const [newGroupType, setNewGroupType] = useState<'MANAGEMENT' | 'MAINTENANCE' | 'FRONTDESK'>('FRONTDESK')
+  const [creatingGroup, setCreatingGroup] = useState(false)
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      toast.error('Group name is required')
+      return
+    }
+
+    try {
+      setCreatingGroup(true)
+      const response = await fetch(`/api/building/${buildingId}/working-groups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newGroupName.trim(),
+          description: newGroupDescription.trim() || undefined,
+          type: newGroupType,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create working group')
+      }
+
+      toast.success('Working group created successfully')
+      setShowCreateGroup(false)
+      setNewGroupName('')
+      setNewGroupDescription('')
+      setNewGroupType('FRONTDESK')
+      fetchWorkingGroups()
+    } catch (error) {
+      console.error('Error creating working group:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to create working group')
+    } finally {
+      setCreatingGroup(false)
+    }
+  }
+
+  const handleEditGroup = async () => {
+    if (!editingGroup || !newGroupName.trim()) {
+      toast.error('Group name is required')
+      return
+    }
+
+    try {
+      setCreatingGroup(true)
+      const response = await fetch(
+        `/api/community/${editingGroup.communityId}/working-groups/${editingGroup.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newGroupName.trim(),
+            description: newGroupDescription.trim() || undefined,
+            type: newGroupType,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update working group')
+      }
+
+      toast.success('Working group updated successfully')
+      setEditingGroup(null)
+      setNewGroupName('')
+      setNewGroupDescription('')
+      setNewGroupType('FRONTDESK')
+      fetchWorkingGroups()
+    } catch (error) {
+      console.error('Error updating working group:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update working group')
+    } finally {
+      setCreatingGroup(false)
+    }
+  }
+
+  const handleDeleteGroup = async (groupId: string, groupCommunityId: string) => {
+    if (!confirm('Are you sure you want to delete this working group?')) return
+
+    try {
+      const response = await fetch(
+        `/api/community/${groupCommunityId}/working-groups/${groupId}`,
+        { method: 'DELETE' }
+      )
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete working group')
+      }
+
+      toast.success('Working group deleted successfully')
+      fetchWorkingGroups()
+    } catch (error) {
+      console.error('Error deleting working group:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to delete working group')
+    }
+  }
+
+  const openEditGroup = (group: any) => {
+    setEditingGroup(group)
+    setNewGroupName(group.name)
+    setNewGroupDescription(group.description || '')
+    setNewGroupType(group.type)
+  }
+
+  const closeEditGroup = () => {
+    setEditingGroup(null)
+    setNewGroupName('')
+    setNewGroupDescription('')
+    setNewGroupType('FRONTDESK')
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium text-gray-900">
           {t('communityWorkingGroups') || 'Working Groups'}
         </h3>
+        <button
+          onClick={() => setShowCreateGroup(true)}
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+        >
+          <PlusIcon className="h-4 w-4 inline-block mr-2" />
+          {t('createWorkingGroup') || 'Create Working Group'}
+        </button>
       </div>
       {workingGroups.length === 0 ? (
         <div className="text-center py-8 text-gray-500">

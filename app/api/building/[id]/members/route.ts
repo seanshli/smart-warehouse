@@ -414,8 +414,8 @@ export async function POST(
       }
     }
 
-    // If user is a building member with memberClass='building' (working team) or ADMIN role, ensure they have community membership
-    if (building && (role === 'ADMIN' || finalMemberClass === 'building')) {
+    // Ensure all building members automatically become community members for consistency
+    if (building) {
       const communityMembership = await prisma.communityMember.findUnique({
         where: {
           userId_communityId: {
@@ -433,7 +433,7 @@ export async function POST(
       })
 
       if (!communityMembership) {
-        // Building admin should be a community member - create membership if missing
+        // All building members should be community members - create membership if missing
         try {
           // Try with memberClass first, fallback without it if column doesn't exist
           try {
@@ -441,9 +441,15 @@ export async function POST(
               data: {
                 userId: targetUser.id,
                 communityId: building.communityId,
-                role: 'MEMBER',
-                memberClass: 'building',
+                role: 'MEMBER', // Default to MEMBER role in community
+                memberClass: finalMemberClass === 'building' ? 'building' : 'household',
               },
+            })
+            console.log('[Add Building Member] Created community membership for building member:', {
+              userId: targetUser.id,
+              communityId: building.communityId,
+              buildingRole: role,
+              memberClass: finalMemberClass,
             })
           } catch (memberClassError: any) {
             // If memberClass column doesn't exist, create without it

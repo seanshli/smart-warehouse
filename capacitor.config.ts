@@ -4,12 +4,12 @@ const config: CapacitorConfig = {
   appId: 'com.smartwarehouse.app',
   appName: 'Smart Warehouse',
   webDir: 'out',
-  // Configure server based on environment
-  server: {
-    // Production: Point to Vercel deployment
-    url: process.env.CAP_SERVER_URL || 'https://smart-warehouse-five.vercel.app',
-    cleartext: false // HTTPS required for production
-  },
+  // Use native build (no remote server)
+  // server: {
+  //   // Production: Point to Vercel deployment
+  //   url: process.env.CAP_SERVER_URL || 'https://smart-warehouse-five.vercel.app',
+  //   cleartext: false // HTTPS required for production
+  // },
   ios: {
     contentInset: 'automatic',
     scrollEnabled: true,

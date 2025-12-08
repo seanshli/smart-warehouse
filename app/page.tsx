@@ -34,13 +34,23 @@ function ClientHome() {
     // Check session on client side
     const checkSession = async () => {
       try {
-        const response = await fetch('/api/auth/session')
+        const response = await fetch('/api/auth/session', {
+          cache: 'no-store',
+          credentials: 'include'
+        })
         if (response.ok) {
           const sessionData = await response.json()
+          console.log('[ClientHome] Session data:', {
+            hasUser: !!sessionData.user,
+            userId: sessionData.user?.id,
+            email: sessionData.user?.email
+          })
           setSession(sessionData)
+        } else {
+          console.error('[ClientHome] Session check failed:', response.status)
         }
       } catch (error) {
-        console.error('Session check error:', error)
+        console.error('[ClientHome] Session check error:', error)
       } finally {
         setLoading(false)
       }

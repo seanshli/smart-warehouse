@@ -71,7 +71,11 @@ export default function SignIn() {
         toast.error('Invalid credentials')
       } else if (result?.ok) {
         toast.success('Signed in successfully!')
-        router.push('/')
+        // Wait a bit for session to be set, then redirect
+        // Use window.location.href to force a full page reload and ensure session is properly set
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 300)
       } else {
         console.log('Sign in result:', result)
         toast.error('Sign in failed')

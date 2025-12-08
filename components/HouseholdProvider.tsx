@@ -149,14 +149,22 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
 
       // Safely handle response data
       if (!data || typeof data !== 'object') {
-        console.warn('Invalid household API response:', data)
+        console.warn('[HouseholdProvider] Invalid household API response:', data)
         setMemberships([])
         setActiveHouseholdId(null)
         setHousehold(null)
         setRole(null)
         setPermissions(null)
+        setLoading(false)
         return
       }
+      
+      // Log response for debugging
+      console.log('[HouseholdProvider] Household API response:', {
+        hasMemberships: !!(data.memberships && data.memberships.length > 0),
+        membershipsCount: data.memberships?.length || 0,
+        householdId: data.householdId
+      })
 
       const apiMemberships: Membership[] = (data.memberships || []).map((m: any) => {
         if (!m || !m.household) {

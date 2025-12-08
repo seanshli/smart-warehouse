@@ -47,9 +47,10 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Always redirect to dashboard after login
+      // If callbackUrl is provided, use it; otherwise go to home
       if (url.startsWith('/')) return `${baseUrl}${url}`
       else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      return `${baseUrl}/`
     },
     async jwt({ token, user, account }) {
       // Force fresh token on each login

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getUserLineGroups } from '@/lib/line'
+// import { getUserLineGroups } from '@/lib/line'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -20,12 +20,14 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id
 
+    // TODO: Implement after adding LineUser and LineGroup models
     // 獲取用戶的 LINE 群組
-    const groups = await getUserLineGroups(userId)
+    // const groups = await getUserLineGroups(userId)
 
     return NextResponse.json({ 
       success: true,
-      groups,
+      groups: [], // TODO: Implement after adding models
+      message: 'LINE integration not yet configured. Add LineUser and LineGroup models to Prisma schema first.',
     })
   } catch (error: any) {
     console.error('Error fetching LINE groups:', error)

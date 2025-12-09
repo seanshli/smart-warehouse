@@ -19,19 +19,21 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id
 
+    // TODO: Add LineUser model to Prisma schema first
     // 查找用戶的 LINE 綁定
-    const lineUser = await prisma.lineUser.findUnique({
-      where: { userId },
-      select: {
-        lineUserId: true,
-        displayName: true,
-        pictureUrl: true,
-      },
-    })
+    // const lineUser = await prisma.lineUser.findUnique({
+    //   where: { userId },
+    //   select: {
+    //     lineUserId: true,
+    //     displayName: true,
+    //     pictureUrl: true,
+    //   },
+    // })
 
     return NextResponse.json({ 
       success: true,
-      lineUser: lineUser || null,
+      lineUser: null, // TODO: Implement after adding LineUser model
+      message: 'LINE integration not yet configured. Add LineUser model to Prisma schema first.',
     })
   } catch (error: any) {
     console.error('Error fetching LINE user:', error)

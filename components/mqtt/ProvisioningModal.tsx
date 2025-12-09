@@ -164,7 +164,119 @@ export default function ProvisioningModal({
     }
   }, [isOpen, vendor, ssid, household?.id])
 
-  // 發現設備（Philips 和 Panasonic）
+  // 測試 Home Assistant 連接
+  const handleTestConnection = async () => {
+    if (!baseUrl || !accessToken) {
+      toast.error('請先輸入 Base URL 和 Access Token')
+      return
+    }
+
+    setIsTestingConnection(true)
+    setConnectionStatus(null)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/mqtt/homeassistant/status?baseUrl=${encodeURIComponent(baseUrl)}&accessToken=${encodeURIComponent(accessToken)}`)
+      const data = await response.json()
+
+      if (data.connected) {
+        setConnectionStatus({
+          connected: true,
+          location: data.location,
+          version: data.version,
+        })
+        toast.success(`連接成功${data.location ? ` - ${data.location}` : ''}`)
+        // 連接成功後自動發現實體
+        await handleDiscoverDevices()
+      } else {
+        setConnectionStatus({
+          connected: false,
+          error: data.error || '連接失敗',
+        })
+        toast.error(data.error || '連接失敗')
+      }
+    } catch (error: any) {
+      setConnectionStatus({
+        connected: false,
+        error: error.message || '連接失敗',
+      })
+      toast.error(error.message || '連接失敗')
+    } finally {
+      setIsTestingConnection(false)
+    }
+  }
+
+  // 切換實體選擇
+  const handleToggleEntity = (entityId: string) => {
+    setSelectedEntities(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(entityId)) {
+        newSet.delete(entityId)
+      } else {
+        newSet.add(entityId)
+      }
+      return newSet
+    })
+  }
+
+  // 批量添加選中的實體
+  const handleBatchAddEntities = async () => {
+    if (selectedEntities.size === 0) {
+      toast.error('請至少選擇一個實體')
+      return
+    }
+
+    setStatus('starting')
+    setError(null)
+
+    let successCount = 0
+    let failCount = 0
+
+    for (const entityId of selectedEntities) {
+      try {
+        const response = await fetch('/api/mqtt/provisioning', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            vendor: 'homeassistant',
+            baseUrl,
+            accessToken,
+            deviceId: entityId,
+            householdId: household?.id,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (data.success && data.deviceId) {
+          await autoAddDevice(
+            data.deviceId,
+            data.deviceName || `Device ${data.deviceId}`,
+            data.deviceInfo
+          )
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch (error) {
+        failCount++
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`成功添加 ${successCount} 個實體${failCount > 0 ? `，${failCount} 個失敗` : ''}`)
+      setSelectedEntities(new Set())
+      setStatus('idle')
+    } else {
+      toast.error(`添加失敗：${failCount} 個實體無法添加`)
+      setStatus('idle')
+    }
+  }
+
+  // 發現設備（Philips、Panasonic 和 Home Assistant）
   const handleDiscoverDevices = async () => {
     if (vendor !== 'philips' && vendor !== 'panasonic' && vendor !== 'homeassistant') {
       return
@@ -174,6 +286,58 @@ export default function ProvisioningModal({
     setError(null)
 
     try {
+      // Home Assistant: 如果已連接，獲取按設備分組的實體
+      if (vendor === 'homeassistant' && connectionStatus?.connected && baseUrl && accessToken) {
+        try {
+          // 獲取所有實體狀態（按設備分組）
+          const statesResponse = await fetch(`/api/mqtt/homeassistant/states?householdId=${household?.id || ''}`, {
+            headers: {
+              'X-HA-Base-Url': baseUrl,
+              'X-HA-Access-Token': accessToken,
+            },
+          })
+          
+          if (statesResponse.ok) {
+            const statesData = await statesResponse.json()
+            
+            // 如果 API 返回 devices 數組，使用它
+            if (statesData.devices && Array.isArray(statesData.devices)) {
+              setEntitiesByDevice(statesData.devices.map((device: any) => ({
+                deviceId: device.id,
+                deviceName: device.name,
+                entities: device.entities.map((entity: any) => ({
+                  entityId: entity.entity_id,
+                  name: entity.attributes?.friendly_name || entity.entity_id.split('.')[1] || entity.entity_id,
+                  state: entity.state,
+                  domain: entity.entity_id.split('.')[0],
+                })),
+              })))
+              
+              // 同時設置 discoveredDevices 用於向後兼容
+              const allEntities = statesData.devices.flatMap((device: any) => 
+                device.entities.map((entity: any) => ({
+                  deviceId: entity.entity_id,
+                  deviceName: entity.attributes?.friendly_name || entity.entity_id,
+                  deviceInfo: {
+                    entityId: entity.entity_id,
+                    state: entity.state,
+                    attributes: entity.attributes,
+                    domain: entity.entity_id.split('.')[0],
+                  },
+                }))
+              )
+              setDiscoveredDevices(allEntities)
+              
+              toast.success(`發現 ${statesData.devices.length} 個設備，共 ${allEntities.length} 個實體`)
+              return
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching grouped entities:', error)
+        }
+      }
+
+      // 回退到標準發現流程
       const params = new URLSearchParams({
         vendor,
         action: 'discover',
@@ -182,10 +346,6 @@ export default function ProvisioningModal({
       if (baseUrl) params.append('baseUrl', baseUrl)
       if (apiKey) params.append('apiKey', apiKey)
       if (accessToken) params.append('accessToken', accessToken)
-      // Home Assistant 不需要 apiKey，但可以過濾 domain
-      if (vendor === 'homeassistant') {
-        // 可以添加 domain 過濾（可選）
-      }
 
       const response = await fetch(`/api/mqtt/provisioning?${params.toString()}`, {
         method: 'GET',

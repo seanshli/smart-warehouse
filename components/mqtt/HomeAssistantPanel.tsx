@@ -8,10 +8,16 @@ import {
   ArrowPathIcon,
   LightBulbIcon,
   ShieldCheckIcon,
+  WifiIcon,
+  LinkSlashIcon,
+  LinkIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from '../LanguageProvider'
+import { useHousehold } from '../HouseholdProvider'
 import { FanSpeedOptions, SegmentedControl } from './HomeAssistantSegments'
+import ProvisioningModal from './ProvisioningModal'
 
 // Home Assistant 實體狀態類型定義
 type HomeAssistantState = {
@@ -64,19 +70,48 @@ function formatTimestamp(timestamp: string, locale: string) {
 
 export default function HomeAssistantPanel() {
   const { t, currentLanguage } = useLanguage()
+  const { household } = useHousehold()
   const [customEntityId, setCustomEntityId] = useState('')
   const [customPayload, setCustomPayload] = useState('{"entity_id": ""}')
   const [liveStates, setLiveStates] = useState<Map<string, HomeAssistantState>>(
     new Map()
   )
   const [isStreamLive, setIsStreamLive] = useState(false)
+  const [haConfig, setHaConfig] = useState<{
+    baseUrl: string
+    username: string | null
+    serverIp: string | null
+  } | null>(null)
+  const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false)
+  const [isLinking, setIsLinking] = useState(false)
+
+  // Fetch HA config for current household
+  const { data: haConfigData } = useSWR<{
+    success: boolean
+    config: {
+      baseUrl: string
+      username: string | null
+      serverIp: string | null
+    } | null
+  }>(
+    household?.id ? `/api/household/${household.id}/homeassistant` : null,
+    fetcher
+  )
+
+  useEffect(() => {
+    if (haConfigData?.config) {
+      setHaConfig(haConfigData.config)
+    } else {
+      setHaConfig(null)
+    }
+  }, [haConfigData])
 
   const queryParam =
     favoriteEntities.length > 0
       ? `?entity_ids=${encodeURIComponent(
           favoriteEntities.map((entity) => entity.entity_id).join(',')
-        )}`
-      : ''
+        )}${household?.id ? `&householdId=${household.id}` : ''}`
+      : household?.id ? `?householdId=${household.id}` : ''
 
   const { data, error, isLoading, mutate } = useSWR<{
     states: HomeAssistantState[]
@@ -224,12 +259,16 @@ export default function HomeAssistantPanel() {
       const service = turnOn ? 'turn_on' : 'turn_off'
 
       try {
+        const requestBody = household?.id 
+          ? { entity_id: entityId, householdId: household.id }
+          : { entity_id: entityId }
+
         await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ entity_id: entityId }),
+          body: JSON.stringify(requestBody),
         })
         toast.success(
           turnOn
@@ -262,12 +301,17 @@ export default function HomeAssistantPanel() {
       }
 
       const payload = JSON.parse(customPayload || '{}')
+      // Include householdId in payload for per-household HA config
+      const requestBody = household?.id 
+        ? { ...payload, householdId: household.id }
+        : payload
+
       await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
       })
       toast.success(t('homeAssistantCustomSuccess') || 'Service call sent.')
       mutate()
@@ -297,21 +341,53 @@ export default function HomeAssistantPanel() {
 
         <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 space-y-6">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {isLoading
-                ? t('homeAssistantStatusLoading') || '載入狀態中...'
-                : error
-                  ? t('homeAssistantStatusError') || '無法連線 Home Assistant'
-                  : t('homeAssistantStatusReady') || '連線正常'}
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {isLoading
+                  ? t('homeAssistantStatusLoading') || '載入狀態中...'
+                  : error
+                    ? t('homeAssistantStatusError') || '無法連線 Home Assistant'
+                    : t('homeAssistantStatusReady') || '連線正常'}
+              </div>
+              {haConfig && (
+                <div className="text-xs text-gray-400 dark:text-gray-500">
+                  {haConfig.baseUrl} {haConfig.username && `(${haConfig.username})`}
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => mutate()}
-              className="inline-flex items-center rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <ArrowPathIcon className="h-4 w-4 mr-2" />
-              {t('homeAssistantRefresh') || '重新整理'}
-            </button>
+            <div className="flex items-center space-x-2">
+              {!haConfig && (
+                <button
+                  type="button"
+                  onClick={() => setIsProvisioningModalOpen(true)}
+                  className="inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
+                  title="配網 Home Assistant 服務器"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  配網
+                </button>
+              )}
+              {haConfig && (
+                <button
+                  type="button"
+                  onClick={handleDisconnectHA}
+                  disabled={isLinking}
+                  className="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+                  title="斷開 Home Assistant 連接"
+                >
+                  <LinkSlashIcon className="h-4 w-4 mr-2" />
+                  斷開
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => mutate()}
+                className="inline-flex items-center rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <ArrowPathIcon className="h-4 w-4 mr-2" />
+                {t('homeAssistantRefresh') || '重新整理'}
+              </button>
+            </div>
           </div>
 
           <MedoleDehumidifierCard

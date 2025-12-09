@@ -127,9 +127,46 @@ export async function POST(request: NextRequest) {
         )
       }
       config.deviceId = deviceId
-      // Home Assistant 可以使用環境變數，所以 baseUrl 和 accessToken 是可選的
-      if (baseUrl) config.baseUrl = baseUrl
-      if (accessToken) config.accessToken = accessToken
+      
+      // 優先使用請求中的 baseUrl 和 accessToken
+      // 如果沒有提供，嘗試從 household 配置獲取
+      let finalBaseUrl = baseUrl
+      let finalAccessToken = accessToken
+      
+      const householdId = body.householdId
+      if (householdId && (!finalBaseUrl || !finalAccessToken)) {
+        try {
+          const { prisma } = await import('@/lib/prisma')
+          const haConfig = await prisma.homeAssistantConfig.findUnique({
+            where: { householdId },
+          })
+          
+          if (haConfig) {
+            if (!finalBaseUrl) finalBaseUrl = haConfig.baseUrl
+            if (!finalAccessToken) finalAccessToken = haConfig.accessToken
+          }
+        } catch (error) {
+          console.error('Error fetching HA config:', error)
+        }
+      }
+      
+      // 如果還是沒有，使用環境變數（後備）
+      if (!finalBaseUrl) {
+        finalBaseUrl = process.env.HOME_ASSISTANT_BASE_URL || ''
+      }
+      if (!finalAccessToken) {
+        finalAccessToken = process.env.HOME_ASSISTANT_ACCESS_TOKEN || ''
+      }
+      
+      if (!finalBaseUrl || !finalAccessToken) {
+        return NextResponse.json(
+          { error: 'Home Assistant Base URL and Access Token are required. Please configure them in household settings or provide them manually.' },
+          { status: 400 }
+        )
+      }
+      
+      config.baseUrl = finalBaseUrl
+      config.accessToken = finalAccessToken
     }
 
     // 啟動配網流程

@@ -88,8 +88,28 @@ export default function ProvisioningModal({
     }
   }, [pollingInterval])
 
-  // 當模態框打開時，自動獲取當前連接的 WiFi SSID
+  // 當模態框打開時，自動獲取當前連接的 WiFi SSID 或 HA 配置
   useEffect(() => {
+    // 如果是 Home Assistant，自動載入 household 的 HA 配置
+    if (isOpen && vendor === 'homeassistant' && household?.id) {
+      const loadHAConfig = async () => {
+        try {
+          const response = await fetch(`/api/household/${household.id}/homeassistant`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.config) {
+              setBaseUrl(data.config.baseUrl || '')
+              setAccessToken('') // Don't pre-fill token for security
+              toast('已載入 Home Assistant 配置', { icon: 'ℹ️' })
+            }
+          }
+        } catch (error) {
+          console.error('Error loading HA config:', error)
+        }
+      }
+      loadHAConfig()
+    }
+
     // 檢查是否為 MQTT 設備（Tuya, Midea, ESP）
     const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
     
@@ -124,7 +144,7 @@ export default function ProvisioningModal({
       
       getCurrentWiFi()
     }
-  }, [isOpen, vendor, ssid])
+  }, [isOpen, vendor, ssid, household?.id])
 
   // 發現設備（Philips 和 Panasonic）
   const handleDiscoverDevices = async () => {

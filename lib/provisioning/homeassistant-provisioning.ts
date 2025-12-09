@@ -2,7 +2,7 @@
 // 用於添加 Home Assistant 設備到系統
 
 import { BaseProvisioningAdapter, ProvisioningConfig, ProvisioningResult } from './base-provisioning'
-import { getHomeAssistantStates, type HomeAssistantState } from '../homeassistant'
+import { callHomeAssistant, type HomeAssistantState } from '../homeassistant'
 
 export class HomeAssistantProvisioningAdapter extends BaseProvisioningAdapter {
   readonly vendor = 'homeassistant'
@@ -45,9 +45,6 @@ export class HomeAssistantProvisioningAdapter extends BaseProvisioningAdapter {
       }
 
       try {
-        // 使用 callHomeAssistant 直接調用 API，傳遞臨時配置
-        const { callHomeAssistant, type HomeAssistantState } = await import('../homeassistant')
-        
         // 構建臨時配置對象
         const tempConfig = {
           baseUrl: baseUrl || process.env.HOME_ASSISTANT_BASE_URL || '',

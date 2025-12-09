@@ -232,7 +232,7 @@ export default function ProvisioningModal({
     let successCount = 0
     let failCount = 0
 
-    for (const entityId of selectedEntities) {
+    for (const entityId of Array.from(selectedEntities)) {
       try {
         const response = await fetch('/api/mqtt/provisioning', {
           method: 'POST',

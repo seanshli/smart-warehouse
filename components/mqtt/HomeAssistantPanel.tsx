@@ -338,6 +338,46 @@ export default function HomeAssistantPanel() {
     [household?.id, mutate, t, statesByEntity]
   )
 
+  const handleSelectOption = useCallback(
+    async (entityId: string, option: string) => {
+      // Check if entity is unavailable
+      const entityState = statesByEntity.get(entityId)
+      if (entityState?.state === 'unavailable' || entityState?.state === 'unknown') {
+        toast.error('Entity is unavailable. Please check device connection.')
+        return
+      }
+
+      try {
+        const requestBody = household?.id 
+          ? { entity_id: entityId, option, householdId: household.id }
+          : { entity_id: entityId, option }
+
+        const response = await fetch(`/api/mqtt/homeassistant/services/select/select_option`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+          throw new Error(errorMessage)
+        }
+
+        toast.success(t('homeAssistantModeUpdated') || 'Option updated.')
+        // Refresh after a short delay to allow HA to update
+        setTimeout(() => mutate(), 500)
+      } catch (err: any) {
+        console.error('Home Assistant select option failed', err)
+        const errorMessage = err.message || err.toString() || t('homeAssistantToggleError') || 'Action failed.'
+        toast.error(errorMessage)
+      }
+    },
+    [household?.id, mutate, t, statesByEntity]
+  )
+
   const handleCustomService = useCallback(async () => {
     if (!customEntityId.trim()) {
       toast.error(t('homeAssistantCustomEntityRequired') || 'Entity ID required.')
@@ -538,6 +578,7 @@ export default function HomeAssistantPanel() {
                 const state = statesByEntity.get(entity.entity_id)
                 const domain = entity.entity_id.split('.')[0]
                 const isToggleable = ['light', 'switch', 'fan', 'climate', 'cover'].includes(domain)
+                const isSelectable = domain === 'select'
 
                 return (
                   <div
@@ -572,6 +613,13 @@ export default function HomeAssistantPanel() {
                         state={state}
                         t={t}
                         onToggle={handleToggle}
+                      />
+                    ) : isSelectable ? (
+                      <SelectControl
+                        entityId={entity.entity_id}
+                        state={state}
+                        t={t}
+                        onSelect={handleSelectOption}
                       />
                     ) : (
                       <div className="text-xs text-gray-400">
@@ -677,32 +725,73 @@ type ToggleButtonsProps = {
 
 function ToggleButtons({ entityId, state, t, onToggle }: ToggleButtonsProps) {
   const isOn = state?.state !== 'off'
+  const isDisabled = state?.state === 'unavailable' || state?.state === 'unknown'
 
   return (
     <div className="flex items-center space-x-2">
       <button
         type="button"
         onClick={() => onToggle(entityId, true)}
+        disabled={isDisabled}
         className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium ${
           isOn
             ? 'bg-primary-600 text-white hover:bg-primary-700'
             : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-        }`}
+        } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {t('homeAssistantTurnOn') || '開啟'}
       </button>
       <button
         type="button"
         onClick={() => onToggle(entityId, false)}
+        disabled={isDisabled}
         className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium ${
           !isOn
             ? 'bg-primary-200 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200'
             : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-        }`}
+        } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {t('homeAssistantTurnOff') || '關閉'}
       </button>
     </div>
+  )
+}
+
+type SelectControlProps = {
+  entityId: string
+  state?: HomeAssistantState
+  t: (key: keyof import('@/lib/translations').Translations) => string
+  onSelect: (entity: string, option: string) => Promise<void>
+}
+
+function SelectControl({ entityId, state, t, onSelect }: SelectControlProps) {
+  const options = state?.attributes?.options || []
+  const currentValue = state?.state || ''
+  const isDisabled = state?.state === 'unavailable' || state?.state === 'unknown'
+
+  if (options.length === 0) {
+    return (
+      <div className="text-xs text-gray-400">
+        {t('homeAssistantNoOptions') || 'No options available'}
+      </div>
+    )
+  }
+
+  return (
+    <select
+      value={currentValue}
+      onChange={(e) => onSelect(entityId, e.target.value)}
+      disabled={isDisabled}
+      className={`w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+        isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+      }`}
+    >
+      {options.map((option: string) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   )
 }
 

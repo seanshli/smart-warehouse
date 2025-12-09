@@ -69,6 +69,7 @@ export interface Translations {
   homeAssistantCustomError: string // 自訂錯誤
   homeAssistantSendService: string // 發送服務
   homeAssistantNoEntities: string // 無實體
+  homeAssistantNoOptions: string // 無選項
   homeAssistantEntities: string // 實體列表
   homeAssistantEntitiesFound: string // 找到的實體
   homeAssistantEntitiesShown: string // 顯示的實體

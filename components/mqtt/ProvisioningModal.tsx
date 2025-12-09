@@ -777,6 +777,12 @@ export default function ProvisioningModal({
     setZigbeeGatewayId('')
     setBluetoothMac('')
     setDeviceSsid('')
+    // Reset Home Assistant specific states
+    setConnectionStatus(null)
+    setEntitiesByDevice([])
+    setSelectedEntities(new Set())
+    setIsTestingConnection(false)
+    setIsDiscovering(false)
     // ESP 配網狀態重置
     setEspStep('connect')
     setEspHotspotPassword('')

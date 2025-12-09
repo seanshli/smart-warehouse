@@ -11,16 +11,22 @@ export const dynamic = 'force-dynamic' // 強制動態路由
 // @param service - 服務名稱（如 'turn_on', 'turn_off'）
 export async function POST(
   request: NextRequest,
-  { params }: { params: { domain: string; service: string } }
+  { params }: { params: Promise<{ domain: string; service: string }> }
 ) {
   try {
-    const payload = await request.json() // 從請求體獲取服務參數
+    const { domain, service } = await params
+    const body = await request.json() // 從請求體獲取服務參數
+    const householdId = body.householdId || null // 從請求體獲取 household ID（可選）
     
-    // 呼叫 Home Assistant 服務
+    // 移除 householdId 從 payload，因為它不是 HA API 的參數
+    const { householdId: _, ...payload } = body
+    
+    // 呼叫 Home Assistant 服務（使用 household 特定配置）
     const result = await callHomeAssistantService(
-      params.domain, // 服務領域
-      params.service, // 服務名稱
-      payload || {} // 服務載荷（參數）
+      domain, // 服務領域
+      service, // 服務名稱
+      payload || {}, // 服務載荷（參數）
+      householdId // household ID
     )
 
     return NextResponse.json(
@@ -31,8 +37,9 @@ export async function POST(
       { status: 200 }
     )
   } catch (error) {
+    const { domain, service } = await params
     console.error(
-      `Failed to call Home Assistant service ${params.domain}.${params.service}:`,
+      `Failed to call Home Assistant service ${domain}.${service}:`,
       error
     )
     return NextResponse.json(

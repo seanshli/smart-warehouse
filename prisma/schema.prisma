@@ -263,6 +263,7 @@ model Household {
   scenes               Scene[] // 场景管理
   announcementReads    AnnouncementRead[] // Announcements read by this household
   conversations        Conversation[] // Conversations with frontdesk/admin
+  homeAssistantConfig HomeAssistantConfig? // Home Assistant configuration for this household
 
   @@map("households")
 }

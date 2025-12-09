@@ -1,7 +1,9 @@
 // Home Assistant API 輔助模組
 // 提供與 Home Assistant 實例通訊的函數
 
-// 從環境變數讀取 Home Assistant 配置
+import { prisma } from './prisma'
+
+// 從環境變數讀取 Home Assistant 配置（全局後備配置）
 const HOME_ASSISTANT_BASE_URL = process.env.HOME_ASSISTANT_BASE_URL // Home Assistant 基礎 URL
 const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_ACCESS_TOKEN // 長期存取令牌
 
@@ -14,26 +16,66 @@ if (!HOME_ASSISTANT_TOKEN) {
 }
 
 /**
+ * 獲取 household 的 Home Assistant 配置
+ * @param householdId Household ID（可選，如果不提供則使用全局配置）
+ * @returns Home Assistant 配置或 null
+ */
+export async function getHomeAssistantConfig(householdId?: string | null) {
+  if (!householdId) {
+    // 使用全局配置
+    return {
+      baseUrl: HOME_ASSISTANT_BASE_URL,
+      accessToken: HOME_ASSISTANT_TOKEN,
+    }
+  }
+
+  try {
+    const config = await prisma.homeAssistantConfig.findUnique({
+      where: { householdId },
+    })
+
+    if (config) {
+      return {
+        baseUrl: config.baseUrl,
+        accessToken: config.accessToken,
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching Home Assistant config:', error)
+  }
+
+  // 如果沒有找到 household 特定配置，回退到全局配置
+  return {
+    baseUrl: HOME_ASSISTANT_BASE_URL,
+    accessToken: HOME_ASSISTANT_TOKEN,
+  }
+}
+
+/**
  * 呼叫 Home Assistant API
  * @param path API 路徑（相對於基礎 URL）
  * @param init 請求初始化選項
+ * @param householdId 可選的 household ID，用於獲取特定配置
  * @returns API 回應資料
  */
 export async function callHomeAssistant<T = unknown>(
   path: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  householdId?: string | null
 ): Promise<T> {
-  if (!HOME_ASSISTANT_BASE_URL || !HOME_ASSISTANT_TOKEN) {
+  const config = await getHomeAssistantConfig(householdId)
+
+  if (!config.baseUrl || !config.accessToken) {
     throw new Error('Home Assistant credentials are not configured')
   }
 
-  const url = new URL(path, HOME_ASSISTANT_BASE_URL)
+  const url = new URL(path, config.baseUrl)
 
   const response = await fetch(url.toString(), {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${HOME_ASSISTANT_TOKEN}`, // 使用 Bearer Token 認證
+      Authorization: `Bearer ${config.accessToken}`, // 使用 Bearer Token 認證
       ...(init.headers || {}),
     },
     cache: 'no-store', // 不使用快取
@@ -65,10 +107,12 @@ export type HomeAssistantState = {
 /**
  * 獲取 Home Assistant 實體狀態
  * @param entityIds 實體 ID 陣列（可選，不提供則獲取所有實體）
+ * @param householdId 可選的 household ID，用於獲取特定配置
  * @returns 實體狀態陣列
  */
 export async function getHomeAssistantStates(
-  entityIds?: string[]
+  entityIds?: string[],
+  householdId?: string | null
 ): Promise<HomeAssistantState[]> {
   if (entityIds && entityIds.length > 0) {
     // 批量獲取指定實體的狀態
@@ -76,7 +120,9 @@ export async function getHomeAssistantStates(
     for (const entityId of entityIds) {
       try {
         const state = await callHomeAssistant<HomeAssistantState>(
-          `/api/states/${entityId}`
+          `/api/states/${entityId}`,
+          {},
+          householdId
         )
         results.push(state)
       } catch (error) {
@@ -87,7 +133,7 @@ export async function getHomeAssistantStates(
   }
 
   // 獲取所有實體狀態
-  return callHomeAssistant<HomeAssistantState[]>('/api/states')
+  return callHomeAssistant<HomeAssistantState[]>('/api/states', {}, householdId)
 }
 
 /**
@@ -95,6 +141,7 @@ export async function getHomeAssistantStates(
  * @param domain 服務領域（如 'light', 'switch', 'climate'）
  * @param service 服務名稱（如 'turn_on', 'turn_off'）
  * @param payload 服務載荷（參數）
+ * @param householdId 可選的 household ID，用於獲取特定配置
  * @returns 服務呼叫結果
  */
 export async function callHomeAssistantService<
@@ -102,11 +149,16 @@ export async function callHomeAssistantService<
 >(
   domain: string,
   service: string,
-  payload: TPayload
+  payload: TPayload,
+  householdId?: string | null
 ): Promise<unknown> {
-  return callHomeAssistant(`/api/services/${domain}/${service}`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return callHomeAssistant(
+    `/api/services/${domain}/${service}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    householdId
+  )
 }
 

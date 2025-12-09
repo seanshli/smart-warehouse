@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const entityParam = searchParams.get('entity_ids') // 從查詢參數獲取實體 ID 列表
+    const householdId = searchParams.get('householdId') // 從查詢參數獲取 household ID
     
     // 解析實體 ID 列表（格式：entity_id1,entity_id2,...）
     const entityIds = entityParam
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
       : undefined // 如果未提供，則獲取所有實體
 
-    // 呼叫 Home Assistant API 獲取狀態
-    const states = await getHomeAssistantStates(entityIds)
+    // 呼叫 Home Assistant API 獲取狀態（使用 household 特定配置）
+    const states = await getHomeAssistantStates(entityIds, householdId || null)
 
     return NextResponse.json(
       {

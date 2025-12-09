@@ -3,7 +3,7 @@
  * Provides HA server configuration for MQTT integration per household
  */
 
-import { prisma } from './prisma'
+import { prisma } from '@/lib/prisma'
 
 export interface HAConfigForMQTT {
   householdId: string

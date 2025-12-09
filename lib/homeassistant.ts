@@ -99,9 +99,18 @@ export async function callHomeAssistant<T = unknown>(
 export type HomeAssistantState = {
   entity_id: string // 實體 ID
   state: string // 狀態值
-  attributes: Record<string, any> // 屬性字典
+  attributes: Record<string, any> // 屬性字典，包含 device_id, friendly_name 等
   last_changed: string // 最後變更時間
   last_updated: string // 最後更新時間
+}
+
+// Home Assistant 設備信息類型定義
+export type HomeAssistantDevice = {
+  id: string // 設備 ID
+  name: string // 設備名稱
+  entities: HomeAssistantState[] // 該設備的所有實體
+  manufacturer?: string // 製造商
+  model?: string // 型號
 }
 
 /**

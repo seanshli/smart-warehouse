@@ -117,9 +117,31 @@ export default function HomeAssistantPanel() {
 
   const { data, error, isLoading, mutate } = useSWR<{
     states: HomeAssistantState[]
+    devices?: Array<{
+      id: string
+      name: string
+      entities: HomeAssistantState[]
+      manufacturer?: string
+      model?: string
+    }>
   }>(`/api/mqtt/homeassistant/states${queryParam}`, fetcher, {
     refreshInterval: 30_000,
   })
+
+  // Fetch connection status
+  const { data: connectionStatus } = useSWR<{
+    connected: boolean
+    status: 'online' | 'offline' | 'error'
+    location?: string
+    version?: string
+    error?: string
+  }>(
+    household?.id ? `/api/mqtt/homeassistant/status?householdId=${household.id}` : '/api/mqtt/homeassistant/status',
+    fetcher,
+    {
+      refreshInterval: 60_000, // Check every minute
+    }
+  )
 
   useEffect(() => {
     if (data?.states) {
@@ -471,12 +493,25 @@ export default function HomeAssistantPanel() {
         <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {isLoading
-                  ? t('homeAssistantStatusLoading') || '載入狀態中...'
-                  : error
+              <div className="flex items-center space-x-2">
+                <div className={`h-2 w-2 rounded-full ${
+                  connectionStatus?.connected 
+                    ? 'bg-green-500' 
+                    : connectionStatus?.status === 'error'
+                    ? 'bg-red-500'
+                    : 'bg-yellow-500'
+                }`} />
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {isLoading
+                    ? t('homeAssistantStatusLoading') || '載入狀態中...'
+                    : connectionStatus?.connected
+                    ? t('homeAssistantStatusReady') || `連線正常${connectionStatus.location ? ` - ${connectionStatus.location}` : ''}`
+                    : connectionStatus?.status === 'error'
+                    ? t('homeAssistantStatusError') || `連線錯誤: ${connectionStatus.error || '無法連線 Home Assistant'}`
+                    : error
                     ? t('homeAssistantStatusError') || '無法連線 Home Assistant'
                     : t('homeAssistantStatusReady') || '連線正常'}
+                </div>
               </div>
               {haConfig && (
                 <div className="text-xs text-gray-400 dark:text-gray-500">
@@ -572,7 +607,94 @@ export default function HomeAssistantPanel() {
             </div>
           )}
 
-          {displayEntities.length > 0 ? (
+          {/* Display by devices if available, otherwise by entities */}
+          {data?.devices && data.devices.length > 0 ? (
+            <div className="space-y-6">
+              {data.devices.map((device) => (
+                <div
+                  key={device.id}
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-4"
+                >
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <div>
+                      <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {device.name}
+                      </h4>
+                      {(device.manufacturer || device.model) && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {device.manufacturer && device.model
+                            ? `${device.manufacturer} ${device.model}`
+                            : device.manufacturer || device.model}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {device.entities.length} {t('homeAssistantEntities') || 'entities'}
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {device.entities.map((entity) => {
+                      const state = statesByEntity.get(entity.entity_id) || entity
+                      const domain = entity.entity_id.split('.')[0]
+                      const isToggleable = ['light', 'switch', 'fan', 'climate', 'cover'].includes(domain)
+                      const isSelectable = domain === 'select'
+
+                      return (
+                        <div
+                          key={entity.entity_id}
+                          className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                {state.attributes?.friendly_name || entity.entity_id.split('.')[1] || entity.entity_id}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {entity.entity_id}
+                              </div>
+                            </div>
+                            <LightBulbIcon className="h-4 w-4 text-primary-500 flex-shrink-0 ml-2" />
+                          </div>
+
+                          <div className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            {state?.state ?? (t('homeAssistantUnknown') || '未知')}
+                          </div>
+
+                          {isToggleable ? (
+                            <ToggleButtons
+                              entityId={entity.entity_id}
+                              state={state}
+                              t={t}
+                              onToggle={handleToggle}
+                            />
+                          ) : isSelectable ? (
+                            <SelectControl
+                              entityId={entity.entity_id}
+                              state={state}
+                              t={t}
+                              onSelect={handleSelectOption}
+                            />
+                          ) : (
+                            <div className="text-xs text-gray-400">
+                              {t('homeAssistantToggleUnsupported') ||
+                                '此裝置不支援快速開關控制。'}
+                            </div>
+                          )}
+
+                          {state?.last_changed && (
+                            <div className="text-xs text-gray-400">
+                              {t('homeAssistantLastChanged') || '最後更新'}:{' '}
+                              {formatTimestamp(state.last_changed, currentLanguage)}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayEntities.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
               {displayEntities.map((entity) => {
                 const state = statesByEntity.get(entity.entity_id)

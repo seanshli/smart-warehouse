@@ -2,7 +2,7 @@
 // 代理 Home Assistant 實體狀態查詢請求
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getHomeAssistantStates } from '@/lib/homeassistant'
+import { getHomeAssistantStates, HomeAssistantState } from '@/lib/homeassistant'
 
 export const dynamic = 'force-dynamic' // 強制動態路由
 
@@ -24,9 +24,47 @@ export async function GET(request: NextRequest) {
     // 呼叫 Home Assistant API 獲取狀態（使用 household 特定配置）
     const states = await getHomeAssistantStates(entityIds, householdId || null)
 
+    // 按設備分組實體
+    const devicesMap = new Map<string, {
+      id: string
+      name: string
+      entities: HomeAssistantState[]
+      manufacturer?: string
+      model?: string
+    }>()
+
+    states.forEach((state) => {
+      // 嘗試從 attributes 獲取設備信息
+      const deviceId = state.attributes?.device_id || state.attributes?.device?.id
+      const deviceName = state.attributes?.device?.name || 
+                        state.attributes?.device_name ||
+                        // 從 friendly_name 推斷設備名稱（例如："米多力除溼機 電源" -> "米多力除溼機"）
+                        (state.attributes?.friendly_name 
+                          ? state.attributes.friendly_name.split(/\s+/)[0]
+                          : state.entity_id.split('.')[0])
+
+      // 如果沒有 device_id，使用推斷的設備名稱作為 key
+      const key = deviceId || deviceName
+
+      if (!devicesMap.has(key)) {
+        devicesMap.set(key, {
+          id: deviceId || key,
+          name: deviceName,
+          entities: [],
+          manufacturer: state.attributes?.device?.manufacturer || state.attributes?.manufacturer,
+          model: state.attributes?.device?.model || state.attributes?.model,
+        })
+      }
+
+      devicesMap.get(key)!.entities.push(state)
+    })
+
+    const devices = Array.from(devicesMap.values())
+
     return NextResponse.json(
       {
-        states, // 返回實體狀態陣列
+        states, // 返回實體狀態陣列（向後兼容）
+        devices, // 返回按設備分組的數據
       },
       { status: 200 }
     )

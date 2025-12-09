@@ -69,6 +69,10 @@ export interface Translations {
   homeAssistantCustomError: string // 自訂錯誤
   homeAssistantSendService: string // 發送服務
   homeAssistantNoEntities: string // 無實體
+  homeAssistantEntities: string // 實體列表
+  homeAssistantShowLess: string // 顯示較少
+  homeAssistantShowAll: string // 顯示全部
+  homeAssistantAllDomains: string // 所有類型
   mqttDevices: string // MQTT 設備
   mqttDeviceName: string // 設備名稱
   mqttDeviceId: string // 設備 ID
@@ -1053,6 +1057,10 @@ const en: Translations = {
   homeAssistantCustomError: 'Failed to call service.',
   homeAssistantSendService: 'Send',
   homeAssistantNoEntities: 'No entities configured. Add NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES or use the custom service call below.',
+  homeAssistantEntities: 'Entities',
+  homeAssistantShowLess: 'Show Less',
+  homeAssistantShowAll: 'Show All',
+  homeAssistantAllDomains: 'All Types',
   mqttDevices: 'MQTT Devices',
   mqttDeviceName: 'Device Name',
   mqttDeviceId: 'Device ID',
@@ -2035,6 +2043,10 @@ const zhTW: Translations = {
   homeAssistantCustomError: '服務呼叫失敗。',
   homeAssistantSendService: '送出',
   homeAssistantNoEntities: '尚未設定常用實體。可在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 環境變數中加入 entity_id，或直接使用下方自訂服務控制裝置。',
+  homeAssistantEntities: '實體列表',
+  homeAssistantShowLess: '顯示較少',
+  homeAssistantShowAll: '顯示全部',
+  homeAssistantAllDomains: '所有類型',
   mqttDevices: 'MQTT 設備',
   mqttDeviceName: '設備名稱',
   mqttDeviceId: '設備 ID',
@@ -2971,6 +2983,10 @@ const zh: Translations = {
   homeAssistantCustomError: '服务调用失败。',
   homeAssistantSendService: '发送',
   homeAssistantNoEntities: '尚未配置常用实体。可以在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 环境变量中添加 entity_id，或直接使用下面的自定义服务调用。',
+  homeAssistantEntities: '实体列表',
+  homeAssistantShowLess: '显示较少',
+  homeAssistantShowAll: '显示全部',
+  homeAssistantAllDomains: '所有类型',
   mqttDevices: 'MQTT 设备',
   mqttDeviceName: '设备名称',
   mqttDeviceId: '设备 ID',
@@ -3903,6 +3919,10 @@ const ja: Translations = {
   homeAssistantCustomError: 'サービス呼び出しに失敗しました。',
   homeAssistantSendService: '送信',
   homeAssistantNoEntities: '表示するエンティティが設定されていません。NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES に entity_id を設定するか、下のカスタムサービス呼び出しを使用してください。',
+  homeAssistantEntities: 'エンティティ一覧',
+  homeAssistantShowLess: '少なく表示',
+  homeAssistantShowAll: 'すべて表示',
+  homeAssistantAllDomains: 'すべてのタイプ',
   mqttDevices: 'MQTT デバイス',
   mqttDeviceName: 'デバイス名',
   mqttDeviceId: 'デバイス ID',

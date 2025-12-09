@@ -393,7 +393,7 @@ export default function HomeAssistantPanel() {
     } finally {
       setIsLinking(false)
     }
-  }, [household?.id, mutate])
+  }, [household?.id, mutate, setHaConfig, setIsLinking])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

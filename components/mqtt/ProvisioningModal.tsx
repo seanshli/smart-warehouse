@@ -1646,19 +1646,40 @@ export default function ProvisioningModal({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Key <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={vendor === 'philips' ? "Hue Bridge API Key (留空以自動配對)" : vendor === 'homeassistant' ? "Access Token (optional, uses env var)" : "Panasonic API Key"}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={status !== 'idle'}
-                  />
-                </div>
+                {vendor !== 'homeassistant' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      API Key <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={vendor === 'philips' ? "Hue Bridge API Key (留空以自動配對)" : "Panasonic API Key"}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={status !== 'idle'}
+                    />
+                  </div>
+                )}
+
+                {vendor === 'homeassistant' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Access Token <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={accessToken}
+                      onChange={(e) => setAccessToken(e.target.value)}
+                      placeholder="Home Assistant Long-Lived Access Token"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={status !== 'idle'}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      輸入 Home Assistant 長期訪問令牌 (Long-Lived Access Token)
+                    </p>
+                  </div>
+                )}
 
                 {vendor === 'panasonic' && (
                   <div>

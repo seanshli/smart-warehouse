@@ -939,8 +939,10 @@ model CallSession {
 model HomeAssistantConfig {
   id          String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   householdId String   @unique @map("household_id")
-  baseUrl     String   @map("base_url") // Home Assistant base URL (e.g., https://homeassistant.local:8123)
+  baseUrl     String   @map("base_url") // Home Assistant base URL (e.g., https://homeassistant.local:8123 or http://192.168.1.100:8123)
+  username    String? // HA username (for reference/display purposes, token is used for auth)
   accessToken String   @map("access_token") // Long-lived access token (should be encrypted in production)
+  serverIp    String?  @map("server_ip") // Server IP address (extracted from baseUrl for MQTT)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 

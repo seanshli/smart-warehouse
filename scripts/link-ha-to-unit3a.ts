@@ -13,7 +13,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-async function linkHAToUnit3A(baseUrl: string, accessToken: string) {
+async function linkHAToUnit3A(baseUrl: string, username: string | undefined, accessToken: string) {
   try {
     console.log('🔍 查找 Unit 3A household...')
 
@@ -70,19 +70,35 @@ async function linkHAToUnit3A(baseUrl: string, accessToken: string) {
       throw error
     }
 
+    // Extract server IP from baseUrl
+    let serverIp: string | null = null
+    try {
+      const url = new URL(baseUrl)
+      serverIp = url.hostname
+    } catch (error) {
+      // If baseUrl is just an IP address
+      if (/^\d+\.\d+\.\d+\.\d+/.test(baseUrl)) {
+        serverIp = baseUrl.replace(/^https?:\/\//, '').split(':')[0]
+      }
+    }
+
     // 創建或更新 HA 配置
     console.log('\n💾 保存配置...')
     const haConfig = await prisma.homeAssistantConfig.upsert({
       where: { householdId: household.id },
       update: {
         baseUrl: baseUrl.trim(),
+        username: username?.trim() || null,
         accessToken: accessToken.trim(),
+        serverIp: serverIp || null,
         updatedAt: new Date(),
       },
       create: {
         householdId: household.id,
         baseUrl: baseUrl.trim(),
+        username: username?.trim() || null,
         accessToken: accessToken.trim(),
+        serverIp: serverIp || null,
       },
     })
 
@@ -90,7 +106,10 @@ async function linkHAToUnit3A(baseUrl: string, accessToken: string) {
     console.log(`\n配置詳情:`)
     console.log(`  Household: ${household.name}`)
     console.log(`  HA URL: ${haConfig.baseUrl}`)
+    console.log(`  Username: ${haConfig.username || 'N/A'}`)
+    console.log(`  Server IP: ${haConfig.serverIp || 'N/A'}`)
     console.log(`  配置 ID: ${haConfig.id}`)
+    console.log(`\n💡 MQTT 系統可以使用此配置連接到 HA 服務器`)
 
   } catch (error) {
     console.error('❌ 錯誤:', error)
@@ -105,14 +124,19 @@ async function main() {
   const args = process.argv.slice(2)
 
   if (args.length < 2) {
-    console.log('使用方法: tsx scripts/link-ha-to-unit3a.ts <baseUrl> <accessToken>')
+    console.log('使用方法: tsx scripts/link-ha-to-unit3a.ts <baseUrl> <accessToken> [username]')
     console.log('\n例如:')
     console.log('  tsx scripts/link-ha-to-unit3a.ts https://homeassistant.local:8123 eyJ0eXAiOiJKV1QiLCJhbGc...')
+    console.log('  tsx scripts/link-ha-to-unit3a.ts http://192.168.1.100:8123 token123 admin')
+    console.log('\n參數:')
+    console.log('  baseUrl: Home Assistant 服務器 URL (必需)')
+    console.log('  accessToken: Long-lived access token (必需)')
+    console.log('  username: HA 用戶名 (可選，用於參考)')
     process.exit(1)
   }
 
-  const [baseUrl, accessToken] = args
-  await linkHAToUnit3A(baseUrl, accessToken)
+  const [baseUrl, accessToken, username] = args
+  await linkHAToUnit3A(baseUrl, username, accessToken)
 }
 
 main()

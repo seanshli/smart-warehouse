@@ -73,13 +73,27 @@ export async function POST(
     const userId = (session.user as any).id
     const { id: householdId } = await params
     const body = await request.json()
-    const { baseUrl, accessToken } = body
+    const { baseUrl, username, accessToken } = body
 
     if (!baseUrl || !accessToken) {
       return NextResponse.json(
         { error: 'baseUrl and accessToken are required' },
         { status: 400 }
       )
+    }
+
+    // Extract server IP from baseUrl for MQTT integration
+    let serverIp: string | null = null
+    try {
+      const url = new URL(baseUrl)
+      serverIp = url.hostname
+      // If hostname is a domain, try to resolve it (optional)
+      // For now, we'll use hostname as-is
+    } catch (error) {
+      // If baseUrl is just an IP address
+      if (/^\d+\.\d+\.\d+\.\d+/.test(baseUrl)) {
+        serverIp = baseUrl.replace(/^https?:\/\//, '').split(':')[0]
+      }
     }
 
     // 驗證用戶是該 household 的成員且有管理權限
@@ -126,13 +140,17 @@ export async function POST(
       where: { householdId },
       update: {
         baseUrl: baseUrl.trim(),
+        username: username?.trim() || null,
         accessToken: accessToken.trim(), // 注意：實際應該加密存儲
+        serverIp: serverIp || null,
         updatedAt: new Date(),
       },
       create: {
         householdId,
         baseUrl: baseUrl.trim(),
+        username: username?.trim() || null,
         accessToken: accessToken.trim(), // 注意：實際應該加密存儲
+        serverIp: serverIp || null,
       },
     })
 
@@ -143,6 +161,8 @@ export async function POST(
         id: haConfig.id,
         householdId: haConfig.householdId,
         baseUrl: haConfig.baseUrl,
+        username: haConfig.username,
+        serverIp: haConfig.serverIp,
         // 不返回 accessToken 以確保安全
       },
     })

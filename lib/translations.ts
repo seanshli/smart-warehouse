@@ -2049,6 +2049,7 @@ const zhTW: Translations = {
   homeAssistantCustomError: '服務呼叫失敗。',
   homeAssistantSendService: '送出',
   homeAssistantNoEntities: '尚未設定常用實體。可在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 環境變數中加入 entity_id，或直接使用下方自訂服務控制裝置。',
+  homeAssistantNoOptions: '無可用選項',
   homeAssistantEntities: '實體列表',
   homeAssistantEntitiesFound: '個實體已找到',
   homeAssistantEntitiesShown: '個顯示中',

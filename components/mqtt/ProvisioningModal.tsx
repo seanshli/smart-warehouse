@@ -444,7 +444,8 @@ export default function ProvisioningModal({
       baseUrl,
       apiKey,
       accessToken,
-      deviceId: vendor === 'tuya' && mode === 'manual' ? deviceId : undefined,
+      // Include deviceId for Tuya manual mode or Home Assistant
+      deviceId: (vendor === 'tuya' && mode === 'manual') || vendor === 'homeassistant' ? deviceId : undefined,
       zigbeeGatewayId: vendor === 'tuya' && mode === 'zigbee' ? zigbeeGatewayId : undefined,
       bluetoothMac: vendor === 'tuya' && (mode === 'bt' || mode === 'wifi/bt') ? bluetoothMac : undefined,
       deviceSsid: vendor === 'midea' && (mode === 'ap' || mode === 'hotspot') ? deviceSsid : undefined,

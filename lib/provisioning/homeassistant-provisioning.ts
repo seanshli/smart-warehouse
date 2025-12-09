@@ -45,33 +45,65 @@ export class HomeAssistantProvisioningAdapter extends BaseProvisioningAdapter {
       }
 
       try {
-        // 嘗試獲取實體狀態以驗證實體存在
-        const states = await getHomeAssistantStates([deviceId])
+        // 使用 callHomeAssistant 直接調用 API，傳遞臨時配置
+        const { callHomeAssistant, type HomeAssistantState } = await import('../homeassistant')
+        
+        // 構建臨時配置對象
+        const tempConfig = {
+          baseUrl: baseUrl || process.env.HOME_ASSISTANT_BASE_URL || '',
+          accessToken: accessToken || process.env.HOME_ASSISTANT_ACCESS_TOKEN || '',
+        }
 
-        if (states.length === 0) {
+        if (!tempConfig.baseUrl || !tempConfig.accessToken) {
           return {
             success: false,
             status: 'failed',
-            error: `Entity ${deviceId} not found in Home Assistant`,
+            error: 'Home Assistant Base URL and Access Token are required',
           }
         }
 
-        const entity = states[0]
-        const deviceName = entity.attributes?.friendly_name || deviceId
+        // 臨時覆蓋環境變數以確保 callHomeAssistant 使用正確的配置
+        if (baseUrl) {
+          process.env.HOME_ASSISTANT_BASE_URL = baseUrl
+        }
+        if (accessToken) {
+          process.env.HOME_ASSISTANT_ACCESS_TOKEN = accessToken
+        }
 
-        return {
-          success: true,
-          status: 'success',
-          deviceId,
-          deviceName,
-          deviceInfo: {
-            entityId: deviceId,
-            state: entity.state,
-            attributes: entity.attributes,
-            domain: deviceId.split('.')[0],
-            baseUrl: baseUrl || process.env.HOME_ASSISTANT_BASE_URL,
-            accessToken: accessToken || process.env.HOME_ASSISTANT_ACCESS_TOKEN,
-          },
+        try {
+          // 嘗試獲取實體狀態以驗證實體存在
+          const entity = await callHomeAssistant<HomeAssistantState>(
+            `/api/states/${deviceId}`,
+            {},
+            null // 不使用 householdId，因為我們已經設置了環境變數
+          )
+
+          const deviceName = entity.attributes?.friendly_name || deviceId
+
+          return {
+            success: true,
+            status: 'success',
+            deviceId,
+            deviceName,
+            deviceInfo: {
+              entityId: deviceId,
+              state: entity.state,
+              attributes: entity.attributes,
+              domain: deviceId.split('.')[0],
+              baseUrl: tempConfig.baseUrl,
+              accessToken: tempConfig.accessToken,
+            },
+          }
+        } catch (apiError: any) {
+          // 如果實體不存在，API 會返回 404
+          if (apiError.message?.includes('404') || apiError.message?.includes('not found')) {
+            return {
+              success: false,
+              status: 'failed',
+              error: `Entity ${deviceId} not found in Home Assistant`,
+            }
+          }
+          throw apiError
         }
       } finally {
         // 恢復原始環境變數
@@ -179,4 +211,5 @@ export class HomeAssistantProvisioningAdapter extends BaseProvisioningAdapter {
     }
   }
 }
+
 

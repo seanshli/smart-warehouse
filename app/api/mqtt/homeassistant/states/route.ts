@@ -47,7 +47,30 @@ export async function GET(request: NextRequest) {
       model?: string
     }>()
 
-    states.forEach((state) => {
+    // 過濾掉系統級別的實體（如 binary_sensor.backups_stale, sensor.date 等）
+    const systemDomains = ['sensor', 'binary_sensor', 'sun', 'zone', 'person', 'device_tracker', 'automation', 'script', 'scene']
+    const systemEntityPatterns = ['backups', 'date', 'time', 'sun', 'zone', 'person', 'automation', 'script', 'scene']
+    
+    const filteredStates = states.filter((state) => {
+      const domain = state.entity_id.split('.')[0]
+      const entityName = state.entity_id.split('.')[1] || ''
+      
+      // 跳過系統級別的實體
+      if (systemDomains.includes(domain) && !state.attributes?.device_id && !state.attributes?.device?.id) {
+        // 檢查是否是系統實體（沒有關聯設備）
+        if (systemEntityPatterns.some(pattern => entityName.toLowerCase().includes(pattern))) {
+          return false
+        }
+      }
+      
+      // 只包含有設備關聯的實體，或者明確標記為設備的實體
+      return state.attributes?.device_id || 
+             state.attributes?.device?.id || 
+             !systemDomains.includes(domain) ||
+             (domain === 'sensor' || domain === 'binary_sensor') && (state.attributes?.device_id || state.attributes?.device?.id)
+    })
+
+    filteredStates.forEach((state) => {
       // 嘗試從 attributes 獲取設備信息
       const deviceId = state.attributes?.device_id || state.attributes?.device?.id
       const deviceName = state.attributes?.device?.name || 
@@ -55,15 +78,20 @@ export async function GET(request: NextRequest) {
                         // 從 friendly_name 推斷設備名稱（例如："米多力除溼機 電源" -> "米多力除溼機"）
                         (state.attributes?.friendly_name 
                           ? state.attributes.friendly_name.split(/\s+/)[0]
-                          : state.entity_id.split('.')[0])
+                          : null)
 
-      // 如果沒有 device_id，使用推斷的設備名稱作為 key
+      // 如果沒有 device_id 和 deviceName，跳過（這是系統級別的實體）
+      if (!deviceId && !deviceName) {
+        return
+      }
+
+      // 使用 device_id 作為主要 key，如果沒有則使用 deviceName
       const key = deviceId || deviceName
 
       if (!devicesMap.has(key)) {
         devicesMap.set(key, {
           id: deviceId || key,
-          name: deviceName,
+          name: deviceName || state.entity_id.split('.')[0],
           entities: [],
           manufacturer: state.attributes?.device?.manufacturer || state.attributes?.manufacturer,
           model: state.attributes?.device?.model || state.attributes?.model,

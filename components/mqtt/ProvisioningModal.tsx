@@ -628,11 +628,16 @@ export default function ProvisioningModal({
         return
       }
     } else if (vendor === 'homeassistant') {
-      if (!deviceId) {
-        toast.error('實體 ID 為必填項（例如：light.living_room）')
+      // Home Assistant 需要實體 ID 或已選擇的實體
+      if (!deviceId && selectedEntities.size === 0) {
+        toast.error('請輸入實體 ID 或選擇要添加的實體')
         return
       }
-      // Home Assistant 可以使用環境變數，所以 baseUrl 和 accessToken 是可選的
+      // Home Assistant 需要 baseUrl 和 accessToken（可以從環境變數或 household 配置獲取）
+      if (!baseUrl?.trim() || !accessToken?.trim()) {
+        toast.error('請先測試連接以確保 Base URL 和 Access Token 正確')
+        return
+      }
     }
 
     setStatus('starting')
@@ -1766,7 +1771,10 @@ export default function ProvisioningModal({
                       <input
                         type="text"
                         value={deviceId}
-                        onChange={(e) => setDeviceId(e.target.value)}
+                        onChange={(e) => {
+                          setDeviceId(e.target.value)
+                          // 當輸入實體 ID 時，如果連接已成功，可以允許配網
+                        }}
                         placeholder="e.g., light.living_room, switch.bedroom, climate.thermostat"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={status !== 'idle'}
@@ -1945,7 +1953,8 @@ export default function ProvisioningModal({
                   onClick={handleStartProvisioning}
                   disabled={
                     (isMQTTDevice && (!ssid || !password)) ||
-                    (isRESTfulDevice && (!baseUrl || !apiKey)) ||
+                    ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey)) ||
+                    (vendor === 'homeassistant' && (!baseUrl?.trim() || !accessToken?.trim()) && (!deviceId && selectedEntities.size === 0)) ||
                     status !== 'idle'
                   }
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"

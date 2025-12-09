@@ -166,7 +166,10 @@ export default function ProvisioningModal({
 
   // 測試 Home Assistant 連接
   const handleTestConnection = async () => {
-    if (!baseUrl || !accessToken) {
+    const trimmedBaseUrl = baseUrl?.trim()
+    const trimmedAccessToken = accessToken?.trim()
+    
+    if (!trimmedBaseUrl || !trimmedAccessToken) {
       toast.error('請先輸入 Base URL 和 Access Token')
       return
     }
@@ -176,7 +179,7 @@ export default function ProvisioningModal({
     setError(null)
 
     try {
-      const response = await fetch(`/api/mqtt/homeassistant/status?baseUrl=${encodeURIComponent(baseUrl)}&accessToken=${encodeURIComponent(accessToken)}`)
+      const response = await fetch(`/api/mqtt/homeassistant/status?baseUrl=${encodeURIComponent(trimmedBaseUrl)}&accessToken=${encodeURIComponent(trimmedAccessToken)}`)
       const data = await response.json()
 
       if (data.connected) {
@@ -1700,7 +1703,7 @@ export default function ProvisioningModal({
                       <button
                         type="button"
                         onClick={handleTestConnection}
-                        disabled={isTestingConnection || !baseUrl || !accessToken}
+                        disabled={isTestingConnection || !baseUrl?.trim() || !accessToken?.trim()}
                         className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                       >
                         {isTestingConnection ? '測試中...' : '測試連接'}

@@ -145,8 +145,11 @@ export async function POST(request: NextRequest) {
             if (!finalBaseUrl) finalBaseUrl = haConfig.baseUrl
             if (!finalAccessToken) finalAccessToken = haConfig.accessToken
           }
-        } catch (error) {
-          console.error('Error fetching HA config:', error)
+        } catch (error: any) {
+          // 如果表不存在或其他 Prisma 錯誤，靜默處理（使用提供的 baseUrl 和 accessToken）
+          if (error.code !== 'P2021' && error.code !== 'P2022') {
+            console.error('Error fetching HA config:', error)
+          }
         }
       }
       

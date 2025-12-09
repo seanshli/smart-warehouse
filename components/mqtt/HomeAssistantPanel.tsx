@@ -526,6 +526,12 @@ export default function HomeAssistantPanel() {
           </div>
         </div>
       </div>
+
+      <ProvisioningModal
+        isOpen={isProvisioningModalOpen}
+        onClose={() => setIsProvisioningModalOpen(false)}
+        vendor="homeassistant"
+      />
     </div>
   )
 }
@@ -977,12 +983,6 @@ function MedoleDehumidifierCard({
           </div>
         </div>
       </div>
-
-      <ProvisioningModal
-        isOpen={isProvisioningModalOpen}
-        onClose={() => setIsProvisioningModalOpen(false)}
-        vendor="homeassistant"
-      />
     </div>
   )
 }

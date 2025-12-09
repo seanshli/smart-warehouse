@@ -164,6 +164,27 @@ export default function ProvisioningModal({
     }
   }, [isOpen, vendor, ssid, household?.id])
 
+  // 當 vendor 切換到 Home Assistant 時，自動載入配置
+  useEffect(() => {
+    if (vendor === 'homeassistant' && household?.id && !baseUrl) {
+      const loadHAConfig = async () => {
+        try {
+          const response = await fetch(`/api/household/${household.id}/homeassistant`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.config) {
+              setBaseUrl(data.config.baseUrl || '')
+              // Don't auto-fill accessToken for security
+            }
+          }
+        } catch (error) {
+          console.error('Error loading HA config:', error)
+        }
+      }
+      loadHAConfig()
+    }
+  }, [vendor, household?.id, baseUrl])
+
   // 測試 Home Assistant 連接
   const handleTestConnection = async () => {
     const trimmedBaseUrl = baseUrl?.trim()

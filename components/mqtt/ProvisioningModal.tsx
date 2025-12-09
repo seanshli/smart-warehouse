@@ -65,6 +65,24 @@ export default function ProvisioningModal({
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
   const [discoveredDevices, setDiscoveredDevices] = useState<any[]>([])
   const [isDiscovering, setIsDiscovering] = useState(false)
+  const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<{
+    connected: boolean
+    location?: string
+    version?: string
+    error?: string
+  } | null>(null)
+  const [entitiesByDevice, setEntitiesByDevice] = useState<Array<{
+    deviceId: string
+    deviceName: string
+    entities: Array<{
+      entityId: string
+      name: string
+      state: string
+      domain: string
+    }>
+  }>>([])
   
   // ESP 配網多步驟狀態
   const [espStep, setEspStep] = useState<'connect' | 'configure'>('connect') // ESP AP 模式步驟
@@ -1496,22 +1514,57 @@ export default function ProvisioningModal({
                 )}
 
                 {vendor === 'homeassistant' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      實體 ID (Entity ID) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={deviceId}
-                      onChange={(e) => setDeviceId(e.target.value)}
-                      placeholder="e.g., light.living_room, switch.bedroom, climate.thermostat"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={status !== 'idle'}
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      輸入 Home Assistant 實體 ID。格式：domain.entity_name（例如：light.living_room）
-                    </p>
-                  </div>
+                  <>
+                    {/* 連接測試按鈕和狀態 */}
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        {connectionStatus && (
+                          <div className={`h-2 w-2 rounded-full ${
+                            connectionStatus.connected ? 'bg-green-500' : 'bg-red-500'
+                          }`} />
+                        )}
+                        <div className="text-sm">
+                          {connectionStatus?.connected ? (
+                            <span className="text-green-700">
+                              已連接{connectionStatus.location ? ` - ${connectionStatus.location}` : ''}
+                            </span>
+                          ) : connectionStatus ? (
+                            <span className="text-red-700">
+                              連接失敗: {connectionStatus.error}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600">未測試連接</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleTestConnection}
+                        disabled={isTestingConnection || !baseUrl || !accessToken}
+                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        {isTestingConnection ? '測試中...' : '測試連接'}
+                      </button>
+                    </div>
+
+                    {/* 手動輸入實體 ID（可選） */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        實體 ID (Entity ID) <span className="text-gray-400 text-xs">(可選，用於手動添加單個實體)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={deviceId}
+                        onChange={(e) => setDeviceId(e.target.value)}
+                        placeholder="e.g., light.living_room, switch.bedroom, climate.thermostat"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        輸入 Home Assistant 實體 ID。格式：domain.entity_name（例如：light.living_room）
+                      </p>
+                    </div>
+                  </>
                 )}
               </>
             )}
@@ -1597,8 +1650,59 @@ export default function ProvisioningModal({
               </button>
             </div>
 
-            {/* 發現的設備列表 */}
-            {discoveredDevices.length > 0 && (
+            {/* 發現的設備列表 - 按設備分組（Home Assistant） */}
+            {vendor === 'homeassistant' && entitiesByDevice.length > 0 && (
+              <div className="border border-gray-300 rounded-md p-4 mt-4 space-y-4 max-h-96 overflow-y-auto">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-700">
+                    發現的設備和實體 ({entitiesByDevice.length} 個設備)
+                  </p>
+                  {selectedEntities.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleBatchAddEntities}
+                      disabled={status !== 'idle'}
+                      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      批量添加選中 ({selectedEntities.size})
+                    </button>
+                  )}
+                </div>
+                {entitiesByDevice.map((device) => (
+                  <div key={device.deviceId} className="border border-gray-200 rounded-lg p-3 bg-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-semibold text-gray-900">{device.deviceName}</h4>
+                      <span className="text-xs text-gray-500">{device.entities.length} 個實體</span>
+                    </div>
+                    <div className="space-y-1">
+                      {device.entities.map((entity) => (
+                        <label
+                          key={entity.entityId}
+                          className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedEntities.has(entity.entityId)}
+                            onChange={() => handleToggleEntity(entity.entityId)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            disabled={status !== 'idle'}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{entity.name}</p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {entity.entityId} • {entity.state}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 發現的設備列表 - 標準格式（其他品牌） */}
+            {vendor !== 'homeassistant' && discoveredDevices.length > 0 && (
               <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto mt-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">發現的設備：</p>
                 {discoveredDevices.map((device, index) => (

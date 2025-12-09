@@ -11,9 +11,22 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const householdId = searchParams.get('householdId')
+    const baseUrl = searchParams.get('baseUrl')
+    const accessToken = searchParams.get('accessToken')
 
-    // 嘗試獲取 Home Assistant 配置信息來檢查連接
+    // 如果提供了自定義 baseUrl 和 accessToken，臨時設置環境變數
+    const originalBaseUrl = process.env.HOME_ASSISTANT_BASE_URL
+    const originalToken = process.env.HOME_ASSISTANT_ACCESS_TOKEN
+
+    if (baseUrl) {
+      process.env.HOME_ASSISTANT_BASE_URL = baseUrl
+    }
+    if (accessToken) {
+      process.env.HOME_ASSISTANT_ACCESS_TOKEN = accessToken
+    }
+
     try {
+      // 嘗試獲取 Home Assistant 配置信息來檢查連接
       const config = await callHomeAssistant<{
         location_name: string
         version: string
@@ -33,6 +46,14 @@ export async function GET(request: NextRequest) {
         status: 'offline',
         error: error.message || 'Failed to connect to Home Assistant',
       })
+    } finally {
+      // 恢復原始環境變數
+      if (baseUrl) {
+        process.env.HOME_ASSISTANT_BASE_URL = originalBaseUrl
+      }
+      if (accessToken) {
+        process.env.HOME_ASSISTANT_ACCESS_TOKEN = originalToken
+      }
     }
   } catch (error: any) {
     console.error('Failed to check Home Assistant status:', error)

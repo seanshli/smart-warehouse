@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const entityParam = searchParams.get('entity_ids') // 從查詢參數獲取實體 ID 列表
     const householdId = searchParams.get('householdId') // 從查詢參數獲取 household ID
+    const baseUrl = request.headers.get('X-HA-Base-Url') || searchParams.get('baseUrl')
+    const accessToken = request.headers.get('X-HA-Access-Token') || searchParams.get('accessToken')
     
     // 解析實體 ID 列表（格式：entity_id1,entity_id2,...）
     const entityIds = entityParam
@@ -21,8 +23,20 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
       : undefined // 如果未提供，則獲取所有實體
 
-    // 呼叫 Home Assistant API 獲取狀態（使用 household 特定配置）
-    const states = await getHomeAssistantStates(entityIds, householdId || null)
+    // 如果提供了自定義 baseUrl 和 accessToken，臨時設置環境變數
+    const originalBaseUrl = process.env.HOME_ASSISTANT_BASE_URL
+    const originalToken = process.env.HOME_ASSISTANT_ACCESS_TOKEN
+
+    if (baseUrl) {
+      process.env.HOME_ASSISTANT_BASE_URL = baseUrl
+    }
+    if (accessToken) {
+      process.env.HOME_ASSISTANT_ACCESS_TOKEN = accessToken
+    }
+
+    try {
+      // 呼叫 Home Assistant API 獲取狀態（使用 household 特定配置或臨時配置）
+      const states = await getHomeAssistantStates(entityIds, householdId || null)
 
     // 按設備分組實體
     const devicesMap = new Map<string, {
@@ -59,15 +73,24 @@ export async function GET(request: NextRequest) {
       devicesMap.get(key)!.entities.push(state)
     })
 
-    const devices = Array.from(devicesMap.values())
+      const devices = Array.from(devicesMap.values())
 
-    return NextResponse.json(
-      {
-        states, // 返回實體狀態陣列（向後兼容）
-        devices, // 返回按設備分組的數據
-      },
-      { status: 200 }
-    )
+      return NextResponse.json(
+        {
+          states, // 返回實體狀態陣列（向後兼容）
+          devices, // 返回按設備分組的數據
+        },
+        { status: 200 }
+      )
+    } finally {
+      // 恢復原始環境變數
+      if (baseUrl) {
+        process.env.HOME_ASSISTANT_BASE_URL = originalBaseUrl
+      }
+      if (accessToken) {
+        process.env.HOME_ASSISTANT_ACCESS_TOKEN = originalToken
+      }
+    }
   } catch (error) {
     console.error('Failed to fetch Home Assistant states:', error)
     return NextResponse.json(

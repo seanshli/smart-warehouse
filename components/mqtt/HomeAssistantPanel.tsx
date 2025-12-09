@@ -319,7 +319,36 @@ export default function HomeAssistantPanel() {
       console.error('Home Assistant custom service failed', err)
       toast.error(t('homeAssistantCustomError') || 'Failed to call service.')
     }
-  }, [customEntityId, customPayload, mutate, t])
+  }, [customEntityId, customPayload, household?.id, mutate, t])
+
+  const handleDisconnectHA = useCallback(async () => {
+    if (!household?.id) {
+      toast.error('無法斷開連接：未選擇住戶')
+      return
+    }
+
+    setIsLinking(true)
+    try {
+      const response = await fetch(`/api/household/${household.id}/homeassistant`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || '斷開連接失敗')
+      }
+
+      setHaConfig(null)
+      toast.success('已斷開 Home Assistant 連接')
+      mutate() // Refresh the data
+    } catch (err: any) {
+      console.error('Failed to disconnect HA:', err)
+      toast.error(err.message || '斷開連接失敗')
+    } finally {
+      setIsLinking(false)
+    }
+  }, [household?.id, mutate])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -948,6 +977,12 @@ function MedoleDehumidifierCard({
           </div>
         </div>
       </div>
+
+      <ProvisioningModal
+        isOpen={isProvisioningModalOpen}
+        onClose={() => setIsProvisioningModalOpen(false)}
+        vendor="homeassistant"
+      />
     </div>
   )
 }

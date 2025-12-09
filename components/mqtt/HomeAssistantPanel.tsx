@@ -84,6 +84,8 @@ export default function HomeAssistantPanel() {
   } | null>(null)
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
+  const [showAllEntities, setShowAllEntities] = useState(false)
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
 
   // Fetch HA config for current household
   const { data: haConfigData } = useSWR<{
@@ -240,18 +242,49 @@ export default function HomeAssistantPanel() {
       return []
     }
 
-    const preferredDomains = ['light', 'switch', 'climate', 'cover', 'scene']
-    return data.states
-      .filter((state) => preferredDomains.includes(state.entity_id.split('.')[0]))
-      .slice(0, 6)
-      .map((state) => ({
+    const preferredDomains = ['light', 'switch', 'climate', 'cover', 'scene', 'fan', 'select']
+    const filtered = data.states.filter((state) => {
+      const domain = state.entity_id.split('.')[0]
+      return preferredDomains.includes(domain)
+    })
+    
+    // If showing all entities, don't limit
+    const entities = filtered.map((state) => ({
+      entity_id: state.entity_id,
+      name: state.attributes?.friendly_name || state.entity_id,
+      description: state.attributes?.state_class || undefined,
+    }))
+    
+    return showAllEntities ? entities : entities.slice(0, 20) // Show up to 20 entities
+  }, [data, showAllEntities])
+
+  const allEntitiesByDomain = useMemo(() => {
+    if (!data?.states || data.states.length === 0) {
+      return {}
+    }
+    
+    const grouped: Record<string, FavoriteEntityConfig[]> = {}
+    data.states.forEach((state) => {
+      const domain = state.entity_id.split('.')[0]
+      if (!grouped[domain]) {
+        grouped[domain] = []
+      }
+      grouped[domain].push({
         entity_id: state.entity_id,
         name: state.attributes?.friendly_name || state.entity_id,
         description: state.attributes?.state_class || undefined,
-      }))
+      })
+    })
+    return grouped
   }, [data])
 
-  const displayEntities = favoriteEntities.length > 0 ? favoriteEntities : derivedEntities
+  const displayEntities = useMemo(() => {
+    const base = favoriteEntities.length > 0 ? favoriteEntities : derivedEntities
+    if (selectedDomain) {
+      return base.filter((entity) => entity.entity_id.split('.')[0] === selectedDomain)
+    }
+    return base
+  }, [favoriteEntities, derivedEntities, selectedDomain])
 
   const handleToggle = useCallback(
     async (entityId: string, turnOn: boolean) => {
@@ -263,25 +296,31 @@ export default function HomeAssistantPanel() {
           ? { entity_id: entityId, householdId: household.id }
           : { entity_id: entityId }
 
-        await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
+        const response = await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
         })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `HTTP ${response.status}`)
+        }
+
         toast.success(
           turnOn
             ? t('homeAssistantToggleOn') || 'Turned on.'
             : t('homeAssistantToggleOff') || 'Turned off.'
         )
         mutate()
-      } catch (err) {
+      } catch (err: any) {
         console.error('Home Assistant toggle failed', err)
-        toast.error(t('homeAssistantToggleError') || 'Action failed.')
+        toast.error(err.message || t('homeAssistantToggleError') || 'Action failed.')
       }
     },
-    [mutate, t]
+    [household?.id, mutate, t]
   )
 
   const handleCustomService = useCallback(async () => {
@@ -306,18 +345,24 @@ export default function HomeAssistantPanel() {
         ? { ...payload, householdId: household.id }
         : payload
 
-      await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
+      const response = await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
       toast.success(t('homeAssistantCustomSuccess') || 'Service call sent.')
       mutate()
-    } catch (err) {
+    } catch (err: any) {
       console.error('Home Assistant custom service failed', err)
-      toast.error(t('homeAssistantCustomError') || 'Failed to call service.')
+      toast.error(err.message || t('homeAssistantCustomError') || 'Failed to call service.')
     }
   }, [customEntityId, customPayload, household?.id, mutate, t])
 
@@ -419,12 +464,53 @@ export default function HomeAssistantPanel() {
             </div>
           </div>
 
-          <MedoleDehumidifierCard
-            states={statesByEntity}
-            onServiceSuccess={mutate}
-            t={t}
-            currentLanguage={currentLanguage}
-          />
+          {/* Only show MedoleDehumidifierCard if Medole entities exist */}
+          {Object.values(MEDOLE_ENTITIES).some((entityId) => 
+            statesByEntity.has(entityId)
+          ) && (
+            <MedoleDehumidifierCard
+              states={statesByEntity}
+              onServiceSuccess={mutate}
+              t={t}
+              currentLanguage={currentLanguage}
+            />
+          )}
+
+          {/* Entity Browser */}
+          {data?.states && data.states.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {t('homeAssistantEntities') || '實體列表'}
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllEntities(!showAllEntities)}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                  >
+                    {showAllEntities 
+                      ? t('homeAssistantShowLess') || '顯示較少'
+                      : t('homeAssistantShowAll') || `顯示全部 (${data.states.length})`}
+                  </button>
+                  {Object.keys(allEntitiesByDomain).length > 0 && (
+                    <select
+                      value={selectedDomain || ''}
+                      onChange={(e) => setSelectedDomain(e.target.value || null)}
+                      className="text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+                    >
+                      <option value="">{t('homeAssistantAllDomains') || '所有類型'}</option>
+                      {Object.keys(allEntitiesByDomain).sort().map((domain) => (
+                        <option key={domain} value={domain}>
+                          {domain} ({allEntitiesByDomain[domain].length})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {displayEntities.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -673,7 +759,7 @@ function MedoleDehumidifierCard({
 
   const handleSelectOption = async (entityId: string, option: string) => {
     try {
-      await fetch(
+      const response = await fetch(
         `/api/mqtt/homeassistant/services/select/select_option`,
         {
           method: 'POST',
@@ -686,11 +772,17 @@ function MedoleDehumidifierCard({
           }),
         }
       )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
       toast.success(t('homeAssistantModeUpdated') || 'Mode updated.')
       onServiceSuccess()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to set select option:', error)
-      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+      toast.error(error.message || t('homeAssistantToggleError') || 'Action failed.')
     }
   }
 
@@ -699,15 +791,16 @@ function MedoleDehumidifierCard({
     level: MedoleFanLevel
   ) => {
     try {
+      let response: Response
       if (level === 'off') {
-        await fetch(`/api/mqtt/homeassistant/services/fan/turn_off`, {
+        response = await fetch(`/api/mqtt/homeassistant/services/fan/turn_off`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entity_id: entityId }),
         })
       } else {
         const target = FAN_LEVELS.find((option) => option.key === level)
-        await fetch(`/api/mqtt/homeassistant/services/fan/set_percentage`, {
+        response = await fetch(`/api/mqtt/homeassistant/services/fan/set_percentage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -716,11 +809,17 @@ function MedoleDehumidifierCard({
           }),
         })
       }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
       toast.success(t('homeAssistantHumidityUpdated') || 'Updated.')
       onServiceSuccess()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to set fan level:', error)
-      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+      toast.error(error.message || t('homeAssistantToggleError') || 'Action failed.')
     }
   }
 
@@ -728,20 +827,26 @@ function MedoleDehumidifierCard({
     const domain = 'switch'
     const service = turnOn ? 'turn_on' : 'turn_off'
     try {
-      await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
+      const response = await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entity_id: entityId }),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
       toast.success(
         turnOn
           ? t('homeAssistantToggleOn') || 'Turned on.'
           : t('homeAssistantToggleOff') || 'Turned off.'
       )
       onServiceSuccess()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle switch:', error)
-      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+      toast.error(error.message || t('homeAssistantToggleError') || 'Action failed.')
     }
   }
 
@@ -807,9 +912,9 @@ function MedoleDehumidifierCard({
       toast.error(
         t('homeAssistantPowerUnavailable') || 'Power entity unavailable.'
       )
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle power:', error)
-      toast.error(t('homeAssistantToggleError') || 'Action failed.')
+      toast.error(error.message || t('homeAssistantToggleError') || 'Action failed.')
     }
   }
 

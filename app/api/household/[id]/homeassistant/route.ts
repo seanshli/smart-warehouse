@@ -38,20 +38,33 @@ export async function GET(
     }
 
     // 查找 household 的 HA 配置
-    const haConfig = await prisma.homeAssistantConfig.findUnique({
-      where: { householdId },
-    })
+    try {
+      const haConfig = await prisma.homeAssistantConfig.findUnique({
+        where: { householdId },
+      })
 
-    return NextResponse.json({
-      success: true,
-      config: haConfig || null,
-    })
+      return NextResponse.json({
+        success: true,
+        config: haConfig || null,
+      })
+    } catch (prismaError: any) {
+      // 如果表不存在或其他 Prisma 錯誤，返回 null 配置（使用全局配置）
+      if (prismaError.code === 'P2021' || prismaError.code === 'P2022') {
+        console.warn('HomeAssistantConfig table may not exist, using global config')
+        return NextResponse.json({
+          success: true,
+          config: null,
+        })
+      }
+      throw prismaError
+    }
   } catch (error: any) {
     console.error('Error fetching Home Assistant config:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Home Assistant config', details: error.message },
-      { status: 500 }
-    )
+    // 返回成功但 config 為 null，讓前端使用全局配置
+    return NextResponse.json({
+      success: true,
+      config: null,
+    })
   }
 }
 

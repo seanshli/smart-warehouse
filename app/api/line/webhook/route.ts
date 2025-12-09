@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Client, middleware, WebhookEvent, TextMessage, Message } from '@line/bot-sdk'
+// import { Client, middleware, WebhookEvent, TextMessage, Message } from '@line/bot-sdk'
 import { prisma } from '@/lib/prisma'
 
-// LINE Client 配置
-const lineClient = new Client({
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
-  channelSecret: process.env.LINE_CHANNEL_SECRET || '',
-})
+// TODO: Install @line/bot-sdk package: npm install @line/bot-sdk
+// Temporary types until package is installed
+type WebhookEvent = any
+type TextMessage = any
 
-// 驗證 LINE Webhook 簽名
-const lineMiddleware = middleware({
-  channelSecret: process.env.LINE_CHANNEL_SECRET || '',
-})
+// LINE Client 配置 (commented out until @line/bot-sdk is installed)
+// const lineClient = new Client({
+//   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
+//   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
+// })
+
+// 驗證 LINE Webhook 簽名 (commented out until @line/bot-sdk is installed)
+// const lineMiddleware = middleware({
+//   channelSecret: process.env.LINE_CHANNEL_SECRET || '',
+// })
 
 export const dynamic = 'force-dynamic'
 
@@ -187,13 +192,13 @@ async function handleFollowEvent(event: WebhookEvent) {
   const lineUserId = event.source.userId
   console.log('User followed LINE account:', lineUserId)
   
-  // 可以發送歡迎消息
-  if (lineUserId) {
-    await lineClient.replyMessage(event.replyToken, {
-      type: 'text',
-      text: '歡迎使用 Smart Warehouse！請在應用中綁定您的 LINE 帳號以開始使用。',
-    })
-  }
+  // 可以發送歡迎消息 (commented out until @line/bot-sdk is installed)
+  // if (lineUserId) {
+  //   await lineClient.replyMessage(event.replyToken, {
+  //     type: 'text',
+  //     text: '歡迎使用 Smart Warehouse！請在應用中綁定您的 LINE 帳號以開始使用。',
+  //   })
+  // }
 }
 
 /**

@@ -1,29 +1,34 @@
-import { Client, TextMessage, ImageMessage } from '@line/bot-sdk'
+// import { Client, TextMessage, ImageMessage } from '@line/bot-sdk'
 import { prisma } from './prisma'
 
+// TODO: Install @line/bot-sdk package: npm install @line/bot-sdk
+// Temporary types until package is installed
+type TextMessage = any
+type ImageMessage = any
+
 // LINE Client 實例
-let lineClient: Client | null = null
+// let lineClient: Client | null = null
 
 /**
- * 獲取 LINE Client 實例
+ * 獲取 LINE Client 實例 (commented out until @line/bot-sdk is installed)
  */
-function getLineClient(): Client {
-  if (!lineClient) {
-    const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
-    const channelSecret = process.env.LINE_CHANNEL_SECRET
+// function getLineClient(): Client {
+//   if (!lineClient) {
+//     const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+//     const channelSecret = process.env.LINE_CHANNEL_SECRET
 
-    if (!channelAccessToken || !channelSecret) {
-      throw new Error('LINE credentials not configured')
-    }
+//     if (!channelAccessToken || !channelSecret) {
+//       throw new Error('LINE credentials not configured')
+//     }
 
-    lineClient = new Client({
-      channelAccessToken,
-      channelSecret,
-    })
-  }
+//     lineClient = new Client({
+//       channelAccessToken,
+//       channelSecret,
+//     })
+//   }
 
-  return lineClient
-}
+//   return lineClient
+// }
 
 /**
  * 發送文本消息到 LINE 群組
@@ -32,19 +37,22 @@ export async function sendLineGroupMessage(
   groupId: string,
   message: string
 ): Promise<void> {
-  try {
-    const client = getLineClient()
-    
-    await client.pushMessage(groupId, {
-      type: 'text',
-      text: message,
-    } as TextMessage)
+  // TODO: Implement after installing @line/bot-sdk
+  throw new Error('LINE SDK not installed. Run: npm install @line/bot-sdk')
+  
+  // try {
+  //   const client = getLineClient()
+  //   
+  //   await client.pushMessage(groupId, {
+  //     type: 'text',
+  //     text: message,
+  //   } as TextMessage)
 
-    console.log('LINE message sent to group:', groupId)
-  } catch (error) {
-    console.error('Error sending LINE message:', error)
-    throw error
-  }
+  //   console.log('LINE message sent to group:', groupId)
+  // } catch (error) {
+  //   console.error('Error sending LINE message:', error)
+  //   throw error
+  // }
 }
 
 /**
@@ -55,20 +63,23 @@ export async function sendLineGroupImage(
   imageUrl: string,
   previewUrl?: string
 ): Promise<void> {
-  try {
-    const client = getLineClient()
-    
-    await client.pushMessage(groupId, {
-      type: 'image',
-      originalContentUrl: imageUrl,
-      previewImageUrl: previewUrl || imageUrl,
-    } as ImageMessage)
+  // TODO: Implement after installing @line/bot-sdk
+  throw new Error('LINE SDK not installed. Run: npm install @line/bot-sdk')
+  
+  // try {
+  //   const client = getLineClient()
+  //   
+  //   await client.pushMessage(groupId, {
+  //     type: 'image',
+  //     originalContentUrl: imageUrl,
+  //     previewImageUrl: previewUrl || imageUrl,
+  //   } as ImageMessage)
 
-    console.log('LINE image sent to group:', groupId)
-  } catch (error) {
-    console.error('Error sending LINE image:', error)
-    throw error
-  }
+  //   console.log('LINE image sent to group:', groupId)
+  // } catch (error) {
+  //   console.error('Error sending LINE image:', error)
+  //   throw error
+  // }
 }
 
 /**

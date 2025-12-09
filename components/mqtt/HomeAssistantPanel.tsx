@@ -84,7 +84,7 @@ export default function HomeAssistantPanel() {
   } | null>(null)
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
-  const [showAllEntities, setShowAllEntities] = useState(false)
+  const [showAllEntities, setShowAllEntities] = useState(true) // Default to showing all entities
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
 
   // Fetch HA config for current household
@@ -108,12 +108,12 @@ export default function HomeAssistantPanel() {
     }
   }, [haConfigData])
 
-  const queryParam =
-    favoriteEntities.length > 0
-      ? `?entity_ids=${encodeURIComponent(
+  // Always fetch all entities when browsing, only use favorites if explicitly set and not browsing
+  const queryParam = showAllEntities || favoriteEntities.length === 0
+      ? household?.id ? `?householdId=${household.id}` : ''
+      : `?entity_ids=${encodeURIComponent(
           favoriteEntities.map((entity) => entity.entity_id).join(',')
         )}${household?.id ? `&householdId=${household.id}` : ''}`
-      : household?.id ? `?householdId=${household.id}` : ''
 
   const { data, error, isLoading, mutate } = useSWR<{
     states: HomeAssistantState[]
@@ -242,20 +242,22 @@ export default function HomeAssistantPanel() {
       return []
     }
 
+    // When showing all entities, include all domains; otherwise filter by preferred domains
     const preferredDomains = ['light', 'switch', 'climate', 'cover', 'scene', 'fan', 'select']
-    const filtered = data.states.filter((state) => {
-      const domain = state.entity_id.split('.')[0]
-      return preferredDomains.includes(domain)
-    })
+    const filtered = showAllEntities 
+      ? data.states // Show all entities when browsing
+      : data.states.filter((state) => {
+          const domain = state.entity_id.split('.')[0]
+          return preferredDomains.includes(domain)
+        })
     
-    // If showing all entities, don't limit
     const entities = filtered.map((state) => ({
       entity_id: state.entity_id,
       name: state.attributes?.friendly_name || state.entity_id,
       description: state.attributes?.state_class || undefined,
     }))
     
-    return showAllEntities ? entities : entities.slice(0, 20) // Show up to 20 entities
+    return showAllEntities ? entities : entities.slice(0, 20) // Show up to 20 entities when not browsing
   }, [data, showAllEntities])
 
   const allEntitiesByDomain = useMemo(() => {
@@ -279,15 +281,23 @@ export default function HomeAssistantPanel() {
   }, [data])
 
   const displayEntities = useMemo(() => {
-    const base = favoriteEntities.length > 0 ? favoriteEntities : derivedEntities
+    // Always prefer discovered entities when available, only fall back to favorites if no data
+    const base = (data?.states && data.states.length > 0) ? derivedEntities : favoriteEntities
     if (selectedDomain) {
       return base.filter((entity) => entity.entity_id.split('.')[0] === selectedDomain)
     }
     return base
-  }, [favoriteEntities, derivedEntities, selectedDomain])
+  }, [data?.states, favoriteEntities, derivedEntities, selectedDomain])
 
   const handleToggle = useCallback(
     async (entityId: string, turnOn: boolean) => {
+      // Check if entity is unavailable
+      const entityState = statesByEntity.get(entityId)
+      if (entityState?.state === 'unavailable' || entityState?.state === 'unknown') {
+        toast.error('Entity is unavailable. Please check device connection.')
+        return
+      }
+
       const domain = entityId.split('.')[0]
       const service = turnOn ? 'turn_on' : 'turn_off'
 
@@ -306,21 +316,26 @@ export default function HomeAssistantPanel() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || `HTTP ${response.status}`)
+          const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+          throw new Error(errorMessage)
         }
 
+        const result = await response.json().catch(() => ({}))
+        
         toast.success(
           turnOn
             ? t('homeAssistantToggleOn') || 'Turned on.'
             : t('homeAssistantToggleOff') || 'Turned off.'
         )
-        mutate()
+        // Refresh after a short delay to allow HA to update
+        setTimeout(() => mutate(), 500)
       } catch (err: any) {
         console.error('Home Assistant toggle failed', err)
-        toast.error(err.message || t('homeAssistantToggleError') || 'Action failed.')
+        const errorMessage = err.message || err.toString() || t('homeAssistantToggleError') || 'Action failed.'
+        toast.error(errorMessage)
       }
     },
-    [household?.id, mutate, t]
+    [household?.id, mutate, t, statesByEntity]
   )
 
   const handleCustomService = useCallback(async () => {
@@ -393,7 +408,7 @@ export default function HomeAssistantPanel() {
     } finally {
       setIsLinking(false)
     }
-  }, [household?.id, mutate, setHaConfig, setIsLinking])
+  }, [household?.id, mutate])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -480,9 +495,14 @@ export default function HomeAssistantPanel() {
           {data?.states && data.states.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {t('homeAssistantEntities') || '實體列表'}
-                </h3>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {t('homeAssistantEntities') || '實體列表'}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {data.states.length} {t('homeAssistantEntitiesFound') || 'entities found'} • {displayEntities.length} {t('homeAssistantEntitiesShown') || 'shown'}
+                  </p>
+                </div>
                 <div className="flex items-center space-x-2">
                   <button
                     type="button"

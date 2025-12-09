@@ -70,6 +70,8 @@ export interface Translations {
   homeAssistantSendService: string // 發送服務
   homeAssistantNoEntities: string // 無實體
   homeAssistantEntities: string // 實體列表
+  homeAssistantEntitiesFound: string // 找到的實體
+  homeAssistantEntitiesShown: string // 顯示的實體
   homeAssistantShowLess: string // 顯示較少
   homeAssistantShowAll: string // 顯示全部
   homeAssistantAllDomains: string // 所有類型
@@ -1058,6 +1060,8 @@ const en: Translations = {
   homeAssistantSendService: 'Send',
   homeAssistantNoEntities: 'No entities configured. Add NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES or use the custom service call below.',
   homeAssistantEntities: 'Entities',
+  homeAssistantEntitiesFound: 'entities found',
+  homeAssistantEntitiesShown: 'shown',
   homeAssistantShowLess: 'Show Less',
   homeAssistantShowAll: 'Show All',
   homeAssistantAllDomains: 'All Types',
@@ -2984,6 +2988,8 @@ const zh: Translations = {
   homeAssistantSendService: '发送',
   homeAssistantNoEntities: '尚未配置常用实体。可以在 NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES 环境变量中添加 entity_id，或直接使用下面的自定义服务调用。',
   homeAssistantEntities: '实体列表',
+  homeAssistantEntitiesFound: '个实体已找到',
+  homeAssistantEntitiesShown: '个显示中',
   homeAssistantShowLess: '显示较少',
   homeAssistantShowAll: '显示全部',
   homeAssistantAllDomains: '所有类型',

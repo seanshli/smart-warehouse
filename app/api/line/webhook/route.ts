@@ -94,68 +94,73 @@ async function handleMessageEvent(event: WebhookEvent) {
   const lineUserId = event.source.userId || ''
   const groupId = event.source.type === 'group' ? event.source.groupId : null
 
+  // TODO: Add LineUser and LineGroup models to Prisma schema first
   // 查找對應的用戶和 household
-  const lineUser = await prisma.lineUser.findUnique({
-    where: { lineUserId },
-    include: { user: true },
-  })
+  // const lineUser = await prisma.lineUser.findUnique({
+  //   where: { lineUserId },
+  //   include: { user: true },
+  // })
 
-  if (!lineUser || !groupId) {
-    console.log('LINE user not found or not a group message:', { lineUserId, groupId })
-    return
-  }
+  // if (!lineUser || !groupId) {
+  //   console.log('LINE user not found or not a group message:', { lineUserId, groupId })
+  //   return
+  // }
 
-  // 查找對應的 LINE 群組和 household
-  const lineGroup = await prisma.lineGroup.findUnique({
-    where: { lineGroupId: groupId },
-    include: { household: true },
-  })
+  // // 查找對應的 LINE 群組和 household
+  // const lineGroup = await prisma.lineGroup.findUnique({
+  //   where: { lineGroupId: groupId },
+  //   include: { household: true },
+  // })
 
-  if (!lineGroup) {
-    console.log('LINE group not found:', groupId)
-    return
-  }
+  // if (!lineGroup) {
+  //   console.log('LINE group not found:', groupId)
+  //   return
+  // }
+  
+  console.log('LINE webhook received (models not yet configured):', { lineUserId, groupId })
+  return
 
+  // TODO: Implement after adding LINE models
   // 保存消息到數據庫
-  await prisma.lineMessage.create({
-    data: {
-      lineMessageId: event.message.id,
-      lineUserId,
-      messageType: 'text',
-      content: textMessage.text,
-      metadata: {
-        timestamp: event.timestamp,
-        replyToken: event.replyToken,
-      },
-    },
-  })
+  // await prisma.lineMessage.create({
+  //   data: {
+  //     lineMessageId: event.message.id,
+  //     lineUserId,
+  //     messageType: 'text',
+  //     content: textMessage.text,
+  //     metadata: {
+  //       timestamp: event.timestamp,
+  //       replyToken: event.replyToken,
+  //     },
+  //   },
+  // })
 
-  // 同步到系統內的 Conversation
-  const conversation = await getOrCreateConversation(
-    lineUser.userId,
-    lineGroup.householdId,
-    'general'
-  )
+  // // 同步到系統內的 Conversation
+  // const conversation = await getOrCreateConversation(
+  //   lineUser.userId,
+  //   lineGroup.householdId,
+  //   'general'
+  // )
 
-  // 創建系統內的消息記錄
-  await prisma.message.create({
-    data: {
-      conversationId: conversation.id,
-      senderId: lineUser.userId,
-      content: textMessage.text,
-      messageType: 'text',
-      metadata: {
-        source: 'line',
-        lineMessageId: event.message.id,
-      },
-    },
-  })
+  // // 創建系統內的消息記錄
+  // await prisma.message.create({
+  //   data: {
+  //     conversationId: conversation.id,
+  //     senderId: lineUser.userId,
+  //     content: textMessage.text,
+  //     messageType: 'text',
+  //     metadata: {
+  //       source: 'line',
+  //       lineMessageId: event.message.id,
+  //     },
+  //   },
+  // })
 
-  console.log('LINE message synced:', {
-    lineUserId,
-    householdId: lineGroup.householdId,
-    conversationId: conversation.id,
-  })
+  // console.log('LINE message synced:', {
+  //   lineUserId,
+  //   householdId: lineGroup.householdId,
+  //   conversationId: conversation.id,
+  // })
 }
 
 /**

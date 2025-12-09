@@ -2,7 +2,7 @@
 // 用於添加 Home Assistant 設備到系統
 
 import { BaseProvisioningAdapter, ProvisioningConfig, ProvisioningResult } from './base-provisioning'
-import { callHomeAssistant, type HomeAssistantState } from '../homeassistant'
+import { callHomeAssistant, getHomeAssistantStates, type HomeAssistantState } from '../homeassistant'
 
 export class HomeAssistantProvisioningAdapter extends BaseProvisioningAdapter {
   readonly vendor = 'homeassistant'

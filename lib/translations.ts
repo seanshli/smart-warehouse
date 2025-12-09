@@ -1060,6 +1060,7 @@ const en: Translations = {
   homeAssistantCustomError: 'Failed to call service.',
   homeAssistantSendService: 'Send',
   homeAssistantNoEntities: 'No entities configured. Add NEXT_PUBLIC_HOME_ASSISTANT_ENTITIES or use the custom service call below.',
+  homeAssistantNoOptions: 'No options available',
   homeAssistantEntities: 'Entities',
   homeAssistantEntitiesFound: 'entities found',
   homeAssistantEntitiesShown: 'shown',

@@ -1698,8 +1698,15 @@ export default function ProvisioningModal({
                   </>
                 )}
 
-            {/* RESTful 設備配置（Philips, Panasonic） */}
+            {/* RESTful 設備配置（Philips, Panasonic, Home Assistant） */}
             {isRESTfulDevice && (
+              <>
+                {/* Debug info in development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="text-xs text-gray-400 mb-2 p-2 bg-yellow-50 rounded">
+                    Debug: vendor={vendor}, isRESTfulDevice={isRESTfulDevice ? 'true' : 'false'}
+                  </div>
+                )}
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

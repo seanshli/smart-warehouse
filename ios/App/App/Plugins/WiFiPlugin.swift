@@ -212,14 +212,4 @@ public class WiFiPlugin: CAPPlugin {
 }
 
 // MARK: - Capacitor Plugin Registration
-
-CAP_PLUGIN(WiFiPlugin, "WiFi",
-           CAP_PLUGIN_METHOD(getCurrentSSID, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(scanNetworks, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(checkPermission, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(requestPermission, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(savePassword, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(getPassword, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(deletePassword, CAPPluginReturnPromise);
-           CAP_PLUGIN_METHOD(getSavedSSIDs, CAPPluginReturnPromise);
-)
+// Plugin registration is done in WiFiPlugin.m (Objective-C file)

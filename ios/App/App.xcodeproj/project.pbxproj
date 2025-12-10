@@ -11,7 +11,9 @@
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		18874E26A8F7AD31D46BF91A /* NativeBarcodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EF2B53830011B272F2430D /* NativeBarcodeScanner.swift */; };
+		D42BCFE1741DFB32B2CE7C83 /* NativeBarcodeScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = D42BCFE1741DFB32B2CE7C84 /* NativeBarcodeScanner.m */; };
 		B010A269A1CE2A168F70AB0C /* WiFiPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3B67A556B042A3B67898E5C /* WiFiPlugin.swift */; };
+		791E4B5390A01CB56EF2D4D5 /* WiFiPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 791E4B5390A01CB56EF2D4D6 /* WiFiPlugin.m */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
@@ -45,7 +47,9 @@
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C6EF2B53830011B272F2430D /* NativeBarcodeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Plugins/NativeBarcodeScanner.swift"; sourceTree = "<group>"; };
+		D42BCFE1741DFB32B2CE7C84 /* NativeBarcodeScanner.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "Plugins/NativeBarcodeScanner.m"; sourceTree = "<group>"; };
 		C3B67A556B042A3B67898E5C /* WiFiPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Plugins/WiFiPlugin.swift"; sourceTree = "<group>"; };
+		791E4B5390A01CB56EF2D4D6 /* WiFiPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "Plugins/WiFiPlugin.m"; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -102,7 +106,9 @@
 			isa = PBXGroup;
 			children = (
 				C6EF2B53830011B272F2430D /* NativeBarcodeScanner.swift */,
+				D42BCFE1741DFB32B2CE7C84 /* NativeBarcodeScanner.m */,
 				C3B67A556B042A3B67898E5C /* WiFiPlugin.swift */,
+				791E4B5390A01CB56EF2D4D6 /* WiFiPlugin.m */,
 				C442869A562BD29F00ED60AA /* App-Bridging-Header.h */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -277,7 +283,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				18874E26A8F7AD31D46BF91A /* NativeBarcodeScanner.swift in Sources */,
+				D42BCFE1741DFB32B2CE7C83 /* NativeBarcodeScanner.m in Sources */,
 				B010A269A1CE2A168F70AB0C /* WiFiPlugin.swift in Sources */,
+				791E4B5390A01CB56EF2D4D5 /* WiFiPlugin.m in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

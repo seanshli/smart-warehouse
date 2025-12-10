@@ -14,7 +14,11 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     scrollEnabled: true,
     allowsLinkPreview: true,
-    preferredContentMode: 'mobile'
+    preferredContentMode: 'mobile',
+    // Support for iPad and iPhone
+    scrollEnabled: true,
+    // Enable responsive design for tablets
+    allowsLinkPreview: true,
   },
   android: {
     // Configure for external hosting
@@ -22,9 +26,11 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: true,
-    // Tablet and phone support
-    appendUserAgent: 'SmartWarehouse/1.0.1',
-    // Enable responsive design
+    // Tablet and phone support - updated version
+    appendUserAgent: 'SmartWarehouse/1.0.36',
+    // Enable responsive design for all screen sizes
+    // Support for phones (small, normal) and tablets (large, xlarge)
+    // Viewport meta tag handled by Next.js for responsive design
   },
   plugins: {
     Camera: {

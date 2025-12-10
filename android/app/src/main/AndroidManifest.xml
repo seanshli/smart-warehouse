@@ -66,46 +66,16 @@
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     
     <!-- Device Support Configuration -->
+    <!-- Universal support for all screen sizes and densities -->
+    <!-- Removed compatible-screens to allow installation on all devices -->
     <supports-screens 
         android:smallScreens="true"
         android:normalScreens="true"
         android:largeScreens="true"
         android:xlargeScreens="true"
         android:anyDensity="true"
-        android:resizeable="true" />
-    
-    <!-- Tablet and Phone Support -->
-    <compatible-screens>
-        <!-- Phone screens -->
-        <screen android:screenSize="small" android:screenDensity="ldpi" />
-        <screen android:screenSize="small" android:screenDensity="mdpi" />
-        <screen android:screenSize="small" android:screenDensity="hdpi" />
-        <screen android:screenSize="small" android:screenDensity="xhdpi" />
-        <screen android:screenSize="small" android:screenDensity="xxhdpi" />
-        <screen android:screenSize="small" android:screenDensity="xxxhdpi" />
-        
-        <!-- Normal screens (phones) -->
-        <screen android:screenSize="normal" android:screenDensity="ldpi" />
-        <screen android:screenSize="normal" android:screenDensity="mdpi" />
-        <screen android:screenSize="normal" android:screenDensity="hdpi" />
-        <screen android:screenSize="normal" android:screenDensity="xhdpi" />
-        <screen android:screenSize="normal" android:screenDensity="xxhdpi" />
-        <screen android:screenSize="normal" android:screenDensity="xxxhdpi" />
-        
-        <!-- Large screens (tablets) -->
-        <screen android:screenSize="large" android:screenDensity="ldpi" />
-        <screen android:screenSize="large" android:screenDensity="mdpi" />
-        <screen android:screenSize="large" android:screenDensity="hdpi" />
-        <screen android:screenSize="large" android:screenDensity="xhdpi" />
-        <screen android:screenSize="large" android:screenDensity="xxhdpi" />
-        <screen android:screenSize="large" android:screenDensity="xxxhdpi" />
-        
-        <!-- Extra large screens (large tablets) -->
-        <screen android:screenSize="xlarge" android:screenDensity="ldpi" />
-        <screen android:screenSize="xlarge" android:screenDensity="mdpi" />
-        <screen android:screenSize="xlarge" android:screenDensity="hdpi" />
-        <screen android:screenSize="xlarge" android:screenDensity="xhdpi" />
-        <screen android:screenSize="xlarge" android:screenDensity="xxhdpi" />
-        <screen android:screenSize="xlarge" android:screenDensity="xxxhdpi" />
-    </compatible-screens>
+        android:resizeable="true"
+        android:requiresSmallestWidthDp="320"
+        android:compatibleWidthLimitDp=""
+        android:largestWidthLimitDp="" />
 </manifest>

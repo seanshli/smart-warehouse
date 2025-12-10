@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
@@ -24,6 +25,7 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 
 // Client-side only component to prevent hydration issues
 function ClientHome() {
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -79,8 +81,11 @@ function ClientHome() {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Authentication Required</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the dashboard.</p>
           <button
-            onClick={() => window.location.href = '/auth/signin'}
-            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+            onClick={() => {
+              // Use router.push for better iOS/Capacitor compatibility
+              router.push('/auth/signin')
+            }}
+            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
           >
             Go to Login
           </button>

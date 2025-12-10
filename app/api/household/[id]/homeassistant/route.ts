@@ -189,6 +189,20 @@ export async function POST(
       },
     })
 
+    // Auto-sync Home Assistant entities to MQTT
+    try {
+      const { initializeHASync } = await import('@/lib/mqtt/homeassistant-sync')
+      // Initialize sync in background (don't wait for it to complete)
+      initializeHASync(householdId).catch((error) => {
+        console.error('[HA Config] Error initializing MQTT sync:', error)
+        // Don't fail the request if sync fails - it can be retried later
+      })
+      console.log(`[HA Config] Started MQTT sync for household ${householdId}`)
+    } catch (syncError) {
+      console.error('[HA Config] Failed to start MQTT sync:', syncError)
+      // Continue anyway - sync can be retried later
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Home Assistant linked successfully',
@@ -251,6 +265,16 @@ export async function DELETE(
     }).catch(() => {
       // 如果不存在，忽略錯誤
     })
+
+    // Stop MQTT sync when Home Assistant is unlinked
+    try {
+      const { cleanupHASync } = await import('@/lib/mqtt/homeassistant-sync')
+      await cleanupHASync(householdId)
+      console.log(`[HA Config] Stopped MQTT sync for household ${householdId}`)
+    } catch (cleanupError) {
+      console.error('[HA Config] Error stopping MQTT sync:', cleanupError)
+      // Continue anyway
+    }
 
     return NextResponse.json({
       success: true,

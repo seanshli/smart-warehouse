@@ -101,12 +101,17 @@ export default function HomeAssistantPanel() {
   )
 
   useEffect(() => {
-    if (haConfigData?.config) {
+    if (haConfigData?.config && haConfigData.config.baseUrl && haConfigData.config.accessToken) {
       setHaConfig(haConfigData.config)
     } else {
       setHaConfig(null)
     }
   }, [haConfigData])
+
+  // 如果沒有配置，不顯示面板
+  if (!haConfig && (!household?.id || haConfigData?.config === null)) {
+    return null
+  }
 
   // Always fetch all entities when browsing, only use favorites if explicitly set and not browsing
   const queryParam = showAllEntities || favoriteEntities.length === 0
@@ -176,6 +181,11 @@ export default function HomeAssistantPanel() {
     const params = new URLSearchParams({
       entities: entityIdsForStream.join(','),
     })
+    
+    // 添加 householdId 參數
+    if (household?.id) {
+      params.append('householdId', household.id)
+    }
 
     const connect = () => {
       if (stopped) return

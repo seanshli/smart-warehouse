@@ -4,23 +4,27 @@
 
 import { NextRequest } from 'next/server'
 import WebSocket from 'ws'
+import { getHomeAssistantConfig } from '@/lib/homeassistant'
 
 export const runtime = 'nodejs' // 使用 Node.js 運行時（WebSocket 需要）
 
-// 從環境變數讀取 Home Assistant 配置
-const BASE_URL = process.env.HOME_ASSISTANT_BASE_URL // Home Assistant 基礎 URL
-const ACCESS_TOKEN = process.env.HOME_ASSISTANT_ACCESS_TOKEN // 長期存取令牌
-
 // GET 處理器：建立 SSE 事件流
 export async function GET(request: NextRequest) {
-  if (!BASE_URL || !ACCESS_TOKEN) {
-    return new Response('Home Assistant credentials not configured', {
-      status: 500,
+  const searchParams = request.nextUrl.searchParams
+  const householdId = searchParams.get('householdId') // 從查詢參數獲取 householdId
+  const entitiesParam = searchParams.get('entities') // 從查詢參數獲取要監聽的實體 ID 列表
+  
+  // 獲取 household 特定的 Home Assistant 配置
+  const config = await getHomeAssistantConfig(householdId || null)
+  
+  if (!config || !config.baseUrl || !config.accessToken) {
+    return new Response('Home Assistant credentials not configured for this household', {
+      status: 400,
     })
   }
-
-  const searchParams = request.nextUrl.searchParams
-  const entitiesParam = searchParams.get('entities') // 從查詢參數獲取要監聽的實體 ID 列表
+  
+  const BASE_URL = config.baseUrl
+  const ACCESS_TOKEN = config.accessToken
   
   // 解析實體 ID 集合（格式：entity_id1,entity_id2,...）
   const entitySet = new Set(

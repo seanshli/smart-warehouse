@@ -153,17 +153,10 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // 如果還是沒有，使用環境變數（後備）
-      if (!finalBaseUrl) {
-        finalBaseUrl = process.env.HOME_ASSISTANT_BASE_URL || ''
-      }
-      if (!finalAccessToken) {
-        finalAccessToken = process.env.HOME_ASSISTANT_ACCESS_TOKEN || ''
-      }
-      
+      // 不再使用環境變數作為後備，每個 household 必須有自己的配置
       if (!finalBaseUrl || !finalAccessToken) {
         return NextResponse.json(
-          { error: 'Home Assistant Base URL and Access Token are required. Please configure them in household settings or provide them manually.' },
+          { error: 'Home Assistant Base URL and Access Token are required. Please configure them in household settings or provide them manually in the provisioning form.' },
           { status: 400 }
         )
       }

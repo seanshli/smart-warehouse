@@ -186,6 +186,7 @@ export async function POST(
         baseUrl: device.baseUrl || '',
         apiKey: device.apiKey || '',
         accessToken: device.accessToken || '',
+        householdId: device.householdId, // 傳遞 householdId 給適配器
         ...(device.metadata as any || {})
       }
 
@@ -195,7 +196,10 @@ export async function POST(
         // 更新設備狀態（可選：重新獲取狀態）
         try {
           if (adapter.getDeviceState) {
-            const newState = await adapter.getDeviceState(device.deviceId, config)
+            const newState = await adapter.getDeviceState(device.deviceId, {
+              ...config,
+              householdId: device.householdId, // 確保傳遞 householdId
+            })
             if (newState) {
               await prisma.ioTDevice.update({
                 where: { id: device.id },

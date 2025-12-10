@@ -234,6 +234,20 @@ export default function Dashboard() {
   const { t } = useLanguage()
   const { household, role, permissions, refreshTrigger, forceRefresh } = useHousehold()
   const deviceInfo = useDeviceDetection()
+  
+  // Check if household has Home Assistant configuration
+  const { data: haConfigData } = useSWR<{
+    success: boolean
+    config: {
+      baseUrl: string
+      accessToken: string
+    } | null
+  }>(
+    household?.id ? `/api/household/${household.id}/homeassistant` : null,
+    (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json())
+  )
+  
+  const hasHomeAssistant = !!haConfigData?.config?.baseUrl && !!haConfigData?.config?.accessToken
 
   // Add error boundary for client-side errors
   useEffect(() => {
@@ -381,7 +395,8 @@ export default function Dashboard() {
     { id: 'activities', name: t('activities'), icon: ClockIcon },
     { id: 'notifications', name: t('notifications'), icon: BellIcon },
     { id: 'members', name: t('members'), icon: UsersIcon, permission: 'canManageMembers' },
-    { id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon },
+    // Only show Home Assistant tab if household has HA configuration
+    ...(hasHomeAssistant ? [{ id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon }] : []),
     { id: 'mqtt', name: t('mqttDevices') || 'MQTT Devices', icon: WifiIcon },
     { id: 'maintenance', name: (t as any)('maintenanceTickets') || '報修', icon: ExclamationTriangleIcon },
     // Reservation entry point is now in the Property Services area on the dashboard

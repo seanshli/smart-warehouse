@@ -25,8 +25,8 @@ export class HomeAssistantAdapter extends BaseAdapter {
       metadata: {
         connectionType: 'restful',
         entityId: deviceId, // Home Assistant 實體 ID
-        baseUrl: config?.baseUrl || process.env.HOME_ASSISTANT_BASE_URL,
-        accessToken: config?.accessToken || process.env.HOME_ASSISTANT_ACCESS_TOKEN,
+        baseUrl: config?.baseUrl || '', // 不再使用環境變數，必須從配置提供
+        accessToken: config?.accessToken || '', // 不再使用環境變數，必須從配置提供
         ...config,
       },
     }
@@ -107,11 +107,12 @@ export class HomeAssistantAdapter extends BaseAdapter {
   /**
    * 獲取設備狀態
    * @param deviceId Home Assistant 實體 ID
-   * @param config 配置
+   * @param config 配置（應包含 householdId）
    */
   async getDeviceState(deviceId: string, config: AdapterConfig): Promise<DeviceState | null> {
     try {
-      const states = await getHomeAssistantStates([deviceId])
+      const householdId = (config as any)?.householdId || null
+      const states = await getHomeAssistantStates([deviceId], householdId)
       if (states.length > 0) {
         return this.parseState(states[0])
       }
@@ -126,7 +127,7 @@ export class HomeAssistantAdapter extends BaseAdapter {
    * 發送控制命令
    * @param deviceId Home Assistant 實體 ID
    * @param command 控制命令
-   * @param config 配置
+   * @param config 配置（應包含 householdId）
    */
   async sendCommand(deviceId: string, command: ControlCommand, config: AdapterConfig): Promise<boolean> {
     try {
@@ -188,8 +189,9 @@ export class HomeAssistantAdapter extends BaseAdapter {
           }
       }
 
-      // 調用 Home Assistant 服務
-      await callHomeAssistantService(domain, command.action, payload)
+      // 調用 Home Assistant 服務（使用 householdId）
+      const householdId = (config as any)?.householdId || null
+      await callHomeAssistantService(domain, command.action, payload, householdId)
       return true
     } catch (error) {
       console.error('Failed to send Home Assistant command:', error)

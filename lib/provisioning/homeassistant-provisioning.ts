@@ -45,10 +45,10 @@ export class HomeAssistantProvisioningAdapter extends BaseProvisioningAdapter {
       }
 
       try {
-        // 構建臨時配置對象
+        // 構建臨時配置對象（不再使用環境變數作為後備）
         const tempConfig = {
-          baseUrl: baseUrl || process.env.HOME_ASSISTANT_BASE_URL || '',
-          accessToken: accessToken || process.env.HOME_ASSISTANT_ACCESS_TOKEN || '',
+          baseUrl: baseUrl || '',
+          accessToken: accessToken || '',
         }
 
         if (!tempConfig.baseUrl || !tempConfig.accessToken) {

@@ -3,30 +3,15 @@
 
 import { prisma } from './prisma'
 
-// 從環境變數讀取 Home Assistant 配置（全局後備配置）
-const HOME_ASSISTANT_BASE_URL = process.env.HOME_ASSISTANT_BASE_URL // Home Assistant 基礎 URL
-const HOME_ASSISTANT_TOKEN = process.env.HOME_ASSISTANT_ACCESS_TOKEN // 長期存取令牌
-
-if (!HOME_ASSISTANT_BASE_URL) {
-  console.warn('HOME_ASSISTANT_BASE_URL is not configured')
-}
-
-if (!HOME_ASSISTANT_TOKEN) {
-  console.warn('HOME_ASSISTANT_ACCESS_TOKEN is not configured')
-}
-
 /**
  * 獲取 household 的 Home Assistant 配置
- * @param householdId Household ID（可選，如果不提供則使用全局配置）
- * @returns Home Assistant 配置或 null
+ * @param householdId Household ID（必需，每個 household 必須有自己的配置）
+ * @returns Home Assistant 配置或 null（如果沒有配置）
  */
 export async function getHomeAssistantConfig(householdId?: string | null) {
   if (!householdId) {
-    // 使用全局配置
-    return {
-      baseUrl: HOME_ASSISTANT_BASE_URL,
-      accessToken: HOME_ASSISTANT_TOKEN,
-    }
+    // 不再使用全局配置，每個 household 必須有自己的配置
+    return null
   }
 
   try {
@@ -44,11 +29,8 @@ export async function getHomeAssistantConfig(householdId?: string | null) {
     console.error('Error fetching Home Assistant config:', error)
   }
 
-  // 如果沒有找到 household 特定配置，回退到全局配置
-  return {
-    baseUrl: HOME_ASSISTANT_BASE_URL,
-    accessToken: HOME_ASSISTANT_TOKEN,
-  }
+  // 如果沒有找到 household 特定配置，返回 null（不再回退到全局配置）
+  return null
 }
 
 /**

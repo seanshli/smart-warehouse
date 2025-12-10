@@ -55,37 +55,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle root path specially - always check authentication
-  if (request.nextUrl.pathname === '/') {
+  // Handle root path - let page.tsx handle redirect with getServerSession
+  // This allows server-side redirect which is more reliable in Capacitor
+  if (pathname === '/') {
+    // Just check token and allow through - page.tsx will redirect if needed
     try {
       const token = await getToken({ req: request })
-      console.log('[Middleware] Token check for root path:', {
-        hasToken: !!token,
-        tokenKeys: token ? Object.keys(token) : [],
-        tokenId: token?.id,
-        tokenEmail: token?.email
-      })
-      
-      // If no token, redirect to sign in
       if (!token || Object.keys(token).length === 0) {
-        console.log('[Middleware] No token found, redirecting to signin')
-        const response = NextResponse.redirect(new URL('/auth/signin', request.url))
-        // Clear any existing session cookies
-        response.cookies.delete('next-auth.session-token')
-        response.cookies.delete('__Secure-next-auth.session-token')
-        return response
+        // No token - redirect to signin
+        console.log('[Middleware] No token for root path, redirecting to signin')
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
-      
-      // If authenticated, allow through to page.tsx
-      console.log('[Middleware] Token found, allowing access to dashboard')
+      // Has token - allow through to page.tsx (which will also check)
       return NextResponse.next()
     } catch (error) {
       console.error('[Middleware] Root path token error:', error)
-      // If token retrieval fails, redirect to signin
-      const response = NextResponse.redirect(new URL('/auth/signin', request.url))
-      response.cookies.delete('next-auth.session-token')
-      response.cookies.delete('__Secure-next-auth.session-token')
-      return response
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
   }
   

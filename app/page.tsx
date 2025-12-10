@@ -18,14 +18,20 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 })
 
 // COMPLETELY PASSIVE APPROACH: Home page does NOT redirect
-// Middleware handles all redirects via meta refresh
+// RedirectHandler in layout handles all redirects
 // This component ONLY renders Dashboard if authenticated, otherwise shows nothing
 function ClientHome() {
   // CRITICAL: Check pathname IMMEDIATELY - return null if not on /
+  // Also check redirect flag to prevent rendering if redirect is in progress
   if (typeof window !== 'undefined') {
     const currentPath = window.location.pathname
     if (currentPath !== '/' && currentPath !== '') {
       return null // Not on home page - don't render anything
+    }
+    // If redirect was attempted, don't render
+    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    if (redirectAttempted === 'true') {
+      return null // Redirect in progress, don't render
     }
   }
 
@@ -84,6 +90,14 @@ function ClientHome() {
     
     checkSession()
   }, [])
+
+  // Check redirect flag - if redirect was attempted, show nothing
+  if (typeof window !== 'undefined') {
+    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    if (redirectAttempted === 'true') {
+      return null // Redirect in progress, don't show loading
+    }
+  }
 
   // Show loading while checking
   if (!mounted || checking) {

@@ -48,6 +48,16 @@ export default function HouseholdSettings() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  
+  // Home Assistant configuration
+  const [haConfig, setHaConfig] = useState<{
+    baseUrl: string
+    accessToken: string
+  } | null>(null)
+  const [haLoading, setHaLoading] = useState(false)
+  const [haSaving, setHaSaving] = useState(false)
+  const [haError, setHaError] = useState<string | null>(null)
+  const [haSuccess, setHaSuccess] = useState<string | null>(null)
 
   // Form data
   const [formData, setFormData] = useState({
@@ -105,7 +115,100 @@ export default function HouseholdSettings() {
 
   useEffect(() => {
     fetchHousehold()
+    fetchHAConfig()
   }, [activeHouseholdId])
+  
+  // Fetch Home Assistant configuration
+  const fetchHAConfig = async () => {
+    if (!activeHouseholdId) return
+    
+    try {
+      setHaLoading(true)
+      const response = await fetch(`/api/household/${activeHouseholdId}/homeassistant`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.config) {
+          setHaConfig({
+            baseUrl: data.config.baseUrl || '',
+            accessToken: '', // Don't load token for security
+          })
+        } else {
+          setHaConfig(null)
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching HA config:', err)
+    } finally {
+      setHaLoading(false)
+    }
+  }
+  
+  // Save Home Assistant configuration
+  const handleSaveHAConfig = async () => {
+    if (!activeHouseholdId || !haConfig) return
+    
+    if (!haConfig.baseUrl || !haConfig.accessToken) {
+      setHaError('Base URL and Access Token are required')
+      return
+    }
+    
+    try {
+      setHaSaving(true)
+      setHaError(null)
+      setHaSuccess(null)
+      
+      const response = await fetch(`/api/household/${activeHouseholdId}/homeassistant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          baseUrl: haConfig.baseUrl.trim(),
+          accessToken: haConfig.accessToken.trim(),
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save Home Assistant configuration')
+      }
+      
+      setHaSuccess('Home Assistant configuration saved successfully!')
+      setTimeout(() => setHaSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error saving HA config:', err)
+      setHaError(err instanceof Error ? err.message : 'Failed to save Home Assistant configuration')
+    } finally {
+      setHaSaving(false)
+    }
+  }
+  
+  // Delete Home Assistant configuration
+  const handleDeleteHAConfig = async () => {
+    if (!activeHouseholdId || !confirm('Are you sure you want to remove Home Assistant configuration?')) return
+    
+    try {
+      setHaSaving(true)
+      setHaError(null)
+      
+      const response = await fetch(`/api/household/${activeHouseholdId}/homeassistant`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete Home Assistant configuration')
+      }
+      
+      setHaConfig(null)
+      setHaSuccess('Home Assistant configuration removed successfully!')
+      setTimeout(() => setHaSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error deleting HA config:', err)
+      setHaError(err instanceof Error ? err.message : 'Failed to delete Home Assistant configuration')
+    } finally {
+      setHaSaving(false)
+    }
+  }
 
   // Handle form submission
   const handleSave = async (e?: React.MouseEvent) => {
@@ -420,6 +523,88 @@ export default function HouseholdSettings() {
                 ))}
               </div>
             </div>
+          </div>
+          
+          {/* Home Assistant Configuration */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+              Home Assistant Configuration
+            </h3>
+            
+            {haSuccess && (
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">{haSuccess}</p>
+              </div>
+            )}
+            
+            {haError && (
+              <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                <p className="text-sm text-red-800 dark:text-red-200">{haError}</p>
+              </div>
+            )}
+            
+            {haLoading ? (
+              <div className="text-center py-4 text-gray-500">Loading...</div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Base URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={haConfig?.baseUrl || ''}
+                    onChange={(e) => setHaConfig(prev => ({
+                      baseUrl: e.target.value,
+                      accessToken: prev?.accessToken || '',
+                    }))}
+                    placeholder="https://your-home-assistant-instance.com"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Your Home Assistant server URL (e.g., https://demoha.smtengo.com/)
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Access Token <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={haConfig?.accessToken || ''}
+                    onChange={(e) => setHaConfig(prev => ({
+                      baseUrl: prev?.baseUrl || '',
+                      accessToken: e.target.value,
+                    }))}
+                    placeholder="Enter your Long-Lived Access Token"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Long-Lived Access Token from Home Assistant Settings → People → Long-Lived Access Tokens
+                  </p>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleSaveHAConfig}
+                    disabled={haSaving || !haConfig?.baseUrl || !haConfig?.accessToken}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {haSaving ? 'Saving...' : haConfig?.baseUrl ? 'Update Configuration' : 'Save Configuration'}
+                  </button>
+                  {haConfig?.baseUrl && (
+                    <button
+                      onClick={handleDeleteHAConfig}
+                      disabled={haSaving}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      Remove Configuration
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

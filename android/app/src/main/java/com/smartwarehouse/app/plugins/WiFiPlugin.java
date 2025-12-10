@@ -185,14 +185,15 @@ public class WiFiPlugin extends Plugin {
         }
 
         // Request permission
+        // Note: In Capacitor, permission requests are handled by the framework
+        // The user will be prompted, and subsequent calls to checkPermission() will reflect the new status
         ActivityCompat.requestPermissions(
             getActivity(),
             new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
             LOCATION_PERMISSION_REQUEST_CODE
         );
 
-        // Note: Actual permission result will be handled by onRequestPermissionsResult
-        // For now, return current status
+        // Return current status - actual permission result will be available on next checkPermission() call
         JSObject result = new JSObject();
         result.put("granted", false);
         result.put("denied", permissionStatus == PackageManager.PERMISSION_DENIED);
@@ -297,15 +298,5 @@ public class WiFiPlugin extends Plugin {
             return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         }
         return true; // Permission granted by default on older Android versions
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            // Permission result handled - plugin methods will check permission status when called
-            // The actual permission check happens in checkPermission() method
-        }
     }
 }

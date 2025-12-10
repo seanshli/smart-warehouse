@@ -21,6 +21,17 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 // Check authentication immediately and redirect if needed
 // Optimized for Capacitor WebView where redirects need special handling
 function ClientHome() {
+  // CRITICAL: Check pathname IMMEDIATELY in render - before any state or effects
+  // This prevents the component from running at all if not on home page
+  // This is essential for Capacitor where components may render even on other routes
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname
+    if (currentPath !== '/' && currentPath !== '') {
+      // Not on home page - return null immediately, don't run any logic
+      return null
+    }
+  }
+
   const [mounted, setMounted] = useState(false)
   const [checking, setChecking] = useState(true)
   const [redirecting, setRedirecting] = useState(false)
@@ -28,7 +39,7 @@ function ClientHome() {
   useEffect(() => {
     setMounted(true)
     
-    // CRITICAL: Check pathname first - only run if we're on home page
+    // Double-check pathname - only run if we're on home page
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname
       if (currentPath !== '/' && currentPath !== '') {
@@ -106,18 +117,6 @@ function ClientHome() {
       checkAndRedirect()
     }, 50)
   }, [redirecting])
-
-  // If redirecting, show nothing (redirect is in progress)
-  if (redirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    )
-  }
 
   // If redirecting, show redirect message
   if (redirecting) {

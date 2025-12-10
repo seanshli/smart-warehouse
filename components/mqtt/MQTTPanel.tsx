@@ -20,6 +20,7 @@ import { useLanguage } from '../LanguageProvider'
 import { useHousehold } from '../HouseholdProvider'
 import ProvisioningModal from './ProvisioningModal'
 import SceneManager from './SceneManager'
+import HomeAssistantConfigModal from './HomeAssistantConfigModal'
 
 // IoT 設備介面（統一支援 MQTT 和 RESTful API）
 interface MQTTDevice {
@@ -537,11 +538,10 @@ export default function MQTTPanel() {
           </button>
           <button
             onClick={() => {
-              setProvisioningVendor('homeassistant')
-              setIsProvisioningModalOpen(true)
+              setIsHAConfigModalOpen(true)
             }}
             className="px-3 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2"
-            title="Home Assistant 設備添加"
+            title="Home Assistant 服務器配置"
           >
             <WifiIcon className="h-4 w-4" />
             Home Assistant

@@ -1672,10 +1672,21 @@ export default function ProvisioningModal({
                     type="text"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder={vendor === 'philips' ? "e.g., http://192.168.1.100 (Hue Bridge IP)" : "e.g., https://api.panasonic.com"}
+                    placeholder={
+                      vendor === 'philips' 
+                        ? "e.g., http://192.168.1.100 (Hue Bridge IP)" 
+                        : vendor === 'homeassistant'
+                        ? "e.g., https://demoha.smtengo.com/"
+                        : "e.g., https://api.panasonic.com"
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
+                  {vendor === 'homeassistant' && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      輸入 Home Assistant 服務器 URL
+                    </p>
+                  )}
                 </div>
 
                 {vendor !== 'homeassistant' && (

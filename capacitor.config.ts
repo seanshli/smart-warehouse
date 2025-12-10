@@ -8,12 +8,9 @@ const config: CapacitorConfig = {
   // No need to rebuild native apps for code changes - just deploy to Vercel
   server: {
     // Production: Point to Vercel deployment
-    url: process.env.CAP_SERVER_URL || 'https://smart-warehouse-five.vercel.app',
+    url: 'https://smart-warehouse-five.vercel.app',
     cleartext: false // HTTPS required for production
   },
-  // Fallback: If server URL not set, use local static files
-  // This is for development/testing only
-  webDir: process.env.CAP_SERVER_URL ? undefined : 'out',
   ios: {
     contentInset: 'automatic',
     scrollEnabled: true,

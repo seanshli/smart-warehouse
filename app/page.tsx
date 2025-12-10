@@ -31,71 +31,34 @@ function ClientHome() {
   useEffect(() => {
     setMounted(true)
     
-    // IMMEDIATE redirect if no session - don't wait for API call
-    // This is critical for Capacitor apps to prevent redirect loops
-    if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname
-      // Only redirect from home page
-      if (currentPath === '/' || currentPath === '') {
-        // Check session, but redirect immediately if no session
-        const checkSession = async () => {
-          try {
-            const response = await fetch('/api/auth/session', {
-              cache: 'no-store',
-              credentials: 'include'
-            })
-            if (response.ok) {
-              const sessionData = await response.json()
-              console.log('[ClientHome] Session data:', {
-                hasUser: !!sessionData.user,
-                userId: sessionData.user?.id,
-                email: sessionData.user?.email
-              })
-              
-              // Only set session if we have a valid user
-              if (sessionData.user && sessionData.user.id) {
-                setSession(sessionData)
-              } else {
-                // No valid session - redirect immediately
-                console.log('[ClientHome] No valid session, redirecting to signin')
-                window.location.replace('/auth/signin')
-              }
-            } else {
-              console.error('[ClientHome] Session check failed:', response.status)
-              // Session check failed - redirect immediately
-              window.location.replace('/auth/signin')
-            }
-          } catch (error) {
-            console.error('[ClientHome] Session check error:', error)
-            // Error checking session - redirect immediately
-            window.location.replace('/auth/signin')
-          } finally {
-            setLoading(false)
-          }
+    // Check session - middleware handles redirects, we just check for display
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session', {
+          cache: 'no-store',
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const sessionData = await response.json()
+          console.log('[ClientHome] Session data:', {
+            hasUser: !!sessionData.user,
+            userId: sessionData.user?.id,
+            email: sessionData.user?.email
+          })
+          setSession(sessionData)
+        } else {
+          console.error('[ClientHome] Session check failed:', response.status)
+          // Don't redirect here - middleware handles it
         }
-        
-        checkSession()
-      } else {
-        // Not on home page, just check session normally
-        const checkSession = async () => {
-          try {
-            const response = await fetch('/api/auth/session', {
-              cache: 'no-store',
-              credentials: 'include'
-            })
-            if (response.ok) {
-              const sessionData = await response.json()
-              setSession(sessionData)
-            }
-          } catch (error) {
-            console.error('[ClientHome] Session check error:', error)
-          } finally {
-            setLoading(false)
-          }
-        }
-        checkSession()
+      } catch (error) {
+        console.error('[ClientHome] Session check error:', error)
+        // Don't redirect here - middleware handles it
+      } finally {
+        setLoading(false)
       }
     }
+    
+    checkSession()
   }, [])
 
   if (!mounted || loading) {
@@ -110,13 +73,16 @@ function ClientHome() {
   }
 
   // Check authentication on client side
+  // If no session, middleware should have redirected already
+  // But show loading state just in case
   if (!session || !session.user || !session.user.id) {
-    // Show loading while redirect happens
+    // Don't redirect here - middleware handles redirects
+    // Just show loading state
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Redirecting to login...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Checking authentication...</p>
         </div>
       </div>
     )

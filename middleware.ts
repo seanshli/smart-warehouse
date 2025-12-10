@@ -55,24 +55,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle root path specially - allow through, let client handle redirect
-  // This is more reliable in Capacitor WebView where middleware redirects may not work
+  // Handle root path specially - use meta refresh for Capacitor compatibility
+  // Server-side redirects don't work reliably in Capacitor, so we inject meta refresh tag
   if (pathname === '/') {
     try {
       const token = await getToken({ req: request })
-      // Allow through regardless - client component will check and redirect if needed
-      // This prevents middleware redirect issues in Capacitor
       if (!token || Object.keys(token).length === 0) {
-        console.log('[Middleware] No token for root path, allowing through for client check')
-        return NextResponse.next()
+        console.log('[Middleware] No token for root path, injecting meta refresh for Capacitor')
+        // Instead of redirecting, inject meta refresh tag for Capacitor compatibility
+        const response = NextResponse.next()
+        // Inject meta refresh tag in the HTML response
+        response.headers.set('X-Meta-Refresh', '0;url=/auth/signin')
+        return response
       }
       // Has token - allow through to page.tsx
       console.log('[Middleware] Token found for root path, allowing access')
       return NextResponse.next()
     } catch (error) {
       console.error('[Middleware] Root path token error:', error)
-      // On error, allow through - let client handle it
-      return NextResponse.next()
+      // On error, inject meta refresh
+      const response = NextResponse.next()
+      response.headers.set('X-Meta-Refresh', '0;url=/auth/signin')
+      return response
     }
   }
   

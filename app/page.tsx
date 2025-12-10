@@ -28,6 +28,18 @@ function ClientHome() {
   useEffect(() => {
     setMounted(true)
     
+    // CRITICAL: Only check session if we're actually on the home page
+    // Don't check if we're navigating to signin or other routes
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+      // If we're not on home page, don't check session (prevents redirect loop)
+      if (currentPath !== '/' && currentPath !== '') {
+        console.log('[ClientHome] Not on home page, skipping session check:', currentPath)
+        setLoading(false)
+        return
+      }
+    }
+    
     // Check session on client side
     const checkSession = async () => {
       try {
@@ -68,13 +80,24 @@ function ClientHome() {
   }
 
   // Check authentication on client side
+  // CRITICAL: Only show auth required if we're actually on home page
+  // This prevents redirect loop when navigating to signin
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname
+    if (currentPath !== '/' && currentPath !== '') {
+      // Not on home page - don't render anything (let other pages render)
+      return null
+    }
+  }
+
   if (!session || !session.user || !session.user.id) {
     const handleGoToLogin = () => {
       // Use window.location.href for Capacitor compatibility
       // This is more reliable than anchor tags in WebView
       if (typeof window !== 'undefined') {
         console.log('[ClientHome] Navigating to signin page')
-        window.location.href = '/auth/signin'
+        // Use replace to prevent back button issues
+        window.location.replace('/auth/signin')
       }
     }
 

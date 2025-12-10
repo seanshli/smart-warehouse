@@ -16,6 +16,13 @@ export default function SignIn() {
 
   useEffect(() => {
     setMounted(true)
+    
+    // CRITICAL BYPASS: Set bypass flag to prevent home page from interfering
+    // This ensures the signin page can render without interference
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('smart-warehouse-bypass-home', 'true')
+    }
+    
     // Get CSRF token (don't clear session here - let middleware handle auth)
     getCsrfToken().then((token) => {
       if (token) {

@@ -17,44 +17,58 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
   ),
 })
 
-// Client-side only component to prevent hydration issues
-// Check authentication immediately and redirect if needed
-// Optimized for Capacitor WebView where redirects need special handling
+// BYPASS APPROACH: Use sessionStorage to completely disable home page when navigating to signin
+// This prevents any interference with the signin page in Capacitor
+const BYPASS_KEY = 'smart-warehouse-bypass-home'
+
 function ClientHome() {
-  // CRITICAL: Use refs to track state and prevent multiple checks/redirects
-  const hasCheckedRef = useRef(false)
-  const redirectAttemptedRef = useRef(false)
-  
-  // CRITICAL: Check pathname IMMEDIATELY in render - before any state or effects
-  // This prevents the component from running at all if not on home page
-  // This is essential for Capacitor where components may render even on other routes
+  // CRITICAL BYPASS: Check sessionStorage FIRST - if bypass is set, return null immediately
+  // This completely disables the home page component when navigating to signin
   if (typeof window !== 'undefined') {
-    const currentPath = window.location.pathname
-    // If not on home page, return null immediately - don't run ANY logic
-    if (currentPath !== '/' && currentPath !== '') {
+    const bypass = sessionStorage.getItem(BYPASS_KEY)
+    if (bypass === 'true') {
+      // Bypass is active - don't run ANY logic, return null immediately
       return null
     }
-    // If we've already attempted redirect, don't run again
-    if (redirectAttemptedRef.current) {
+    
+    const currentPath = window.location.pathname
+    // If not on home page, return null immediately AND set bypass flag
+    if (currentPath !== '/' && currentPath !== '') {
+      // Set bypass flag to prevent this component from running on other routes
+      sessionStorage.setItem(BYPASS_KEY, 'true')
       return null
+    }
+    // If on home page, clear bypass flag
+    if (currentPath === '/') {
+      sessionStorage.removeItem(BYPASS_KEY)
     }
   }
 
   const [mounted, setMounted] = useState(false)
   const [checking, setChecking] = useState(true)
+  const hasCheckedRef = useRef(false)
+  const redirectAttemptedRef = useRef(false)
 
   useEffect(() => {
+    // CRITICAL: Check bypass flag again in useEffect
+    if (typeof window !== 'undefined') {
+      const bypass = sessionStorage.getItem(BYPASS_KEY)
+      if (bypass === 'true') {
+        return // Don't run any logic if bypass is set
+      }
+    }
+
     // CRITICAL: If we've already checked or attempted redirect, don't run again
     if (hasCheckedRef.current || redirectAttemptedRef.current) {
       return
     }
 
     // CRITICAL: Check pathname BEFORE setting mounted state
-    // This prevents any logic from running if not on home page
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname
       if (currentPath !== '/' && currentPath !== '') {
-        // Not on home page - don't run ANY logic, return immediately
+        // Not on home page - set bypass and return
+        sessionStorage.setItem(BYPASS_KEY, 'true')
         hasCheckedRef.current = true
         setChecking(false)
         return
@@ -66,8 +80,18 @@ function ClientHome() {
     
     // Check session immediately - redirect if no session
     const checkAndRedirect = async () => {
+      // Check bypass flag again
+      if (typeof window !== 'undefined') {
+        const bypass = sessionStorage.getItem(BYPASS_KEY)
+        if (bypass === 'true') {
+          setChecking(false)
+          return
+        }
+      }
+
       // Final pathname check before doing anything
       if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        sessionStorage.setItem(BYPASS_KEY, 'true')
         setChecking(false)
         return
       }
@@ -91,16 +115,17 @@ function ClientHome() {
           const sessionData = await response.json()
           // Final check we're still on home page
           if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+            sessionStorage.setItem(BYPASS_KEY, 'true')
             setChecking(false)
             return
           }
           
           if (!sessionData.user || !sessionData.user.id) {
-            // No session - redirect to signin immediately
+            // No session - set bypass flag and redirect to signin
             if (!redirectAttemptedRef.current && typeof window !== 'undefined') {
               redirectAttemptedRef.current = true
+              sessionStorage.setItem(BYPASS_KEY, 'true') // Set bypass BEFORE redirect
               console.log('[ClientHome] No session, redirecting to signin')
-              // Use replace to prevent back button and redirect loops
               window.location.replace('/auth/signin')
             }
             return
@@ -108,26 +133,33 @@ function ClientHome() {
           // Has session - allow render
           setChecking(false)
         } else {
-          // Session check failed - redirect to signin
+          // Session check failed - set bypass and redirect to signin
           if (!redirectAttemptedRef.current && typeof window !== 'undefined') {
             redirectAttemptedRef.current = true
+            sessionStorage.setItem(BYPASS_KEY, 'true') // Set bypass BEFORE redirect
             console.log('[ClientHome] Session check failed, redirecting to signin')
             window.location.replace('/auth/signin')
           }
         }
       } catch (error) {
         console.error('[ClientHome] Session check error:', error)
-        // On error, redirect to signin
+        // On error, set bypass and redirect to signin
         if (!redirectAttemptedRef.current && typeof window !== 'undefined') {
           redirectAttemptedRef.current = true
+          sessionStorage.setItem(BYPASS_KEY, 'true') // Set bypass BEFORE redirect
           window.location.replace('/auth/signin')
         }
       }
     }
     
-    // Run check immediately - no delay needed
+    // Run check immediately
     checkAndRedirect()
   }, [])
+
+  // Check bypass flag before rendering anything
+  if (typeof window !== 'undefined' && sessionStorage.getItem(BYPASS_KEY) === 'true') {
+    return null
+  }
 
   // If redirect attempted, show nothing (redirect is in progress)
   if (redirectAttemptedRef.current) {
@@ -153,9 +185,13 @@ function ClientHome() {
     )
   }
 
-  // Check pathname one more time before rendering
-  if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-    return null
+  // Final check pathname before rendering
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname
+    if (currentPath !== '/' && currentPath !== '') {
+      sessionStorage.setItem(BYPASS_KEY, 'true')
+      return null
+    }
   }
 
   // User is authenticated - show dashboard

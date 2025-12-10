@@ -1707,7 +1707,6 @@ export default function ProvisioningModal({
                     Debug: vendor={vendor}, isRESTfulDevice={isRESTfulDevice ? 'true' : 'false'}
                   </div>
                 )}
-              <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     API Base URL <span className="text-red-500">*</span>

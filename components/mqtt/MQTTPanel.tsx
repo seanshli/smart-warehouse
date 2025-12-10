@@ -21,7 +21,6 @@ import { useHousehold } from '../HouseholdProvider'
 import ProvisioningModal from './ProvisioningModal'
 import SceneManager from './SceneManager'
 import HomeAssistantConfigModal from './HomeAssistantConfigModal'
-import HomeAssistantConfigModal from './HomeAssistantConfigModal'
 
 // IoT 設備介面（統一支援 MQTT 和 RESTful API）
 interface MQTTDevice {

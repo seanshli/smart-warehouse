@@ -75,7 +75,5 @@
         android:xlargeScreens="true"
         android:anyDensity="true"
         android:resizeable="true"
-        android:requiresSmallestWidthDp="320"
-        android:compatibleWidthLimitDp=""
-        android:largestWidthLimitDp="" />
+        android:requiresSmallestWidthDp="320" />
 </manifest>

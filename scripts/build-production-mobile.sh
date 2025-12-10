@@ -11,6 +11,12 @@ export CAP_SERVER_URL="https://smart-warehouse-five.vercel.app"
 echo "📍 Production URL: $CAP_SERVER_URL"
 echo "🔧 Environment: $NODE_ENV"
 
+# Clean old build files FIRST
+echo "🧹 Cleaning old build files..."
+rm -rf out .next
+echo "✅ Old build files cleaned"
+echo ""
+
 # Build the app
 echo "📦 Building Next.js app..."
 npm run build:production

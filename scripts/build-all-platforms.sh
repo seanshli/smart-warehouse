@@ -13,6 +13,12 @@ echo "📍 Production URL: $CAP_SERVER_URL"
 echo "🔧 Environment: $NODE_ENV"
 echo ""
 
+# 0. Clean old build files FIRST
+echo "🧹 Step 0: Cleaning old build files..."
+rm -rf out .next
+echo "✅ Old build files cleaned"
+echo ""
+
 # 1. Build Next.js app
 echo "📦 Step 1: Building Next.js app..."
 npm run build:production

@@ -17,10 +17,11 @@ import toast from 'react-hot-toast'
 import { useLanguage } from '../LanguageProvider'
 import { useHousehold } from '../HouseholdProvider'
 import { FanSpeedOptions, SegmentedControl } from './HomeAssistantSegments'
+import { HomeAssistantSlider } from './HomeAssistantSlider'
 import ProvisioningModal from './ProvisioningModal'
 
 // Home Assistant 實體狀態類型定義
-type HomeAssistantState = {
+export type HomeAssistantState = {
   entity_id: string // 實體 ID
   state: string // 狀態值
   attributes: Record<string, any> // 屬性字典
@@ -371,6 +372,69 @@ export default function HomeAssistantPanel() {
     [household?.id, mutate, t, statesByEntity]
   )
 
+  const handlePercentageChange = useCallback(
+    async (entityId: string, percentage: number) => {
+      // Check if entity is unavailable
+      const entityState = statesByEntity.get(entityId)
+      if (entityState?.state === 'unavailable' || entityState?.state === 'unknown') {
+        toast.error('Entity is unavailable. Please check device connection.')
+        return
+      }
+
+      const domain = entityId.split('.')[0]
+
+      try {
+        let service: string
+        let requestBody: any
+
+        if (percentage === 0) {
+          // If percentage is 0, turn off
+          service = 'turn_off'
+          requestBody = household?.id 
+            ? { entity_id: entityId, householdId: household.id }
+            : { entity_id: entityId }
+        } else {
+          // Use set_percentage for fan entities
+          if (domain === 'fan') {
+            service = 'set_percentage'
+            requestBody = household?.id 
+              ? { entity_id: entityId, percentage, householdId: household.id }
+              : { entity_id: entityId, percentage }
+          } else {
+            // For other domains, try turn_on with percentage
+            service = 'turn_on'
+            requestBody = household?.id 
+              ? { entity_id: entityId, percentage, householdId: household.id }
+              : { entity_id: entityId, percentage }
+          }
+        }
+
+        const response = await fetch(`/api/mqtt/homeassistant/services/${domain}/${service}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+          throw new Error(errorMessage)
+        }
+
+        // Refresh after a short delay to allow HA to update
+        setTimeout(() => mutate(), 500)
+      } catch (err: any) {
+        console.error('Home Assistant percentage change failed', err)
+        const errorMessage = err.message || err.toString() || t('homeAssistantToggleError') || 'Action failed.'
+        toast.error(errorMessage)
+        throw err
+      }
+    },
+    [household?.id, mutate, t, statesByEntity]
+  )
+
   const handleSelectOption = useCallback(
     async (entityId: string, option: string) => {
       // Check if entity is unavailable
@@ -671,14 +735,15 @@ export default function HomeAssistantPanel() {
                             {state?.state ?? (t('homeAssistantUnknown') || '未知')}
                           </div>
 
-                          {isToggleable ? (
-                            <ToggleButtons
-                              entityId={entity.entity_id}
-                              state={state}
-                              t={t}
-                              onToggle={handleToggle}
-                            />
-                          ) : isSelectable ? (
+                    {isToggleable ? (
+                      <ToggleButtons
+                        entityId={entity.entity_id}
+                        state={state}
+                        t={t}
+                        onToggle={handleToggle}
+                        onPercentageChange={handlePercentageChange}
+                      />
+                    ) : isSelectable ? (
                             <SelectControl
                               entityId={entity.entity_id}
                               state={state}
@@ -746,6 +811,7 @@ export default function HomeAssistantPanel() {
                         state={state}
                         t={t}
                         onToggle={handleToggle}
+                        onPercentageChange={handlePercentageChange}
                       />
                     ) : isSelectable ? (
                       <SelectControl
@@ -854,12 +920,38 @@ type ToggleButtonsProps = {
   state?: HomeAssistantState
   t: (key: keyof import('@/lib/translations').Translations) => string
   onToggle: (entity: string, turnOn: boolean) => Promise<void>
+  onPercentageChange?: (entity: string, percentage: number) => Promise<void>
 }
 
-function ToggleButtons({ entityId, state, t, onToggle }: ToggleButtonsProps) {
+function ToggleButtons({ entityId, state, t, onToggle, onPercentageChange }: ToggleButtonsProps) {
   const isOn = state?.state !== 'off'
   const isDisabled = state?.state === 'unavailable' || state?.state === 'unknown'
+  
+  // 检查是否有 percentage 属性（表示设备有级别控制）
+  const hasPercentage = state?.attributes?.percentage !== undefined && state?.attributes?.percentage !== null
+  const domain = entityId.split('.')[0]
+  
+  // 对于 fan 类型的实体，如果有 percentage 属性，显示滑块
+  if (hasPercentage && domain === 'fan' && onPercentageChange) {
+    const percentage = Number(state.attributes?.percentage) || 0
+    const friendlyName = state.attributes?.friendly_name || entityId.split('.')[1] || entityId
+    
+    return (
+      <HomeAssistantSlider
+        entityId={entityId}
+        state={state}
+        min={0}
+        max={100}
+        step={1}
+        unit="%"
+        label={friendlyName}
+        onValueChange={onPercentageChange}
+        t={t}
+      />
+    )
+  }
 
+  // 默认显示开/关按钮
   return (
     <div className="flex items-center space-x-2">
       <button

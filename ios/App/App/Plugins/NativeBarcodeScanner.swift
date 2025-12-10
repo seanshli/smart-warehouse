@@ -396,5 +396,4 @@ CAP_PLUGIN(NativeBarcodeScanner, "NativeBarcodeScanner",
            CAP_PLUGIN_METHOD(stopScan, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(hideBackground, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(showBackground, CAPPluginReturnPromise);
-           )
-
+)

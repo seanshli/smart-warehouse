@@ -51,6 +51,7 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2A3 /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
 		B1A31BC125AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IFlyAIUI_Dynamic.framework; path = AIUI/IFlyAIUI_Dynamic.framework; sourceTree = "<group>"; };
 		B1A31BC325AA4C049AAE27A1 /* iflyAIUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = iflyAIUI.framework; path = AIUI/iflyAIUI.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -431,7 +432,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0.59;
+				MARKETING_VERSION = 1.0.60;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = com.smartwarehouse.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -460,7 +461,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0.59;
+				MARKETING_VERSION = 1.0.60;
 				PRODUCT_BUNDLE_IDENTIFIER = com.smartwarehouse.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

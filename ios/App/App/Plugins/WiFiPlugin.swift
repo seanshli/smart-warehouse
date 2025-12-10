@@ -222,4 +222,4 @@ CAP_PLUGIN(WiFiPlugin, "WiFi",
            CAP_PLUGIN_METHOD(getPassword, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(deletePassword, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(getSavedSSIDs, CAPPluginReturnPromise);
-           )
+)

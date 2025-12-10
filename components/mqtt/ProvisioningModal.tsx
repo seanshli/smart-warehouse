@@ -516,6 +516,29 @@ export default function ProvisioningModal({
         setStatus('success')
         toast.success('配網成功！')
         
+        // 如果是 Home Assistant，保存配置到 household（如果還沒有保存）
+        if (vendor === 'homeassistant' && household?.id && baseUrl && accessToken) {
+          try {
+            const configResponse = await fetch(`/api/household/${household.id}/homeassistant`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                baseUrl: baseUrl.trim(),
+                accessToken: accessToken.trim(),
+              }),
+            })
+            if (configResponse.ok) {
+              console.log('✅ Home Assistant configuration saved to household')
+              toast('Home Assistant 配置已保存', { icon: '✅' })
+            }
+          } catch (error) {
+            console.error('Error saving HA config:', error)
+            // Don't fail the provisioning if config save fails
+          }
+        }
+        
         // 自動添加設備到數據庫
         if (data.deviceId) {
           await autoAddDevice(

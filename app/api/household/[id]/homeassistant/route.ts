@@ -127,45 +127,47 @@ export async function POST(
     }
 
     // 驗證 HA 連接（可選，但建議）
+    // 注意：如果連接測試失敗，我們仍然允許保存配置（用戶可能稍後修復）
     try {
-      // 確保 baseUrl 格式正確（以 / 結尾）
-      const normalizedBaseUrl = baseUrl.trim().replace(/\/$/, '')
+      // 確保 baseUrl 格式正確（移除尾部斜杠）
+      const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '')
       const configUrl = `${normalizedBaseUrl}/api/config`
       
-      const testResponse = await fetch(configUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken.trim()}`,
-          'Content-Type': 'application/json',
-        },
-        // 添加超時設置
-        signal: AbortSignal.timeout(10000), // 10秒超時
-      })
-
-      if (!testResponse.ok) {
-        const errorText = await testResponse.text().catch(() => '')
-        console.error('HA connection test failed:', {
-          status: testResponse.status,
-          statusText: testResponse.statusText,
-          error: errorText,
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超時
+      
+      try {
+        const testResponse = await fetch(configUrl, {
+          headers: {
+            'Authorization': `Bearer ${accessToken.trim()}`,
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
         })
-        return NextResponse.json(
-          { error: `Failed to connect to Home Assistant: ${testResponse.status} ${testResponse.statusText}. Please check your URL and token.` },
-          { status: 400 }
-        )
+
+        clearTimeout(timeoutId)
+
+        if (!testResponse.ok) {
+          const errorText = await testResponse.text().catch(() => '')
+          console.warn('HA connection test failed during save, but continuing:', {
+            status: testResponse.status,
+            statusText: testResponse.statusText,
+            error: errorText,
+          })
+          // 不阻止保存，只記錄警告（用戶已經在 UI 中測試過連接）
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === 'AbortError') {
+          console.warn('HA connection test timeout during save, but continuing')
+        } else {
+          console.warn('HA connection test error during save, but continuing:', fetchError.message)
+        }
+        // 不阻止保存，只記錄警告
       }
     } catch (error: any) {
-      console.error('HA connection test error:', error)
-      // 如果是超時錯誤，提供更明確的錯誤信息
-      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-        return NextResponse.json(
-          { error: 'Connection timeout. Please check your URL and network connection.' },
-          { status: 400 }
-        )
-      }
-      return NextResponse.json(
-        { error: `Failed to connect to Home Assistant: ${error.message || 'Please check your URL and token.'}` },
-        { status: 400 }
-      )
+      console.warn('HA connection test setup error, but continuing:', error.message)
+      // 不阻止保存
     }
 
     // 創建或更新 HA 配置

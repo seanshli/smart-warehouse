@@ -22,11 +22,12 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 // This component ONLY renders Dashboard if authenticated, otherwise shows nothing
 function ClientHome() {
   // CRITICAL: Check pathname IMMEDIATELY - return null if not on /
-  // Also check redirect flag to prevent rendering if redirect is in progress
+  // This MUST be the first thing checked before ANY React hooks or state
   if (typeof window !== 'undefined') {
     const currentPath = window.location.pathname
+    // If not on home page, return null IMMEDIATELY - don't run ANY logic
     if (currentPath !== '/' && currentPath !== '') {
-      return null // Not on home page - don't render anything
+      return null
     }
     // If redirect was attempted, don't render
     const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
@@ -40,8 +41,15 @@ function ClientHome() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    // Double-check pathname
+    // CRITICAL: Check pathname BEFORE doing anything
     if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      setChecking(false)
+      return
+    }
+
+    // Check redirect flag
+    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    if (redirectAttempted === 'true') {
       setChecking(false)
       return
     }
@@ -52,6 +60,13 @@ function ClientHome() {
     const checkSession = async () => {
       // Final pathname check
       if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        setChecking(false)
+        return
+      }
+
+      // Check redirect flag again
+      const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+      if (redirectAttempted === 'true') {
         setChecking(false)
         return
       }
@@ -74,6 +89,13 @@ function ClientHome() {
             return
           }
           
+          // Check redirect flag one more time
+          const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+          if (redirectAttempted === 'true') {
+            setChecking(false)
+            return
+          }
+          
           if (sessionData.user && sessionData.user.id) {
             // Has session - allow render
             setHasSession(true)
@@ -91,7 +113,7 @@ function ClientHome() {
     checkSession()
   }, [])
 
-  // Check redirect flag - if redirect was attempted, show nothing
+  // Check redirect flag before rendering anything
   if (typeof window !== 'undefined') {
     const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
     if (redirectAttempted === 'true') {
@@ -116,7 +138,15 @@ function ClientHome() {
     return null
   }
 
-  // If no session, show nothing - middleware will handle redirect via meta refresh
+  // Final redirect flag check
+  if (typeof window !== 'undefined') {
+    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    if (redirectAttempted === 'true') {
+      return null
+    }
+  }
+
+  // If no session, show nothing - RedirectHandler will handle redirect
   if (!hasSession) {
     return null
   }
@@ -132,5 +162,9 @@ function ClientHome() {
 }
 
 export default function Home() {
+  // CRITICAL: Check pathname at the top level too
+  if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+    return null
+  }
   return <ClientHome />
 }

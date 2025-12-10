@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/ErrorBoundary'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
@@ -21,54 +21,59 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 // Check authentication immediately and redirect if needed
 // Optimized for Capacitor WebView where redirects need special handling
 function ClientHome() {
+  // CRITICAL: Use refs to track state and prevent multiple checks/redirects
+  const hasCheckedRef = useRef(false)
+  const redirectAttemptedRef = useRef(false)
+  
   // CRITICAL: Check pathname IMMEDIATELY in render - before any state or effects
   // This prevents the component from running at all if not on home page
   // This is essential for Capacitor where components may render even on other routes
   if (typeof window !== 'undefined') {
     const currentPath = window.location.pathname
+    // If not on home page, return null immediately - don't run ANY logic
     if (currentPath !== '/' && currentPath !== '') {
-      // Not on home page - return null immediately, don't run any logic
+      return null
+    }
+    // If we've already attempted redirect, don't run again
+    if (redirectAttemptedRef.current) {
       return null
     }
   }
 
   const [mounted, setMounted] = useState(false)
   const [checking, setChecking] = useState(true)
-  const [redirecting, setRedirecting] = useState(false)
 
   useEffect(() => {
+    // CRITICAL: If we've already checked or attempted redirect, don't run again
+    if (hasCheckedRef.current || redirectAttemptedRef.current) {
+      return
+    }
+
     // CRITICAL: Check pathname BEFORE setting mounted state
     // This prevents any logic from running if not on home page
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname
       if (currentPath !== '/' && currentPath !== '') {
         // Not on home page - don't run ANY logic, return immediately
+        hasCheckedRef.current = true
+        setChecking(false)
         return
       }
     }
 
     setMounted(true)
+    hasCheckedRef.current = true
     
-    // Double-check pathname - only run if we're on home page
-    if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname
-      if (currentPath !== '/' && currentPath !== '') {
-        // Not on home page - don't check, let other pages handle themselves
-        setChecking(false)
-        return
-      }
-    }
-
     // Check session immediately - redirect if no session
     const checkAndRedirect = async () => {
-      // Prevent multiple redirect attempts
-      if (redirecting) {
+      // Final pathname check before doing anything
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        setChecking(false)
         return
       }
 
-      // Triple-check pathname before doing anything
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-        setChecking(false)
+      // Prevent multiple redirect attempts
+      if (redirectAttemptedRef.current) {
         return
       }
 
@@ -84,7 +89,7 @@ function ClientHome() {
         
         if (response.ok) {
           const sessionData = await response.json()
-          // Double-check we're still on home page
+          // Final check we're still on home page
           if (typeof window !== 'undefined' && window.location.pathname !== '/') {
             setChecking(false)
             return
@@ -92,16 +97,11 @@ function ClientHome() {
           
           if (!sessionData.user || !sessionData.user.id) {
             // No session - redirect to signin immediately
-            // Use a flag to prevent multiple redirects
-            if (!redirecting && typeof window !== 'undefined') {
-              setRedirecting(true)
+            if (!redirectAttemptedRef.current && typeof window !== 'undefined') {
+              redirectAttemptedRef.current = true
               console.log('[ClientHome] No session, redirecting to signin')
               // Use replace to prevent back button and redirect loops
-              setTimeout(() => {
-                if (window.location.pathname === '/') {
-                  window.location.replace('/auth/signin')
-                }
-              }, 100)
+              window.location.replace('/auth/signin')
             }
             return
           }
@@ -109,41 +109,28 @@ function ClientHome() {
           setChecking(false)
         } else {
           // Session check failed - redirect to signin
-          if (!redirecting && typeof window !== 'undefined') {
-            setRedirecting(true)
+          if (!redirectAttemptedRef.current && typeof window !== 'undefined') {
+            redirectAttemptedRef.current = true
             console.log('[ClientHome] Session check failed, redirecting to signin')
-            setTimeout(() => {
-              if (window.location.pathname === '/') {
-                window.location.replace('/auth/signin')
-              }
-            }, 100)
+            window.location.replace('/auth/signin')
           }
         }
       } catch (error) {
         console.error('[ClientHome] Session check error:', error)
         // On error, redirect to signin
-        if (!redirecting && typeof window !== 'undefined') {
-          setRedirecting(true)
-          setTimeout(() => {
-            if (window.location.pathname === '/') {
-              window.location.replace('/auth/signin')
-            }
-          }, 100)
+        if (!redirectAttemptedRef.current && typeof window !== 'undefined') {
+          redirectAttemptedRef.current = true
+          window.location.replace('/auth/signin')
         }
       }
     }
     
-    // Small delay to ensure component is fully mounted
-    setTimeout(() => {
-      // Final pathname check before running
-      if (typeof window !== 'undefined' && window.location.pathname === '/') {
-        checkAndRedirect()
-      }
-    }, 50)
-  }, [redirecting])
+    // Run check immediately - no delay needed
+    checkAndRedirect()
+  }, [])
 
-  // If redirecting, show redirect message
-  if (redirecting) {
+  // If redirect attempted, show nothing (redirect is in progress)
+  if (redirectAttemptedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

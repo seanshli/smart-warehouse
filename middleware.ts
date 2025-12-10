@@ -30,6 +30,8 @@ export async function middleware(request: NextRequest) {
     '/auth/signin',
     '/auth/signup',
     '/auth/signout',
+    '/auth/forgot-password',
+    '/auth/reset-password',
     '/admin-auth/signin',
     '/admin-auth/signout',
     '/api/auth/',
@@ -43,8 +45,9 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
   )
   
-  // Allow public routes
+  // Allow public routes - CRITICAL: Don't redirect these routes
   if (isPublicRoute) {
+    console.log('[Middleware] Allowing public route:', request.nextUrl.pathname)
     return NextResponse.next()
   }
 
@@ -160,6 +163,8 @@ export const config = {
     '/dashboard/:path*',
     '/items/:path*',
     '/search/:path*',
-    '/settings/:path*'
+    '/settings/:path*',
+    // Explicitly exclude auth routes from matcher to prevent interference
+    '/((?!auth|api/auth|_next/static|_next/image|favicon.ico).*)',
   ],
 }

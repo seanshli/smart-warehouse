@@ -11,9 +11,11 @@ export default function SignIn() {
   const [householdId, setHouseholdId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [csrfToken, setCsrfToken] = useState('')
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    setMounted(true)
     // Get CSRF token (don't clear session here - let middleware handle auth)
     getCsrfToken().then((token) => {
       if (token) {
@@ -21,6 +23,18 @@ export default function SignIn() {
       }
     })
   }, [])
+
+  // Prevent redirect if already on signin page
+  useEffect(() => {
+    if (mounted && typeof window !== 'undefined') {
+      // Ensure we stay on signin page - don't allow redirects away
+      const currentPath = window.location.pathname
+      if (currentPath !== '/auth/signin' && currentPath !== '/auth/signup') {
+        // Only redirect if we're somehow on a different page
+        console.log('[SignIn] Current path:', currentPath, '- staying on signin page')
+      }
+    }
+  }, [mounted])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

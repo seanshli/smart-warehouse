@@ -48,9 +48,17 @@ function ClientHome() {
           setSession(sessionData)
         } else {
           console.error('[ClientHome] Session check failed:', response.status)
+          // If session check fails, redirect to signin immediately
+          if (typeof window !== 'undefined' && window.location.pathname === '/') {
+            window.location.replace('/auth/signin')
+          }
         }
       } catch (error) {
         console.error('[ClientHome] Session check error:', error)
+        // If error, redirect to signin immediately
+        if (typeof window !== 'undefined' && window.location.pathname === '/') {
+          window.location.replace('/auth/signin')
+        }
       } finally {
         setLoading(false)
       }
@@ -70,20 +78,26 @@ function ClientHome() {
     )
   }
 
-  // Check authentication on client side
+  // Check authentication on client side - redirect immediately if no session
   if (!session || !session.user || !session.user.id) {
+    // Immediate redirect - don't wait, don't show button
+    if (typeof window !== 'undefined' && mounted && !loading) {
+      const currentPath = window.location.pathname
+      // Only redirect if we're on the home page
+      if (currentPath === '/' || currentPath === '') {
+        console.log('[ClientHome] No session detected, redirecting to signin immediately')
+        window.location.replace('/auth/signin')
+        // Return null while redirecting
+        return null
+      }
+    }
+
+    // Show minimal loading state while redirecting
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">🔒</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Authentication Required</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the dashboard.</p>
-          <a
-            href="/auth/signin"
-            className="inline-block bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors text-center cursor-pointer"
-          >
-            Go to Login
-          </a>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )

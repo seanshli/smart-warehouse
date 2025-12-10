@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/ErrorBoundary'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
@@ -17,10 +17,14 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
   ),
 })
 
-// COMPLETELY PASSIVE APPROACH: Home page does NOT redirect
-// RedirectHandler in layout handles all redirects
-// This component ONLY renders Dashboard if authenticated, otherwise shows nothing
+const REDIRECT_KEY = 'smart-warehouse-redirect-attempted'
+
+// COMPLETELY SELF-CONTAINED: Home page handles its own redirect
+// NO external RedirectHandler - everything happens here
 function ClientHome() {
+  const redirectAttemptedRef = useRef(false)
+  const hasCheckedRef = useRef(false)
+  
   // CRITICAL: Check pathname IMMEDIATELY - return null if not on /
   // This MUST be the first thing checked before ANY React hooks or state
   if (typeof window !== 'undefined') {
@@ -29,11 +33,6 @@ function ClientHome() {
     if (currentPath !== '/' && currentPath !== '') {
       return null
     }
-    // If redirect was attempted, don't render
-    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
-    if (redirectAttempted === 'true') {
-      return null // Redirect in progress, don't render
-    }
   }
 
   const [mounted, setMounted] = useState(false)
@@ -41,14 +40,24 @@ function ClientHome() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
+    // CRITICAL: Only run once
+    if (hasCheckedRef.current) {
+      return
+    }
+    hasCheckedRef.current = true
+
     // CRITICAL: Check pathname BEFORE doing anything
-    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (window.location.pathname !== '/') {
       setChecking(false)
       return
     }
 
     // Check redirect flag
-    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    const redirectAttempted = sessionStorage.getItem(REDIRECT_KEY)
     if (redirectAttempted === 'true') {
       setChecking(false)
       return
@@ -56,16 +65,16 @@ function ClientHome() {
 
     setMounted(true)
     
-    // Check session - but DON'T redirect, just set state
+    // Check session and handle redirect if needed
     const checkSession = async () => {
       // Final pathname check
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      if (window.location.pathname !== '/') {
         setChecking(false)
         return
       }
 
       // Check redirect flag again
-      const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+      const redirectAttempted = sessionStorage.getItem(REDIRECT_KEY)
       if (redirectAttempted === 'true') {
         setChecking(false)
         return
@@ -83,14 +92,15 @@ function ClientHome() {
         
         if (response.ok) {
           const sessionData = await response.json()
-          // Final check we're still on home page
-          if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+          
+          // CRITICAL: Final check we're still on home page
+          if (window.location.pathname !== '/') {
             setChecking(false)
             return
           }
           
           // Check redirect flag one more time
-          const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+          const redirectAttempted = sessionStorage.getItem(REDIRECT_KEY)
           if (redirectAttempted === 'true') {
             setChecking(false)
             return
@@ -99,12 +109,33 @@ function ClientHome() {
           if (sessionData.user && sessionData.user.id) {
             // Has session - allow render
             setHasSession(true)
+            // Clear redirect flag if it exists
+            sessionStorage.removeItem(REDIRECT_KEY)
+          } else {
+            // No session - redirect to signin
+            if (!redirectAttemptedRef.current) {
+              redirectAttemptedRef.current = true
+              sessionStorage.setItem(REDIRECT_KEY, 'true')
+              console.log('[ClientHome] No session, redirecting to signin')
+              window.location.replace('/auth/signin')
+            }
           }
-          // No session - don't redirect, just don't render dashboard
+        } else {
+          // Response not ok - redirect to signin
+          if (!redirectAttemptedRef.current && window.location.pathname === '/') {
+            redirectAttemptedRef.current = true
+            sessionStorage.setItem(REDIRECT_KEY, 'true')
+            window.location.replace('/auth/signin')
+          }
         }
       } catch (error) {
         console.error('[ClientHome] Session check error:', error)
-        // On error, don't redirect - just don't render
+        // On error, redirect to signin if still on /
+        if (!redirectAttemptedRef.current && window.location.pathname === '/') {
+          redirectAttemptedRef.current = true
+          sessionStorage.setItem(REDIRECT_KEY, 'true')
+          window.location.replace('/auth/signin')
+        }
       } finally {
         setChecking(false)
       }
@@ -115,7 +146,7 @@ function ClientHome() {
 
   // Check redirect flag before rendering anything
   if (typeof window !== 'undefined') {
-    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    const redirectAttempted = sessionStorage.getItem(REDIRECT_KEY)
     if (redirectAttempted === 'true') {
       return null // Redirect in progress, don't show loading
     }
@@ -140,13 +171,13 @@ function ClientHome() {
 
   // Final redirect flag check
   if (typeof window !== 'undefined') {
-    const redirectAttempted = sessionStorage.getItem('smart-warehouse-redirect-attempted')
+    const redirectAttempted = sessionStorage.getItem(REDIRECT_KEY)
     if (redirectAttempted === 'true') {
       return null
     }
   }
 
-  // If no session, show nothing - RedirectHandler will handle redirect
+  // If no session, show nothing (redirect should have happened)
   if (!hasSession) {
     return null
   }

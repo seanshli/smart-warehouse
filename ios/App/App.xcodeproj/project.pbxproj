@@ -51,7 +51,7 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F2A3 /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
+		C442869A562BD29F00ED60AA /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
 		B1A31BC125AA4C049AAE27A1 /* IFlyAIUI_Dynamic.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IFlyAIUI_Dynamic.framework; path = AIUI/IFlyAIUI_Dynamic.framework; sourceTree = "<group>"; };
 		B1A31BC325AA4C049AAE27A1 /* iflyAIUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = iflyAIUI.framework; path = AIUI/iflyAIUI.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -103,6 +103,7 @@
 			children = (
 				C6EF2B53830011B272F2430D /* NativeBarcodeScanner.swift */,
 				C3B67A556B042A3B67898E5C /* WiFiPlugin.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2A3 /* App-Bridging-Header.h */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -438,6 +439,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "App/App-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

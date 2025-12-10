@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { XMarkIcon, PencilIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { Capacitor } from '@capacitor/core'
 import { NativeBarcodeScanner } from '@/lib/native-barcode-scanner'
+import { Camera } from '@capacitor/camera'
 
 // 條碼掃描器屬性介面
 interface BarcodeScannerProps {
@@ -56,11 +57,12 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
     checkNative()
   }, [])
 
-  // Native barcode scanning
+  // Native barcode scanning - iOS/Android full-screen camera
   useEffect(() => {
     if (!isNative) return
 
     let isActive = true
+    let scanPromise: Promise<any> | null = null
 
     const startNativeScanning = async () => {
       try {
@@ -83,21 +85,43 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
         // Prepare the scanner (hide background, show camera)
         await NativeBarcodeScanner.hideBackground()
 
-        // Start scanning - this will resolve when a barcode is detected
-        const result = await NativeBarcodeScanner.startScan()
+        // Start scanning - iOS shows full-screen camera, resolves when barcode detected or cancelled
+        // The iOS implementation shows a full-screen camera overlay
+        // startScan() will NOT resolve immediately - it waits for barcode detection or cancellation
+        scanPromise = NativeBarcodeScanner.startScan()
+        const result = await scanPromise
 
-        if (isActive && result.hasContent && result.content) {
-          console.log('Native barcode detected:', result.content, 'Format:', result.format)
-          onScan(result.content)
-          
-          // Clean up
-          await NativeBarcodeScanner.stopScan()
-          await NativeBarcodeScanner.showBackground()
-        } else if (isActive) {
-          // User cancelled or no content
-          await NativeBarcodeScanner.stopScan()
-          await NativeBarcodeScanner.showBackground()
-          onClose()
+        if (isActive) {
+          if (result.hasContent && result.content) {
+            console.log('Native barcode detected:', result.content, 'Format:', result.format)
+            onScan(result.content)
+            
+            // Clean up after successful scan
+            try {
+              await NativeBarcodeScanner.stopScan()
+              await NativeBarcodeScanner.showBackground()
+            } catch (cleanupErr) {
+              console.warn('Cleanup error:', cleanupErr)
+            }
+          } else if (result.cancelled) {
+            // User cancelled - close the modal
+            try {
+              await NativeBarcodeScanner.stopScan()
+              await NativeBarcodeScanner.showBackground()
+            } catch (cleanupErr) {
+              console.warn('Cleanup error:', cleanupErr)
+            }
+            onClose()
+          } else {
+            // No content - close
+            try {
+              await NativeBarcodeScanner.stopScan()
+              await NativeBarcodeScanner.showBackground()
+            } catch (cleanupErr) {
+              console.warn('Cleanup error:', cleanupErr)
+            }
+            onClose()
+          }
         }
       } catch (err: any) {
         if (isActive) {
@@ -123,16 +147,23 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
             // Ignore cleanup errors
           }
         }
+      } finally {
+        if (isActive) {
+          setIsScanning(false)
+        }
       }
     }
 
+    // Only start if component is mounted and native is enabled
     startNativeScanning()
 
     return () => {
       isActive = false
       // Cleanup native scanner
-      NativeBarcodeScanner.stopScan().catch(() => {})
-      NativeBarcodeScanner.showBackground().catch(() => {})
+      if (scanPromise) {
+        NativeBarcodeScanner.stopScan().catch(() => {})
+        NativeBarcodeScanner.showBackground().catch(() => {})
+      }
     }
   }, [isNative, onScan, onClose])
 
@@ -658,22 +689,22 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-2 sm:p-4">
+      <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-5 border w-full max-w-lg shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg sm:text-xl font-medium text-gray-900">
             Scan Barcode
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 p-1"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
 
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+        <div className="space-y-3 sm:space-y-4">
+          <p className="text-xs sm:text-sm text-gray-600 px-1">
             Position the barcode within the camera view to scan, or upload an image.
           </p>
 
@@ -698,26 +729,74 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
                 browse files
               </button>
             </p>
-            <div className="mt-3 flex space-x-2">
+            <div className="mt-3 flex flex-col sm:flex-row gap-2">
+              {/* Photo Library Button - Native on iOS/Android */}
+              {Capacitor.isNativePlatform() && (
+                <button
+                  onClick={async () => {
+                    try {
+                      setIsProcessingImage(true)
+                      setError(null)
+                      
+                      const image = await Camera.pickImages({
+                        quality: 90,
+                        limit: 1,
+                      })
+                      
+                      if (image.photos && image.photos.length > 0) {
+                        const photo = image.photos[0]
+                        // Convert webPath to File for processing
+                        const response = await fetch(photo.webPath!)
+                        const blob = await response.blob()
+                        const file = new File([blob], 'photo.jpg', { type: blob.type })
+                        await handleFileUpload(file)
+                      }
+                    } catch (err: any) {
+                      console.error('Photo library error:', err)
+                      if (err.message?.includes('cancel') || err.message?.includes('Cancel')) {
+                        // User cancelled - no error needed
+                      } else {
+                        setError('Failed to access photo library. Please try again.')
+                      }
+                    } finally {
+                      setIsProcessingImage(false)
+                    }
+                  }}
+                  disabled={isProcessingImage}
+                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50 flex items-center justify-center gap-1"
+                >
+                  <PhotoIcon className="h-4 w-4" />
+                  <span>Photo Library</span>
+                </button>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 px-3 py-2 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center justify-center gap-1"
+              >
+                <PhotoIcon className="h-4 w-4" />
+                <span>{Capacitor.isNativePlatform() ? 'Browse Files' : 'Browse Files'}</span>
+              </button>
               <button
                 onClick={() => {
                   const file = fileInputRef.current?.files?.[0]
                   if (file) handleFileUpload(file)
                 }}
-                disabled={!fileInputRef.current?.files?.[0]}
-                className="flex-1 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
+                disabled={!fileInputRef.current?.files?.[0] || isProcessingImage}
+                className="flex-1 px-3 py-2 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 flex items-center justify-center gap-1"
               >
-                Scan Barcode
+                <PhotoIcon className="h-4 w-4" />
+                <span>Scan Barcode</span>
               </button>
               <button
                 onClick={() => {
                   const file = fileInputRef.current?.files?.[0]
                   if (file) handleVisionAnalysis(file)
                 }}
-                disabled={!fileInputRef.current?.files?.[0]}
-                className="flex-1 px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
+                disabled={!fileInputRef.current?.files?.[0] || isProcessingImage}
+                className="flex-1 px-3 py-2 text-xs sm:text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 flex items-center justify-center gap-1"
               >
-                AI Vision Analysis
+                <PhotoIcon className="h-4 w-4" />
+                <span>AI Vision</span>
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
@@ -735,8 +814,8 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
             />
           </div>
 
-          {/* Camera View */}
-          {!showManualInput && (
+          {/* Camera View - Only show for web/fallback, native shows full-screen */}
+          {!showManualInput && !isNative && (
             <div className="relative">
               <div
                 ref={scannerRef}
@@ -755,42 +834,57 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
                     <p className="mt-2 text-sm text-gray-600">Starting camera...</p>
                   </div>
                 ) : error ? (
-                  <div className="text-center text-red-600">
+                  <div className="text-center text-red-600 p-4">
                     <p className="text-sm">{error}</p>
                   </div>
                 ) : (
-                  <div className="text-center text-gray-500">
+                  <div className="text-center text-gray-500 p-4">
                     <p className="text-sm">Camera view will appear here</p>
+                    <p className="text-xs mt-1">Or use Photo Library / Browse Files above</p>
                   </div>
                 )}
               </div>
               
-              <div className="mt-2 text-xs text-gray-500 text-center">
+              <div className="mt-2 text-xs text-gray-500 text-center px-2">
                 Supported formats: EAN-13, EAN-8, UPC, Code 128, Code 39, Codabar, I2of5 (Taiwan 1D compatible)
+              </div>
+            </div>
+          )}
+          
+          {/* Native Scanner Status */}
+          {isNative && isScanning && (
+            <div className="relative">
+              <div className="w-full h-64 bg-black rounded-lg flex items-center justify-center">
+                <div className="text-center text-white p-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                  <p className="text-sm font-medium">Native Camera Scanner Active</p>
+                  <p className="text-xs mt-2 opacity-75">Point camera at barcode to scan</p>
+                  <p className="text-xs mt-1 opacity-50">Tap Cancel button on camera view to close</p>
+                </div>
               </div>
             </div>
           )}
 
           {/* Manual Input */}
           {showManualInput ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Enter Barcode Manually
                 </label>
                 <input
                   type="text"
                   value={manualBarcode}
                   onChange={(e) => setManualBarcode(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Type or paste barcode here"
                   autoFocus
                 />
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row gap-2 justify-between">
                 <button
                   onClick={() => setShowManualInput(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Back to Camera
                 </button>
@@ -801,25 +895,25 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
                     }
                   }}
                   disabled={!manualBarcode.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   Use This Barcode
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row gap-2 justify-between">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setShowManualInput(true)}
-                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center space-x-1"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center space-x-1"
               >
-                <PencilIcon className="h-4 w-4" />
+                <PencilIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>Enter Manually</span>
               </button>
             </div>
@@ -829,7 +923,7 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
             <div className="mt-4 flex justify-center">
               <button
                 onClick={restartCamera}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Try Again
               </button>

@@ -201,12 +201,10 @@ public class NativeBarcodeScanner: CAPPlugin {
             session.startRunning()
             self.isScanning = true
             
-            // Resolve immediately - scanning will continue until barcode is detected
-            call.resolve([
-                "hasContent": false,
-                "content": "",
-                "format": ""
-            ])
+            // DO NOT resolve immediately - wait for barcode detection or cancellation
+            // The call will be resolved in metadataOutput delegate when barcode is detected
+            // or in stopScanning() if cancelled
+            // Keep currentCall stored for later resolution
         }
     }
     
@@ -249,6 +247,16 @@ public class NativeBarcodeScanner: CAPPlugin {
     }
     
     @objc private func didTapCancelButton() {
+        // User cancelled - resolve the call with cancelled status
+        if let call = currentCall {
+            call.resolve([
+                "hasContent": false,
+                "content": "",
+                "format": "",
+                "cancelled": true
+            ])
+            currentCall = nil
+        }
         stopScanning()
     }
     
@@ -378,4 +386,15 @@ extension NativeBarcodeScanner: AVCaptureMetadataOutputObjectsDelegate {
         }
     }
 }
+
+// MARK: - Capacitor Plugin Registration
+
+CAP_PLUGIN(NativeBarcodeScanner, "NativeBarcodeScanner",
+           CAP_PLUGIN_METHOD(checkPermission, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(requestPermission, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(startScan, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(stopScan, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(hideBackground, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(showBackground, CAPPluginReturnPromise);
+           )
 

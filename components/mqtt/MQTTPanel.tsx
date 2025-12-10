@@ -403,19 +403,19 @@ export default function MQTTPanel() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full overflow-x-hidden">
       {/* 標題 */}
-      <div>
-        <h2 className="text-xl font-semibold">MQTT 設備管理</h2>
-        <p className="text-sm text-gray-500">
+      <div className="px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">MQTT 設備管理</h2>
+        <p className="text-xs sm:text-sm text-gray-500 break-words">
           MQTT: {t('mqttVendorTuya')}, {t('mqttVendorESP')}, {t('mqttVendorMidea')}, {t('mqttVendorShelly')}, {t('mqttVendorAqara')} • 
           RESTful: Philips Hue, Panasonic, Home Assistant
         </p>
       </div>
 
       {/* 標籤頁 */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max sm:min-w-0">
           {[
             { id: 'devices', name: '設備', icon: WifiIcon },
             { id: 'scenes', name: '場景', icon: SparklesIcon },
@@ -444,64 +444,70 @@ export default function MQTTPanel() {
       {activeTab === 'devices' && (
         <>
           {/* 操作按鈕 */}
-          <div className="flex items-center justify-end">
-            <div className="flex gap-2">
+          <div className="flex items-center justify-end overflow-x-auto">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-end min-w-max sm:min-w-0">
           <button
             onClick={() => mutate()}
-            className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
           >
-            <ArrowPathIcon className="h-4 w-4" />
-            {t('homeAssistantRefresh')}
+            <ArrowPathIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('homeAssistantRefresh')}</span>
+            <span className="sm:hidden">刷新</span>
           </button>
           <button
             onClick={() => handleDiscoverDevices('all')}
             disabled={isDiscovering}
-            className="px-3 py-2 text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 disabled:opacity-50 whitespace-nowrap"
             title="掃描 MQTT Broker 發現所有設備"
           >
-            <ArrowPathIcon className={`h-4 w-4 ${isDiscovering ? 'animate-spin' : ''}`} />
-            {isDiscovering ? '掃描中...' : '掃描設備'}
+            <ArrowPathIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${isDiscovering ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isDiscovering ? '掃描中...' : '掃描設備'}</span>
+            <span className="sm:hidden">{isDiscovering ? '掃描中' : '掃描'}</span>
           </button>
           <button
             onClick={() => {
               setProvisioningVendor('tuya')
               setIsProvisioningModalOpen(true)
             }}
-            className="px-3 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Tuya 設備配網"
           >
-            <WifiIcon className="h-4 w-4" />
-            Tuya 配網
+            <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Tuya 配網</span>
+            <span className="sm:hidden">Tuya</span>
           </button>
           <button
             onClick={() => {
               setProvisioningVendor('midea')
               setIsProvisioningModalOpen(true)
             }}
-            className="px-3 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Midea 設備配網（需要 Midea SDK）"
           >
-            <WifiIcon className="h-4 w-4" />
-            Midea 配網
+            <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Midea 配網</span>
+            <span className="sm:hidden">Midea</span>
           </button>
           {bridgeStatus === 'running' ? (
             <button
               onClick={handleStopBridge}
-              className="px-3 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
               title="停止 Midea Bridge"
             >
-              <WifiIcon className="h-4 w-4" />
-              Bridge: 運行中
+              <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Bridge: 運行中</span>
+              <span className="sm:hidden">運行中</span>
             </button>
           ) : (
             <button
               onClick={handleStartBridge}
               disabled={isStartingBridge}
-              className="px-3 py-2 text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 disabled:opacity-50 whitespace-nowrap"
               title="啟動 Midea Bridge（連接 Midea Cloud 到 MQTT）"
             >
-              <WifiIcon className={`h-4 w-4 ${isStartingBridge ? 'animate-spin' : ''}`} />
-              {isStartingBridge ? '啟動中...' : '啟動 Bridge'}
+              <WifiIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${isStartingBridge ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isStartingBridge ? '啟動中...' : '啟動 Bridge'}</span>
+              <span className="sm:hidden">{isStartingBridge ? '啟動中' : 'Bridge'}</span>
             </button>
           )}
           <button
@@ -509,107 +515,114 @@ export default function MQTTPanel() {
               setProvisioningVendor('esp')
               setIsProvisioningModalOpen(true)
             }}
-            className="px-3 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="ESP 設備配網"
           >
-            <WifiIcon className="h-4 w-4" />
-            ESP 配網
+            <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">ESP 配網</span>
+            <span className="sm:hidden">ESP</span>
           </button>
           <button
             onClick={() => {
               setProvisioningVendor('philips')
               setIsProvisioningModalOpen(true)
             }}
-            className="px-3 py-2 text-sm bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Philips Hue 配網"
           >
-            <WifiIcon className="h-4 w-4" />
-            Hue 配網
+            <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Hue 配網</span>
+            <span className="sm:hidden">Hue</span>
           </button>
           <button
             onClick={() => {
               setProvisioningVendor('panasonic')
               setIsProvisioningModalOpen(true)
             }}
-            className="px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Panasonic 設備配網"
           >
-            <WifiIcon className="h-4 w-4" />
-            Panasonic 配網
+            <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Panasonic 配網</span>
+            <span className="sm:hidden">Panasonic</span>
           </button>
           <button
             onClick={() => {
               setIsHAConfigModalOpen(true)
             }}
-            className="px-3 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Home Assistant 服務器配置"
           >
-            <WifiIcon className="h-4 w-4" />
-            Home Assistant
+            <WifiIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Home Assistant</span>
+            <span className="sm:hidden">HA</span>
           </button>
           <button
             onClick={() => {
               handleDiscoverDevices('shelly')
               toast.success('正在掃描 Shelly 設備...', { duration: 3000 })
             }}
-            className="px-3 py-2 text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Shelly 設備發現（通過 MQTT 掃描）"
           >
-            <MagnifyingGlassIcon className="h-4 w-4" />
-            Shelly 發現
+            <MagnifyingGlassIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Shelly 發現</span>
+            <span className="sm:hidden">Shelly</span>
           </button>
           <button
             onClick={() => {
               handleDiscoverDevices('aqara')
               toast.success('正在掃描 Aqara 設備...', { duration: 3000 })
             }}
-            className="px-3 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             title="Aqara 設備發現（通過 zigbee2mqtt MQTT 掃描）"
           >
-            <MagnifyingGlassIcon className="h-4 w-4" />
-            Aqara 發現
+            <MagnifyingGlassIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Aqara 發現</span>
+            <span className="sm:hidden">Aqara</span>
           </button>
           <button
             onClick={() => setIsAddingDevice(!isAddingDevice)}
-            className="px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1 sm:gap-2 whitespace-nowrap"
           >
-            <PlusIcon className="h-4 w-4" />
-            {t('mqttAddDevice')}
+            <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('mqttAddDevice')}</span>
+            <span className="sm:hidden">添加</span>
           </button>
         </div>
       </div>
 
       {/* 添加設備表單 */}
       {isAddingDevice && (
-        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-          <h3 className="font-semibold">{t('mqttAddDevice')}</h3>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="bg-gray-50 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
+          <h3 className="font-semibold text-sm sm:text-base">{t('mqttAddDevice')}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">{t('mqttDeviceId')}</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1">{t('mqttDeviceId')}</label>
               <input
                 type="text"
                 value={newDevice.deviceId}
                 onChange={(e) => setNewDevice({ ...newDevice, deviceId: e.target.value })}
                 placeholder={newDevice.vendor === 'philips' ? "e.g., 1 (Hue light ID)" : newDevice.vendor === 'panasonic' ? "e.g., ac_001" : newDevice.vendor === 'homeassistant' ? "e.g., light.living_room" : newDevice.vendor === 'shelly' ? "e.g., shelly1-1234 or shellyplus1-5678" : newDevice.vendor === 'aqara' ? "e.g., door_sensor (Zigbee2MQTT friendly name)" : "e.g., tuya_device_001"}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('mqttDeviceName')}</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1">{t('mqttDeviceName')}</label>
               <input
                 type="text"
                 value={newDevice.name}
                 onChange={(e) => setNewDevice({ ...newDevice, name: e.target.value })}
                 placeholder="e.g., Living Room AC"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('mqttVendor')}</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1">{t('mqttVendor')}</label>
               <select
                 value={newDevice.vendor}
                 onChange={(e) => setNewDevice({ ...newDevice, vendor: e.target.value as any, baseUrl: '', apiKey: '', accessToken: '' })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
               >
                 <optgroup label="MQTT">
                   <option value="tuya">{t('mqttVendorTuya')}</option>
@@ -626,65 +639,65 @@ export default function MQTTPanel() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('selectARoom')} ({t('optional')})</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1">{t('selectARoom')} ({t('optional')})</label>
               <input
                 type="text"
                 value={newDevice.roomId}
                 onChange={(e) => setNewDevice({ ...newDevice, roomId: e.target.value })}
                 placeholder={t('selectARoom')}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
               />
             </div>
             {/* RESTful API 配置欄位 */}
             {needsRestfulConfig(newDevice.vendor) && (
               <>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">API Base URL *</label>
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium mb-1">API Base URL *</label>
                   <input
                     type="text"
                     value={newDevice.baseUrl}
                     onChange={(e) => setNewDevice({ ...newDevice, baseUrl: e.target.value })}
                     placeholder={newDevice.vendor === 'philips' ? "e.g., http://192.168.1.100 (Hue Bridge IP)" : newDevice.vendor === 'homeassistant' ? "e.g., http://homeassistant.local:8123 (optional, uses env var if empty)" : "e.g., https://api.panasonic.com"}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">API Key *</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-1">API Key *</label>
                   <input
                     type="text"
                     value={newDevice.apiKey}
                     onChange={(e) => setNewDevice({ ...newDevice, apiKey: e.target.value })}
                     placeholder={newDevice.vendor === 'philips' ? "Hue API Key" : newDevice.vendor === 'homeassistant' ? "Access Token (optional, uses env var if empty)" : "Panasonic API Key"}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
                     required
                   />
                 </div>
                 {newDevice.vendor === 'panasonic' && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">Access Token ({t('optional')})</label>
+                    <label className="block text-xs sm:text-sm font-medium mb-1">Access Token ({t('optional')})</label>
                     <input
                       type="text"
                       value={newDevice.accessToken}
                       onChange={(e) => setNewDevice({ ...newDevice, accessToken: e.target.value })}
                       placeholder="Panasonic Access Token"
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg"
                     />
                   </div>
                 )}
               </>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleAddDevice}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+              className="flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
             >
               {t('mqttAddDevice')}
             </button>
             <button
               onClick={() => setIsAddingDevice(false)}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+              className="flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-gray-200 hover:bg-gray-300 rounded-lg"
             >
               {t('cancel')}
             </button>
@@ -694,14 +707,14 @@ export default function MQTTPanel() {
 
       {/* 發現的設備列表 */}
       {discoveredDevices.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-blue-900">
+        <div className="bg-blue-50 border border-blue-200 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-blue-900 text-sm sm:text-base">
               發現 {discoveredDevices.length} 個設備
             </h3>
             <button
               onClick={() => setDiscoveredDevices([])}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 whitespace-nowrap"
             >
               關閉
             </button>
@@ -710,22 +723,22 @@ export default function MQTTPanel() {
             {discoveredDevices.map((device) => (
               <div
                 key={`${device.vendor}_${device.deviceId}`}
-                className="bg-white p-3 rounded-lg border border-blue-200 flex items-center justify-between"
+                className="bg-white p-2 sm:p-3 rounded-lg border border-blue-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
               >
-                <div className="flex-1">
-                  <div className="font-medium">{device.name || device.deviceId}</div>
-                  <div className="text-sm text-gray-500">
-                    {device.vendor.toUpperCase()} • ID: {device.deviceId}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm sm:text-base truncate">{device.name || device.deviceId}</div>
+                  <div className="text-xs sm:text-sm text-gray-500 break-words">
+                    {device.vendor.toUpperCase()} • <span className="break-all">ID: {device.deviceId}</span>
                   </div>
                   {device.lastSeen && (
-                    <div className="text-xs text-gray-400">
-                      最後在線: {new Date(device.lastSeen).toLocaleString()}
+                    <div className="text-xs text-gray-400 mt-1">
+                      最後在線: <span className="whitespace-nowrap">{new Date(device.lastSeen).toLocaleString()}</span>
                     </div>
                   )}
                 </div>
                 <button
                   onClick={() => handleAddDiscoveredDevice(device)}
-                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg"
+                  className="px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm rounded-lg whitespace-nowrap w-full sm:w-auto"
                 >
                   添加
                 </button>
@@ -753,18 +766,18 @@ export default function MQTTPanel() {
       )}
 
       {!isLoading && !error && devices && devices.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {devices.map((device) => (
             <div
               key={device.id}
-              className="bg-white border rounded-lg p-4 space-y-3"
+              className="bg-white border rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3"
             >
               {/* 設備標題 */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{device.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {getVendorName(device.vendor)} • {device.deviceId}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm sm:text-base truncate">{device.name}</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 break-words">
+                    {getVendorName(device.vendor)} • <span className="break-all">{device.deviceId}</span>
                   </p>
                   {device.room && (
                     <p className="text-xs text-gray-400 mt-1">
@@ -774,69 +787,69 @@ export default function MQTTPanel() {
                 </div>
                 <button
                   onClick={() => handleDeleteDevice(device.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 flex-shrink-0 p-1"
                 >
-                  <TrashIcon className="h-5 w-5" />
+                  <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
 
               {/* 狀態指示器 */}
-              <div className="flex items-center gap-2">
-                <WifiIcon className={`h-4 w-4 ${getStatusColor(device.status)}`} />
-                <span className={`text-sm ${getStatusColor(device.status)}`}>
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <WifiIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${getStatusColor(device.status)} flex-shrink-0`} />
+                <span className={`text-xs sm:text-sm ${getStatusColor(device.status)} whitespace-nowrap`}>
                   {device.status === 'online' ? t('mqttOnline') : t('mqttOffline')}
                 </span>
                 {device.lastSeen && (
-                  <span className="text-xs text-gray-400">
-                    {t('homeAssistantLastChanged')}: {new Date(device.lastSeen).toLocaleString()}
+                  <span className="text-xs text-gray-400 break-words">
+                    {t('homeAssistantLastChanged')}: <span className="whitespace-nowrap">{new Date(device.lastSeen).toLocaleString()}</span>
                   </span>
                 )}
               </div>
 
               {/* 設備狀態 */}
               {device.state && (
-                <div className="bg-gray-50 p-2 rounded text-xs">
-                  <pre className="whitespace-pre-wrap">
+                <div className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
+                  <pre className="whitespace-pre-wrap break-words">
                     {JSON.stringify(device.state, null, 2)}
                   </pre>
                 </div>
               )}
 
               {/* 控制按鈕 */}
-              <div className="flex gap-2 pt-2 border-t">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
                 <button
                   onClick={() => handleControl(device.id, 'power_on')}
-                  className="flex-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded text-sm flex items-center justify-center gap-1"
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-green-500 hover:bg-green-600 text-white rounded text-xs sm:text-sm flex items-center justify-center gap-1"
                 >
-                  <PowerIcon className="h-4 w-4" />
+                  <PowerIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                   {t('mqttPowerOn')}
                 </button>
                 <button
                   onClick={() => handleControl(device.id, 'power_off')}
-                  className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm flex items-center justify-center gap-1"
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded text-xs sm:text-sm flex items-center justify-center gap-1"
                 >
-                  <PowerIcon className="h-4 w-4" />
+                  <PowerIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                   {t('mqttPowerOff')}
                 </button>
               </div>
 
               {/* 供應商特定控制 */}
               {device.vendor === 'tuya' || device.vendor === 'midea' ? (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {device.state?.temperature !== undefined && (
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">{t('homeAssistantCurrentTemperature')}</label>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
                         <button
                           onClick={() => handleControl(device.id, 'set_temperature', (device.state?.temperature || 20) - 1)}
-                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs"
+                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs min-w-[32px]"
                         >
                           -
                         </button>
-                        <span className="px-2 py-1 text-xs">{device.state?.temperature || 'N/A'}°C</span>
+                        <span className="px-2 py-1 text-xs whitespace-nowrap">{device.state?.temperature || 'N/A'}°C</span>
                         <button
                           onClick={() => handleControl(device.id, 'set_temperature', (device.state?.temperature || 20) + 1)}
-                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs"
+                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-xs min-w-[32px]"
                         >
                           +
                         </button>

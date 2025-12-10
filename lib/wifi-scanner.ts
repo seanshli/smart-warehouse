@@ -109,8 +109,19 @@ export class WiFiScanner {
       return networks
     } catch (error: any) {
       console.error('[WiFiScanner] Native WiFi scan error:', error)
-      // 重新抛出错误，让调用者决定如何处理
-      throw error
+      
+      // Provide better error messages
+      let errorMessage = error.message || 'Unknown error'
+      
+      // Check if plugin is not implemented
+      if (errorMessage.includes('not implemented') || errorMessage.includes('plugin is not implemented')) {
+        errorMessage = 'WiFi plugin is not properly registered. Please rebuild the native app in Xcode/Android Studio.'
+      } else if (errorMessage.includes('permission') || errorMessage.includes('Permission') || errorMessage.includes('denied')) {
+        errorMessage = 'WiFi 掃描需要位置權限。請在設備設置中授予位置權限。'
+      }
+      
+      // Re-throw with improved error message
+      throw new Error(errorMessage)
     }
   }
 

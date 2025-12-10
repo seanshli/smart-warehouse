@@ -27,6 +27,7 @@ export interface NativeBarcodeScannerPlugin {
     hasContent: boolean
     content: string
     format: string
+    cancelled?: boolean
   }>
 
   /**

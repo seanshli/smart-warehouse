@@ -28,7 +28,8 @@ function ClientHome() {
 
   // CRITICAL: Return null immediately if not on home page
   // This prevents the component from running at all on other routes
-  if (pathname !== '/') {
+  // Handle null pathname during SSR/initial render
+  if (pathname !== null && pathname !== '/') {
     return null
   }
 

@@ -65,7 +65,10 @@ const nextConfig = {
   // For Capacitor builds, we use standalone mode
   // Dynamic routes will be handled client-side via API calls
   // API routes will be called from the server URL configured in capacitor.config.ts
-  output: 'standalone',
+  // Only use standalone for Capacitor builds, not for Vercel deployments
+  // Vercel uses its own serverless functions, so standalone mode causes conflicts
+  // Check if we're building for Capacitor (not Vercel)
+  ...(process.env.CAPACITOR_BUILD === 'true' && !process.env.VERCEL ? { output: 'standalone' } : {}),
   // PWA and mobile optimizations
   // experimental: {
   //   optimizeCss: true,

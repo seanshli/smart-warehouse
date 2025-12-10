@@ -24,12 +24,20 @@ export default function SignIn() {
     })
   }, [])
 
-  // Ensure we stay on signin page - log current path for debugging
+  // CRITICAL: Ensure we stay on signin page - prevent any redirects away
   useEffect(() => {
     if (mounted && typeof window !== 'undefined') {
       const currentPath = window.location.pathname
       console.log('[SignIn] Component mounted, current path:', currentPath)
-      // Don't redirect away - just log for debugging
+      
+      // CRITICAL: If we're not on signin page, navigate back immediately
+      // This prevents redirect loops in Capacitor
+      if (currentPath !== '/auth/signin' && currentPath !== '/auth/signup') {
+        console.log('[SignIn] Not on signin page, redirecting back:', currentPath)
+        // Use replace to prevent back button issues
+        window.location.replace('/auth/signin')
+        return
+      }
     }
   }, [mounted])
 

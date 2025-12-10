@@ -37,6 +37,16 @@ function ClientHome() {
   const [redirecting, setRedirecting] = useState(false)
 
   useEffect(() => {
+    // CRITICAL: Check pathname BEFORE setting mounted state
+    // This prevents any logic from running if not on home page
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+      if (currentPath !== '/' && currentPath !== '') {
+        // Not on home page - don't run ANY logic, return immediately
+        return
+      }
+    }
+
     setMounted(true)
     
     // Double-check pathname - only run if we're on home page
@@ -53,6 +63,12 @@ function ClientHome() {
     const checkAndRedirect = async () => {
       // Prevent multiple redirect attempts
       if (redirecting) {
+        return
+      }
+
+      // Triple-check pathname before doing anything
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        setChecking(false)
         return
       }
 
@@ -80,10 +96,11 @@ function ClientHome() {
             if (!redirecting && typeof window !== 'undefined') {
               setRedirecting(true)
               console.log('[ClientHome] No session, redirecting to signin')
-              // Use href instead of replace for better Capacitor compatibility
-              // Add small delay to ensure state is set
+              // Use replace to prevent back button and redirect loops
               setTimeout(() => {
-                window.location.href = '/auth/signin'
+                if (window.location.pathname === '/') {
+                  window.location.replace('/auth/signin')
+                }
               }, 100)
             }
             return
@@ -96,7 +113,9 @@ function ClientHome() {
             setRedirecting(true)
             console.log('[ClientHome] Session check failed, redirecting to signin')
             setTimeout(() => {
-              window.location.href = '/auth/signin'
+              if (window.location.pathname === '/') {
+                window.location.replace('/auth/signin')
+              }
             }, 100)
           }
         }
@@ -106,7 +125,9 @@ function ClientHome() {
         if (!redirecting && typeof window !== 'undefined') {
           setRedirecting(true)
           setTimeout(() => {
-            window.location.href = '/auth/signin'
+            if (window.location.pathname === '/') {
+              window.location.replace('/auth/signin')
+            }
           }, 100)
         }
       }
@@ -114,7 +135,10 @@ function ClientHome() {
     
     // Small delay to ensure component is fully mounted
     setTimeout(() => {
-      checkAndRedirect()
+      // Final pathname check before running
+      if (typeof window !== 'undefined' && window.location.pathname === '/') {
+        checkAndRedirect()
+      }
     }, 50)
   }, [redirecting])
 

@@ -6,6 +6,7 @@
 import { getMQTTClient } from '../mqtt-client'
 import { getHomeAssistantStates, type HomeAssistantState } from '../homeassistant'
 import { getHomeAssistantConfig } from '../homeassistant'
+import { prisma } from '../prisma'
 import WebSocket from 'ws'
 
 // Active sync sessions per household
@@ -58,6 +59,76 @@ async function publishEntityToMQTT(
 }
 
 /**
+ * Create or update IoTDevice record for Home Assistant entity
+ */
+async function createOrUpdateIoTDevice(
+  householdId: string,
+  entity: HomeAssistantState,
+  mqttTopic: string
+): Promise<void> {
+  try {
+    const deviceId = entity.entity_id
+    const friendlyName = entity.attributes?.friendly_name || entity.entity_id
+    const domain = entity.entity_id.split('.')[0] // e.g., 'light', 'switch', 'sensor'
+    
+    // Use upsert with unique constraint: householdId, deviceId, vendor
+    await prisma.ioTDevice.upsert({
+      where: {
+        householdId_deviceId_vendor: {
+          householdId,
+          deviceId,
+          vendor: 'homeassistant',
+        },
+      },
+      update: {
+        name: friendlyName,
+        status: entity.state === 'unavailable' ? 'offline' : 'online',
+        topic: mqttTopic,
+        statusTopic: mqttTopic,
+        metadata: {
+          entity_id: entity.entity_id,
+          domain,
+          state: entity.state,
+          attributes: entity.attributes,
+          last_changed: entity.last_changed,
+          last_updated: entity.last_updated,
+        },
+        lastSeen: new Date(),
+      },
+      create: {
+        deviceId,
+        name: friendlyName,
+        vendor: 'homeassistant',
+        connectionType: 'restful',
+        topic: mqttTopic,
+        statusTopic: mqttTopic,
+        commandTopic: null, // Home Assistant uses REST API, not MQTT commands
+        baseUrl: null,
+        apiKey: null,
+        accessToken: null,
+        householdId,
+        roomId: null,
+        status: entity.state === 'unavailable' ? 'offline' : 'online',
+        metadata: {
+          entity_id: entity.entity_id,
+          domain,
+          state: entity.state,
+          attributes: entity.attributes,
+          last_changed: entity.last_changed,
+          last_updated: entity.last_updated,
+        },
+        lastSeen: new Date(),
+      },
+    })
+    
+    console.log(`[HA-MQTT Sync] Synced IoTDevice for ${entity.entity_id}`)
+  } catch (error) {
+    console.error(`[HA-MQTT Sync] Error creating/updating IoTDevice for ${entity.entity_id}:`, error)
+    // Don't throw - continue with other entities
+  }
+}
+
+/**
  * Sync all Home Assistant entities to MQTT
  */
 export async function syncAllEntitiesToMQTT(householdId: string): Promise<void> {
@@ -85,12 +156,18 @@ export async function syncAllEntitiesToMQTT(householdId: string): Promise<void> 
     const entities = await getHomeAssistantStates(undefined, householdId)
     console.log(`[HA-MQTT Sync] Found ${entities.length} entities to sync`)
 
-    // Publish all entities to MQTT
+    // Sync each entity: publish to MQTT and create/update IoTDevice record
     for (const entity of entities) {
+      const mqttTopic = getMQTTTopic(householdId, entity.entity_id)
+      
+      // Publish to MQTT broker
       await publishEntityToMQTT(householdId, entity, mqttClient)
+      
+      // Create/update IoTDevice record so it shows up in MQTT device management
+      await createOrUpdateIoTDevice(householdId, entity, mqttTopic)
     }
 
-    console.log(`[HA-MQTT Sync] Completed sync for household ${householdId}`)
+    console.log(`[HA-MQTT Sync] Completed sync for household ${householdId}: ${entities.length} entities synced`)
   } catch (error) {
     console.error(`[HA-MQTT Sync] Error syncing entities:`, error)
     throw error
@@ -165,6 +242,10 @@ export async function startStateChangeListener(householdId: string): Promise<voi
           if (newState) {
             // Publish state change to MQTT
             await publishEntityToMQTT(householdId, newState, mqttClient)
+            
+            // Update IoTDevice record status
+            const mqttTopic = getMQTTTopic(householdId, entityId)
+            await createOrUpdateIoTDevice(householdId, newState, mqttTopic)
           }
         }
       } catch (error) {

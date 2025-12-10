@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
@@ -25,7 +24,6 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 
 // Client-side only component to prevent hydration issues
 function ClientHome() {
-  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -80,20 +78,12 @@ function ClientHome() {
           <div className="text-red-500 text-6xl mb-4">🔒</div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Authentication Required</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the dashboard.</p>
-          <button
-            onClick={() => {
-              // For Capacitor apps, use window.location for reliable navigation
-              // For web, router.push works fine but window.location is more reliable in WebViews
-              if (typeof window !== 'undefined') {
-                window.location.href = '/auth/signin'
-              } else {
-                router.push('/auth/signin')
-              }
-            }}
-            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
+          <a
+            href="/auth/signin"
+            className="inline-block bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors text-center cursor-pointer"
           >
             Go to Login
-          </button>
+          </a>
         </div>
       </div>
     )

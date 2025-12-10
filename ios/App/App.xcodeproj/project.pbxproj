@@ -103,7 +103,7 @@
 			children = (
 				C6EF2B53830011B272F2430D /* NativeBarcodeScanner.swift */,
 				C3B67A556B042A3B67898E5C /* WiFiPlugin.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1F2A3 /* App-Bridging-Header.h */,
+				C442869A562BD29F00ED60AA /* App-Bridging-Header.h */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,

@@ -24,15 +24,12 @@ export default function SignIn() {
     })
   }, [])
 
-  // Prevent redirect if already on signin page
+  // Ensure we stay on signin page - log current path for debugging
   useEffect(() => {
     if (mounted && typeof window !== 'undefined') {
-      // Ensure we stay on signin page - don't allow redirects away
       const currentPath = window.location.pathname
-      if (currentPath !== '/auth/signin' && currentPath !== '/auth/signup') {
-        // Only redirect if we're somehow on a different page
-        console.log('[SignIn] Current path:', currentPath, '- staying on signin page')
-      }
+      console.log('[SignIn] Component mounted, current path:', currentPath)
+      // Don't redirect away - just log for debugging
     }
   }, [mounted])
 

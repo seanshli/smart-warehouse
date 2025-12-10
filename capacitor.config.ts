@@ -25,7 +25,7 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: true,
     // Tablet and phone support - updated version
-    appendUserAgent: 'SmartWarehouse/1.0.43',
+    appendUserAgent: 'SmartWarehouse/1.0.44',
     // Enable responsive design for all screen sizes
     // Support for phones (small, normal) and tablets (large, xlarge)
     // Viewport meta tag handled by Next.js for responsive design

@@ -31,55 +31,72 @@ function ClientHome() {
   useEffect(() => {
     setMounted(true)
     
-    // Check session on client side
-    const checkSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session', {
-          cache: 'no-store',
-          credentials: 'include'
-        })
-        if (response.ok) {
-          const sessionData = await response.json()
-          console.log('[ClientHome] Session data:', {
-            hasUser: !!sessionData.user,
-            userId: sessionData.user?.id,
-            email: sessionData.user?.email
-          })
-          setSession(sessionData)
-        } else {
-          console.error('[ClientHome] Session check failed:', response.status)
-          // If session check fails, redirect to signin immediately
-          if (typeof window !== 'undefined' && window.location.pathname === '/') {
+    // IMMEDIATE redirect if no session - don't wait for API call
+    // This is critical for Capacitor apps to prevent redirect loops
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+      // Only redirect from home page
+      if (currentPath === '/' || currentPath === '') {
+        // Check session, but redirect immediately if no session
+        const checkSession = async () => {
+          try {
+            const response = await fetch('/api/auth/session', {
+              cache: 'no-store',
+              credentials: 'include'
+            })
+            if (response.ok) {
+              const sessionData = await response.json()
+              console.log('[ClientHome] Session data:', {
+                hasUser: !!sessionData.user,
+                userId: sessionData.user?.id,
+                email: sessionData.user?.email
+              })
+              
+              // Only set session if we have a valid user
+              if (sessionData.user && sessionData.user.id) {
+                setSession(sessionData)
+              } else {
+                // No valid session - redirect immediately
+                console.log('[ClientHome] No valid session, redirecting to signin')
+                window.location.replace('/auth/signin')
+              }
+            } else {
+              console.error('[ClientHome] Session check failed:', response.status)
+              // Session check failed - redirect immediately
+              window.location.replace('/auth/signin')
+            }
+          } catch (error) {
+            console.error('[ClientHome] Session check error:', error)
+            // Error checking session - redirect immediately
             window.location.replace('/auth/signin')
+          } finally {
+            setLoading(false)
           }
         }
-      } catch (error) {
-        console.error('[ClientHome] Session check error:', error)
-        // If error, redirect to signin immediately
-        if (typeof window !== 'undefined' && window.location.pathname === '/') {
-          window.location.replace('/auth/signin')
+        
+        checkSession()
+      } else {
+        // Not on home page, just check session normally
+        const checkSession = async () => {
+          try {
+            const response = await fetch('/api/auth/session', {
+              cache: 'no-store',
+              credentials: 'include'
+            })
+            if (response.ok) {
+              const sessionData = await response.json()
+              setSession(sessionData)
+            }
+          } catch (error) {
+            console.error('[ClientHome] Session check error:', error)
+          } finally {
+            setLoading(false)
+          }
         }
-      } finally {
-        setLoading(false)
+        checkSession()
       }
     }
-    
-    checkSession()
   }, [])
-
-  // Redirect to signin immediately if no session (for Capacitor apps)
-  useEffect(() => {
-    if (mounted && !loading && (!session || !session.user || !session.user.id)) {
-      if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname
-        // Only redirect if we're on the home page, not already on signin
-        if (currentPath === '/' || currentPath === '') {
-          console.log('[ClientHome] No session detected, redirecting to signin immediately')
-          window.location.replace('/auth/signin')
-        }
-      }
-    }
-  }, [mounted, loading, session])
 
   if (!mounted || loading) {
     return (

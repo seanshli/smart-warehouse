@@ -25,7 +25,11 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Public routes that don't require authentication
+  // CRITICAL: Check if this is an auth route FIRST - before any other processing
+  // This prevents middleware from interfering with signin page
+  const pathname = request.nextUrl.pathname
+  
+  // Public routes that don't require authentication - check FIRST
   const publicRoutes = [
     '/auth/signin',
     '/auth/signup',
@@ -42,12 +46,12 @@ export async function middleware(request: NextRequest) {
   ]
   
   const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
+    pathname === route || pathname.startsWith(route)
   )
   
-  // Allow public routes - CRITICAL: Don't redirect these routes
+  // Allow public routes - CRITICAL: Return immediately, don't process further
   if (isPublicRoute) {
-    console.log('[Middleware] Allowing public route:', request.nextUrl.pathname)
+    console.log('[Middleware] Allowing public route (early return):', pathname)
     return NextResponse.next()
   }
 
@@ -156,14 +160,23 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (NextAuth.js routes)
-     * - auth (authentication pages)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api/auth|auth|_next/static|_next/image|favicon.ico).*)',
+    // Only match routes that need authentication - explicitly exclude /auth
+    '/',
+    '/api/:path*',
+    '/admin/:path*',
+    '/dashboard/:path*',
+    '/items/:path*',
+    '/search/:path*',
+    '/settings/:path*',
+    '/building/:path*',
+    '/community/:path*',
+    '/duplicates/:path*',
+    '/household/:path*',
+    '/join/:path*',
+    // Explicitly DO NOT match:
+    // - /auth/* (signin, signup, etc.)
+    // - /admin-auth/* (admin auth pages)
+    // - /api/auth/* (NextAuth routes)
+    // - /_next/* (Next.js internals)
   ],
 }

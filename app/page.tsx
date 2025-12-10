@@ -59,20 +59,6 @@ function ClientHome() {
     checkSession()
   }, [])
 
-  // Auto-redirect to signin if no session (fallback for Capacitor apps)
-  useEffect(() => {
-    if (mounted && !loading && (!session || !session.user || !session.user.id)) {
-      // Small delay to ensure UI renders, then redirect
-      const redirectTimer = setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/signin'
-        }
-      }, 1000) // 1 second delay to show the message
-
-      return () => clearTimeout(redirectTimer)
-    }
-  }, [mounted, loading, session])
-
   if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

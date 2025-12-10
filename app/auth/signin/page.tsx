@@ -14,35 +14,7 @@ export default function SignIn() {
   const router = useRouter()
 
   useEffect(() => {
-    // Clear any existing sessions and caches on page load
-    const clearExistingSession = async () => {
-      try {
-        // Clear all browser storage
-        if (typeof window !== 'undefined') {
-          localStorage.clear()
-          sessionStorage.clear()
-          
-          // Clear any cached data
-          if ('caches' in window) {
-            const cacheNames = await caches.keys()
-            await Promise.all(
-              cacheNames.map(cacheName => caches.delete(cacheName))
-            )
-          }
-          
-          // Clear cookies
-          document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-          });
-        }
-      } catch (error) {
-        console.log('Session clearing completed')
-      }
-    }
-    
-    clearExistingSession()
-    
-    // Get CSRF token
+    // Get CSRF token (don't clear session here - let middleware handle auth)
     getCsrfToken().then((token) => {
       if (token) {
         setCsrfToken(token)

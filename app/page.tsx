@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
@@ -23,21 +23,34 @@ function ClientHome() {
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isNavigating, setIsNavigating] = useState(false)
   const router = useRouter()
-  const pathname = usePathname()
-
-  // CRITICAL: Return null immediately if not on home page
-  // This prevents the component from running at all on other routes
-  // Handle null pathname during SSR/initial render
-  if (pathname !== null && pathname !== '/') {
-    return null
-  }
 
   useEffect(() => {
     setMounted(true)
     
+    // CRITICAL: Check pathname BEFORE doing anything else
+    // This prevents component from running when not on home page
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+      if (currentPath !== '/' && currentPath !== '') {
+        console.log('[ClientHome] Not on home page, skipping:', currentPath)
+        setLoading(false)
+        return
+      }
+    }
+    
     // Check session on client side - only runs if we're on home page
     const checkSession = async () => {
+      // Double-check we're still on home page before checking session
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname
+        if (currentPath !== '/' && currentPath !== '') {
+          console.log('[ClientHome] Navigated away during check, aborting')
+          return
+        }
+      }
+
       try {
         const response = await fetch('/api/auth/session', {
           cache: 'no-store',
@@ -64,7 +77,16 @@ function ClientHome() {
     checkSession()
   }, [])
 
-  if (!mounted || loading) {
+  // CRITICAL: Check pathname in render - return null if not on home page
+  // This prevents rendering when navigating to other routes
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname
+    if (currentPath !== '/' && currentPath !== '') {
+      return null
+    }
+  }
+
+  if (!mounted || loading || isNavigating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -78,11 +100,17 @@ function ClientHome() {
   // Check authentication on client side
   if (!session || !session.user || !session.user.id) {
     const handleGoToLogin = () => {
+      // Set navigating flag to prevent any further checks
+      setIsNavigating(true)
+      
       // Use window.location.replace for Capacitor compatibility
       // This prevents back button and ensures clean navigation
       if (typeof window !== 'undefined') {
         console.log('[ClientHome] Navigating to signin page')
-        window.location.replace('/auth/signin')
+        // Small delay to ensure state is set before navigation
+        setTimeout(() => {
+          window.location.replace('/auth/signin')
+        }, 50)
       }
     }
 

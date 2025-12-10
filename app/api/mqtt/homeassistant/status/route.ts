@@ -26,12 +26,55 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      // 嘗試獲取 Home Assistant 配置信息來檢查連接
-      const config = await callHomeAssistant<{
+      // 確定要使用的 baseUrl 和 accessToken
+      let finalBaseUrl = baseUrl
+      let finalAccessToken = accessToken
+      
+      // 如果沒有提供，嘗試從 household 配置獲取
+      if (!finalBaseUrl || !finalAccessToken) {
+        if (householdId) {
+          const { getHomeAssistantConfig } = await import('@/lib/homeassistant')
+          const haConfig = await getHomeAssistantConfig(householdId)
+          if (haConfig) {
+            finalBaseUrl = finalBaseUrl || haConfig.baseUrl
+            finalAccessToken = finalAccessToken || haConfig.accessToken
+          }
+        }
+      }
+      
+      // 如果還是沒有，返回錯誤
+      if (!finalBaseUrl || !finalAccessToken) {
+        return NextResponse.json({
+          connected: false,
+          status: 'offline',
+          error: 'Home Assistant credentials are not configured',
+        })
+      }
+      
+      // 直接使用提供的 baseUrl 和 accessToken 進行連接測試
+      const url = new URL('/api/config', finalBaseUrl)
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${finalAccessToken}`,
+        },
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        return NextResponse.json({
+          connected: false,
+          status: 'offline',
+          error: `Home Assistant request failed: ${response.status} ${response.statusText} - ${errorText}`,
+        })
+      }
+
+      const config = await response.json() as {
         location_name: string
         version: string
         time_zone: string
-      }>('/api/config', {}, householdId || null)
+      }
 
       return NextResponse.json({
         connected: true,

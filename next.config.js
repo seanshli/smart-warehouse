@@ -67,7 +67,8 @@ const nextConfig = {
   // API routes will be called from the server URL configured in capacitor.config.ts
   // Only use standalone for Capacitor builds, not for Vercel deployments
   // Vercel uses its own serverless functions, so standalone mode causes conflicts
-  // Check if we're building for Capacitor (not Vercel)
+  // Vercel automatically sets VERCEL=1, so we only use standalone for Capacitor builds
+  // Use explicit conditional assignment instead of spread operator for better compatibility
   ...(process.env.CAPACITOR_BUILD === 'true' && !process.env.VERCEL ? { output: 'standalone' } : {}),
   // PWA and mobile optimizations
   // experimental: {

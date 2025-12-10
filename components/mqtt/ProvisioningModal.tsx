@@ -46,6 +46,13 @@ export default function ProvisioningModal({
   const { t } = useLanguage()
   const { household } = useHousehold() // 獲取當前 Household
   const [vendor, setVendor] = useState<SupportedVendor>(initialVendor || 'tuya')
+  
+  // Update vendor when initialVendor changes
+  useEffect(() => {
+    if (initialVendor) {
+      setVendor(initialVendor)
+    }
+  }, [initialVendor])
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'wifi' | 'ez' | 'hotspot' | 'ap' | 'wifi/bt' | 'zigbee' | 'bt' | 'manual' | 'auto' | 'smartconfig'>('auto')

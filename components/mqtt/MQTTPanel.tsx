@@ -63,6 +63,7 @@ export default function MQTTPanel() {
   const [isAddingDevice, setIsAddingDevice] = useState(false) // 是否正在添加設備
   const [isProvisioningModalOpen, setIsProvisioningModalOpen] = useState(false) // 配網模態框狀態
   const [provisioningVendor, setProvisioningVendor] = useState<'tuya' | 'midea' | 'esp' | 'philips' | 'panasonic' | 'homeassistant' | 'shelly' | 'aqara' | undefined>(undefined) // 配網品牌
+  const [isHAConfigModalOpen, setIsHAConfigModalOpen] = useState(false) // Home Assistant 配置模態框狀態
   const [isDiscovering, setIsDiscovering] = useState(false) // 是否正在掃描設備
   const [discoveredDevices, setDiscoveredDevices] = useState<any[]>([]) // 發現的設備列表
   const [bridgeStatus, setBridgeStatus] = useState<'running' | 'stopped' | 'unknown'>('unknown') // Bridge 狀態
@@ -876,6 +877,20 @@ export default function MQTTPanel() {
               
               // 提示信息已在 ProvisioningModal 中顯示
               // 這裡不需要額外的提示
+            }}
+          />
+          
+          {/* Home Assistant 配置模態框 */}
+          <HomeAssistantConfigModal
+            isOpen={isHAConfigModalOpen}
+            onClose={() => {
+              setIsHAConfigModalOpen(false)
+            }}
+            onSuccess={() => {
+              // 配置保存成功後，刷新頁面以顯示 Home Assistant 標籤頁
+              setTimeout(() => {
+                window.location.reload()
+              }, 1000)
             }}
           />
         </>

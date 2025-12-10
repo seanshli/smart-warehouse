@@ -57,11 +57,36 @@ export default function SignIn() {
         toast.error('Invalid credentials')
       } else if (result?.ok) {
         toast.success('Signed in successfully!')
-        // Wait a bit for session to be set, then redirect
-        // Use window.location.href to force a full page reload and ensure session is properly set
-        setTimeout(() => {
-          window.location.href = '/'
-        }, 300)
+        // Wait longer for session cookie to be properly set before redirect
+        // This is critical for Capacitor apps where cookie setting can be delayed
+        setTimeout(async () => {
+          // Verify session is actually set before redirecting
+          try {
+            const sessionCheck = await fetch('/api/auth/session', {
+              cache: 'no-store',
+              credentials: 'include'
+            })
+            if (sessionCheck.ok) {
+              const sessionData = await sessionCheck.json()
+              if (sessionData.user && sessionData.user.id) {
+                // Session confirmed - safe to redirect
+                window.location.href = '/'
+              } else {
+                // Session not ready yet - wait a bit more
+                setTimeout(() => {
+                  window.location.href = '/'
+                }, 500)
+              }
+            } else {
+              // Session check failed - redirect anyway (will show login if needed)
+              window.location.href = '/'
+            }
+          } catch (error) {
+            console.error('Session verification error:', error)
+            // Redirect anyway
+            window.location.href = '/'
+          }
+        }, 500) // Increased from 300ms to 500ms
       } else {
         console.log('Sign in result:', result)
         toast.error('Sign in failed')

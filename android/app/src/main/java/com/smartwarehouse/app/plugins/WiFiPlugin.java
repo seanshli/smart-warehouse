@@ -168,30 +168,36 @@ public class WiFiPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
-        if (checkLocationPermission()) {
+        Context context = getContext();
+        if (context == null) {
+            call.reject("Context not available");
+            return;
+        }
+
+        int permissionStatus = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
             JSObject result = new JSObject();
             result.put("granted", true);
+            result.put("denied", false);
+            result.put("asked", true);
             call.resolve(result);
             return;
         }
 
         // Request permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
-        }
+        ActivityCompat.requestPermissions(
+            getActivity(),
+            new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+            LOCATION_PERMISSION_REQUEST_CODE
+        );
 
-        // Check again after a delay
-        getActivity().runOnUiThread(() -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            boolean granted = checkLocationPermission();
-            JSObject result = new JSObject();
-            result.put("granted", granted);
-            call.resolve(result);
-        });
+        // Note: Actual permission result will be handled by onRequestPermissionsResult
+        // For now, return current status
+        JSObject result = new JSObject();
+        result.put("granted", false);
+        result.put("denied", permissionStatus == PackageManager.PERMISSION_DENIED);
+        result.put("asked", true);
+        call.resolve(result);
     }
 
     @PluginMethod
@@ -291,5 +297,15 @@ public class WiFiPlugin extends Plugin {
             return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         }
         return true; // Permission granted by default on older Android versions
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            // Permission result handled - plugin methods will check permission status when called
+            // The actual permission check happens in checkPermission() method
+        }
     }
 }

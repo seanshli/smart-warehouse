@@ -55,23 +55,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle root path - let page.tsx handle redirect with getServerSession
-  // This allows server-side redirect which is more reliable in Capacitor
+  // Handle root path - allow through, let client component handle display
+  // Client component will check session and show login button if needed
+  // This works better for Capacitor apps which don't run server-side code
   if (pathname === '/') {
-    // Just check token and allow through - page.tsx will redirect if needed
-    try {
-      const token = await getToken({ req: request })
-      if (!token || Object.keys(token).length === 0) {
-        // No token - redirect to signin
-        console.log('[Middleware] No token for root path, redirecting to signin')
-        return NextResponse.redirect(new URL('/auth/signin', request.url))
-      }
-      // Has token - allow through to page.tsx (which will also check)
-      return NextResponse.next()
-    } catch (error) {
-      console.error('[Middleware] Root path token error:', error)
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
-    }
+    return NextResponse.next()
   }
   
   // Check authentication for all other routes

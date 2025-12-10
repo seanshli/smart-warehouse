@@ -50,9 +50,16 @@ export default function ProvisioningModal({
   // Update vendor when initialVendor changes
   useEffect(() => {
     if (initialVendor) {
+      console.log('🔄 ProvisioningModal: Setting vendor to', initialVendor)
       setVendor(initialVendor)
     }
   }, [initialVendor])
+  
+  // Debug: Log vendor and isRESTfulDevice
+  useEffect(() => {
+    const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant'
+    console.log('🔄 ProvisioningModal: vendor =', vendor, ', isRESTfulDevice =', isRESTfulDevice)
+  }, [vendor])
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'wifi' | 'ez' | 'hotspot' | 'ap' | 'wifi/bt' | 'zigbee' | 'bt' | 'manual' | 'auto' | 'smartconfig'>('auto')

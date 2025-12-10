@@ -55,25 +55,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle root path specially - check authentication like build 34
-  // But don't redirect immediately - allow client component to handle display
-  // This prevents redirect loops while still checking auth
+  // Handle root path specially - redirect directly to signin if no token
+  // This prevents any client-side redirect loops and goes directly to login
   if (pathname === '/') {
     try {
       const token = await getToken({ req: request })
-      // If no token, allow through - client component will show login button
-      // This prevents middleware redirect loops after login
+      // If no token, redirect directly to signin page - no intermediate UI
       if (!token || Object.keys(token).length === 0) {
-        console.log('[Middleware] No token for root path, allowing through for client check')
-        return NextResponse.next()
+        console.log('[Middleware] No token for root path, redirecting directly to signin')
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
       // Has token - allow through to page.tsx
       console.log('[Middleware] Token found for root path, allowing access')
       return NextResponse.next()
     } catch (error) {
       console.error('[Middleware] Root path token error:', error)
-      // On error, allow through - let client handle it
-      return NextResponse.next()
+      // On error, redirect to signin
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
   }
   

@@ -19,38 +19,19 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 })
 
 // Client-side only component to prevent hydration issues
+// Middleware handles redirect to /auth/signin if not authenticated
+// So this component only renders if user is authenticated
 function ClientHome() {
   const [mounted, setMounted] = useState(false)
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [isNavigating, setIsNavigating] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
     
-    // CRITICAL: Check pathname BEFORE doing anything else
-    // This prevents component from running when not on home page
-    if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname
-      if (currentPath !== '/' && currentPath !== '') {
-        console.log('[ClientHome] Not on home page, skipping:', currentPath)
-        setLoading(false)
-        return
-      }
-    }
-    
-    // Check session on client side - only runs if we're on home page
+    // Verify session - if middleware let us through, we should have a session
+    // But double-check on client side and redirect immediately if missing
     const checkSession = async () => {
-      // Double-check we're still on home page before checking session
-      if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname
-        if (currentPath !== '/' && currentPath !== '') {
-          console.log('[ClientHome] Navigated away during check, aborting')
-          return
-        }
-      }
-
       try {
         const response = await fetch('/api/auth/session', {
           cache: 'no-store',
@@ -58,17 +39,35 @@ function ClientHome() {
         })
         if (response.ok) {
           const sessionData = await response.json()
-          console.log('[ClientHome] Session data:', {
-            hasUser: !!sessionData.user,
-            userId: sessionData.user?.id,
-            email: sessionData.user?.email
-          })
-          setSession(sessionData)
+          if (sessionData.user && sessionData.user.id) {
+            console.log('[ClientHome] Session verified:', {
+              userId: sessionData.user.id,
+              email: sessionData.user.email
+            })
+            setSession(sessionData)
+          } else {
+            // No valid session - redirect immediately to signin
+            console.log('[ClientHome] No valid session, redirecting to signin')
+            if (typeof window !== 'undefined') {
+              window.location.replace('/auth/signin')
+            }
+            return
+          }
         } else {
-          console.error('[ClientHome] Session check failed:', response.status)
+          // Session check failed - redirect immediately
+          console.log('[ClientHome] Session check failed, redirecting to signin')
+          if (typeof window !== 'undefined') {
+            window.location.replace('/auth/signin')
+          }
+          return
         }
       } catch (error) {
         console.error('[ClientHome] Session check error:', error)
+        // On error, redirect to signin
+        if (typeof window !== 'undefined') {
+          window.location.replace('/auth/signin')
+        }
+        return
       } finally {
         setLoading(false)
       }
@@ -77,16 +76,8 @@ function ClientHome() {
     checkSession()
   }, [])
 
-  // CRITICAL: Check pathname in render - return null if not on home page
-  // This prevents rendering when navigating to other routes
-  if (typeof window !== 'undefined') {
-    const currentPath = window.location.pathname
-    if (currentPath !== '/' && currentPath !== '') {
-      return null
-    }
-  }
-
-  if (!mounted || loading || isNavigating) {
+  // Show loading while checking session
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -97,40 +88,12 @@ function ClientHome() {
     )
   }
 
-  // Check authentication on client side
+  // If no session after check, show nothing (redirect should have happened)
   if (!session || !session.user || !session.user.id) {
-    const handleGoToLogin = () => {
-      // Set navigating flag to prevent any further checks
-      setIsNavigating(true)
-      
-      // Use window.location.replace for Capacitor compatibility
-      // This prevents back button and ensures clean navigation
-      if (typeof window !== 'undefined') {
-        console.log('[ClientHome] Navigating to signin page')
-        // Small delay to ensure state is set before navigation
-        setTimeout(() => {
-          window.location.replace('/auth/signin')
-        }, 50)
-      }
-    }
-
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">🔒</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Authentication Required</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the dashboard.</p>
-          <button
-            onClick={handleGoToLogin}
-            className="inline-block bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors text-center font-medium cursor-pointer"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    )
+    return null
   }
 
+  // User is authenticated - show dashboard
   return (
     <div className="min-h-screen">
       <ErrorBoundary>

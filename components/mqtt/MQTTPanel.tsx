@@ -750,17 +750,17 @@ export default function MQTTPanel() {
 
       {/* 設備列表 */}
       {isLoading && (
-        <div className="text-center py-8 text-gray-500">{t('loading')}</div>
+        <div className="text-center py-6 sm:py-8 text-gray-500 text-sm sm:text-base">{t('loading')}</div>
       )}
 
       {error && (
-        <div className="text-center py-8 text-red-500">
+        <div className="text-center py-6 sm:py-8 text-red-500 text-xs sm:text-sm px-2">
           {t('mqttCommandFailed')}. {t('homeAssistantStatusError')}
         </div>
       )}
 
       {!isLoading && !error && devices && devices.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-6 sm:py-8 text-gray-500 text-sm sm:text-base px-2">
           {t('mqttNoDevices')}
         </div>
       )}

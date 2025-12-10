@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Home Assistant sync initialized successfully',
       })
-    } catch (syncError: any
+    } catch (syncError: any) {
       // If initialization fails, try just syncing entities (without listener)
       try {
         await syncAllEntitiesToMQTT(householdId)

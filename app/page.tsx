@@ -82,8 +82,13 @@ function ClientHome() {
           <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the dashboard.</p>
           <button
             onClick={() => {
-              // Use router.push for better iOS/Capacitor compatibility
-              router.push('/auth/signin')
+              // For Capacitor apps, use window.location for reliable navigation
+              // For web, router.push works fine but window.location is more reliable in WebViews
+              if (typeof window !== 'undefined') {
+                window.location.href = '/auth/signin'
+              } else {
+                router.push('/auth/signin')
+              }
             }}
             className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors"
           >

@@ -128,22 +128,42 @@ export async function POST(
 
     // 驗證 HA 連接（可選，但建議）
     try {
-      const testResponse = await fetch(`${baseUrl}/api/config`, {
+      // 確保 baseUrl 格式正確（以 / 結尾）
+      const normalizedBaseUrl = baseUrl.trim().replace(/\/$/, '')
+      const configUrl = `${normalizedBaseUrl}/api/config`
+      
+      const testResponse = await fetch(configUrl, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${accessToken.trim()}`,
           'Content-Type': 'application/json',
         },
+        // 添加超時設置
+        signal: AbortSignal.timeout(10000), // 10秒超時
       })
 
       if (!testResponse.ok) {
+        const errorText = await testResponse.text().catch(() => '')
+        console.error('HA connection test failed:', {
+          status: testResponse.status,
+          statusText: testResponse.statusText,
+          error: errorText,
+        })
         return NextResponse.json(
-          { error: 'Failed to connect to Home Assistant. Please check your URL and token.' },
+          { error: `Failed to connect to Home Assistant: ${testResponse.status} ${testResponse.statusText}. Please check your URL and token.` },
           { status: 400 }
         )
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('HA connection test error:', error)
+      // 如果是超時錯誤，提供更明確的錯誤信息
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        return NextResponse.json(
+          { error: 'Connection timeout. Please check your URL and network connection.' },
+          { status: 400 }
+        )
+      }
       return NextResponse.json(
-        { error: 'Failed to connect to Home Assistant. Please check your URL.' },
+        { error: `Failed to connect to Home Assistant: ${error.message || 'Please check your URL and token.'}` },
         { status: 400 }
       )
     }

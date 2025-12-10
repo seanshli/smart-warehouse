@@ -2237,14 +2237,14 @@ export default function ProvisioningModal({
             )}
 
             {/* 操作按鈕 */}
-            <div className="flex space-x-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
               {(vendor === 'shelly' || vendor === 'aqara') ? (
                 <button
                   onClick={handleDiscoverDevices}
                   disabled={isDiscovering}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="flex-1 bg-blue-600 text-white px-3 sm:px-4 py-2 text-sm sm:text-base rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  <MagnifyingGlassIcon className="h-5 w-5" />
+                  <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>{isDiscovering ? '掃描中...' : '掃描 MQTT 設備'}</span>
                 </button>
               ) : (
@@ -2256,15 +2256,15 @@ export default function ProvisioningModal({
                     (vendor === 'homeassistant' && (!baseUrl?.trim() || !accessToken?.trim()) && (!deviceId && selectedEntities.size === 0)) ||
                     status !== 'idle'
                   }
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="flex-1 bg-blue-600 text-white px-3 sm:px-4 py-2 text-sm sm:text-base rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  <WifiIcon className="h-5 w-5" />
+                  <WifiIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>開始配網</span>
                 </button>
               )}
               <button
                 onClick={handleClose}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 取消
               </button>

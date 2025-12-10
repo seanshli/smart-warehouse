@@ -59,17 +59,14 @@ const nextConfig = {
       },
     ];
   },
-  // Configure for static export (for Capacitor)
-  // Note: API routes are not exported, they run on the server (Vercel)
+  // MOST ROBUST CONFIGURATION:
+  // - Apps load from Vercel server (always latest code)
+  // - No standalone mode needed (Vercel uses serverless)
+  // - API routes work perfectly (they're on the server)
+  // - No need to rebuild native apps for code changes
   trailingSlash: false,
-  // For Capacitor builds, we use standalone mode
-  // Dynamic routes will be handled client-side via API calls
-  // API routes will be called from the server URL configured in capacitor.config.ts
-  // Only use standalone for Capacitor builds, not for Vercel deployments
-  // Vercel uses its own serverless functions, so standalone mode causes conflicts
-  // Vercel automatically sets VERCEL=1, so we only use standalone for Capacitor builds
-  // Use explicit conditional assignment instead of spread operator for better compatibility
-  ...(process.env.CAPACITOR_BUILD === 'true' && !process.env.VERCEL ? { output: 'standalone' } : {}),
+  // Don't use standalone mode - Vercel handles deployment
+  // Apps connect to Vercel server, ensuring always latest code
   // PWA and mobile optimizations
   // experimental: {
   //   optimizeCss: true,

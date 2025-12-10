@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import ErrorBoundary from '@/components/ErrorBoundary'
+import ClientHome from './ClientHome'
 
 // Dynamically import Dashboard with no SSR to avoid hydration issues
 const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
@@ -26,11 +26,6 @@ export default async function Home() {
     redirect('/auth/signin')
   }
 
-  return (
-    <div className="min-h-screen">
-      <ErrorBoundary>
-        <Dashboard />
-      </ErrorBoundary>
-    </div>
-  )
+  // Pass session to client component
+  return <ClientHome session={session} Dashboard={Dashboard} />
 }

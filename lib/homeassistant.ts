@@ -47,7 +47,7 @@ export async function callHomeAssistant<T = unknown>(
 ): Promise<T> {
   const config = await getHomeAssistantConfig(householdId)
 
-  if (!config.baseUrl || !config.accessToken) {
+  if (!config || !config.baseUrl || !config.accessToken) {
     throw new Error('Home Assistant credentials are not configured')
   }
 

@@ -101,7 +101,8 @@ export default function HomeAssistantPanel() {
   )
 
   useEffect(() => {
-    if (haConfigData?.config && haConfigData.config.baseUrl && haConfigData.config.accessToken) {
+    // API 不返回 accessToken（出于安全考虑），只检查 baseUrl 是否存在来判断是否有配置
+    if (haConfigData?.config && haConfigData.config.baseUrl) {
       setHaConfig(haConfigData.config)
     } else {
       setHaConfig(null)

@@ -240,14 +240,16 @@ export default function Dashboard() {
     success: boolean
     config: {
       baseUrl: string
-      accessToken: string
+      username: string | null
+      serverIp: string | null
     } | null
   }>(
     household?.id ? `/api/household/${household.id}/homeassistant` : null,
     (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json())
   )
   
-  const hasHomeAssistant = !!haConfigData?.config?.baseUrl && !!haConfigData?.config?.accessToken
+  // API 不返回 accessToken（出于安全考虑），只检查 baseUrl 是否存在来判断是否有配置
+  const hasHomeAssistant = !!haConfigData?.config?.baseUrl
 
   // Add error boundary for client-side errors
   useEffect(() => {

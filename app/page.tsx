@@ -67,6 +67,20 @@ function ClientHome() {
     checkSession()
   }, [])
 
+  // Redirect to signin immediately if no session (for Capacitor apps)
+  useEffect(() => {
+    if (mounted && !loading && (!session || !session.user || !session.user.id)) {
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname
+        // Only redirect if we're on the home page, not already on signin
+        if (currentPath === '/' || currentPath === '') {
+          console.log('[ClientHome] No session detected, redirecting to signin immediately')
+          window.location.replace('/auth/signin')
+        }
+      }
+    }
+  }, [mounted, loading, session])
+
   if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -78,26 +92,14 @@ function ClientHome() {
     )
   }
 
-  // Check authentication on client side - redirect immediately if no session
+  // Check authentication on client side
   if (!session || !session.user || !session.user.id) {
-    // Immediate redirect - don't wait, don't show button
-    if (typeof window !== 'undefined' && mounted && !loading) {
-      const currentPath = window.location.pathname
-      // Only redirect if we're on the home page
-      if (currentPath === '/' || currentPath === '') {
-        console.log('[ClientHome] No session detected, redirecting to signin immediately')
-        window.location.replace('/auth/signin')
-        // Return null while redirecting
-        return null
-      }
-    }
-
-    // Show minimal loading state while redirecting
+    // Show loading while redirect happens
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Redirecting to login...</p>
         </div>
       </div>
     )

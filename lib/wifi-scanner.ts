@@ -153,6 +153,7 @@ export class WiFiScanner {
   /**
    * 智能扫描：优先使用原生扫描，失败则回退到服务器扫描
    * Smart scan: prefer native scan, fallback to server scan
+   * CRITICAL: On iOS/Android, ALWAYS use native scan first - never fallback to server on Vercel
    */
   static async scan(): Promise<WiFiNetwork[]> {
     try {
@@ -160,28 +161,31 @@ export class WiFiScanner {
       const { Capacitor } = await import('@capacitor/core')
       const platform = Capacitor.getPlatform()
       
-      // 移动端优先使用原生扫描
+      // 移动端优先使用原生扫描 - CRITICAL for iOS/Android
       if (platform === 'ios' || platform === 'android') {
         try {
-          console.log('[WiFiScanner] Attempting native scan on', platform)
+          console.log('[WiFiScanner] CRITICAL: Using native scan on', platform)
           const networks = await this.scanNative()
           if (networks && networks.length > 0) {
             console.log(`[WiFiScanner] Native scan successful: found ${networks.length} networks`)
             return networks
           }
-          console.warn('[WiFiScanner] Native scan returned empty, falling back to server scan')
+          // Even if empty, return empty array - don't fallback to server on mobile
+          console.log('[WiFiScanner] Native scan returned empty array (no networks found)')
+          return []
         } catch (nativeError: any) {
-          console.warn('[WiFiScanner] Native scan failed:', nativeError.message)
+          console.error('[WiFiScanner] Native scan failed:', nativeError.message)
           // 如果是权限错误，直接抛出，不要回退到服务器
-          if (nativeError.message?.includes('permission') || nativeError.message?.includes('denied')) {
+          if (nativeError.message?.includes('permission') || nativeError.message?.includes('denied') || nativeError.message?.includes('權限')) {
             throw new Error('WiFi 掃描需要位置權限。請在設備設置中授予位置權限。')
           }
-          // 其他错误，尝试服务器扫描
+          // On mobile, don't fallback to server - throw error
+          throw new Error(`原生 WiFi 掃描失敗: ${nativeError.message || '未知錯誤'}`)
         }
       }
       
-      // Web 环境或原生扫描失败时，回退到服务器扫描
-      console.log('[WiFiScanner] Attempting server scan')
+      // Web 环境才使用服务器扫描
+      console.log('[WiFiScanner] Web platform detected, attempting server scan')
       try {
         return await this.scanFromServer()
       } catch (serverError: any) {

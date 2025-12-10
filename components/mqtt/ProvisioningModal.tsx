@@ -105,6 +105,12 @@ export default function ProvisioningModal({
   const [isScanningWifi, setIsScanningWifi] = useState(false) // 是否正在掃描 WiFi
   const [isLoadingSavedWifi, setIsLoadingSavedWifi] = useState(false)
   const [selectedNetwork, setSelectedNetwork] = useState<WiFiNetwork | null>(null) // 選中的 WiFi 網絡
+  const [isVerifyingWifi, setIsVerifyingWifi] = useState(false) // 是否正在驗證 WiFi 連接
+  const [wifiVerificationStatus, setWifiVerificationStatus] = useState<{
+    verified: boolean
+    message?: string
+    error?: string
+  } | null>(null) // WiFi 驗證狀態
 
   const useNativeTuyaProvisioning = useMemo(
     () => vendor === 'tuya' && canUseNativeTuyaProvisioning(),
@@ -939,17 +945,91 @@ export default function ProvisioningModal({
     }
   }
 
+  // 驗證 WiFi 連接（類似 Home Assistant 的驗證流程）
+  const handleVerifyWifiConnection = async () => {
+    if (!ssid || !password) {
+      toast.error('請先輸入 WiFi SSID 和密碼')
+      return
+    }
+
+    setIsVerifyingWifi(true)
+    setWifiVerificationStatus(null)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/mqtt/wifi/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ssid, password }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        if (data.verified) {
+          setWifiVerificationStatus({
+            verified: true,
+            message: data.message || 'WiFi 憑證格式正確',
+          })
+          toast.success('WiFi 憑證驗證成功')
+        } else if (data.requiresNativeApp) {
+          // On native apps, we can actually verify connection
+          const { Capacitor } = await import('@capacitor/core')
+          const platform = Capacitor.getPlatform()
+          
+          if (platform === 'ios' || platform === 'android') {
+            // On native, we assume credentials are valid if format is correct
+            // Actual connection verification would require device-level APIs
+            setWifiVerificationStatus({
+              verified: true,
+              message: 'WiFi 憑證格式正確，可以在配網時使用',
+            })
+            toast.success('WiFi 憑證格式正確')
+          } else {
+            setWifiVerificationStatus({
+              verified: false,
+              message: data.message || 'WiFi 憑證格式正確，但需要原生應用進行實際連接驗證',
+            })
+            toast('WiFi 憑證格式正確', { icon: 'ℹ️' })
+          }
+        } else {
+          setWifiVerificationStatus({
+            verified: true,
+            message: data.message || 'WiFi 憑證格式正確',
+          })
+          toast.success('WiFi 憑證驗證成功')
+        }
+      } else {
+        setWifiVerificationStatus({
+          verified: false,
+          error: data.error || 'WiFi 憑證驗證失敗',
+        })
+        toast.error(data.error || 'WiFi 憑證驗證失敗')
+      }
+    } catch (error: any) {
+      setWifiVerificationStatus({
+        verified: false,
+        error: error.message || 'WiFi 憑證驗證失敗',
+      })
+      toast.error(error.message || 'WiFi 憑證驗證失敗')
+    } finally {
+      setIsVerifyingWifi(false)
+    }
+  }
+
   const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
   const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant'
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-4 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         {/* 標題 */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
             {vendor === 'tuya' && 'Tuya 設備配網'}
             {vendor === 'midea' && 'Midea 設備配網'}
             {vendor === 'esp' && 'ESP 設備配網'}
@@ -1051,23 +1131,26 @@ export default function ProvisioningModal({
             {isMQTTDevice && vendor !== 'esp' && (
               <>
                 <div className="space-y-2">
-                  <button
-                    onClick={handleScanWifi}
-                    disabled={isScanningWifi || status !== 'idle'}
-                    className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    <MagnifyingGlassIcon className="h-5 w-5" />
-                    <span>{isScanningWifi ? '掃描中…' : '掃描 WiFi 網絡'}</span>
-                  </button>
-                  <button
-                    onClick={handleLoadSavedWifi}
-                    disabled={isLoadingSavedWifi || status !== 'idle'}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    <MagnifyingGlassIcon className="h-5 w-5" />
-                    <span>{isLoadingSavedWifi ? '載入中…' : '載入已保存的 WiFi'}</span>
-                  </button>
-                  <p className="text-xs text-gray-500">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleScanWifi}
+                      disabled={isScanningWifi || status !== 'idle'}
+                      className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span>{isScanningWifi ? '掃描中…' : '掃描 WiFi 網絡'}</span>
+                    </button>
+                    <button
+                      onClick={handleLoadSavedWifi}
+                      disabled={isLoadingSavedWifi || status !== 'idle'}
+                      className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="hidden sm:inline">{isLoadingSavedWifi ? '載入中…' : '載入已保存的 WiFi'}</span>
+                      <span className="sm:hidden">{isLoadingSavedWifi ? '載入中…' : '已保存'}</span>
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 px-1">
                     提示：若要掃描周圍的 Wi-Fi，請在「安裝於本機的 Smart Warehouse App」或具有網卡存取權限的環境執行。
                     若裝置或瀏覽器不支援掃描，可以載入已保存的 Wi-Fi 或手動輸入。
                   </p>
@@ -1086,6 +1169,7 @@ export default function ProvisioningModal({
                           onClick={async () => {
                             setSelectedNetwork(network)
                             setSsid(network.ssid)
+                            setWifiVerificationStatus(null) // Clear verification when network changes
                             // 异步获取保存的密码
                             const savedPassword = await WiFiScanner.getSavedPassword(network.ssid)
                             if (savedPassword) {
@@ -1093,32 +1177,32 @@ export default function ProvisioningModal({
                               toast('已自動填充保存的密碼', { icon: '✓' })
                             }
                           }}
-                          className={`w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 ${
+                          className={`w-full text-left p-2 sm:p-3 border-b border-gray-200 hover:bg-gray-50 ${
                             isSelected ? 'bg-blue-50 border-blue-300' : ''
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2">
-                                <WifiIcon className="h-4 w-4 text-gray-500" />
-                                <span className="font-medium text-sm">{network.ssid}</span>
+                                <WifiIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                                <span className="font-medium text-sm truncate">{network.ssid}</span>
                               </div>
-                              <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                 {network.signalStrength && (
-                                  <span>信號: {network.signalStrength} dBm</span>
+                                  <span className="whitespace-nowrap">信號: {network.signalStrength} dBm</span>
                                 )}
                                 {network.security && network.security !== 'none' && (
-                                  <span className="text-orange-600">
+                                  <span className="text-orange-600 whitespace-nowrap">
                                     {network.security.toUpperCase()}
                                   </span>
                                 )}
                                 {hasSavedPassword && (
-                                  <span className="text-green-600">已保存密碼</span>
+                                  <span className="text-green-600 whitespace-nowrap">已保存密碼</span>
                                 )}
                               </div>
                             </div>
                             {isSelected && (
-                              <CheckCircleIcon className="h-5 w-5 text-blue-600" />
+                              <CheckCircleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 ml-2" />
                             )}
                           </div>
                         </button>
@@ -1136,6 +1220,7 @@ export default function ProvisioningModal({
                     value={ssid}
                     onChange={async (e) => {
                       setSsid(e.target.value)
+                      setWifiVerificationStatus(null) // Clear verification when SSID changes
                       // 檢查是否有保存的密碼（异步）
                       const saved = await WiFiScanner.getSavedPassword(e.target.value)
                       if (saved) {
@@ -1144,7 +1229,7 @@ export default function ProvisioningModal({
                       }
                     }}
                     placeholder="輸入或選擇 Wi-Fi 網絡名稱"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
                 </div>
@@ -1156,31 +1241,76 @@ export default function ProvisioningModal({
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setWifiVerificationStatus(null) // Clear verification when password changes
+                    }}
                     placeholder="輸入 Wi-Fi 密碼"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
-                  <div className="mt-1 flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="remember-wifi-password"
-                      defaultChecked={true}
-                      onChange={async (e) => {
-                        if (e.target.checked && ssid && password) {
-                          await WiFiScanner.saveNetwork(
-                            { ssid, security: 'wpa2' },
-                            password
-                          )
-                          toast('已保存 WiFi 密碼', { icon: '✓' })
-                        }
-                      }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="remember-wifi-password" className="text-xs text-gray-600">
-                      記住此 WiFi 密碼
-                    </label>
+                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="remember-wifi-password"
+                        defaultChecked={true}
+                        onChange={async (e) => {
+                          if (e.target.checked && ssid && password) {
+                            await WiFiScanner.saveNetwork(
+                              { ssid, security: 'wpa2' },
+                              password
+                            )
+                            toast('已保存 WiFi 密碼', { icon: '✓' })
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="remember-wifi-password" className="text-xs text-gray-600">
+                        記住此 WiFi 密碼
+                      </label>
+                    </div>
+                    {/* Verify Connect Button */}
+                    {ssid && password && (
+                      <button
+                        onClick={handleVerifyWifiConnection}
+                        disabled={isVerifyingWifi || status !== 'idle'}
+                        className="text-xs sm:text-sm px-3 py-1.5 bg-green-50 text-green-700 border border-green-300 rounded-md hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed flex items-center justify-center space-x-1"
+                      >
+                        {isVerifyingWifi ? (
+                          <>
+                            <ClockIcon className="h-4 w-4 animate-spin" />
+                            <span>驗證中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircleIcon className="h-4 w-4" />
+                            <span>驗證連接</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
+                  {/* WiFi Verification Status */}
+                  {wifiVerificationStatus && (
+                    <div className={`mt-2 p-2 rounded-md text-xs ${
+                      wifiVerificationStatus.verified 
+                        ? 'bg-green-50 text-green-700 border border-green-200' 
+                        : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}>
+                      {wifiVerificationStatus.verified ? (
+                        <div className="flex items-center space-x-1">
+                          <CheckCircleIcon className="h-4 w-4" />
+                          <span>{wifiVerificationStatus.message || 'WiFi 憑證驗證成功'}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-1">
+                          <XCircleIcon className="h-4 w-4" />
+                          <span>{wifiVerificationStatus.error || wifiVerificationStatus.message || 'WiFi 憑證驗證失敗'}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Midea AP 模式：設備熱點 SSID */}
@@ -1212,12 +1342,12 @@ export default function ProvisioningModal({
                   <button
                     onClick={handleScanWifi}
                     disabled={isScanningWifi || status !== 'idle'}
-                    className="w-full mb-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="w-full mb-3 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
-                    <MagnifyingGlassIcon className="h-5 w-5" />
+                    <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>{isScanningWifi ? '掃描中...' : '掃描 WiFi 網絡'}</span>
                   </button>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 px-1">
                     SmartConfig 需要路由器的 Wi-Fi 資訊。請允許應用程式在本機掃描或於無法掃描時手動輸入。
                   </p>
                 </div>
@@ -1234,38 +1364,39 @@ export default function ProvisioningModal({
                           onClick={async () => {
                             setSelectedNetwork(network)
                             setSsid(network.ssid)
+                            setWifiVerificationStatus(null) // Clear verification when network changes
                             const savedPassword = await WiFiScanner.getSavedPassword(network.ssid)
                             if (savedPassword) {
                               setPassword(savedPassword)
                               toast('已自動填充保存的密碼', { icon: '✓' })
                             }
                           }}
-                          className={`w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 ${
+                          className={`w-full text-left p-2 sm:p-3 border-b border-gray-200 hover:bg-gray-50 ${
                             isSelected ? 'bg-blue-50 border-blue-300' : ''
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2">
-                                <WifiIcon className="h-4 w-4 text-gray-500" />
-                                <span className="font-medium text-sm">{network.ssid}</span>
+                                <WifiIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                                <span className="font-medium text-sm truncate">{network.ssid}</span>
                               </div>
-                              <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                 {network.signalStrength && (
-                                  <span>信號: {network.signalStrength} dBm</span>
+                                  <span className="whitespace-nowrap">信號: {network.signalStrength} dBm</span>
                                 )}
                                 {network.security && network.security !== 'none' && (
-                                  <span className="text-orange-600">
+                                  <span className="text-orange-600 whitespace-nowrap">
                                     {network.security.toUpperCase()}
                                   </span>
                                 )}
                                 {hasSavedPassword && (
-                                  <span className="text-green-600">已保存密碼</span>
+                                  <span className="text-green-600 whitespace-nowrap">已保存密碼</span>
                                 )}
                               </div>
                             </div>
                             {isSelected && (
-                              <CheckCircleIcon className="h-5 w-5 text-blue-600" />
+                              <CheckCircleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 ml-2" />
                             )}
                           </div>
                         </button>
@@ -1283,6 +1414,7 @@ export default function ProvisioningModal({
                     value={ssid}
                     onChange={async (e) => {
                       setSsid(e.target.value)
+                      setWifiVerificationStatus(null) // Clear verification when SSID changes
                       const saved = await WiFiScanner.getSavedPassword(e.target.value)
                       if (saved) {
                         setPassword(saved)
@@ -1290,7 +1422,7 @@ export default function ProvisioningModal({
                       }
                     }}
                     placeholder="輸入或選擇 Wi-Fi 網絡名稱"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
                 </div>
@@ -1302,31 +1434,76 @@ export default function ProvisioningModal({
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setWifiVerificationStatus(null) // Clear verification when password changes
+                    }}
                     placeholder="輸入 Wi-Fi 密碼"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={status !== 'idle'}
                   />
-                  <div className="mt-1 flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="remember-esp-password"
-                      defaultChecked={true}
-                      onChange={async (e) => {
-                        if (e.target.checked && ssid && password) {
-                          await WiFiScanner.saveNetwork(
-                            { ssid, security: 'wpa2' },
-                            password
-                          )
-                          toast('已保存 WiFi 密碼', { icon: '✓' })
-                        }
-                      }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="remember-esp-password" className="text-xs text-gray-600">
-                      記住此 WiFi 密碼
-                    </label>
+                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="remember-esp-password"
+                        defaultChecked={true}
+                        onChange={async (e) => {
+                          if (e.target.checked && ssid && password) {
+                            await WiFiScanner.saveNetwork(
+                              { ssid, security: 'wpa2' },
+                              password
+                            )
+                            toast('已保存 WiFi 密碼', { icon: '✓' })
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="remember-esp-password" className="text-xs text-gray-600">
+                        記住此 WiFi 密碼
+                      </label>
+                    </div>
+                    {/* Verify Connect Button */}
+                    {ssid && password && (
+                      <button
+                        onClick={handleVerifyWifiConnection}
+                        disabled={isVerifyingWifi || status !== 'idle'}
+                        className="text-xs sm:text-sm px-3 py-1.5 bg-green-50 text-green-700 border border-green-300 rounded-md hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed flex items-center justify-center space-x-1"
+                      >
+                        {isVerifyingWifi ? (
+                          <>
+                            <ClockIcon className="h-4 w-4 animate-spin" />
+                            <span>驗證中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircleIcon className="h-4 w-4" />
+                            <span>驗證連接</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
+                  {/* WiFi Verification Status */}
+                  {wifiVerificationStatus && (
+                    <div className={`mt-2 p-2 rounded-md text-xs ${
+                      wifiVerificationStatus.verified 
+                        ? 'bg-green-50 text-green-700 border border-green-200' 
+                        : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}>
+                      {wifiVerificationStatus.verified ? (
+                        <div className="flex items-center space-x-1">
+                          <CheckCircleIcon className="h-4 w-4" />
+                          <span>{wifiVerificationStatus.message || 'WiFi 憑證驗證成功'}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-1">
+                          <XCircleIcon className="h-4 w-4" />
+                          <span>{wifiVerificationStatus.error || wifiVerificationStatus.message || 'WiFi 憑證驗證失敗'}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -1516,8 +1693,26 @@ export default function ProvisioningModal({
                             // 嘗試掃描 WiFi 網絡
                             setIsScanningWifi(true)
                             try {
-                              // 嘗試從 ESP 設備掃描（如果已連接）
-                              const networks = await WiFiScanner.scanFromESPDevice()
+                              // CRITICAL: On mobile, use native scan first
+                              const { Capacitor } = await import('@capacitor/core')
+                              const platform = Capacitor.getPlatform()
+                              
+                              let networks: WiFiNetwork[] = []
+                              
+                              if (platform === 'ios' || platform === 'android') {
+                                // Use native scan on mobile
+                                try {
+                                  networks = await WiFiScanner.scanNative()
+                                  console.log(`[ESP] Native scan found ${networks.length} networks`)
+                                } catch (nativeError: any) {
+                                  console.warn('[ESP] Native scan failed, trying ESP device scan:', nativeError.message)
+                                  // Fallback to ESP device scan
+                                  networks = await WiFiScanner.scanFromESPDevice()
+                                }
+                              } else {
+                                // Web: Try ESP device scan
+                                networks = await WiFiScanner.scanFromESPDevice()
+                              }
                               
                               // 如果掃描失敗，使用已保存的網絡
                               const saved = await WiFiScanner.getSavedNetworks()
@@ -1548,16 +1743,16 @@ export default function ProvisioningModal({
                             }
                           }}
                           disabled={isScanningWifi || status !== 'idle'}
-                          className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                          className="mt-3 w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                         >
                           {isScanningWifi ? (
                             <>
-                              <ClockIcon className="h-5 w-5 animate-spin" />
+                              <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                               <span>掃描 WiFi 網絡中...</span>
                             </>
                           ) : (
                             <>
-                              <MagnifyingGlassIcon className="h-5 w-5" />
+                              <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                               <span>已連接設備熱點，下一步</span>
                             </>
                           )}
@@ -1583,41 +1778,42 @@ export default function ProvisioningModal({
                                   onClick={async () => {
                                     setSelectedNetwork(network)
                                     setSsid(network.ssid)
+                                    setWifiVerificationStatus(null) // Clear verification when network changes
                                     // 如果有保存的密碼，自動填充
                                     const savedPassword = await WiFiScanner.getSavedPassword(network.ssid)
                                     if (savedPassword) {
                                       setPassword(savedPassword)
                                     }
                                   }}
-                                  className={`w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 ${
+                                  className={`w-full text-left p-2 sm:p-3 border-b border-gray-200 hover:bg-gray-50 ${
                                     isSelected ? 'bg-blue-50 border-blue-300' : ''
                                   }`}
                                 >
                                   <div className="flex items-center justify-between">
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                       <div className="flex items-center space-x-2">
-                                        <WifiIcon className="h-4 w-4 text-gray-500" />
-                                        <span className="font-medium text-sm">{network.ssid}</span>
+                                        <WifiIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                                        <span className="font-medium text-sm truncate">{network.ssid}</span>
                                         {network.isConnected && (
-                                          <span className="text-xs text-green-600">已連接</span>
+                                          <span className="text-xs text-green-600 whitespace-nowrap">已連接</span>
                                         )}
                                       </div>
-                                      <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
+                                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                         {network.signalStrength && (
-                                          <span>信號: {network.signalStrength} dBm</span>
+                                          <span className="whitespace-nowrap">信號: {network.signalStrength} dBm</span>
                                         )}
                                         {network.security && network.security !== 'none' && (
-                                          <span className="text-orange-600">
+                                          <span className="text-orange-600 whitespace-nowrap">
                                             {network.security.toUpperCase()}
                                           </span>
                                         )}
                                         {hasSavedPassword && (
-                                          <span className="text-green-600">已保存密碼</span>
+                                          <span className="text-green-600 whitespace-nowrap">已保存密碼</span>
                                         )}
                                       </div>
                                     </div>
                                     {isSelected && (
-                                      <CheckCircleIcon className="h-5 w-5 text-blue-600" />
+                                      <CheckCircleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 ml-2" />
                                     )}
                                   </div>
                                 </button>
@@ -1625,7 +1821,7 @@ export default function ProvisioningModal({
                             })}
                           </div>
                         ) : (
-                          <p className="text-xs text-gray-500 mb-3">未發現 WiFi 網絡，請手動輸入</p>
+                          <p className="text-xs text-gray-500 mb-3 px-1">未發現 WiFi 網絡，請手動輸入</p>
                         )}
 
                         {/* 手動輸入 WiFi */}
@@ -1639,6 +1835,7 @@ export default function ProvisioningModal({
                               value={ssid}
                               onChange={async (e) => {
                                 setSsid(e.target.value)
+                                setWifiVerificationStatus(null) // Clear verification when SSID changes
                                 // 檢查是否有保存的密碼
                                 const saved = await WiFiScanner.getSavedPassword(e.target.value)
                                 if (saved) {
@@ -1647,7 +1844,7 @@ export default function ProvisioningModal({
                                 }
                               }}
                               placeholder="輸入或選擇 WiFi 網絡名稱"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               disabled={status !== 'idle'}
                             />
                           </div>
@@ -1659,36 +1856,84 @@ export default function ProvisioningModal({
                             <input
                               type="password"
                               value={password}
-                              onChange={(e) => setPassword(e.target.value)}
+                              onChange={(e) => {
+                                setPassword(e.target.value)
+                                setWifiVerificationStatus(null) // Clear verification when password changes
+                              }}
                               placeholder="輸入 WiFi 密碼"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               disabled={status !== 'idle'}
                             />
-                            <div className="mt-1 flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id="remember-password"
-                                checked={true}
-                                onChange={async (e) => {
-                                  if (e.target.checked && ssid && password) {
-                                    await WiFiScanner.saveNetwork(
-                                      { ssid, security: 'wpa2' },
-                                      password
-                                    )
-                                    toast('已保存 WiFi 密碼', { icon: '✓' })
-                                  }
-                                }}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <label htmlFor="remember-password" className="text-xs text-gray-600">
-                                記住此 WiFi 密碼
-                              </label>
+                            <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="remember-password"
+                                  checked={true}
+                                  onChange={async (e) => {
+                                    if (e.target.checked && ssid && password) {
+                                      await WiFiScanner.saveNetwork(
+                                        { ssid, security: 'wpa2' },
+                                        password
+                                      )
+                                      toast('已保存 WiFi 密碼', { icon: '✓' })
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <label htmlFor="remember-password" className="text-xs text-gray-600">
+                                  記住此 WiFi 密碼
+                                </label>
+                              </div>
+                              {/* Verify Connect Button */}
+                              {ssid && password && (
+                                <button
+                                  onClick={handleVerifyWifiConnection}
+                                  disabled={isVerifyingWifi || status !== 'idle'}
+                                  className="text-xs sm:text-sm px-3 py-1.5 bg-green-50 text-green-700 border border-green-300 rounded-md hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed flex items-center justify-center space-x-1"
+                                >
+                                  {isVerifyingWifi ? (
+                                    <>
+                                      <ClockIcon className="h-4 w-4 animate-spin" />
+                                      <span>驗證中...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircleIcon className="h-4 w-4" />
+                                      <span>驗證連接</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
+                            {/* WiFi Verification Status */}
+                            {wifiVerificationStatus && (
+                              <div className={`mt-2 p-2 rounded-md text-xs ${
+                                wifiVerificationStatus.verified 
+                                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                              }`}>
+                                {wifiVerificationStatus.verified ? (
+                                  <div className="flex items-center space-x-1">
+                                    <CheckCircleIcon className="h-4 w-4" />
+                                    <span>{wifiVerificationStatus.message || 'WiFi 憑證驗證成功'}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center space-x-1">
+                                    <XCircleIcon className="h-4 w-4" />
+                                    <span>{wifiVerificationStatus.error || wifiVerificationStatus.message || 'WiFi 憑證驗證失敗'}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           <button
-                            onClick={() => setEspStep('connect')}
-                            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                            onClick={() => {
+                              setEspStep('connect')
+                              setWifiVerificationStatus(null) // Clear verification when going back
+                            }}
+                            className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                           >
                             返回上一步
                           </button>

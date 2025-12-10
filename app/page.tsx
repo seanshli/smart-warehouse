@@ -18,18 +18,70 @@ const Dashboard = dynamic(() => import('@/components/warehouse/Dashboard'), {
 })
 
 // Client-side only component to prevent hydration issues
-// Middleware handles redirect to /auth/signin if not authenticated
-// If this component renders, middleware has already verified authentication
-// Trust middleware - no client-side redirects needed
+// Check authentication immediately and redirect if needed
+// This works reliably in Capacitor WebView where middleware redirects may not
 function ClientHome() {
   const [mounted, setMounted] = useState(false)
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     setMounted(true)
+    
+    // CRITICAL: Check pathname first - only run if we're on home page
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname
+      if (currentPath !== '/' && currentPath !== '') {
+        // Not on home page - don't check, let other pages handle themselves
+        setChecking(false)
+        return
+      }
+    }
+
+    // Check session immediately - redirect if no session
+    const checkAndRedirect = async () => {
+      try {
+        const response = await fetch('/api/auth/session', {
+          cache: 'no-store',
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const sessionData = await response.json()
+          // Double-check we're still on home page
+          if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+            setChecking(false)
+            return
+          }
+          
+          if (!sessionData.user || !sessionData.user.id) {
+            // No session - redirect to signin immediately
+            console.log('[ClientHome] No session, redirecting to signin')
+            window.location.replace('/auth/signin')
+            return
+          }
+          // Has session - allow render
+          setChecking(false)
+        } else {
+          // Session check failed - redirect to signin
+          console.log('[ClientHome] Session check failed, redirecting to signin')
+          if (typeof window !== 'undefined') {
+            window.location.replace('/auth/signin')
+          }
+        }
+      } catch (error) {
+        console.error('[ClientHome] Session check error:', error)
+        // On error, redirect to signin
+        if (typeof window !== 'undefined') {
+          window.location.replace('/auth/signin')
+        }
+      }
+    }
+    
+    checkAndRedirect()
   }, [])
 
-  // Show loading while mounting
-  if (!mounted) {
+  // Show loading while checking
+  if (!mounted || checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -40,7 +92,12 @@ function ClientHome() {
     )
   }
 
-  // Middleware has verified authentication - show dashboard
+  // Check pathname one more time before rendering
+  if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+    return null
+  }
+
+  // User is authenticated - show dashboard
   return (
     <div className="min-h-screen">
       <ErrorBoundary>

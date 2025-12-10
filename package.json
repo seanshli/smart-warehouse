@@ -1,6 +1,6 @@
 {
   "name": "smart-warehouse",
-  "version": "1.0.49",
+  "version": "1.0.50",
   "private": true,
   "scripts": {
     "verify:wifi-tuya": "tsx scripts/verify-wifi-tuya-connection.ts",

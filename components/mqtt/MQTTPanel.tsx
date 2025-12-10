@@ -866,6 +866,13 @@ export default function MQTTPanel() {
               // 刷新設備列表以顯示新添加的設備
               mutate()
               
+              // If Home Assistant, refresh the page to show HA tab in Dashboard
+              if (vendor === 'homeassistant') {
+                setTimeout(() => {
+                  window.location.reload()
+                }, 1000)
+              }
+              
               // 提示信息已在 ProvisioningModal 中顯示
               // 這裡不需要額外的提示
             }}

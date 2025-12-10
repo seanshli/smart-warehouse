@@ -101,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				C6EF2B53830011B272F2430D /* NativeBarcodeScanner.swift */,
+				C3B67A556B042A3B67898E5C /* WiFiPlugin.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -274,6 +275,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18874E26A8F7AD31D46BF91A /* NativeBarcodeScanner.swift in Sources */,
+				B010A269A1CE2A168F70AB0C /* WiFiPlugin.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -418,7 +420,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 68;
+				CURRENT_PROJECT_VERSION = 69;
 				DEVELOPMENT_TEAM = M358UZHL82;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -447,7 +449,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 68;
+				CURRENT_PROJECT_VERSION = 69;
 				DEVELOPMENT_TEAM = M358UZHL82;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

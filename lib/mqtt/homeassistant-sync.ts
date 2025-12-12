@@ -3,16 +3,18 @@
  * Automatically syncs Home Assistant entities to MQTT for cross-platform control
  */
 
-import { getMQTTClient } from '../mqtt-client'
+import { getMQTTClient, type MQTTClient } from '../mqtt-client'
 import { getHomeAssistantStates, type HomeAssistantState } from '../homeassistant'
 import { getHomeAssistantConfig } from '../homeassistant'
 import { prisma } from '../prisma'
 import WebSocket from 'ws'
 
 // Active sync sessions per household
+import type { MQTTClient } from '../mqtt-client'
+
 const activeSyncSessions = new Map<string, {
   websocket: WebSocket | null
-  mqttClient: ReturnType<typeof getMQTTClient>
+  mqttClient: MQTTClient
   householdId: string
   reconnectTimer?: NodeJS.Timeout
 }>()
@@ -144,12 +146,19 @@ export async function syncAllEntitiesToMQTT(householdId: string): Promise<void> 
       return
     }
 
-    // Get MQTT client
-    const mqttClient = getMQTTClient()
+    // Get household-specific MQTT client
+    const { getHouseholdMQTTClient } = await import('../mqtt-client')
+    const mqttClient = getHouseholdMQTTClient(householdId)
 
     // Ensure MQTT client is connected
     if (!mqttClient.isConnected()) {
-      await mqttClient.connect()
+      try {
+        await mqttClient.connect()
+        console.log(`[HA-MQTT Sync] MQTT client connected for household ${householdId}`)
+      } catch (mqttError: any) {
+        console.error(`[HA-MQTT Sync] Failed to connect to MQTT broker:`, mqttError)
+        throw new Error(`MQTT broker connection failed: ${mqttError.message}. Please ensure MQTT_BROKER_URL is configured and broker is running.`)
+      }
     }
 
     // Get all Home Assistant entities
@@ -192,12 +201,19 @@ export async function startStateChangeListener(householdId: string): Promise<voi
       return
     }
 
-    // Get MQTT client
-    const mqttClient = getMQTTClient()
+    // Get household-specific MQTT client
+    const { getHouseholdMQTTClient } = await import('../mqtt-client')
+    const mqttClient = getHouseholdMQTTClient(householdId)
 
     // Ensure MQTT client is connected
     if (!mqttClient.isConnected()) {
-      await mqttClient.connect()
+      try {
+        await mqttClient.connect()
+        console.log(`[HA-MQTT Sync] MQTT client connected for state listener (household ${householdId})`)
+      } catch (mqttError: any) {
+        console.error(`[HA-MQTT Sync] Failed to connect to MQTT broker for state listener:`, mqttError)
+        throw new Error(`MQTT broker connection failed: ${mqttError.message}. Please ensure MQTT_BROKER_URL is configured and broker is running.`)
+      }
     }
 
     // Convert HTTP URL to WebSocket URL

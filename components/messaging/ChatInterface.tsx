@@ -42,6 +42,7 @@ interface ChatInterfaceProps {
   householdName: string
   onClose?: () => void
   onInitiateCall?: (callType: 'audio' | 'video') => void
+  showCallButtons?: boolean // Whether to show call initiation buttons
 }
 
 export default function ChatInterface({
@@ -50,6 +51,7 @@ export default function ChatInterface({
   householdName,
   onClose,
   onInitiateCall,
+  showCallButtons = true,
 }: ChatInterfaceProps) {
   const { t } = useLanguage()
   const { data: session } = useSession()
@@ -60,12 +62,48 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const userId = (session?.user as any)?.id
 
+  // Set up real-time message updates
   useEffect(() => {
+    if (!householdId) return
+
+    const { useRealtime } = require('@/lib/useRealtime')
+    // Note: We can't use hooks conditionally, so we'll use polling + realtime broadcast
     fetchMessages()
-    // Poll for new messages every 5 seconds
-    const interval = setInterval(fetchMessages, 5000)
-    return () => clearInterval(interval)
-  }, [conversationId])
+    
+    // Poll for new messages every 2 seconds (reduced since we have realtime)
+    const interval = setInterval(fetchMessages, 2000)
+    
+    // Also listen for real-time updates via EventSource
+    const eventSource = new EventSource(`/api/realtime?householdId=${householdId}`, { withCredentials: true })
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const update = JSON.parse(event.data)
+        if (update.type === 'message' && update.data?.conversationId === conversationId) {
+          // New message received via realtime
+          const newMessage = update.data.message
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.find(m => m.id === newMessage.id)) {
+              return prev
+            }
+            return [...prev, newMessage]
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing realtime message:', error)
+      }
+    }
+
+    eventSource.onerror = () => {
+      eventSource.close()
+    }
+
+    return () => {
+      clearInterval(interval)
+      eventSource.close()
+    }
+  }, [conversationId, householdId])
 
   useEffect(() => {
     scrollToBottom()
@@ -141,7 +179,7 @@ export default function ChatInterface({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {onInitiateCall && (
+          {showCallButtons && onInitiateCall && (
             <>
               <button
                 onClick={() => onInitiateCall('audio')}

@@ -2,10 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 
 interface RealtimeUpdate {
-  type: 'connected' | 'update' | 'ping' | 'doorbell'
+  type: 'connected' | 'update' | 'ping' | 'doorbell' | 'webrtc-signaling' | 'message' | 'call'
   data?: any
   message?: string
   timestamp: string
+  signalingType?: 'offer' | 'answer' | 'ice-candidate'
+  callId?: string
+  callType?: 'conversation' | 'doorbell' | 'household'
+  fromUserId?: string
+  conversationId?: string
 }
 
 export function useRealtime(householdId: string, onUpdate?: (data: any) => void) {
@@ -38,11 +43,11 @@ export function useRealtime(householdId: string, onUpdate?: (data: any) => void)
           
           if (update.type === 'connected') {
             console.log('Real-time updates connected')
-          } else if (update.type === 'update' || update.type === 'doorbell') {
-            console.log('Real-time update received:', update.data)
+          } else if (update.type === 'update' || update.type === 'doorbell' || update.type === 'message' || update.type === 'call' || update.type === 'webrtc-signaling') {
+            console.log('Real-time update received:', update.type, update.data)
             setLastUpdate(new Date())
             if (onUpdate) {
-              onUpdate(update.data)
+              onUpdate(update)
             }
           } else if (update.type === 'ping') {
             // Keep connection alive

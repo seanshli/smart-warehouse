@@ -113,8 +113,15 @@ export class WiFiScanner {
       // Provide better error messages
       let errorMessage = error.message || 'Unknown error'
       
-      // Check if plugin is not implemented
-      if (errorMessage.includes('not implemented') || errorMessage.includes('plugin is not implemented')) {
+      // Check if plugin is not implemented or not registered
+      if (
+        errorMessage.includes('not implemented') || 
+        errorMessage.includes('plugin is not implemented') ||
+        errorMessage.includes('not registered') ||
+        errorMessage.includes('undefined') ||
+        error?.code === 'UNIMPLEMENTED' ||
+        (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'UNIMPLEMENTED')
+      ) {
         errorMessage = 'WiFi plugin is not properly registered. Please rebuild the native app in Xcode/Android Studio.'
       } else if (errorMessage.includes('permission') || errorMessage.includes('Permission') || errorMessage.includes('denied')) {
         errorMessage = 'WiFi 掃描需要位置權限。請在設備設置中授予位置權限。'

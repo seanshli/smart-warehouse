@@ -278,10 +278,27 @@ export class MQTTClient {
   }
 }
 
-// 創建單例 MQTT 客戶端實例
+// 創建單例 MQTT 客戶端實例（全局連接）
 let mqttClientInstance: MQTTClient | null = null
 
-// 獲取或創建 MQTT 客戶端實例
+// 每個 household 的 MQTT 客戶端實例（用於隔離連接）
+const householdClients = new Map<string, MQTTClient>()
+
+// MQTT 連接統計
+interface MQTTConnectionStats {
+  householdId: string | null // null for global connection
+  clientId: string
+  connected: boolean
+  connectedAt?: Date
+  lastActivity?: Date
+  messagesPublished: number
+  messagesReceived: number
+  subscriptions: string[]
+}
+
+const connectionStats = new Map<string, MQTTConnectionStats>()
+
+// 獲取或創建 MQTT 客戶端實例（全局連接）
 export function getMQTTClient(config?: MQTTConfig): MQTTClient {
   if (!mqttClientInstance) {
     if (!config) {
@@ -307,7 +324,161 @@ export function getMQTTClient(config?: MQTTConfig): MQTTClient {
       console.log(`MQTT: Broker URL: ${config.brokerUrl}`)
     }
     mqttClientInstance = new MQTTClient(config)
+    
+    // Track global connection stats
+    const stats: MQTTConnectionStats = {
+      householdId: null,
+      clientId: config.clientId || 'global',
+      connected: false,
+      messagesPublished: 0,
+      messagesReceived: 0,
+      subscriptions: [],
+    }
+    connectionStats.set('global', stats)
+    
+    // Track connection events
+    mqttClientInstance.onConnect(() => {
+      const globalStats = connectionStats.get('global')
+      if (globalStats) {
+        globalStats.connected = true
+        globalStats.connectedAt = new Date()
+      }
+    })
+    
+    mqttClientInstance.onDisconnect(() => {
+      const globalStats = connectionStats.get('global')
+      if (globalStats) {
+        globalStats.connected = false
+      }
+    })
   }
   return mqttClientInstance
 }
+
+// 獲取或創建特定 household 的 MQTT 客戶端實例
+export function getHouseholdMQTTClient(householdId: string, config?: MQTTConfig): MQTTClient {
+  if (!householdClients.has(householdId)) {
+    if (!config) {
+      const isProduction = process.env.NODE_ENV === 'production'
+      const defaultBrokerUrl = isProduction 
+        ? 'mqtts://localhost:8883'
+        : 'mqtt://localhost:1883'
+      
+      // 為每個 household 創建唯一的 client ID
+      const clientId = process.env.MQTT_CLIENT_ID 
+        ? `${process.env.MQTT_CLIENT_ID}-household-${householdId.substring(0, 8)}`
+        : `smart-warehouse-household-${householdId.substring(0, 8)}-${Date.now()}`
+      
+      config = {
+        brokerUrl: process.env.MQTT_BROKER_URL || defaultBrokerUrl,
+        username: process.env.MQTT_USERNAME,
+        password: process.env.MQTT_PASSWORD,
+        clientId,
+        keepalive: parseInt(process.env.MQTT_KEEPALIVE || '60'),
+        reconnectPeriod: parseInt(process.env.MQTT_RECONNECT_PERIOD || '1000'),
+        connectTimeout: parseInt(process.env.MQTT_CONNECT_TIMEOUT || '30000'),
+      }
+      
+      console.log(`MQTT: Creating household-specific client for ${householdId}`)
+      console.log(`MQTT: Client ID: ${clientId}`)
+    }
+    
+    const client = new MQTTClient(config)
+    householdClients.set(householdId, client)
+    
+    // Track household connection stats
+    const stats: MQTTConnectionStats = {
+      householdId,
+      clientId: config.clientId || `household-${householdId}`,
+      connected: false,
+      messagesPublished: 0,
+      messagesReceived: 0,
+      subscriptions: [],
+    }
+    connectionStats.set(householdId, stats)
+    
+    // Track connection events
+    client.onConnect(() => {
+      const householdStats = connectionStats.get(householdId)
+      if (householdStats) {
+        householdStats.connected = true
+        householdStats.connectedAt = new Date()
+      }
+    })
+    
+    client.onDisconnect(() => {
+      const householdStats = connectionStats.get(householdId)
+      if (householdStats) {
+        householdStats.connected = false
+      }
+    })
+    
+    // Track message publishing
+    const originalPublish = client.publish.bind(client)
+    client.publish = async function(message: MQTTMessage) {
+      const householdStats = connectionStats.get(householdId)
+      if (householdStats) {
+        householdStats.messagesPublished++
+        householdStats.lastActivity = new Date()
+      }
+      return originalPublish(message)
+    }
+    
+    // Track message receiving
+    const originalOnMessage = client.onMessage.bind(client)
+    client.onMessage = function(topic: string, handler: (message: MQTTMessage) => void) {
+      const householdStats = connectionStats.get(householdId)
+      if (householdStats && !householdStats.subscriptions.includes(topic)) {
+        householdStats.subscriptions.push(topic)
+      }
+      return originalOnMessage(topic, handler)
+    }
+  }
+  
+  return householdClients.get(householdId)!
+}
+
+// 獲取所有 MQTT 連接統計
+export function getMQTTConnectionStats(): MQTTConnectionStats[] {
+  // Update connection status for all clients
+  const globalClient = mqttClientInstance
+  if (globalClient) {
+    const globalStats = connectionStats.get('global')
+    if (globalStats) {
+      globalStats.connected = globalClient.isConnected()
+    }
+  }
+  
+  householdClients.forEach((client, householdId) => {
+    const stats = connectionStats.get(householdId)
+    if (stats) {
+      stats.connected = client.isConnected()
+    }
+  })
+  
+  return Array.from(connectionStats.values())
+}
+
+// 獲取特定 household 的 MQTT 連接統計
+export function getHouseholdMQTTStats(householdId: string): MQTTConnectionStats | null {
+  return connectionStats.get(householdId) || null
+}
+
+// 清理 household 的 MQTT 連接（當 household 被刪除時）
+export async function cleanupHouseholdMQTT(householdId: string): Promise<void> {
+  const client = householdClients.get(householdId)
+  if (client) {
+    try {
+      await client.disconnect()
+    } catch (error) {
+      console.error(`Error disconnecting MQTT client for household ${householdId}:`, error)
+    }
+    householdClients.delete(householdId)
+    connectionStats.delete(householdId)
+    console.log(`MQTT: Cleaned up connection for household ${householdId}`)
+  }
+}
+
+// Export types for admin API
+export type { MQTTConnectionStats }
 

@@ -126,6 +126,12 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
       } catch (err: any) {
         if (isActive) {
           console.error('Native barcode scan error:', err)
+          console.error('Error details:', {
+            message: err.message,
+            code: err.code,
+            name: err.name,
+            stack: err.stack,
+          })
           
           // Handle permission errors
           if (err.message?.includes('permission') || err.message?.includes('Permission') || err.message?.includes('denied')) {
@@ -133,8 +139,19 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
           } else if (err.message?.includes('cancel') || err.message?.includes('Cancel') || err.message?.includes('User')) {
             // User cancelled, just close
             onClose()
+          } else if (
+            err.message?.includes('not implemented') || 
+            err.message?.includes('plugin is not implemented') ||
+            err.message?.includes('not registered') ||
+            err.code === 'UNIMPLEMENTED'
+          ) {
+            setError('Barcode scanner plugin is not properly registered. Please rebuild the native app in Xcode.')
+            setIsNative(false) // Fall back to web scanner
+          } else if (err.message?.includes('No camera available') || err.message?.includes('camera')) {
+            setError('No camera available or camera is in use by another app.')
+            setIsNative(false) // Fall back to web scanner
           } else {
-            setError('Failed to start native barcode scanner. Falling back to web scanner.')
+            setError(`Failed to start native barcode scanner: ${err.message || 'Unknown error'}. Falling back to web scanner.`)
             setIsNative(false) // Fall back to web scanner
           }
           setIsScanning(false)

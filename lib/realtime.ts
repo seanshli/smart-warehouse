@@ -52,6 +52,28 @@ export function broadcastToUser(userEmail: string, householdId: string, data: an
   const connectionId = `${userEmail}-${householdId}` // 連接 ID（用戶電子郵件 + 家庭 ID）
   const controller = connections.get(connectionId)
   
+  if (!controller) {
+    // Try to find connection with building context
+    const buildingConnectionId = `${userEmail}-${householdId}-building`
+    const buildingController = connections.get(buildingConnectionId)
+    if (buildingController) {
+      try {
+        const message = JSON.stringify({
+          type: 'update',
+          data,
+          timestamp: new Date().toISOString()
+        })
+        buildingController.enqueue(`data: ${message}\n\n`)
+        return
+      } catch (error) {
+        console.error('Error sending update to building connection:', error)
+        connections.delete(buildingConnectionId)
+        return
+      }
+    }
+    return
+  }
+  
   if (controller) {
     const message = JSON.stringify({
       type: 'update', // 更新類型

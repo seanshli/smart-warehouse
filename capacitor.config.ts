@@ -44,7 +44,10 @@ const config: CapacitorConfig = {
     },
     GoogleMaps: {
       apiKey: process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyAHSc802preQitVIaas3o0k8RbLxteSlQQ'
-    }
+    },
+    // Microphone permissions are handled via WebRTC getUserMedia API
+    // iOS: NSMicrophoneUsageDescription in Info.plist
+    // Android: RECORD_AUDIO in AndroidManifest.xml
   }
 };
 

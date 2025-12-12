@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { broadcastToHousehold } from '@/lib/realtime'
+import { broadcastToHousehold, broadcastToUser } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -179,6 +179,22 @@ export async function POST(
       conversationId,
       message,
     })
+
+    // Also notify conversation creator (front desk/admin) if different from sender
+    if (conversation.createdBy !== userId) {
+      const creator = await prisma.user.findUnique({
+        where: { id: conversation.createdBy },
+        select: { email: true },
+      }).catch(() => null)
+
+      if (creator) {
+        broadcastToUser(creator.email, conversation.householdId, {
+          type: 'message',
+          conversationId,
+          message,
+        })
+      }
+    }
 
     return NextResponse.json({ success: true, message })
   } catch (error: any) {

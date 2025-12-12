@@ -22,6 +22,14 @@ interface SystemStatus {
   totalUsers: number
   totalHouseholds: number
   totalItems: number
+  mqtt?: {
+    brokerUrl: string
+    globalConnected: boolean
+    totalConnections: number
+    activeConnections: number
+    totalHouseholds: number
+    activeHouseholds: number
+  }
 }
 
 export default function AdminSettingsPage() {
@@ -53,7 +61,8 @@ export default function AdminSettingsPage() {
         adminUsers: 2,
         totalUsers: data.users || 0,
         totalHouseholds: data.households || 0,
-        totalItems: data.items || 0
+        totalItems: data.items || 0,
+        mqtt: data.mqtt || undefined
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -179,9 +188,70 @@ export default function AdminSettingsPage() {
                 {getStatusText(status?.authentication || false)}
               </div>
             </div>
+
+            {status?.mqtt && (
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <ServerIcon className="h-6 w-6 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">MQTT Broker (EMQX)</p>
+                    <p className="text-sm text-gray-500">{status.mqtt.brokerUrl}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {getStatusIcon(status.mqtt.globalConnected)}
+                  {getStatusText(status.mqtt.globalConnected)}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* MQTT Connection Summary */}
+      {status?.mqtt && (
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <ServerIcon className="h-5 w-5 inline mr-2" />
+              MQTT Connection Summary
+            </h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{status.mqtt.totalConnections}</div>
+                <div className="text-sm text-gray-500">Total Connections</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{status.mqtt.activeConnections}</div>
+                <div className="text-sm text-gray-500">Active Connections</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{status.mqtt.totalHouseholds}</div>
+                <div className="text-sm text-gray-500">Households Connected</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{status.mqtt.activeHouseholds}</div>
+                <div className="text-sm text-gray-500">Active Households</div>
+              </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Broker:</span> {status.mqtt.brokerUrl}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                <span className="font-medium">Status:</span>{' '}
+                {status.mqtt.globalConnected ? (
+                  <span className="text-green-600">Connected</span>
+                ) : (
+                  <span className="text-red-600">Disconnected</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* System Statistics */}
       <div className="bg-white shadow rounded-lg mb-8">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { broadcastDoorBellEvent } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,29 @@ export async function POST(
         message: message.trim(),
       },
     })
+
+    // Get doorbell info for broadcasting
+    const doorBell = await prisma.doorBell.findUnique({
+      where: { id: doorBellId },
+      include: {
+        building: { select: { id: true } },
+        household: { select: { id: true } },
+      },
+    })
+
+    // Broadcast message via realtime
+    if (doorBell?.building?.id && doorBell?.household?.id) {
+      broadcastDoorBellEvent(doorBellId, doorBell.household.id, doorBell.building.id, {
+        type: 'message',
+        callSessionId: activeSession.id,
+        message: {
+          id: newMessage.id,
+          text: newMessage.message,
+          from: newMessage.from as 'guest' | 'household',
+          timestamp: newMessage.createdAt,
+        },
+      })
+    }
 
     return NextResponse.json({
       success: true,

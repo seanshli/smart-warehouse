@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import { useHousehold } from '@/components/HouseholdProvider'
 import { useLanguage } from '@/components/LanguageProvider'
 import { 
@@ -37,6 +38,7 @@ interface DoorBellPanelProps {
 export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: DoorBellPanelProps = {}) {
   const { household } = useHousehold()
   const { t } = useLanguage()
+  const { data: session } = useSession()
   const [activeCalls, setActiveCalls] = useState<DoorBellCall[]>([])
   const [selectedCall, setSelectedCall] = useState<DoorBellCall | null>(null)
   const [messageInput, setMessageInput] = useState('')
@@ -76,11 +78,18 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
     fetchBuildingId()
   }, [household?.id, household?.buildingId])
 
-  // Set up realtime updates for doorbell events
-  useRealtime(household?.id || '', (data) => {
-    if (data?.type === 'doorbell' || data?.event) {
+  // Set up realtime updates for doorbell events and WebRTC signaling
+  useRealtime(household?.id || '', (update) => {
+    if (update?.type === 'doorbell' || update?.data?.event) {
       // Refresh calls when doorbell event is received
-      console.log('Doorbell event received via realtime:', data)
+      console.log('Doorbell event received via realtime:', update)
+      fetchActiveCalls()
+    } else if (update?.type === 'webrtc-signaling' && update?.callId && webrtcRef.current) {
+      // Handle WebRTC signaling messages
+      console.log('WebRTC signaling received:', update.signalingType)
+      // The WebRTC class will handle this via its signaling check
+    } else if (update?.type === 'message' && update?.data?.callSessionId) {
+      // New chat message in doorbell call
       fetchActiveCalls()
     }
   })
@@ -192,11 +201,18 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
     if (!selectedCall || selectedCall.status !== 'connected') return
     
     try {
-      if (!localVideoRef.current || !remoteVideoRef.current) return
+      if (!localVideoRef.current || !remoteVideoRef.current || !buildingId) return
+
+      const userId = (session?.user as any)?.id || 'household-user'
 
       webrtcRef.current = new DoorBellWebRTC({
         localVideoElement: localVideoRef.current,
         remoteVideoElement: remoteVideoRef.current,
+        callId: selectedCall.id,
+        callType: 'doorbell',
+        userId,
+        targetBuildingId: buildingId,
+        targetHouseholdId: household?.id,
         onLocalStream: (stream) => {
           console.log('Local stream initialized')
         },
@@ -211,6 +227,9 @@ export default function DoorBellPanel({ onActiveCallsChange, onRingingCall }: Do
 
       // Initialize with current camera/mic settings
       await webrtcRef.current.initializeLocalStream(cameraEnabled, micEnabled)
+      
+      // Wait for offer from front desk, then create answer
+      // The signaling system will handle this automatically
     } catch (error) {
       console.error('Error initializing WebRTC:', error)
       toast.error(t('doorBellMessageError'))

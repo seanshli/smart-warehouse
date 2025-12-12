@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { broadcastToHousehold } from '@/lib/realtime'
+import { broadcastToHousehold, broadcastToUser } from '@/lib/realtime'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,8 +113,26 @@ export async function PUT(
       broadcastToHousehold(callSession.conversation.householdId, {
         type: 'call',
         callSessionId: callId,
+        conversationId,
         status: 'answered',
+        callType: callSession.callType,
       })
+      
+      // Also notify conversation creator (front desk/admin)
+      const creator = await prisma.user.findUnique({
+        where: { id: callSession.conversation.createdBy },
+        select: { email: true },
+      }).catch(() => null)
+
+      if (creator) {
+        broadcastToUser(creator.email, callSession.conversation.householdId, {
+          type: 'call',
+          callSessionId: callId,
+          conversationId,
+          status: 'answered',
+          callType: callSession.callType,
+        })
+      }
     } else if (action === 'reject') {
       if (callSession.status !== 'ringing') {
         return NextResponse.json(

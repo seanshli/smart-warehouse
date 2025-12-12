@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useLanguage } from '@/components/LanguageProvider'
 import { 
   HomeIcon, 
@@ -35,6 +36,7 @@ export default function FrontDoorPage() {
   const params = useParams()
   const buildingId = params.id as string
   const { t } = useLanguage()
+  const { data: session } = useSession()
   const [building, setBuilding] = useState<Building | null>(null)
   const [doorBells, setDoorBells] = useState<DoorBell[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,10 +54,17 @@ export default function FrontDoorPage() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const webrtcRef = useRef<DoorBellWebRTC | null>(null)
 
-  // Set up realtime updates for doorbell events
-  useBuildingRealtime(buildingId, (data) => {
-    if (data?.type === 'doorbell' || data?.event) {
+  // Set up realtime updates for doorbell events and WebRTC signaling
+  useBuildingRealtime(buildingId, (update) => {
+    if (update?.type === 'doorbell' || update?.event) {
       // Refresh calls when doorbell event is received
+      fetchActiveCalls()
+    } else if (update?.type === 'webrtc-signaling' && update?.callId && webrtcRef.current) {
+      // Handle WebRTC signaling messages
+      console.log('WebRTC signaling received:', update.signalingType)
+      // The WebRTC class will handle this via its signaling check
+    } else if (update?.type === 'message' && update?.data?.callSessionId) {
+      // New chat message in doorbell call
       fetchActiveCalls()
     }
   })
@@ -266,11 +275,27 @@ export default function FrontDoorPage() {
 
   const initializeWebRTC = async () => {
     try {
-      if (!localVideoRef.current || !remoteVideoRef.current) return
+      if (!localVideoRef.current || !remoteVideoRef.current || !selectedDoorBell) return
+
+      // Get active call session for this doorbell
+      const activeCallResponse = await fetch(`/api/building/${buildingId}/door-bell/active-calls`)
+      const activeCallData = await activeCallResponse.json()
+      const activeCall = activeCallData.calls?.find((c: any) => c.doorBellId === selectedDoorBell.id && c.status === 'connected')
+
+      if (!activeCall) {
+        console.warn('No active call found for WebRTC initialization')
+        return
+      }
+
+      const userId = (session?.user as any)?.id || 'front-desk'
 
       webrtcRef.current = new DoorBellWebRTC({
         localVideoElement: localVideoRef.current,
         remoteVideoElement: remoteVideoRef.current,
+        callId: activeCall.id,
+        callType: 'doorbell',
+        userId,
+        targetBuildingId: buildingId,
         onLocalStream: (stream) => {
           console.log('Local stream initialized')
         },
@@ -285,6 +310,9 @@ export default function FrontDoorPage() {
 
       // Initialize with current camera/mic settings
       await webrtcRef.current.initializeLocalStream(cameraEnabled, micEnabled)
+      
+      // Create offer to start WebRTC connection
+      await webrtcRef.current.createOffer()
     } catch (error) {
       console.error('Error initializing WebRTC:', error)
       toast.error('Failed to initialize camera/microphone')

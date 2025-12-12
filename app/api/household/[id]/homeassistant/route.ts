@@ -192,15 +192,29 @@ export async function POST(
     // Auto-sync Home Assistant entities to MQTT
     try {
       const { initializeHASync } = await import('@/lib/mqtt/homeassistant-sync')
-      // Initialize sync in background (don't wait for it to complete)
-      initializeHASync(householdId).catch((error) => {
-        console.error('[HA Config] Error initializing MQTT sync:', error)
-        // Don't fail the request if sync fails - it can be retried later
+      // Initialize sync - await it to ensure it starts properly, but don't fail the request if it errors
+      initializeHASync(householdId)
+        .then(() => {
+          console.log(`[HA Config] Successfully initialized MQTT sync for household ${householdId}`)
+        })
+        .catch((error) => {
+          console.error('[HA Config] Error initializing MQTT sync:', error)
+          console.error('[HA Config] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            householdId,
+          })
+          // Don't fail the request if sync fails - it can be retried later via manual sync endpoint
+        })
+      console.log(`[HA Config] Started MQTT sync initialization for household ${householdId}`)
+    } catch (syncError: any) {
+      console.error('[HA Config] Failed to import or start MQTT sync:', syncError)
+      console.error('[HA Config] Sync error details:', {
+        message: syncError?.message,
+        stack: syncError?.stack,
+        householdId,
       })
-      console.log(`[HA Config] Started MQTT sync for household ${householdId}`)
-    } catch (syncError) {
-      console.error('[HA Config] Failed to start MQTT sync:', syncError)
-      // Continue anyway - sync can be retried later
+      // Continue anyway - sync can be retried later via /api/mqtt/homeassistant/sync endpoint
     }
 
     return NextResponse.json({

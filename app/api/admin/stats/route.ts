@@ -208,6 +208,31 @@ export async function GET(request: NextRequest) {
       userActivityData[userName] = activity._count.id
     }
 
+    // Get MQTT statistics
+    let mqttStats = null
+    try {
+      const { getMQTTConnectionStats, getMQTTClient } = await import('@/lib/mqtt-client')
+      const connectionStats = getMQTTConnectionStats()
+      const globalClient = getMQTTClient()
+      const globalConnected = globalClient.isConnected()
+      
+      const activeConnections = connectionStats.filter(s => s.connected).length
+      const totalHouseholds = connectionStats.filter(s => s.householdId !== null).length
+      const activeHouseholds = connectionStats.filter(s => s.householdId !== null && s.connected).length
+      
+      mqttStats = {
+        brokerUrl: process.env.MQTT_BROKER_URL || 'not configured',
+        globalConnected,
+        totalConnections: connectionStats.length,
+        activeConnections,
+        totalHouseholds,
+        activeHouseholds,
+      }
+    } catch (mqttError) {
+      console.warn('Failed to get MQTT stats:', mqttError)
+      // Don't fail the request if MQTT stats fail
+    }
+
     const result = { 
       users, 
       households, 
@@ -217,7 +242,8 @@ export async function GET(request: NextRequest) {
       itemsByCategory: categoryData,
       itemsByRoom: roomData,
       usersByHousehold: householdData,
-      activityByUser: userActivityData
+      activityByUser: userActivityData,
+      mqtt: mqttStats
     }
     
     return NextResponse.json(result)

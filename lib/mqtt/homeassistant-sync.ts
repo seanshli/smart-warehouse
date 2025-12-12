@@ -10,7 +10,6 @@ import { prisma } from '../prisma'
 import WebSocket from 'ws'
 
 // Active sync sessions per household
-import type { MQTTClient } from '../mqtt-client'
 
 const activeSyncSessions = new Map<string, {
   websocket: WebSocket | null

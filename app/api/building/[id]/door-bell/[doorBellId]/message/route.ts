@@ -36,8 +36,10 @@ export async function POST(
     const doorBell = await prisma.doorBell.findUnique({
       where: { id: doorBellId },
       include: {
+        building: { select: { id: true } },
         household: {
-          include: {
+          select: {
+            id: true,
             members: {
               where: { userId },
             },
@@ -80,15 +82,7 @@ export async function POST(
     })
 
     // Broadcast message via realtime
-    const doorBell = await prisma.doorBell.findUnique({
-      where: { id: doorBellId },
-      include: {
-        building: { select: { id: true } },
-        household: { select: { id: true } },
-      },
-    })
-
-    if (doorBell?.building?.id && doorBell?.household?.id) {
+    if (doorBell.building?.id && doorBell.household?.id) {
       broadcastDoorBellEvent(doorBellId, doorBell.household.id, doorBell.building.id, {
         type: 'message',
         callSessionId: activeSession.id,

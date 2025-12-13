@@ -167,6 +167,31 @@ export async function POST(
       },
     })
 
+    // Record chat history for admin viewing (text messages only)
+    if (messageType === 'text') {
+      try {
+        // Determine receiver type and ID
+        const receiverType = conversation.createdBy === userId ? 'household' : 'frontdesk'
+        const receiverId = receiverType === 'frontdesk' ? conversation.createdBy : conversation.householdId
+
+        await prisma.chatHistory.create({
+          data: {
+            conversationId,
+            householdId: conversation.householdId,
+            senderId: userId,
+            receiverType,
+            receiverId,
+            content: content.trim(),
+            messageType: 'text',
+            format: 'text',
+          },
+        })
+      } catch (historyError) {
+        // Don't fail message creation if history recording fails
+        console.error('Error recording chat history:', historyError)
+      }
+    }
+
     // Update conversation updatedAt
     await prisma.conversation.update({
       where: { id: conversationId },

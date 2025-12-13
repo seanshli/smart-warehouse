@@ -111,41 +111,51 @@ export async function POST(
       return NextResponse.json({ error: 'Not a member of this household' }, { status: 403 })
     }
 
+    const messageId = `msg-${Date.now()}`
+    const messageData = {
+      id: messageId,
+      content: content.trim(),
+      senderId: userId,
+      senderName: membership.user.name || membership.user.email,
+      createdAt: new Date().toISOString(),
+    }
+
+    // Record chat history for admin viewing (household-to-household)
+    try {
+      await prisma.chatHistory.create({
+        data: {
+          householdId,
+          targetHouseholdId,
+          senderId: userId,
+          receiverType: 'household',
+          receiverId: targetHouseholdId,
+          content: content.trim(),
+          messageType: 'text',
+          format: 'text',
+        },
+      })
+    } catch (historyError) {
+      // Don't fail message creation if history recording fails
+      console.error('Error recording chat history:', historyError)
+    }
+
     // Broadcast message to target household via realtime
     broadcastToHousehold(targetHouseholdId, {
       type: 'message',
       targetHouseholdId,
-      message: {
-        id: `msg-${Date.now()}`,
-        content: content.trim(),
-        senderId: userId,
-        senderName: membership.user.name || membership.user.email,
-        createdAt: new Date().toISOString(),
-      },
+      message: messageData,
     })
 
     // Also broadcast to source household (for confirmation)
     broadcastToHousehold(householdId, {
       type: 'message',
       targetHouseholdId,
-      message: {
-        id: `msg-${Date.now()}`,
-        content: content.trim(),
-        senderId: userId,
-        senderName: membership.user.name || membership.user.email,
-        createdAt: new Date().toISOString(),
-      },
+      message: messageData,
     })
 
     return NextResponse.json({
       success: true,
-      message: {
-        id: `msg-${Date.now()}`,
-        content: content.trim(),
-        senderId: userId,
-        senderName: membership.user.name || membership.user.email,
-        createdAt: new Date().toISOString(),
-      },
+      message: messageData,
     })
   } catch (error: any) {
     console.error('Error sending household chat message:', error)

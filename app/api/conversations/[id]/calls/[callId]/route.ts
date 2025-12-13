@@ -72,6 +72,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Call does not belong to this conversation' }, { status: 400 })
     }
 
+    if (!callSession.conversation) {
+      return NextResponse.json({ error: 'Call session missing conversation data' }, { status: 400 })
+    }
+
     // Verify user has access
     const hasAccess = 
       callSession.conversation.createdBy === userId ||

@@ -45,6 +45,7 @@ model User {
   conversationsCreated Conversation[]       @relation("ConversationCreator")
   messagesSent         Message[]            @relation("MessageSender")
   callsInitiated       CallSession[]        @relation("CallInitiator")
+  chatHistorySent      ChatHistory[]        @relation("ChatHistorySender")
 
   @@map("users")
 }
@@ -263,6 +264,8 @@ model Household {
   scenes               Scene[] // 场景管理
   announcementReads    AnnouncementRead[] // Announcements read by this household
   conversations        Conversation[] // Conversations with frontdesk/admin
+  callSessions         CallSession[] // Call sessions initiated from this household
+  chatHistory          ChatHistory[]         @relation("ChatHistoryHousehold") // Chat history for this household
   homeAssistantConfig  HomeAssistantConfig? // Home Assistant configuration for this household
 
   @@map("households")
@@ -879,11 +882,12 @@ model Conversation {
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  building  Building?     @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  creator   User          @relation("ConversationCreator", fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  messages  Message[]
-  calls     CallSession[]
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  building    Building?     @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  creator     User          @relation("ConversationCreator", fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  messages    Message[]
+  calls       CallSession[]
+  chatHistory ChatHistory[] @relation("ChatHistoryConversation")
 
   @@index([householdId])
   @@index([buildingId])
@@ -915,24 +919,57 @@ model Message {
 
 // CallSession - Video/audio call session
 model CallSession {
-  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  conversationId String    @map("conversation_id")
-  initiatorId    String    @map("initiator_id") // User ID who started the call
-  callType       String    @default("audio") // 'audio' | 'video'
-  status         String    @default("ringing") // 'ringing' | 'answered' | 'ended' | 'missed' | 'rejected'
-  startedAt      DateTime? @map("started_at") @db.Timestamptz(6)
-  answeredAt     DateTime? @map("answered_at") @db.Timestamptz(6)
-  endedAt        DateTime? @map("ended_at") @db.Timestamptz(6)
-  duration       Int?      @default(0) // Duration in seconds
-  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId    String?   @map("conversation_id") // Optional: for frontdesk conversations
+  householdId       String?   @map("household_id") // For household-to-household calls
+  targetHouseholdId String?   @map("target_household_id") // Target household for household-to-household calls
+  initiatorId       String    @map("initiator_id") // User ID who started the call
+  callType          String    @default("audio") // 'audio' | 'video'
+  status            String    @default("ringing") // 'ringing' | 'answered' | 'ended' | 'missed' | 'rejected' | 'auto-rejected'
+  rejectionReason   String?   @map("rejection_reason") // Reason for rejection (e.g., "Call already active")
+  startedAt         DateTime? @map("started_at") @db.Timestamptz(6)
+  answeredAt        DateTime? @map("answered_at") @db.Timestamptz(6)
+  endedAt           DateTime? @map("ended_at") @db.Timestamptz(6)
+  duration          Int?      @default(0) // Duration in seconds
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  initiator    User         @relation("CallInitiator", fields: [initiatorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  household    Household?    @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  initiator    User          @relation("CallInitiator", fields: [initiatorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([conversationId])
+  @@index([householdId])
+  @@index([targetHouseholdId])
   @@index([initiatorId])
   @@index([status, createdAt])
   @@map("call_sessions")
+}
+
+// ChatHistory - Admin viewable chat history (word/text messages only)
+model ChatHistory {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  conversationId    String?   @map("conversation_id") // For frontdesk/household conversations
+  householdId       String?   @map("household_id") // Source household
+  targetHouseholdId String?   @map("target_household_id") // Target household (for household-to-household)
+  senderId          String    @map("sender_id") // User ID who sent the message
+  receiverType      String    @map("receiver_type") // 'household' | 'frontdesk' | 'frontdoor' | 'visitor'
+  receiverId        String?   @map("receiver_id") // Household ID, user ID, or conversation ID
+  content           String // Message content
+  messageType       String    @default("text") @map("message_type") // 'text' | 'image' | 'file' | 'system'
+  format            String    @default("text") // Format: 'text', 'markdown', 'html', etc.
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation Conversation? @relation("ChatHistoryConversation", fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  household    Household?    @relation("ChatHistoryHousehold", fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sender       User          @relation("ChatHistorySender", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([conversationId])
+  @@index([householdId])
+  @@index([targetHouseholdId])
+  @@index([senderId])
+  @@index([receiverType, receiverId])
+  @@index([createdAt])
+  @@map("chat_history")
 }
 
 // Home Assistant Configuration - Per-household HA server configuration

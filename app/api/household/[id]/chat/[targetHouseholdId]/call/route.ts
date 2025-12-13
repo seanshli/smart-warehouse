@@ -68,11 +68,102 @@ export async function POST(
       return NextResponse.json({ error: 'Not a member of this household' }, { status: 403 })
     }
 
+    // Check if there's an active call between these households
+    const activeCall = await prisma.callSession.findFirst({
+      where: {
+        OR: [
+          {
+            householdId,
+            targetHouseholdId,
+            status: {
+              in: ['ringing', 'answered'],
+            },
+          },
+          {
+            householdId: targetHouseholdId,
+            targetHouseholdId: householdId,
+            status: {
+              in: ['ringing', 'answered'],
+            },
+          },
+        ],
+      },
+      include: {
+        initiator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        household: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    })
+
+    if (activeCall) {
+      // Automatically create rejected call session
+      const rejectedCall = await prisma.callSession.create({
+        data: {
+          householdId,
+          targetHouseholdId,
+          initiatorId: userId,
+          callType,
+          status: 'auto-rejected',
+          rejectionReason: `Call already active. Existing call initiated by ${activeCall.initiator.name || activeCall.initiator.email} from ${activeCall.household?.name || 'household'}`,
+          startedAt: new Date(),
+          endedAt: new Date(),
+        },
+        include: {
+          initiator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'There is already an active call between these households',
+          errorCode: 'CALL_OCCUPIED',
+          callSession: rejectedCall,
+          conflict: {
+            activeCallId: activeCall.id,
+            activeCallInitiator: activeCall.initiator.name || activeCall.initiator.email,
+            activeCallType: activeCall.callType,
+            activeCallStartedAt: activeCall.startedAt,
+          },
+        },
+        { status: 409 } // 409 Conflict
+      )
+    }
+
+    // Create call session
+    const callSessionId = callId || `household-${householdId}-${targetHouseholdId}-${Date.now()}`
+    const callSession = await prisma.callSession.create({
+      data: {
+        householdId,
+        targetHouseholdId,
+        initiatorId: userId,
+        callType,
+        status: 'ringing',
+        startedAt: new Date(),
+      },
+    })
+
     // Broadcast call to target household
     broadcastToHousehold(targetHouseholdId, {
       type: 'call',
       callType,
-      callId: callId || `household-${householdId}-${targetHouseholdId}-${Date.now()}`,
+      callId: callSessionId,
+      callSessionId: callSession.id,
       fromHouseholdId: householdId,
       fromHouseholdName: membership.household.name,
       fromUserId: userId,
@@ -82,7 +173,8 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      callId: callId || `household-${householdId}-${targetHouseholdId}-${Date.now()}`,
+      callId: callSessionId,
+      callSession,
     })
   } catch (error: any) {
     console.error('Error initiating household call:', error)

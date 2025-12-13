@@ -48,7 +48,7 @@ export async function POST(
       },
     })
 
-    // Get doorbell info for broadcasting
+    // Get doorbell info for broadcasting and history
     const doorBell = await prisma.doorBell.findUnique({
       where: { id: doorBellId },
       include: {
@@ -56,6 +56,26 @@ export async function POST(
         household: { select: { id: true } },
       },
     })
+
+    // Record chat history for admin viewing (visitor/front door chat)
+    if (doorBell?.household?.id && from === 'guest') {
+      try {
+        await prisma.chatHistory.create({
+          data: {
+            householdId: doorBell.household.id,
+            senderId: 'visitor', // Special ID for visitors
+            receiverType: 'frontdoor',
+            receiverId: doorBellId,
+            content: message.trim(),
+            messageType: 'text',
+            format: 'text',
+          },
+        })
+      } catch (historyError) {
+        // Don't fail message creation if history recording fails
+        console.error('Error recording chat history:', historyError)
+      }
+    }
 
     // Broadcast message via realtime
     if (doorBell?.building?.id && doorBell?.household?.id) {

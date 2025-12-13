@@ -89,6 +89,9 @@ export async function POST(request: NextRequest) {
 
       if (callSession) {
         // Broadcast to household members
+        if (!callSession.conversation) {
+          return NextResponse.json({ error: 'Call session missing conversation data' }, { status: 400 })
+        }
         broadcastToHousehold(callSession.conversation.householdId, {
           type: 'webrtc-signaling',
           callId,
@@ -99,7 +102,7 @@ export async function POST(request: NextRequest) {
         })
 
         // Also send to conversation creator (front desk/admin)
-        if (callSession.conversation.createdBy !== userId) {
+        if (callSession.conversation && callSession.conversation.createdBy !== userId) {
           const creator = await prisma.user.findUnique({
             where: { id: callSession.conversation.createdBy },
             select: { email: true },

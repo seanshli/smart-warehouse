@@ -46,9 +46,21 @@ export default function BuildingMessagesPage() {
         body: JSON.stringify({ callType }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to initiate call')
+        // Handle CALL_OCCUPIED error code
+        if (data.errorCode === 'CALL_OCCUPIED') {
+          const conflictInfo = data.conflict
+          const activeCallInitiator = conflictInfo?.activeCallInitiator || 'another user'
+          alert(
+            t('callOccupied') || 
+            `Call already active. Existing call initiated by ${activeCallInitiator}. Your call has been automatically rejected.`
+          )
+        } else {
+          throw new Error(data.error || 'Failed to initiate call')
+        }
+        return
       }
 
       // TODO: Open video/audio call interface

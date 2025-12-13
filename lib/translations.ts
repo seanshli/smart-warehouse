@@ -197,6 +197,8 @@ export interface Translations {
   adminAdministrator: string
   adminCopyright: string
   adminAccess: string
+  adminFilters: string
+  adminHousehold: string
   adminSecure: string
   
   // Admin Duplicates
@@ -932,6 +934,21 @@ export interface Translations {
   reservationEndTimeMustBeAfterStart: string
   reservationMinimumDuration: string
   reservationTimeOccupied: string
+  adminChatHistory: string
+  adminChatHistoryDescription: string
+  adminReceiverType: string
+  adminStartDate: string
+  adminEndDate: string
+  adminApplyFilters: string
+  adminNoChatHistory: string
+  adminTimestamp: string
+  adminSender: string
+  adminReceiver: string
+  adminMessage: string
+  adminFormat: string
+  adminPrevious: string
+  adminNext: string
+  callOccupied: string
   
   day: string
   status: string
@@ -977,6 +994,21 @@ const en: Translations = {
   reservationEndTimeMustBeAfterStart: 'End time must be after start time',
   reservationMinimumDuration: 'Reservation must be at least 1 hour',
   reservationTimeOccupied: 'Time slot is already occupied by another household. Your reservation has been automatically rejected.',
+  adminChatHistory: 'Chat History',
+  adminChatHistoryDescription: 'View all text chat messages between households, front desk, and front door visitors',
+  adminReceiverType: 'Receiver Type',
+  adminStartDate: 'Start Date',
+  adminEndDate: 'End Date',
+  adminApplyFilters: 'Apply Filters',
+  adminNoChatHistory: 'No chat history found',
+  adminTimestamp: 'Timestamp',
+  adminSender: 'Sender',
+  adminReceiver: 'Receiver',
+  adminMessage: 'Message',
+  adminFormat: 'Format',
+  adminPrevious: 'Previous',
+  adminNext: 'Next',
+  callOccupied: 'Call already active. Existing call initiated by another user. Your call has been automatically rejected.',
   announcements: 'Announcements',
   announcement: 'Announcement',
   createAnnouncement: 'Create Announcement',
@@ -1136,6 +1168,8 @@ const en: Translations = {
   adminSettings: 'Settings',
   adminAdministrator: 'Administrator',
   adminCopyright: 'Smart Warehouse Admin Panel. All rights reserved.',
+  adminFilters: 'Filters',
+  adminHousehold: 'Household',
   adminAccess: 'Admin Access',
   adminSecure: 'Secure',
   
@@ -1911,6 +1945,21 @@ const zhTW: Translations = {
   reservationEndTimeMustBeAfterStart: '結束時間必須在開始時間之後',
   reservationMinimumDuration: '預約時間至少需要 1 小時',
   reservationTimeOccupied: '該時段已被其他住戶預約。您的預約已自動被拒絕。',
+  adminChatHistory: '聊天記錄',
+  adminChatHistoryDescription: '查看所有住戶、前台和訪客之間的文字聊天訊息',
+  adminReceiverType: '接收者類型',
+  adminStartDate: '開始日期',
+  adminEndDate: '結束日期',
+  adminApplyFilters: '套用篩選',
+  adminNoChatHistory: '找不到聊天記錄',
+  adminTimestamp: '時間戳記',
+  adminSender: '發送者',
+  adminReceiver: '接收者',
+  adminMessage: '訊息',
+  adminFormat: '格式',
+  adminPrevious: '上一頁',
+  adminNext: '下一頁',
+  callOccupied: '通話已在使用中。現有通話由其他用戶發起。您的通話已自動被拒絕。',
   
   // Announcements
   announcements: '公告',
@@ -2132,6 +2181,8 @@ const zhTW: Translations = {
   adminSettings: '設定',
   adminAdministrator: '管理員',
   adminCopyright: '智能倉庫管理面板。版權所有。',
+  adminFilters: '篩選',
+  adminHousehold: '住戶',
   adminAccess: '管理員存取',
   adminSecure: '安全',
   
@@ -2858,6 +2909,21 @@ const zh: Translations = {
   reservationEndTimeMustBeAfterStart: '结束时间必须在开始时间之后',
   reservationMinimumDuration: '预约时间至少需要 1 小时',
   reservationTimeOccupied: '该时段已被其他住户预约。您的预约已自动被拒绝。',
+  adminChatHistory: '聊天记录',
+  adminChatHistoryDescription: '查看所有住户、前台和访客之间的文字聊天消息',
+  adminReceiverType: '接收者类型',
+  adminStartDate: '开始日期',
+  adminEndDate: '结束日期',
+  adminApplyFilters: '应用筛选',
+  adminNoChatHistory: '找不到聊天记录',
+  adminTimestamp: '时间戳',
+  adminSender: '发送者',
+  adminReceiver: '接收者',
+  adminMessage: '消息',
+  adminFormat: '格式',
+  adminPrevious: '上一页',
+  adminNext: '下一页',
+  callOccupied: '通话已在使用中。现有通话由其他用户发起。您的通话已自动被拒绝。',
   
   // Announcements
   announcements: '公告',
@@ -3081,6 +3147,8 @@ const zh: Translations = {
   adminSettings: '设置',
   adminAdministrator: '管理员',
   adminCopyright: '智能仓库管理面板。版权所有。',
+  adminFilters: '筛选',
+  adminHousehold: '住户',
   adminAccess: '管理员访问',
   adminSecure: '安全',
   
@@ -3804,6 +3872,21 @@ const ja: Translations = {
   reservationEndTimeMustBeAfterStart: '終了時間は開始時間より後である必要があります',
   reservationMinimumDuration: '予約は最低1時間必要です',
   reservationTimeOccupied: 'この時間帯は既に他の世帯によって予約されています。ご予約は自動的に拒否されました。',
+  adminChatHistory: 'チャット履歴',
+  adminChatHistoryDescription: '世帯、フロントデスク、訪問者間のすべてのテキストチャットメッセージを表示',
+  adminReceiverType: '受信者タイプ',
+  adminStartDate: '開始日',
+  adminEndDate: '終了日',
+  adminApplyFilters: 'フィルターを適用',
+  adminNoChatHistory: 'チャット履歴が見つかりません',
+  adminTimestamp: 'タイムスタンプ',
+  adminSender: '送信者',
+  adminReceiver: '受信者',
+  adminMessage: 'メッセージ',
+  adminFormat: 'フォーマット',
+  adminPrevious: '前へ',
+  adminNext: '次へ',
+  callOccupied: '通話は既にアクティブです。既存の通話は別のユーザーによって開始されました。ご通話は自動的に拒否されました。',
   
   // Announcements
   announcements: 'お知らせ',
@@ -4026,6 +4109,8 @@ const ja: Translations = {
   adminSettings: '設定',
   adminAdministrator: '管理者',
   adminCopyright: 'スマート倉庫管理パネル。全著作権所有。',
+  adminFilters: 'フィルター',
+  adminHousehold: '世帯',
   adminAccess: '管理者アクセス',
   adminSecure: 'セキュア',
   

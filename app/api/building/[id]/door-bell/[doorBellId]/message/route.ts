@@ -81,6 +81,26 @@ export async function POST(
       },
     })
 
+    // Record chat history for admin viewing (front door/visitor chat)
+    if (doorBell.household?.id) {
+      try {
+        await prisma.chatHistory.create({
+          data: {
+            householdId: doorBell.household.id,
+            senderId: userId,
+            receiverType: 'frontdoor',
+            receiverId: doorBellId,
+            content: message.trim(),
+            messageType: 'text',
+            format: 'text',
+          },
+        })
+      } catch (historyError) {
+        // Don't fail message creation if history recording fails
+        console.error('Error recording chat history:', historyError)
+      }
+    }
+
     // Broadcast message via realtime
     if (doorBell.building?.id && doorBell.household?.id) {
       broadcastDoorBellEvent(doorBellId, doorBell.household.id, doorBell.building.id, {

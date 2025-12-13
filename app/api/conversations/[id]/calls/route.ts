@@ -74,12 +74,55 @@ export async function POST(
           in: ['ringing', 'answered'],
         },
       },
+      include: {
+        initiator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     })
 
     if (activeCall) {
+      // Automatically create rejected call session
+      const rejectionReason = `Call already active. Existing call initiated by ${activeCall.initiator.name || activeCall.initiator.email}`
+      const rejectedCall = await prisma.callSession.create({
+        data: {
+          conversationId,
+          initiatorId: userId,
+          callType,
+          status: 'auto-rejected',
+          rejectionReason,
+          startedAt: new Date(),
+          endedAt: new Date(),
+        },
+        include: {
+          initiator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      })
+
       return NextResponse.json(
-        { error: 'There is already an active call in this conversation' },
-        { status: 400 }
+        {
+          success: false,
+          error: 'There is already an active call in this conversation',
+          errorCode: 'CALL_OCCUPIED',
+          callSession: rejectedCall,
+          conflict: {
+            activeCallId: activeCall.id,
+            activeCallInitiator: activeCall.initiator.name || activeCall.initiator.email,
+            activeCallType: activeCall.callType,
+            activeCallStartedAt: activeCall.startedAt,
+          },
+        },
+        { status: 409 } // 409 Conflict
       )
     }
 

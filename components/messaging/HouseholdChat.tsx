@@ -197,12 +197,27 @@ export default function HouseholdChat({
         }),
       })
 
+      const data = await response.json()
+      
       if (!response.ok) {
-        throw new Error('Failed to initiate call')
+        // Handle CALL_OCCUPIED error code
+        if (data.errorCode === 'CALL_OCCUPIED') {
+          const conflictInfo = data.conflict
+          const activeCallInitiator = conflictInfo?.activeCallInitiator || 'another user'
+          toast.error(
+            t('callOccupied') || 
+            `Call already active. Existing call initiated by ${activeCallInitiator}. Your call has been automatically rejected.`
+          )
+        } else {
+          throw new Error(data.error || 'Failed to initiate call')
+        }
+        setInCall(false)
+        setCallType(null)
+        return
       }
     } catch (error) {
       console.error('Error initiating call:', error)
-      toast.error('Failed to start call')
+      toast.error(error instanceof Error ? error.message : 'Failed to start call')
       setInCall(false)
       setCallType(null)
     }

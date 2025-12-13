@@ -10,6 +10,8 @@ import { useSession } from 'next-auth/react'
 import { useHousehold } from '@/components/HouseholdProvider'
 import { useLanguage } from '@/components/LanguageProvider'
 import { PaperAirplaneIcon, PhoneIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Capacitor } from '@capacitor/core'
+import { NativeChat } from '@/lib/native-chat'
 import toast from 'react-hot-toast'
 import { DoorBellWebRTC } from '@/lib/webrtc'
 import { useRealtime } from '@/lib/useRealtime'
@@ -46,6 +48,37 @@ export default function HouseholdChat({
   const webrtcRef = useRef<DoorBellWebRTC | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const userId = (session?.user as any)?.id
+  const [useNativeChat, setUseNativeChat] = useState(false)
+
+  // Check if native chat is available and use it on mobile
+  useEffect(() => {
+    const checkNativeChat = async () => {
+      if (Capacitor.isNativePlatform() && household?.id) {
+        try {
+          // Try to use native chat on iOS/Android
+          await NativeChat.showChat({
+            conversationId: `household-${household.id}-${targetHouseholdId}`,
+            targetHouseholdId,
+            targetHouseholdName,
+          })
+          setUseNativeChat(true)
+          // Close web UI since native is showing
+          if (onClose) {
+            onClose()
+          }
+        } catch (error) {
+          console.log('Native chat not available, using web UI:', error)
+          setUseNativeChat(false)
+        }
+      }
+    }
+    checkNativeChat()
+  }, [household?.id, targetHouseholdId, targetHouseholdName, onClose])
+
+  // Don't render web UI if native chat is being used
+  if (useNativeChat) {
+    return null
+  }
 
   // Set up real-time message updates
   useRealtime(household?.id || '', (update) => {
@@ -301,7 +334,7 @@ export default function HouseholdChat({
       {/* Messages (when not in call or as overlay) */}
       {!inCall && (
         <>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400">
                 {t('noMessages') || 'No messages yet. Start the conversation!'}
@@ -341,8 +374,8 @@ export default function HouseholdChat({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          {/* Input - Always visible when not in call */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 z-10 bg-white dark:bg-gray-800">
             <div className="flex items-center space-x-2">
               <textarea
                 value={messageText}
@@ -356,7 +389,7 @@ export default function HouseholdChat({
               <button
                 onClick={sendMessage}
                 disabled={!messageText.trim() || sending}
-                className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex-shrink-0"
               >
                 <PaperAirplaneIcon className="h-5 w-5" />
               </button>

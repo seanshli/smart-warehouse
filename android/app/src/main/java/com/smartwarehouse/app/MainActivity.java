@@ -7,6 +7,7 @@ import com.smartwarehouse.app.plugins.TuyaProvisioningPlugin;
 import com.smartwarehouse.app.plugins.MideaProvisioningPlugin;
 import com.smartwarehouse.app.plugins.NativeBarcodeScannerPlugin;
 import com.smartwarehouse.app.plugins.WiFiPlugin;
+import com.smartwarehouse.app.plugins.NativeChatPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -15,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(MideaProvisioningPlugin.class);
         registerPlugin(NativeBarcodeScannerPlugin.class);
         registerPlugin(WiFiPlugin.class);
+        registerPlugin(NativeChatPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

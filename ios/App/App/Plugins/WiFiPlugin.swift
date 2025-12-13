@@ -89,15 +89,20 @@ public class WiFiPlugin: CAPPlugin {
             var networks: [[String: Any]] = []
             
             if let ssid = self.getCurrentSSIDLegacy() {
+                // Remove quotes from SSID if present (iOS sometimes wraps SSID in quotes)
+                let cleanSSID = ssid.replacingOccurrences(of: "\"", with: "")
                 networks.append([
-                    "ssid": ssid,
-                    "isConnected": true
+                    "ssid": cleanSSID,
+                    "isConnected": true,
+                    "signalStrength": -50, // Estimated value since we can't get actual signal
+                    "security": "unknown" // Can't determine security type on iOS
                 ])
             }
             
             // For iOS 14+, we can't scan networks directly
             // The app would need to use NEHotspotConfiguration with special entitlements
             // This is a limitation of iOS security model
+            // Return empty array with a note that iOS only returns currently connected network
             
             call.resolve([
                 "networks": networks

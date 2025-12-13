@@ -122,7 +122,15 @@ export class WiFiScanner {
         error?.code === 'UNIMPLEMENTED' ||
         (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === 'UNIMPLEMENTED')
       ) {
-        errorMessage = 'WiFi plugin is not properly registered. Please rebuild the native app in Xcode/Android Studio.'
+        // Check platform to provide specific error message
+        const { Capacitor } = await import('@capacitor/core')
+        const platform = Capacitor.getPlatform()
+        
+        if (platform === 'ios') {
+          errorMessage = 'iOS 系統限制：無法掃描 WiFi 網絡列表。iOS 只能獲取當前連接的 WiFi 網絡。請手動輸入 WiFi 名稱或使用已保存的網絡。'
+        } else {
+          errorMessage = 'WiFi plugin is not properly registered. Please rebuild the native app in Xcode/Android Studio.'
+        }
       } else if (errorMessage.includes('permission') || errorMessage.includes('Permission') || errorMessage.includes('denied')) {
         errorMessage = 'WiFi 掃描需要位置權限。請在設備設置中授予位置權限。'
       }
@@ -196,6 +204,14 @@ export class WiFiScanner {
           // 如果是权限错误，直接抛出，不要回退到服务器
           if (nativeError.message?.includes('permission') || nativeError.message?.includes('denied') || nativeError.message?.includes('權限')) {
             throw new Error('WiFi 掃描需要位置權限。請在設備設置中授予位置權限。')
+          }
+          // Check if it's an iOS limitation
+          if (platform === 'ios' && (
+            nativeError.message?.includes('not implemented') ||
+            nativeError.message?.includes('plugin is not implemented') ||
+            nativeError.message?.includes('not registered')
+          )) {
+            throw new Error('iOS 系統限制：無法掃描 WiFi 網絡列表。iOS 只能獲取當前連接的 WiFi 網絡。請手動輸入 WiFi 名稱或使用已保存的網絡。')
           }
           // On mobile, don't fallback to server - throw error
           throw new Error(`原生 WiFi 掃描失敗: ${nativeError.message || '未知錯誤'}`)

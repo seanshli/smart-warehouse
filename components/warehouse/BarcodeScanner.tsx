@@ -145,7 +145,14 @@ export default function BarcodeScanner({ onScan, onClose, onImageAnalysis, userL
             err.message?.includes('not registered') ||
             err.code === 'UNIMPLEMENTED'
           ) {
-            setError('Barcode scanner plugin is not properly registered. Please rebuild the native app in Xcode.')
+            const { Capacitor } = await import('@capacitor/core')
+            const platform = Capacitor.getPlatform()
+            
+            if (platform === 'ios') {
+              setError('條碼掃描插件未正確註冊。請在 Xcode 中重新構建應用程序，確保 NativeBarcodeScanner.swift 已添加到項目中。')
+            } else {
+              setError('Barcode scanner plugin is not properly registered. Please rebuild the native app.')
+            }
             setIsNative(false) // Fall back to web scanner
           } else if (err.message?.includes('No camera available') || err.message?.includes('camera')) {
             setError('No camera available or camera is in use by another app.')

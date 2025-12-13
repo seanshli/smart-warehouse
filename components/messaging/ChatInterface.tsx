@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { PaperAirplaneIcon, PhoneIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from '@/components/LanguageProvider'
+import { Capacitor } from '@capacitor/core'
+import { NativeChat } from '@/lib/native-chat'
 import toast from 'react-hot-toast'
 
 interface Message {
@@ -61,6 +63,37 @@ export default function ChatInterface({
   const [messageText, setMessageText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const userId = (session?.user as any)?.id
+  const [useNativeChat, setUseNativeChat] = useState(false)
+
+  // Check if native chat is available and use it on mobile
+  useEffect(() => {
+    const checkNativeChat = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          // Try to use native chat on iOS/Android
+          await NativeChat.showChat({
+            conversationId,
+            targetHouseholdId: householdId,
+            targetHouseholdName: householdName,
+          })
+          setUseNativeChat(true)
+          // Close web UI since native is showing
+          if (onClose) {
+            onClose()
+          }
+        } catch (error) {
+          console.log('Native chat not available, using web UI:', error)
+          setUseNativeChat(false)
+        }
+      }
+    }
+    checkNativeChat()
+  }, [conversationId, householdId, householdName, onClose])
+
+  // Don't render web UI if native chat is being used
+  if (useNativeChat) {
+    return null
+  }
 
   // Set up real-time message updates
   useEffect(() => {
@@ -253,8 +286,8 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      {/* Input - Always visible */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 z-10 bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-2">
           <textarea
             value={messageText}
@@ -268,7 +301,7 @@ export default function ChatInterface({
           <button
             onClick={sendMessage}
             disabled={!messageText.trim() || sending}
-            className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex-shrink-0"
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>

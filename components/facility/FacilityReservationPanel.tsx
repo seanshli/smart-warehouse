@@ -186,7 +186,28 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
         fetchReservations()
         alert(t('reservationCreated') || 'Reservation request created successfully')
       } else {
-        alert(data.error || 'Failed to create reservation')
+        // Handle specific error codes
+        if (data.errorCode === 'TIME_OCCUPIED') {
+          const conflictInfo = data.conflict
+          const conflictTime = conflictInfo?.startTime 
+            ? new Date(conflictInfo.startTime).toLocaleString()
+            : 'unknown time'
+          const conflictHousehold = conflictInfo?.household || 'another household'
+          
+          alert(
+            t('reservationTimeOccupied') || 
+            `Time slot is already occupied by ${conflictHousehold} at ${conflictTime}. Your reservation has been automatically rejected.`
+          )
+          
+          // Refresh reservations to show the rejected one
+          fetchReservations()
+        } else if (data.errorCode === 'CAPACITY_EXCEEDED') {
+          alert(data.error || 'Facility capacity exceeded. Your reservation has been automatically rejected.')
+          // Refresh reservations to show the rejected one
+          fetchReservations()
+        } else {
+          alert(data.error || 'Failed to create reservation')
+        }
       }
     } catch (error) {
       console.error('Error creating reservation:', error)

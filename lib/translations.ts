@@ -931,6 +931,7 @@ export interface Translations {
   reservationStartTimeMustBeFuture: string
   reservationEndTimeMustBeAfterStart: string
   reservationMinimumDuration: string
+  reservationTimeOccupied: string
   
   day: string
   status: string
@@ -975,6 +976,7 @@ const en: Translations = {
   reservationStartTimeMustBeFuture: 'Start time must be in the future',
   reservationEndTimeMustBeAfterStart: 'End time must be after start time',
   reservationMinimumDuration: 'Reservation must be at least 1 hour',
+  reservationTimeOccupied: 'Time slot is already occupied by another household. Your reservation has been automatically rejected.',
   announcements: 'Announcements',
   announcement: 'Announcement',
   createAnnouncement: 'Create Announcement',
@@ -1908,6 +1910,7 @@ const zhTW: Translations = {
   reservationStartTimeMustBeFuture: '開始時間必須在未來',
   reservationEndTimeMustBeAfterStart: '結束時間必須在開始時間之後',
   reservationMinimumDuration: '預約時間至少需要 1 小時',
+  reservationTimeOccupied: '該時段已被其他住戶預約。您的預約已自動被拒絕。',
   
   // Announcements
   announcements: '公告',
@@ -2854,6 +2857,7 @@ const zh: Translations = {
   reservationStartTimeMustBeFuture: '开始时间必须在未来',
   reservationEndTimeMustBeAfterStart: '结束时间必须在开始时间之后',
   reservationMinimumDuration: '预约时间至少需要 1 小时',
+  reservationTimeOccupied: '该时段已被其他住户预约。您的预约已自动被拒绝。',
   
   // Announcements
   announcements: '公告',
@@ -3799,6 +3803,7 @@ const ja: Translations = {
   reservationStartTimeMustBeFuture: '開始時間は未来である必要があります',
   reservationEndTimeMustBeAfterStart: '終了時間は開始時間より後である必要があります',
   reservationMinimumDuration: '予約は最低1時間必要です',
+  reservationTimeOccupied: 'この時間帯は既に他の世帯によって予約されています。ご予約は自動的に拒否されました。',
   
   // Announcements
   announcements: 'お知らせ',

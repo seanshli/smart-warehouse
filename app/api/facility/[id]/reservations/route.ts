@@ -375,6 +375,37 @@ export async function POST(
       const totalPeople = totalPeopleInOverlapping + newReservationPeople
       
       if (totalPeople > facility.capacity) {
+        // Automatically create reservation with rejected status
+        const rejectionReason = `Facility capacity exceeded. Current reservations: ${totalPeopleInOverlapping}/${facility.capacity}, adding ${newReservationPeople} would exceed capacity.`
+        const rejectedReservation = await prisma.facilityReservation.create({
+          data: {
+            facilityId,
+            householdId,
+            requestedBy: userId,
+            startTime: start,
+            endTime: end,
+            purpose: purpose || null,
+            notes: notes ? `${notes}\n[Auto-rejected] ${rejectionReason}` : `[Auto-rejected] ${rejectionReason}`,
+            numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
+            status: 'rejected',
+          },
+          include: {
+            facility: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            household: {
+              select: {
+                id: true,
+                name: true,
+                apartmentNo: true,
+              },
+            },
+          },
+        })
+
         // Find next available slot
         const lastOverlapping = overlappingReservations.sort((a, b) => 
           new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
@@ -397,7 +428,10 @@ export async function POST(
 
         return NextResponse.json(
           { 
-            error: `Facility capacity exceeded. Current reservations: ${totalPeopleInOverlapping}/${facility.capacity}, adding ${newReservationPeople} would exceed capacity.`,
+            success: false,
+            error: rejectionReason,
+            errorCode: 'CAPACITY_EXCEEDED',
+            reservation: rejectedReservation,
             conflict: {
               totalPeople: totalPeopleInOverlapping,
               capacity: facility.capacity,
@@ -408,7 +442,7 @@ export async function POST(
               endTime: nextAvailable.endTime,
             } : null,
           },
-          { status: 400 }
+          { status: 409 } // 409 Conflict status code
         )
       }
       // If capacity allows, proceed with creating the reservation
@@ -417,6 +451,37 @@ export async function POST(
       if (overlappingReservations.length > 0) {
         const firstOverlapping = overlappingReservations[0]
         
+        // Automatically create reservation with rejected status
+        const rejectionReason = `Time slot occupied by ${firstOverlapping.household.name || firstOverlapping.household.apartmentNo}`
+        const rejectedReservation = await prisma.facilityReservation.create({
+          data: {
+            facilityId,
+            householdId,
+            requestedBy: userId,
+            startTime: start,
+            endTime: end,
+            purpose: purpose || null,
+            notes: notes ? `${notes}\n[Auto-rejected] ${rejectionReason}` : `[Auto-rejected] ${rejectionReason}`,
+            numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
+            status: 'rejected',
+          },
+          include: {
+            facility: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            household: {
+              select: {
+                id: true,
+                name: true,
+                apartmentNo: true,
+              },
+            },
+          },
+        })
+
         // Find next available slot
         const lastOverlapping = overlappingReservations.sort((a, b) => 
           new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
@@ -439,7 +504,10 @@ export async function POST(
 
         return NextResponse.json(
           { 
-            error: 'Time slot is already reserved',
+            success: false,
+            error: 'Time slot is already occupied',
+            errorCode: 'TIME_OCCUPIED',
+            reservation: rejectedReservation,
             conflict: {
               household: firstOverlapping.household.name || firstOverlapping.household.apartmentNo,
               startTime: firstOverlapping.startTime,
@@ -450,7 +518,7 @@ export async function POST(
               endTime: nextAvailable.endTime,
             } : null,
           },
-          { status: 400 }
+          { status: 409 } // 409 Conflict status code
         )
       }
     }

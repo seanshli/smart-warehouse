@@ -218,56 +218,92 @@ export async function POST(
       const [openHour, openMinute] = operatingHours.openTime.split(':').map(Number)
       const [closeHour, closeMinute] = operatingHours.closeTime.split(':').map(Number)
       
-      // Extract time from the ISO string directly to avoid timezone issues
-      // Parse the time from the original string to get the intended local time
-      const startTimeStr = typeof startTime === 'string' ? startTime : startTime.toISOString()
-      const endTimeStr = typeof endTime === 'string' ? endTime : endTime.toISOString()
+      // CRITICAL FIX: Extract the LOCAL time that was intended
+      // The ISO string is in UTC, but we need the local time that the user selected
+      // Parse the ISO string to extract the date and time components, then reconstruct in local timezone
       
-      // Extract hour and minute from ISO string (format: YYYY-MM-DDTHH:MM:SS or YYYY-MM-DDTHH:MM:SS.sssZ)
-      const startMatch = startTimeStr.match(/T(\d{2}):(\d{2})/)
-      const endMatch = endTimeStr.match(/T(\d{2}):(\d{2})/)
+      // Method: Parse the ISO string and extract date/time, then create a new date in server's local timezone
+      // But since operating hours are stored as local time strings (HH:MM), we need to compare local times
       
-      // If we can't parse from string, fall back to getHours/getMinutes (local time)
+      // Extract date components from ISO string
+      const startISO = start.toISOString()
+      const endISO = end.toISOString()
+      
+      // Parse ISO string: YYYY-MM-DDTHH:MM:SS.sssZ
+      const startMatch = startISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+      const endMatch = endISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+      
       let reservationStartHour: number
       let reservationStartMinute: number
       let reservationEndHour: number
       let reservationEndMinute: number
       
       if (startMatch && endMatch) {
-        // Parse from ISO string - this gives us the time as entered
-        reservationStartHour = parseInt(startMatch[1], 10)
-        reservationStartMinute = parseInt(startMatch[2], 10)
-        reservationEndHour = parseInt(endMatch[1], 10)
-        reservationEndMinute = parseInt(endMatch[2], 10)
+        // Create dates in UTC, then convert to local time for comparison
+        // The ISO string represents UTC time, but we need to know what local time it represents
+        // Since the client sent a local time that was converted to UTC, we need to reverse that
+        
+        // Get timezone offset (in minutes, negative for timezones ahead of UTC)
+        const timezoneOffset = start.getTimezoneOffset()
+        
+        // Extract UTC time from ISO
+        const startUTCHour = parseInt(startMatch[4], 10)
+        const startUTCMinute = parseInt(startMatch[5], 10)
+        const endUTCHour = parseInt(endMatch[4], 10)
+        const endUTCMinute = parseInt(endMatch[5], 10)
+        
+        // Convert UTC to local time (add offset back)
+        // Offset is negative for ahead-of-UTC (e.g., UTC+8 = -480 minutes)
+        // So: localTime = utcTime - offset (in minutes)
+        const startTotalMinutes = startUTCHour * 60 + startUTCMinute - timezoneOffset
+        const endTotalMinutes = endUTCHour * 60 + endUTCMinute - timezoneOffset
+        
+        reservationStartHour = Math.floor(startTotalMinutes / 60) % 24
+        reservationStartMinute = startTotalMinutes % 60
+        if (reservationStartMinute < 0) {
+          reservationStartMinute += 60
+          reservationStartHour = (reservationStartHour - 1 + 24) % 24
+        }
+        
+        reservationEndHour = Math.floor(endTotalMinutes / 60) % 24
+        reservationEndMinute = endTotalMinutes % 60
+        if (reservationEndMinute < 0) {
+          reservationEndMinute += 60
+          reservationEndHour = (reservationEndHour - 1 + 24) % 24
+        }
       } else {
-        // Fallback to local time extraction
+        // Fallback: use local time methods (these should work if server is in same timezone as client)
         reservationStartHour = start.getHours()
         reservationStartMinute = start.getMinutes()
         reservationEndHour = end.getHours()
         reservationEndMinute = end.getMinutes()
       }
       
+      const finalStartHour = reservationStartHour
+      const finalStartMinute = reservationStartMinute
+      const finalEndHour = reservationEndHour
+      const finalEndMinute = reservationEndMinute
+      
       // Convert to minutes for easier comparison
       const openTimeMinutes = openHour * 60 + openMinute
       const closeTimeMinutes = closeHour * 60 + closeMinute
-      const reservationStartMinutes = reservationStartHour * 60 + reservationStartMinute
-      const reservationEndMinutes = reservationEndHour * 60 + reservationEndMinute
+      const reservationStartMinutes = finalStartHour * 60 + finalStartMinute
+      const reservationEndMinutes = finalEndHour * 60 + finalEndMinute
       
       // Debug logging
       console.log('[Reservation Operating Hours Check]', {
         operatingHours: `${operatingHours.openTime} - ${operatingHours.closeTime}`,
         openTimeMinutes,
         closeTimeMinutes,
-        reservationStart: `${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}`,
-        reservationEnd: `${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}`,
+        reservationStart: `${String(finalStartHour).padStart(2, '0')}:${String(finalStartMinute).padStart(2, '0')}`,
+        reservationEnd: `${String(finalEndHour).padStart(2, '0')}:${String(finalEndMinute).padStart(2, '0')}`,
         reservationStartMinutes,
         reservationEndMinutes,
-        startTimeStr,
-        endTimeStr,
+        timezoneOffset,
         startISO: start.toISOString(),
         endISO: end.toISOString(),
-        startLocal: start.toLocaleString(),
-        endLocal: end.toLocaleString(),
+        startLocal: start.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }),
+        endLocal: end.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }),
       })
       
       // Check if reservation is within operating hours
@@ -275,15 +311,15 @@ export async function POST(
       if (reservationStartMinutes < openTimeMinutes || reservationEndMinutes > closeTimeMinutes) {
         console.log('[Reservation Operating Hours Check] FAILED', {
           reason: reservationStartMinutes < openTimeMinutes 
-            ? `Start time ${reservationStartMinutes} (${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}) is before open time ${openTimeMinutes} (${operatingHours.openTime})`
-            : `End time ${reservationEndMinutes} (${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}) is after close time ${closeTimeMinutes} (${operatingHours.closeTime})`,
+            ? `Start time ${reservationStartMinutes} (${String(finalStartHour).padStart(2, '0')}:${String(finalStartMinute).padStart(2, '0')}) is before open time ${openTimeMinutes} (${operatingHours.openTime})`
+            : `End time ${reservationEndMinutes} (${String(finalEndHour).padStart(2, '0')}:${String(finalEndMinute).padStart(2, '0')}) is after close time ${closeTimeMinutes} (${operatingHours.closeTime})`,
         })
         return NextResponse.json(
           { 
             error: `Reservation must be within operating hours (${operatingHours.openTime} - ${operatingHours.closeTime})`,
             details: {
-              requestedStart: `${String(reservationStartHour).padStart(2, '0')}:${String(reservationStartMinute).padStart(2, '0')}`,
-              requestedEnd: `${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}`,
+              requestedStart: `${String(finalStartHour).padStart(2, '0')}:${String(finalStartMinute).padStart(2, '0')}`,
+              requestedEnd: `${String(finalEndHour).padStart(2, '0')}:${String(finalEndMinute).padStart(2, '0')}`,
               operatingHours: `${operatingHours.openTime} - ${operatingHours.closeTime}`,
             },
             suggestedTimes: {

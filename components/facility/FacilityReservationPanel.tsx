@@ -51,9 +51,30 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
   const [loading, setLoading] = useState(true)
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
   const [showReservationModal, setShowReservationModal] = useState(false)
+  // Calculate default times: next hour start, 1 hour duration
+  const getDefaultTimes = () => {
+    const now = new Date()
+    const nextHour = new Date(now)
+    nextHour.setHours(now.getHours() + 1, 0, 0, 0) // Next hour, 0 minutes
+    
+    const endHour = new Date(nextHour)
+    endHour.setHours(nextHour.getHours() + 1) // 1 hour later
+    
+    // Format as HH:MM (24-hour format)
+    const formatTime = (date: Date) => {
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+    }
+    
+    return {
+      start: formatTime(nextHour),
+      end: formatTime(endHour),
+    }
+  }
+
+  const defaultTimes = getDefaultTimes()
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-  const [startTime, setStartTime] = useState('09:00')
-  const [endTime, setEndTime] = useState('10:00')
+  const [startTime, setStartTime] = useState(defaultTimes.start)
+  const [endTime, setEndTime] = useState(defaultTimes.end)
   const [purpose, setPurpose] = useState('')
   const [notes, setNotes] = useState('')
   const [numberOfPeople, setNumberOfPeople] = useState('')
@@ -63,6 +84,15 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
     fetchFacilities()
     fetchReservations()
   }, [householdId])
+
+  // Reset times when modal opens or date changes
+  useEffect(() => {
+    if (showReservationModal) {
+      const defaults = getDefaultTimes()
+      setStartTime(defaults.start)
+      setEndTime(defaults.end)
+    }
+  }, [showReservationModal, selectedDate])
 
   const fetchFacilities = async () => {
     try {
@@ -106,8 +136,32 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
 
     setSubmitting(true)
     try {
-      const startDateTime = new Date(`${selectedDate}T${startTime}`)
-      const endDateTime = new Date(`${selectedDate}T${endTime}`)
+      // Create dates in local timezone, preserving the intended time
+      // Use the date and time strings directly to avoid timezone conversion issues
+      const startDateTime = new Date(`${selectedDate}T${startTime}:00`)
+      const endDateTime = new Date(`${selectedDate}T${endTime}:00`)
+      
+      // Validate times are in the future
+      if (startDateTime < new Date()) {
+        alert(t('reservationStartTimeMustBeFuture') || 'Start time must be in the future')
+        setSubmitting(false)
+        return
+      }
+      
+      // Validate end time is after start time
+      if (endDateTime <= startDateTime) {
+        alert(t('reservationEndTimeMustBeAfterStart') || 'End time must be after start time')
+        setSubmitting(false)
+        return
+      }
+      
+      // Validate minimum 1 hour duration
+      const durationMinutes = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60)
+      if (durationMinutes < 60) {
+        alert(t('reservationMinimumDuration') || 'Reservation must be at least 1 hour')
+        setSubmitting(false)
+        return
+      }
 
       const response = await fetch(`/api/facility/${selectedFacility.id}/reservations`, {
         method: 'POST',
@@ -318,25 +372,69 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('startTime') || 'Start Time'}
+                    {t('startTime') || 'Start Time'} (24hr)
                   </label>
                   <input
                     type="time"
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
+                    onChange={(e) => {
+                      setStartTime(e.target.value)
+                      // Auto-update end time to be at least 1 hour after start
+                      const [startH, startM] = e.target.value.split(':').map(Number)
+                      const startMinutes = startH * 60 + startM
+                      const minEndMinutes = startMinutes + 60 // 1 hour minimum
+                      const minEndH = Math.floor(minEndMinutes / 60) % 24
+                      const minEndM = minEndMinutes % 60
+                      const minEndTime = `${String(minEndH).padStart(2, '0')}:${String(minEndM).padStart(2, '0')}`
+                      
+                      // Only update if current end time is before minimum
+                      const [endH, endM] = endTime.split(':').map(Number)
+                      const endMinutes = endH * 60 + endM
+                      if (endMinutes < minEndMinutes) {
+                        setEndTime(minEndTime)
+                      }
+                    }}
+                    step="900"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t('use24HourFormat') || 'Use 24-hour format (e.g., 09:00, 21:00)'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('endTime') || 'End Time'}
+                    {t('endTime') || 'End Time'} (24hr)
                   </label>
                   <input
                     type="time"
                     value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
+                    onChange={(e) => {
+                      const newEndTime = e.target.value
+                      // Validate: end time must be at least 1 hour after start time
+                      const [startH, startM] = startTime.split(':').map(Number)
+                      const [endH, endM] = newEndTime.split(':').map(Number)
+                      const startMinutes = startH * 60 + startM
+                      const endMinutes = endH * 60 + endM
+                      
+                      if (endMinutes >= startMinutes + 60) {
+                        setEndTime(newEndTime)
+                      } else {
+                        // Auto-set to minimum 1 hour after start
+                        const minEndMinutes = startMinutes + 60
+                        const minEndH = Math.floor(minEndMinutes / 60) % 24
+                        const minEndM = minEndMinutes % 60
+                        setEndTime(`${String(minEndH).padStart(2, '0')}:${String(minEndM).padStart(2, '0')}`)
+                      }
+                    }}
+                    min={startTime}
+                    step="900"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t('minimum1Hour') || 'Minimum 1 hour duration'}
+                  </p>
                 </div>
               </div>
 

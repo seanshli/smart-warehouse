@@ -926,6 +926,11 @@ export interface Translations {
   facilitySaveHours: string
   facilityHoursSaved: string
   facilityHoursError: string
+  use24HourFormat: string
+  minimum1Hour: string
+  reservationStartTimeMustBeFuture: string
+  reservationEndTimeMustBeAfterStart: string
+  reservationMinimumDuration: string
   
   day: string
   status: string
@@ -965,6 +970,11 @@ const en: Translations = {
   createReservation: 'Create Reservation',
   submitting: 'Submitting...',
   reservationCreated: 'Reservation request created. Waiting for building admin approval.',
+  use24HourFormat: 'Use 24-hour format (e.g., 09:00, 21:00)',
+  minimum1Hour: 'Minimum 1 hour duration',
+  reservationStartTimeMustBeFuture: 'Start time must be in the future',
+  reservationEndTimeMustBeAfterStart: 'End time must be after start time',
+  reservationMinimumDuration: 'Reservation must be at least 1 hour',
   announcements: 'Announcements',
   announcement: 'Announcement',
   createAnnouncement: 'Create Announcement',
@@ -1893,6 +1903,11 @@ const zhTW: Translations = {
   createReservation: '建立預約',
   submitting: '提交中...',
   reservationCreated: '預約請求已建立，等待審核',
+  use24HourFormat: '使用 24 小時制（例如：09:00、21:00）',
+  minimum1Hour: '最少 1 小時',
+  reservationStartTimeMustBeFuture: '開始時間必須在未來',
+  reservationEndTimeMustBeAfterStart: '結束時間必須在開始時間之後',
+  reservationMinimumDuration: '預約時間至少需要 1 小時',
   
   // Announcements
   announcements: '公告',
@@ -2834,6 +2849,11 @@ const zh: Translations = {
   createReservation: '建立预约',
   submitting: '提交中...',
   reservationCreated: '预约请求已建立，等待审核',
+  use24HourFormat: '使用 24 小时制（例如：09:00、21:00）',
+  minimum1Hour: '最少 1 小时',
+  reservationStartTimeMustBeFuture: '开始时间必须在未来',
+  reservationEndTimeMustBeAfterStart: '结束时间必须在开始时间之后',
+  reservationMinimumDuration: '预约时间至少需要 1 小时',
   
   // Announcements
   announcements: '公告',
@@ -3774,6 +3794,11 @@ const ja: Translations = {
   createReservation: '予約を作成',
   submitting: '送信中...',
   reservationCreated: '予約リクエストが作成されました。建物管理者の承認を待っています。',
+  use24HourFormat: '24時間形式を使用（例：09:00、21:00）',
+  minimum1Hour: '最低1時間',
+  reservationStartTimeMustBeFuture: '開始時間は未来である必要があります',
+  reservationEndTimeMustBeAfterStart: '終了時間は開始時間より後である必要があります',
+  reservationMinimumDuration: '予約は最低1時間必要です',
   
   // Announcements
   announcements: 'お知らせ',

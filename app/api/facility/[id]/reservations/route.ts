@@ -239,40 +239,31 @@ export async function POST(
       let reservationEndMinute: number
       
       if (startMatch && endMatch) {
-        // Create dates in UTC, then convert to local time for comparison
-        // The ISO string represents UTC time, but we need to know what local time it represents
-        // Since the client sent a local time that was converted to UTC, we need to reverse that
-        
-        // Get timezone offset (in minutes, negative for timezones ahead of UTC)
-        const timezoneOffset = start.getTimezoneOffset()
-        
-        // Extract UTC time from ISO
+        // Extract UTC time from ISO string
         const startUTCHour = parseInt(startMatch[4], 10)
         const startUTCMinute = parseInt(startMatch[5], 10)
         const endUTCHour = parseInt(endMatch[4], 10)
         const endUTCMinute = parseInt(endMatch[5], 10)
         
-        // Convert UTC to local time (add offset back)
-        // Offset is negative for ahead-of-UTC (e.g., UTC+8 = -480 minutes)
-        // So: localTime = utcTime - offset (in minutes)
-        const startTotalMinutes = startUTCHour * 60 + startUTCMinute - timezoneOffset
-        const endTotalMinutes = endUTCHour * 60 + endUTCMinute - timezoneOffset
+        // Get timezone offset from the Date object (negative for timezones ahead of UTC)
+        // e.g., UTC+8 (Taiwan) = -480 minutes
+        const timezoneOffsetMinutes = start.getTimezoneOffset()
         
-        reservationStartHour = Math.floor(startTotalMinutes / 60) % 24
-        reservationStartMinute = startTotalMinutes % 60
-        if (reservationStartMinute < 0) {
-          reservationStartMinute += 60
-          reservationStartHour = (reservationStartHour - 1 + 24) % 24
-        }
+        // Convert UTC to local time: local = UTC - offset
+        // Since offset is negative for ahead-of-UTC, we subtract it (which adds)
+        let startLocalMinutes = startUTCHour * 60 + startUTCMinute - timezoneOffsetMinutes
+        let endLocalMinutes = endUTCHour * 60 + endUTCMinute - timezoneOffsetMinutes
         
-        reservationEndHour = Math.floor(endTotalMinutes / 60) % 24
-        reservationEndMinute = endTotalMinutes % 60
-        if (reservationEndMinute < 0) {
-          reservationEndMinute += 60
-          reservationEndHour = (reservationEndHour - 1 + 24) % 24
-        }
+        // Normalize to 0-1439 (minutes in a day)
+        startLocalMinutes = ((startLocalMinutes % 1440) + 1440) % 1440
+        endLocalMinutes = ((endLocalMinutes % 1440) + 1440) % 1440
+        
+        reservationStartHour = Math.floor(startLocalMinutes / 60)
+        reservationStartMinute = startLocalMinutes % 60
+        reservationEndHour = Math.floor(endLocalMinutes / 60)
+        reservationEndMinute = endLocalMinutes % 60
       } else {
-        // Fallback: use local time methods (these should work if server is in same timezone as client)
+        // Fallback: use Date's local time methods (works if server is in same timezone as client)
         reservationStartHour = start.getHours()
         reservationStartMinute = start.getMinutes()
         reservationEndHour = end.getHours()

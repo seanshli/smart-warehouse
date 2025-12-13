@@ -60,9 +60,12 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
     const endHour = new Date(nextHour)
     endHour.setHours(nextHour.getHours() + 1) // 1 hour later
     
-    // Format as HH:MM (24-hour format)
+    // Format as HH:MM (24-hour format) - ensure always 24-hour
     const formatTime = (date: Date) => {
-      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+      const hours = date.getHours()
+      const minutes = date.getMinutes()
+      // Always return 24-hour format HH:MM
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
     }
     
     return {
@@ -206,7 +209,11 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
           // Refresh reservations to show the rejected one
           fetchReservations()
         } else {
-          alert(data.error || 'Failed to create reservation')
+          // Show detailed error message
+          const errorMsg = data.error || data.details || 'Failed to create reservation'
+          const fullError = data.details ? `${errorMsg}\n\nDetails: ${data.details}` : errorMsg
+          console.error('Reservation creation error:', data)
+          alert(fullError)
         }
       }
     } catch (error) {
@@ -399,10 +406,16 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                     type="time"
                     value={startTime}
                     onChange={(e) => {
-                      setStartTime(e.target.value)
+                      // Ensure 24-hour format - parse and reformat
+                      const timeValue = e.target.value
+                      const [hours, minutes] = timeValue.split(':').map(Number)
+                      // Normalize to 24-hour format
+                      const normalizedHours = hours % 24
+                      const normalizedTime = `${String(normalizedHours).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`
+                      setStartTime(normalizedTime)
+                      
                       // Auto-update end time to be at least 1 hour after start
-                      const [startH, startM] = e.target.value.split(':').map(Number)
-                      const startMinutes = startH * 60 + startM
+                      const startMinutes = normalizedHours * 60 + (minutes || 0)
                       const minEndMinutes = startMinutes + 60 // 1 hour minimum
                       const minEndH = Math.floor(minEndMinutes / 60) % 24
                       const minEndM = minEndMinutes % 60
@@ -416,11 +429,15 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                       }
                     }}
                     step="900"
+                    pattern="[0-9]{2}:[0-9]{2}"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
+                    lang="en"
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {t('use24HourFormat') || 'Use 24-hour format (e.g., 09:00, 21:00)'}
+                    <br />
+                    <span className="text-gray-400">Current: {startTime}</span>
                   </p>
                 </div>
                 <div>
@@ -431,15 +448,20 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                     type="time"
                     value={endTime}
                     onChange={(e) => {
-                      const newEndTime = e.target.value
+                      // Ensure 24-hour format - parse and reformat
+                      const timeValue = e.target.value
+                      const [hours, minutes] = timeValue.split(':').map(Number)
+                      // Normalize to 24-hour format
+                      const normalizedHours = hours % 24
+                      const normalizedTime = `${String(normalizedHours).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`
+                      
                       // Validate: end time must be at least 1 hour after start time
                       const [startH, startM] = startTime.split(':').map(Number)
-                      const [endH, endM] = newEndTime.split(':').map(Number)
                       const startMinutes = startH * 60 + startM
-                      const endMinutes = endH * 60 + endM
+                      const endMinutes = normalizedHours * 60 + (minutes || 0)
                       
                       if (endMinutes >= startMinutes + 60) {
-                        setEndTime(newEndTime)
+                        setEndTime(normalizedTime)
                       } else {
                         // Auto-set to minimum 1 hour after start
                         const minEndMinutes = startMinutes + 60
@@ -450,11 +472,15 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                     }}
                     min={startTime}
                     step="900"
+                    pattern="[0-9]{2}:[0-9]{2}"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
+                    lang="en"
                   />
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {t('minimum1Hour') || 'Minimum 1 hour duration'}
+                    <br />
+                    <span className="text-gray-400">Current: {endTime}</span>
                   </p>
                 </div>
               </div>

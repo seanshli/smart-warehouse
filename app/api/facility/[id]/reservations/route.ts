@@ -558,10 +558,34 @@ export async function POST(
       message: 'Reservation request created. Waiting for building admin approval.',
       data: reservation,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating reservation:', error)
+    
+    // Provide detailed error information
+    let errorMessage = 'Failed to create reservation'
+    let errorDetails = null
+    
+    if (error?.code === 'P2002') {
+      errorMessage = 'Duplicate reservation detected'
+      errorDetails = error.meta?.target
+    } else if (error?.code === 'P2003') {
+      errorMessage = 'Invalid reference (facility or household not found)'
+      errorDetails = error.meta?.field_name
+    } else if (error?.code === 'P2025') {
+      errorMessage = 'Record not found'
+      errorDetails = error.meta?.cause
+    } else if (error?.message) {
+      errorMessage = error.message
+      errorDetails = error.stack
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create reservation' },
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        errorCode: error?.code || 'UNKNOWN_ERROR',
+        fullError: process.env.NODE_ENV === 'development' ? error?.toString() : undefined,
+      },
       { status: 500 }
     )
   }

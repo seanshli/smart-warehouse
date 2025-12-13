@@ -271,7 +271,7 @@ export async function POST(
         reservationEnd: `${String(finalEndHour).padStart(2, '0')}:${String(finalEndMinute).padStart(2, '0')}`,
         reservationStartMinutes,
         reservationEndMinutes,
-        timezoneOffset,
+        timezoneOffsetMinutes: start.getTimezoneOffset(),
         startISO: start.toISOString(),
         endISO: end.toISOString(),
         startLocal: start.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }),

@@ -83,22 +83,20 @@ ORDER BY tablename, indexname;
 
 ## 📋 Next Steps
 
-### Priority 1: Implement Chat History Recording
+### Priority 1: Test Chat History Recording
 
-The `chat_history` table exists, but messages need to be saved to it. Check these API endpoints:
+✅ **Already Implemented!** All message endpoints already save to `chat_history`:
 
-1. **Conversation Messages** (`app/api/conversations/[id]/messages/route.ts`)
-   - When a message is created, also create a `ChatHistory` record
-   - Include: `conversationId`, `householdId`, `senderId`, `receiverType`, `content`, `messageType`, `format`
+1. ✅ **Conversation Messages** (`app/api/conversations/[id]/messages/route.ts` lines 170-193)
+   - Saves to `chat_history` with `receiverType: 'frontdesk'` or `'household'`
 
-2. **Household-to-Household Messages** (`app/api/household/[id]/chat/[targetHouseholdId]/messages/route.ts`)
-   - When a message is sent, create a `ChatHistory` record
-   - Set `receiverType` to `'household'`
-   - Set `targetHouseholdId` to the target household
+2. ✅ **Household-to-Household Messages** (`app/api/household/[id]/chat/[targetHouseholdId]/messages/route.ts` lines 123-140)
+   - Saves to `chat_history` with `receiverType: 'household'` and `targetHouseholdId`
 
-3. **Doorbell Messages** (`app/api/building/[id]/door-bell/[doorBellId]/message/route.ts`)
-   - When a message is sent, create a `ChatHistory` record
-   - Set `receiverType` to `'frontdoor'` or `'visitor'`
+3. ✅ **Doorbell Messages** (`app/api/building/[id]/door-bell/[doorBellId]/message/route.ts` lines 84-102)
+   - Saves to `chat_history` with `receiverType: 'frontdoor'`
+
+**Next**: Test that messages are being saved correctly by checking the admin chat history page.
 
 ### Priority 2: Test Auto-Reject Features
 
@@ -158,14 +156,15 @@ The migration handles foreign keys safely. If you see errors:
 | Reservation Auto-Reject | ✅ Implemented | Needs testing |
 | Call Auto-Reject | ✅ Implemented | Needs testing |
 | Chat History API | ✅ Implemented | Needs testing |
-| Chat Message Recording | ⚠️ Needs Implementation | Messages not saved to chat_history yet |
+| Chat Message Recording | ✅ Implemented | Already saving to chat_history in all endpoints |
 | Admin Chat History Page | ✅ Implemented | Needs testing |
 
 ## 🎯 Immediate Action Items
 
 1. ✅ **DONE**: Run migration in Supabase
 2. ✅ **DONE**: Regenerate Prisma client
-3. ⏭️ **NEXT**: Implement chat message recording to `chat_history` table
+3. ✅ **DONE**: Chat message recording already implemented
 4. ⏭️ **NEXT**: Test reservation auto-reject
 5. ⏭️ **NEXT**: Test call auto-reject
 6. ⏭️ **NEXT**: Test admin chat history page
+7. ⏭️ **NEXT**: Verify chat messages are being saved to `chat_history` table

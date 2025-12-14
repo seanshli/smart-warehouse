@@ -140,9 +140,19 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
     setSubmitting(true)
     try {
       // Create dates in local timezone, preserving the intended time
-      // Use the date and time strings directly to avoid timezone conversion issues
+      // IMPORTANT: When creating Date from string like "2025-12-15T11:00:00", JavaScript interprets it as LOCAL time
+      // But when we call toISOString(), it converts to UTC, which can shift the time
+      // We need to ensure the server receives the correct local time
+      // Solution: Create date object and send ISO string - server will extract local time correctly
       const startDateTime = new Date(`${selectedDate}T${startTime}:00`)
       const endDateTime = new Date(`${selectedDate}T${endTime}:00`)
+      
+      // Validate that dates were parsed correctly
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        alert('Invalid date or time format')
+        setSubmitting(false)
+        return
+      }
       
       // Validate times are in the future
       if (startDateTime < new Date()) {

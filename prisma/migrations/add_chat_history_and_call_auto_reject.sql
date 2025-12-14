@@ -1,7 +1,10 @@
 -- Migration: Add ChatHistory table and update CallSession for auto-reject
 -- Date: 2025-01-XX
+-- FIXED: Creates conversations and call_sessions tables if they don't exist
 
--- First, create conversations table if it doesn't exist
+-- ============================================
+-- STEP 1: Create conversations table if it doesn't exist
+-- ============================================
 CREATE TABLE IF NOT EXISTS conversations (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   household_id TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
@@ -37,7 +40,9 @@ CREATE INDEX IF NOT EXISTS idx_conversations_created_by ON conversations(created
 CREATE INDEX IF NOT EXISTS idx_conversations_type_related_id ON conversations(type, related_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_status_updated_at ON conversations(status, updated_at);
 
--- Create call_sessions table if it doesn't exist
+-- ============================================
+-- STEP 2: Create call_sessions table if it doesn't exist
+-- ============================================
 CREATE TABLE IF NOT EXISTS call_sessions (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   conversation_id TEXT REFERENCES conversations(id) ON DELETE CASCADE,
@@ -51,14 +56,17 @@ CREATE TABLE IF NOT EXISTS call_sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Update CallSession table to support household-to-household calls and auto-reject
+-- ============================================
+-- STEP 3: Add new columns to call_sessions
+-- ============================================
 ALTER TABLE call_sessions 
   ADD COLUMN IF NOT EXISTS household_id TEXT REFERENCES households(id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS target_household_id TEXT,
   ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 
--- Update conversation_id to be nullable (for household-to-household calls)
--- Only if column exists and is NOT NULL
+-- ============================================
+-- STEP 4: Make conversation_id nullable (safe check)
+-- ============================================
 DO $$
 BEGIN
   IF EXISTS (
@@ -71,10 +79,9 @@ BEGIN
   END IF;
 END $$;
 
--- Add status 'auto-rejected' to enum (if using enum, otherwise just allow the string)
--- Note: If status is stored as TEXT, no enum change needed
-
--- Create ChatHistory table for admin viewing
+-- ============================================
+-- STEP 5: Create ChatHistory table
+-- ============================================
 CREATE TABLE IF NOT EXISTS chat_history (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   conversation_id TEXT REFERENCES conversations(id) ON DELETE CASCADE,
@@ -89,7 +96,9 @@ CREATE TABLE IF NOT EXISTS chat_history (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for ChatHistory
+-- ============================================
+-- STEP 6: Create indexes for ChatHistory
+-- ============================================
 CREATE INDEX IF NOT EXISTS idx_chat_history_conversation_id ON chat_history(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_chat_history_household_id ON chat_history(household_id);
 CREATE INDEX IF NOT EXISTS idx_chat_history_target_household_id ON chat_history(target_household_id);
@@ -97,7 +106,9 @@ CREATE INDEX IF NOT EXISTS idx_chat_history_sender_id ON chat_history(sender_id)
 CREATE INDEX IF NOT EXISTS idx_chat_history_receiver_type_id ON chat_history(receiver_type, receiver_id);
 CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history(created_at);
 
--- Create indexes for CallSession (if table exists)
+-- ============================================
+-- STEP 7: Create indexes for CallSession
+-- ============================================
 CREATE INDEX IF NOT EXISTS idx_call_sessions_conversation_id ON call_sessions(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_call_sessions_household_id ON call_sessions(household_id);
 CREATE INDEX IF NOT EXISTS idx_call_sessions_target_household_id ON call_sessions(target_household_id);

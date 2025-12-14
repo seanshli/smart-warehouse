@@ -159,17 +159,24 @@ struct NativeChatView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
+                    Button(action: {
                         eventSource?.cancel()
                         onClose()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.primary)
                     }
                 }
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button(action: onAudioCall) {
                         Image(systemName: "phone.fill")
+                            .foregroundColor(.blue)
                     }
+                    .padding(.trailing, 8)
+                    
                     Button(action: onVideoCall) {
                         Image(systemName: "video.fill")
+                            .foregroundColor(.blue)
                     }
                 }
             }

@@ -1,10 +1,32 @@
 -- Migration: Add ChatHistory table and update CallSession for auto-reject
 -- Run this directly in Supabase SQL Editor
--- FIXED: Creates call_sessions table if it doesn't exist
+-- FIXED: Creates conversations and call_sessions tables if they don't exist
 -- Date: 2025-01-XX
 
 -- ============================================
--- STEP 1: Create call_sessions table if it doesn't exist
+-- STEP 1: Create conversations table if it doesn't exist
+-- ============================================
+CREATE TABLE IF NOT EXISTS conversations (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  household_id TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  building_id TEXT REFERENCES buildings(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'frontdesk', -- 'frontdesk' | 'doorbell' | 'package' | 'reservation'
+  related_id TEXT, -- Related entity ID (package ID, reservation ID, etc.)
+  status TEXT NOT NULL DEFAULT 'active', -- 'active' | 'archived' | 'closed'
+  created_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for conversations
+CREATE INDEX IF NOT EXISTS idx_conversations_household_id ON conversations(household_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_building_id ON conversations(building_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_created_by ON conversations(created_by);
+CREATE INDEX IF NOT EXISTS idx_conversations_type_related_id ON conversations(type, related_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_status_updated_at ON conversations(status, updated_at);
+
+-- ============================================
+-- STEP 2: Create call_sessions table if it doesn't exist
 -- ============================================
 CREATE TABLE IF NOT EXISTS call_sessions (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,

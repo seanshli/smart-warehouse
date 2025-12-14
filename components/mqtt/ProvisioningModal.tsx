@@ -168,9 +168,36 @@ export default function ProvisioningModal({
               const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
               if (savedPassword) {
                 setPassword(savedPassword)
-                toast('已自動填充當前 WiFi 和保存的密碼', { icon: '✓' })
+                toast.success(t('wifiAutoFilled') || '已自動填充當前 WiFi 和保存的密碼')
+                
+                // 檢查連線狀態（可選）
+                // Note: Connectivity check can be done here if needed
               } else {
-                toast('已自動填充當前 WiFi，請輸入密碼', { icon: 'ℹ️' })
+                toast.success(t('wifiSSIDAutoFilled') || '已自動填充當前 WiFi，請輸入密碼')
+              }
+            } else if (currentSSID.ssid && ssid === currentSSID.ssid) {
+              // 如果 SSID 已匹配，自動獲取密碼
+              const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
+              if (savedPassword && !password) {
+                setPassword(savedPassword)
+                toast.success(t('wifiPasswordAutoFilled') || '已自動填充 WiFi 密碼')
+              }
+            }
+          } else if (Capacitor.getPlatform() === 'web') {
+            // Web 平台：嘗試從 localStorage 獲取最後使用的 WiFi
+            const lastWiFi = localStorage.getItem('last_provisioned_wifi')
+            if (lastWiFi && !ssid) {
+              try {
+                const wifiData = JSON.parse(lastWiFi)
+                if (wifiData.ssid) {
+                  setSsid(wifiData.ssid)
+                  if (wifiData.password) {
+                    setPassword(wifiData.password)
+                    toast.success(t('wifiAutoFilled') || '已自動填充上次使用的 WiFi')
+                  }
+                }
+              } catch (e) {
+                // Ignore parse errors
               }
             }
           }
@@ -768,6 +795,20 @@ export default function ProvisioningModal({
         }
 
         toast.success('配網成功！')
+        
+        // 自動保存 WiFi 密碼（如果用戶選擇記住）
+        if (ssid && password && (vendor === 'tuya' || vendor === 'midea' || vendor === 'esp')) {
+          try {
+            await WiFiScanner.saveNetwork({ ssid, security: 'wpa2' }, password)
+            // 同時保存到 localStorage 用於 Web 平台
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('last_provisioned_wifi', JSON.stringify({ ssid, password }))
+            }
+            console.log('✅ WiFi password saved automatically after successful provisioning')
+          } catch (error) {
+            console.warn('Failed to save WiFi password:', error)
+          }
+        }
         
         // 自動添加設備到數據庫（對於 MQTT 設備：Tuya, Midea）
         if (data.deviceId && (vendor === 'tuya' || vendor === 'midea')) {

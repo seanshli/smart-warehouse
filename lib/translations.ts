@@ -949,6 +949,9 @@ export interface Translations {
   adminPrevious: string
   adminNext: string
   callOccupied: string
+  wifiAutoFilled: string
+  wifiSSIDAutoFilled: string
+  wifiPasswordAutoFilled: string
   
   day: string
   status: string
@@ -1009,6 +1012,9 @@ const en: Translations = {
   adminPrevious: 'Previous',
   adminNext: 'Next',
   callOccupied: 'Call already active. Existing call initiated by another user. Your call has been automatically rejected.',
+  wifiAutoFilled: 'Current WiFi and saved password auto-filled',
+  wifiSSIDAutoFilled: 'Current WiFi auto-filled, please enter password',
+  wifiPasswordAutoFilled: 'WiFi password auto-filled',
   announcements: 'Announcements',
   announcement: 'Announcement',
   createAnnouncement: 'Create Announcement',

@@ -3,17 +3,13 @@ package com.smartwarehouse.app.ui;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import androidx.activity.ComponentActivity;
-import androidx.activity.compose.setContent;
-import androidx.compose.foundation.layout.fillMaxSize;
-import androidx.compose.material3.MaterialTheme;
-import androidx.compose.material3.Surface;
-import androidx.compose.ui.Modifier;
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * Native Chat Activity using Jetpack Compose
+ * Native Chat Activity
+ * Note: This is a placeholder. For full native chat UI, implement with standard Android Views or convert to Kotlin for Compose.
  */
-public class NativeChatActivity extends ComponentActivity {
+public class NativeChatActivity extends AppCompatActivity {
     private String conversationId;
     private String targetHouseholdId;
     private String targetHouseholdName;
@@ -33,21 +29,9 @@ public class NativeChatActivity extends ComponentActivity {
             return;
         }
 
-        // Set Compose content
-        setContent {
-            MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    NativeChatScreen(
-                        conversationId = conversationId,
-                        targetHouseholdId = targetHouseholdId,
-                        targetHouseholdName = targetHouseholdName,
-                        onClose = this::finish
-                    );
-                }
-            }
-        }
+        // For now, show a simple message
+        // TODO: Implement full native chat UI
+        Toast.makeText(this, "Chat: " + targetHouseholdName, Toast.LENGTH_SHORT).show();
+        finish();
     }
 }

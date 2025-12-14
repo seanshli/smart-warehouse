@@ -1,10 +1,7 @@
 package com.smartwarehouse.app.plugins;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -12,16 +9,11 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import androidx.activity.ComponentActivity;
-import androidx.activity.compose.setContent;
-import androidx.compose.foundation.layout.fillMaxSize;
-import androidx.compose.material3.MaterialTheme;
-import androidx.compose.material3.Surface;
-import androidx.compose.ui.Modifier;
+import com.smartwarehouse.app.ui.NativeChatActivity;
 
 /**
  * Native Chat Plugin for Android
- * Provides native Jetpack Compose chat interface instead of web-based UI
+ * Provides native chat interface
  */
 @CapacitorPlugin(name = "NativeChat")
 public class NativeChatPlugin extends Plugin {

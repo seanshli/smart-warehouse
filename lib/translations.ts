@@ -1966,6 +1966,9 @@ const zhTW: Translations = {
   adminPrevious: '上一頁',
   adminNext: '下一頁',
   callOccupied: '通話已在使用中。現有通話由其他用戶發起。您的通話已自動被拒絕。',
+  wifiAutoFilled: '已自動填充當前 WiFi 和保存的密碼',
+  wifiSSIDAutoFilled: '已自動填充當前 WiFi，請輸入密碼',
+  wifiPasswordAutoFilled: '已自動填充 WiFi 密碼',
   
   // Announcements
   announcements: '公告',
@@ -2930,6 +2933,9 @@ const zh: Translations = {
   adminPrevious: '上一页',
   adminNext: '下一页',
   callOccupied: '通话已在使用中。现有通话由其他用户发起。您的通话已自动被拒绝。',
+  wifiAutoFilled: '已自动填充当前 WiFi 和保存的密码',
+  wifiSSIDAutoFilled: '已自动填充当前 WiFi，请输入密码',
+  wifiPasswordAutoFilled: '已自动填充 WiFi 密码',
   
   // Announcements
   announcements: '公告',
@@ -3893,6 +3899,9 @@ const ja: Translations = {
   adminPrevious: '前へ',
   adminNext: '次へ',
   callOccupied: '通話は既にアクティブです。既存の通話は別のユーザーによって開始されました。ご通話は自動的に拒否されました。',
+  wifiAutoFilled: '現在のWiFiと保存されたパスワードを自動入力しました',
+  wifiSSIDAutoFilled: '現在のWiFiを自動入力しました。パスワードを入力してください',
+  wifiPasswordAutoFilled: 'WiFiパスワードを自動入力しました',
   
   // Announcements
   announcements: 'お知らせ',

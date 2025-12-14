@@ -210,8 +210,29 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
           fetchReservations()
         } else {
           // Show detailed error message
-          const errorMsg = data.error || data.details || 'Failed to create reservation'
-          const fullError = data.details ? `${errorMsg}\n\nDetails: ${data.details}` : errorMsg
+          const errorMsg = data.error || 'Failed to create reservation'
+          let detailsMsg = ''
+          
+          // Handle details - could be string or object
+          if (data.details) {
+            if (typeof data.details === 'string') {
+              detailsMsg = data.details
+            } else if (typeof data.details === 'object') {
+              // Format object details nicely
+              detailsMsg = Object.entries(data.details)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n')
+            }
+          }
+          
+          // Add additional helpful info if available
+          if (data.requestedStart && data.requestedEnd && data.operatingHours) {
+            detailsMsg = detailsMsg 
+              ? `${detailsMsg}\n\nRequested: ${data.requestedStart} - ${data.requestedEnd}\nOperating Hours: ${data.operatingHours}`
+              : `Requested: ${data.requestedStart} - ${data.requestedEnd}\nOperating Hours: ${data.operatingHours}`
+          }
+          
+          const fullError = detailsMsg ? `${errorMsg}\n\n${detailsMsg}` : errorMsg
           console.error('Reservation creation error:', data)
           alert(fullError)
         }

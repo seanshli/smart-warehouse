@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -61,11 +62,20 @@ fun NativeChatScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Audio call */ }) {
-                        Icon(Icons.Default.Call, contentDescription = "Audio Call")
+                    IconButton(onClick = onAudioCall) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = "Audio Call",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    IconButton(onClick = { /* Video call */ }) {
-                        Icon(Icons.Default.VideoCall, contentDescription = "Video Call")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(onClick = onVideoCall) {
+                        Icon(
+                            imageVector = Icons.Default.VideoCall,
+                            contentDescription = "Video Call",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             )

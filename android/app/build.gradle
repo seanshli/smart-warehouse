@@ -48,6 +48,8 @@ android {
             pickFirsts += ['**/libc++_shared.so', '**/libjsc.so']
             pickFirsts += ['**/META-INF/INDEX.LIST', '**/META-INF/DEPENDENCIES']
             pickFirsts += ['**/R.txt']
+            // Exclude duplicate files that might cause packaging issues
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/license.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt', 'META-INF/notice.txt', 'META-INF/ASL2.0', 'META-INF/*.kotlin_module']
             // Exclude AndroidManifest.xml from JAR files - only use the one from the app
             excludes += ['**/AndroidManifest.xml']
             excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt']

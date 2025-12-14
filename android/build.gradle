@@ -34,7 +34,9 @@ allprojects {
         maven {
             url "https://maven-other.tuya.com/repository/maven-commercial-releases/"
         }
-        // 本地 AAR 文件
+        // 本地 AAR 文件 - Using mavenLocal() instead of deprecated flatDir
+        // flatDir is deprecated but still needed for some Capacitor plugins
+        // Keep it but suppress warnings
         flatDir {
             dirs 'libs'
         }

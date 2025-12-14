@@ -18,8 +18,8 @@ public class WiFiPlugin: CAPPlugin {
         var ssid: String? = nil
         
         // First check if we have location permission (required for iOS 14+)
-        let locationManager = CLLocationManager()
-        let authStatus = locationManager.authorizationStatus()
+        // authorizationStatus is a static property, not an instance method
+        let authStatus = CLLocationManager.authorizationStatus()
         
         if #available(iOS 14.0, *) {
             // iOS 14+ requires location permission

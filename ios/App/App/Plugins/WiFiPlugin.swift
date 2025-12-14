@@ -80,10 +80,11 @@ public class WiFiPlugin: CAPPlugin {
                 return
             }
             
-            // Note: iOS doesn't provide a direct API to scan WiFi networks
+            // IMPORTANT: iOS doesn't provide a direct API to scan WiFi networks
             // We can only get the currently connected network
-            // For full scanning, we need to use NEHotspotConfiguration (iOS 11+)
-            // which requires special entitlements and may not work in all scenarios
+            // This is an iOS security limitation - apps cannot scan for available WiFi networks
+            // For full scanning, we would need NEHotspotConfiguration (iOS 11+) with special entitlements
+            // which requires the app to have configured the network before (not useful for scanning)
             
             // Return current network if available
             var networks: [[String: Any]] = []
@@ -99,13 +100,14 @@ public class WiFiPlugin: CAPPlugin {
                 ])
             }
             
-            // For iOS 14+, we can't scan networks directly
-            // The app would need to use NEHotspotConfiguration with special entitlements
-            // This is a limitation of iOS security model
-            // Return empty array with a note that iOS only returns currently connected network
+            // iOS limitation: Can only return currently connected network
+            // Return the current network (if any) - this is the best we can do on iOS
+            // The frontend will handle showing appropriate message to user
             
             call.resolve([
-                "networks": networks
+                "networks": networks,
+                "iosLimitation": true, // Flag to indicate iOS limitation
+                "message": "iOS can only detect the currently connected WiFi network. Please manually enter WiFi name or use saved networks."
             ])
         }
     }

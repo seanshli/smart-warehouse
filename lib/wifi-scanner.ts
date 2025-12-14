@@ -213,6 +213,12 @@ export class WiFiScanner {
           )) {
             throw new Error('iOS 系統限制：無法掃描 WiFi 網絡列表。iOS 只能獲取當前連接的 WiFi 網絡。請手動輸入 WiFi 名稱或使用已保存的網絡。')
           }
+          // On iOS, provide helpful message about limitations
+          if (platform === 'ios') {
+            // iOS can only return currently connected network, not scan all networks
+            // This is an iOS security limitation
+            throw new Error('iOS 系統限制：無法掃描 WiFi 網絡列表。iOS 只能獲取當前連接的 WiFi 網絡。請手動輸入 WiFi 名稱或使用已保存的網絡。')
+          }
           // On mobile, don't fallback to server - throw error
           throw new Error(`原生 WiFi 掃描失敗: ${nativeError.message || '未知錯誤'}`)
         }

@@ -42,7 +42,15 @@ class NativeChatActivity : ComponentActivity() {
                         conversationId = conversationId!!,
                         targetHouseholdId = targetHouseholdId!!,
                         targetHouseholdName = targetHouseholdName!!,
-                        onClose = { finish() }
+                        onClose = { finish() },
+                        onAudioCall = {
+                            // TODO: Implement native audio call UI
+                            android.util.Log.d("NativeChat", "Initiating audio call")
+                        },
+                        onVideoCall = {
+                            // TODO: Implement native video call UI
+                            android.util.Log.d("NativeChat", "Initiating video call")
+                        }
                     )
                 }
             }

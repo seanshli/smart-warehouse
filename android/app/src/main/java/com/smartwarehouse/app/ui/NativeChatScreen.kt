@@ -30,7 +30,9 @@ fun NativeChatScreen(
     conversationId: String,
     targetHouseholdId: String,
     targetHouseholdName: String,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onAudioCall: () -> Unit = {},
+    onVideoCall: () -> Unit = {}
 ) {
     var messages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
     var messageText by remember { mutableStateOf("") }

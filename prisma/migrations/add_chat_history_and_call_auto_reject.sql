@@ -1,7 +1,43 @@
 -- Migration: Add ChatHistory table and update CallSession for auto-reject
 -- Date: 2025-01-XX
 
--- First, create call_sessions table if it doesn't exist
+-- First, create conversations table if it doesn't exist
+CREATE TABLE IF NOT EXISTS conversations (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  household_id TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  building_id TEXT, -- Foreign key added separately if buildings table exists
+  type TEXT NOT NULL DEFAULT 'frontdesk',
+  related_id TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add building_id foreign key constraint if buildings table exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'buildings') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints 
+      WHERE table_name = 'conversations' 
+      AND constraint_name = 'conversations_building_id_fkey'
+    ) THEN
+      ALTER TABLE conversations 
+      ADD CONSTRAINT conversations_building_id_fkey 
+      FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE;
+    END IF;
+  END IF;
+END $$;
+
+-- Create indexes for conversations
+CREATE INDEX IF NOT EXISTS idx_conversations_household_id ON conversations(household_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_building_id ON conversations(building_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_created_by ON conversations(created_by);
+CREATE INDEX IF NOT EXISTS idx_conversations_type_related_id ON conversations(type, related_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_status_updated_at ON conversations(status, updated_at);
+
+-- Create call_sessions table if it doesn't exist
 CREATE TABLE IF NOT EXISTS call_sessions (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   conversation_id TEXT REFERENCES conversations(id) ON DELETE CASCADE,

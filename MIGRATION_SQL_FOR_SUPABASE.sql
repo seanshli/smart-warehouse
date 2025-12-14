@@ -59,7 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_history_sender_id ON chat_history(sender_id)
 CREATE INDEX IF NOT EXISTS idx_chat_history_receiver_type_id ON chat_history(receiver_type, receiver_id);
 CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history(created_at);
 
--- Create indexes for CallSession (if table exists)
+-- Create indexes for CallSession
 CREATE INDEX IF NOT EXISTS idx_call_sessions_conversation_id ON call_sessions(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_call_sessions_household_id ON call_sessions(household_id);
 CREATE INDEX IF NOT EXISTS idx_call_sessions_target_household_id ON call_sessions(target_household_id);

@@ -6,10 +6,11 @@
 -- ============================================
 -- STEP 1: Create conversations table if it doesn't exist
 -- ============================================
+-- Note: building_id foreign key will be added only if buildings table exists
 CREATE TABLE IF NOT EXISTS conversations (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   household_id TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-  building_id TEXT REFERENCES buildings(id) ON DELETE CASCADE,
+  building_id TEXT, -- Will add foreign key constraint separately if buildings table exists
   type TEXT NOT NULL DEFAULT 'frontdesk', -- 'frontdesk' | 'doorbell' | 'package' | 'reservation'
   related_id TEXT, -- Related entity ID (package ID, reservation ID, etc.)
   status TEXT NOT NULL DEFAULT 'active', -- 'active' | 'archived' | 'closed'
@@ -17,6 +18,23 @@ CREATE TABLE IF NOT EXISTS conversations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add building_id foreign key constraint if buildings table exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'buildings') THEN
+    -- Add foreign key constraint if it doesn't exist
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints 
+      WHERE table_name = 'conversations' 
+      AND constraint_name = 'conversations_building_id_fkey'
+    ) THEN
+      ALTER TABLE conversations 
+      ADD CONSTRAINT conversations_building_id_fkey 
+      FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE;
+    END IF;
+  END IF;
+END $$;
 
 -- Create indexes for conversations
 CREATE INDEX IF NOT EXISTS idx_conversations_household_id ON conversations(household_id);
@@ -42,7 +60,7 @@ CREATE TABLE IF NOT EXISTS call_sessions (
 );
 
 -- ============================================
--- STEP 2: Add new columns to call_sessions
+-- STEP 3: Add new columns to call_sessions
 -- ============================================
 ALTER TABLE call_sessions 
   ADD COLUMN IF NOT EXISTS household_id TEXT REFERENCES households(id) ON DELETE CASCADE,
@@ -50,7 +68,7 @@ ALTER TABLE call_sessions
   ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 
 -- ============================================
--- STEP 3: Make conversation_id nullable (safe check)
+-- STEP 4: Make conversation_id nullable (safe check)
 -- ============================================
 DO $$
 BEGIN
@@ -65,7 +83,7 @@ BEGIN
 END $$;
 
 -- ============================================
--- STEP 4: Create ChatHistory table
+-- STEP 5: Create ChatHistory table
 -- ============================================
 CREATE TABLE IF NOT EXISTS chat_history (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -82,7 +100,7 @@ CREATE TABLE IF NOT EXISTS chat_history (
 );
 
 -- ============================================
--- STEP 5: Create indexes for ChatHistory
+-- STEP 6: Create indexes for ChatHistory
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_chat_history_conversation_id ON chat_history(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_chat_history_household_id ON chat_history(household_id);
@@ -92,7 +110,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_history_receiver_type_id ON chat_history(rec
 CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history(created_at);
 
 -- ============================================
--- STEP 6: Create indexes for CallSession
+-- STEP 7: Create indexes for CallSession
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_call_sessions_conversation_id ON call_sessions(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_call_sessions_household_id ON call_sessions(household_id);

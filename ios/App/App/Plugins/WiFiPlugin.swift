@@ -13,19 +13,35 @@ public class WiFiPlugin: CAPPlugin {
     // MARK: - Get Current SSID
     
     @objc func getCurrentSSID(_ call: CAPPluginCall) {
+        // Always try to get SSID, regardless of iOS version
+        // iOS 14+ requires location permission, but we'll try anyway
+        var ssid: String? = nil
+        
+        // First check if we have location permission (required for iOS 14+)
+        let locationManager = CLLocationManager()
+        let authStatus = locationManager.authorizationStatus()
+        
         if #available(iOS 14.0, *) {
-            // iOS 14+ requires different approach
-            // We can't directly get SSID, but we can check if connected
-            call.resolve([
-                "ssid": getCurrentSSIDiOS14() ?? NSNull()
-            ])
-        } else {
-            // iOS 13 and below
-            if let ssid = getCurrentSSIDLegacy() {
-                call.resolve(["ssid": ssid])
+            // iOS 14+ requires location permission
+            if authStatus == .authorizedWhenInUse || authStatus == .authorizedAlways {
+                ssid = getCurrentSSIDLegacy()
             } else {
+                // No permission, return null
                 call.resolve(["ssid": NSNull()])
+                return
             }
+        } else {
+            // iOS 13 and below - try to get SSID directly
+            ssid = getCurrentSSIDLegacy()
+        }
+        
+        // Return result
+        if let ssidValue = ssid {
+            // Remove quotes if present (iOS sometimes wraps SSID in quotes)
+            let cleanSSID = ssidValue.replacingOccurrences(of: "\"", with: "")
+            call.resolve(["ssid": cleanSSID])
+        } else {
+            call.resolve(["ssid": NSNull()])
         }
     }
     

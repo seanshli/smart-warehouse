@@ -171,31 +171,46 @@ public class NativeBarcodeScanner: CAPPlugin {
             let containerView = UIView(frame: viewController.view.bounds)
             containerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             containerView.backgroundColor = .black
+            containerView.isUserInteractionEnabled = true // Enable interaction
             
+            // Setup preview layer
             preview.frame = containerView.bounds
             self.previewLayer = preview
             containerView.layer.insertSublayer(preview, at: 0)
             
-            // Add cancel button
+            // Make sure preview layer updates its frame when container resizes
+            preview.videoGravity = .resizeAspectFill
+            
+            // Add cancel button with higher z-index
             let cancelButton = UIButton(type: .system)
             cancelButton.setTitle("Cancel", for: .normal)
             cancelButton.setTitleColor(.white, for: .normal)
-            cancelButton.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-            cancelButton.layer.cornerRadius = 5
+            cancelButton.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+            cancelButton.layer.cornerRadius = 8
             cancelButton.translatesAutoresizingMaskIntoConstraints = false
+            cancelButton.isUserInteractionEnabled = true // Ensure button is interactive
             cancelButton.addTarget(self, action: #selector(self.didTapCancelButton), for: .touchUpInside)
+            
+            // Bring button to front
             containerView.addSubview(cancelButton)
+            containerView.bringSubviewToFront(cancelButton)
             
             NSLayoutConstraint.activate([
                 cancelButton.topAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.topAnchor, constant: 20),
                 cancelButton.trailingAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.trailingAnchor, constant: -20),
                 cancelButton.widthAnchor.constraint(equalToConstant: 80),
-                cancelButton.heightAnchor.constraint(equalToConstant: 40)
+                cancelButton.heightAnchor.constraint(equalToConstant: 44)
             ])
             
             // Add container to view controller
             viewController.view.addSubview(containerView)
+            viewController.view.bringSubviewToFront(containerView)
             self.scannerContainerView = containerView
+            
+            // Ensure the preview layer frame is updated after view is added
+            DispatchQueue.main.async {
+                preview.frame = containerView.bounds
+            }
             
             // Start session
             session.startRunning()

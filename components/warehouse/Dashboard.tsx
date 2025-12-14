@@ -23,6 +23,7 @@ import {
   ShieldCheckIcon,
   WifiIcon,
   BuildingOfficeIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import AddItemModal from './AddItemModal'
@@ -51,6 +52,8 @@ import MQTTPanel from '../mqtt/MQTTPanel'
 import FacilityReservationPanel from '../facility/FacilityReservationPanel'
 import AnnouncementBanner from '../AnnouncementBanner'
 import DoorBellPanel from '../household/DoorBellPanel'
+import ConversationList from '../messaging/ConversationList'
+import ChatInterface from '../messaging/ChatInterface'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -407,6 +410,7 @@ export default function Dashboard() {
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
     { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
     { id: 'doorbell', name: t('doorBell') || 'Door Bell', icon: BellIcon },
+    { id: 'chat', name: t('chat') || 'Chat', icon: ChatBubbleLeftRightIcon },
   ]
 
   return (
@@ -680,6 +684,18 @@ export default function Dashboard() {
                
                {activeTab === 'household' && (
                  <HouseholdSettings />
+               )}
+               {activeTab === 'chat' && household?.buildingId && (
+                 <div className="p-4">
+                   <ConversationList 
+                     buildingId={household.buildingId}
+                     onSelectConversation={(conversation) => {
+                       // For now, just show conversation list
+                       // Individual chat can be opened from ConversationList component
+                       console.log('Selected conversation:', conversation)
+                     }}
+                   />
+                 </div>
                )}
                {activeTab === 'doorbell' && (
                  <DoorBellPanel 
@@ -1066,7 +1082,19 @@ function DashboardContent({
         }
       },
     },
-  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations])
+    {
+      id: 'chat',
+      title: translate('chat', '聊天'),
+      subtitle: translate('chatSubtitle', '與住戶、前台、訪客溝通'),
+      icon: ChatBubbleLeftRightIcon,
+      tag: 'NEW',
+      metrics: [],
+      actions: [
+        { label: translate('viewConversations', '查看對話'), onClick: () => onTabChange('chat') },
+      ],
+      onClick: () => onTabChange('chat'),
+    },
+  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations, household])
 
   const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {

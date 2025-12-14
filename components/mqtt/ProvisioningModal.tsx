@@ -128,6 +128,11 @@ export default function ProvisioningModal({
 
   // 當模態框打開時，自動獲取當前連接的 WiFi SSID 或 HA 配置
   useEffect(() => {
+    // Reset SSID and password when modal closes to ensure fresh state
+    if (!isOpen) {
+      return
+    }
+    
     // 如果是 Home Assistant，自動載入 household 的 HA 配置
     if (isOpen && vendor === 'homeassistant' && household?.id) {
       const loadHAConfig = async () => {
@@ -151,39 +156,91 @@ export default function ProvisioningModal({
     // 檢查是否為 MQTT 設備（Tuya, Midea, ESP）
     const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
     
-    if (isOpen && isMQTTDevice && vendor !== 'esp') {
+    if (isOpen && isMQTTDevice) {
       const getCurrentWiFi = async () => {
         try {
           const { Capacitor } = await import('@capacitor/core')
-          if (Capacitor.getPlatform() !== 'web') {
-            // 嘗試獲取當前連接的 WiFi SSID
-            const WiFiPlugin = (await import('@/lib/plugins/wifi')).default
-            const currentSSID = await WiFiPlugin.getCurrentSSID()
-            
-            if (currentSSID.ssid && !ssid) {
-              // 自動填充當前 SSID
-              setSsid(currentSSID.ssid)
+          const platform = Capacitor.getPlatform()
+          
+          console.log('🔍 ProvisioningModal: Getting WiFi SSID, platform:', platform)
+          
+          if (platform !== 'web') {
+            try {
+              // 嘗試獲取當前連接的 WiFi SSID
+              const WiFiPlugin = (await import('@/lib/plugins/wifi')).default
+              console.log('🔍 ProvisioningModal: WiFiPlugin imported, calling getCurrentSSID...')
               
-              // 嘗試獲取已保存的密碼
-              const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
-              if (savedPassword) {
-                setPassword(savedPassword)
-                toast.success(t('wifiAutoFilled') || '已自動填充當前 WiFi 和保存的密碼')
+              const currentSSID = await WiFiPlugin.getCurrentSSID()
+              console.log('🔍 ProvisioningModal: getCurrentSSID result:', currentSSID)
+              
+              if (currentSSID && currentSSID.ssid && !ssid) {
+                // 自動填充當前 SSID
+                console.log('✅ ProvisioningModal: Auto-filling SSID:', currentSSID.ssid)
+                setSsid(currentSSID.ssid)
                 
-                // 檢查連線狀態（可選）
-                // Note: Connectivity check can be done here if needed
+                // 嘗試獲取已保存的密碼
+                try {
+                  const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
+                  if (savedPassword) {
+                    setPassword(savedPassword)
+                    toast.success(t('wifiAutoFilled') || '已自動填充當前 WiFi 和保存的密碼')
+                  } else {
+                    toast.success(t('wifiSSIDAutoFilled') || '已自動填充當前 WiFi，請輸入密碼')
+                  }
+                } catch (pwdError) {
+                  console.log('⚠️ ProvisioningModal: Could not get saved password:', pwdError)
+                  toast.success(t('wifiSSIDAutoFilled') || '已自動填充當前 WiFi，請輸入密碼')
+                }
+              } else if (currentSSID && currentSSID.ssid && ssid === currentSSID.ssid) {
+                // 如果 SSID 已匹配，自動獲取密碼
+                try {
+                  const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
+                  if (savedPassword && !password) {
+                    setPassword(savedPassword)
+                    toast.success(t('wifiPasswordAutoFilled') || '已自動填充 WiFi 密碼')
+                  }
+                } catch (pwdError) {
+                  console.log('⚠️ ProvisioningModal: Could not get saved password:', pwdError)
+                }
               } else {
-                toast.success(t('wifiSSIDAutoFilled') || '已自動填充當前 WiFi，請輸入密碼')
+                console.log('⚠️ ProvisioningModal: No SSID returned or SSID already set')
+                // Fallback: Try localStorage for web or last used
+                const lastWiFi = localStorage.getItem('last_provisioned_wifi')
+                if (lastWiFi && !ssid) {
+                  try {
+                    const wifiData = JSON.parse(lastWiFi)
+                    if (wifiData.ssid) {
+                      setSsid(wifiData.ssid)
+                      if (wifiData.password) {
+                        setPassword(wifiData.password)
+                        toast.success(t('wifiAutoFilled') || '已自動填充上次使用的 WiFi')
+                      }
+                    }
+                  } catch (e) {
+                    console.log('⚠️ ProvisioningModal: Could not parse last WiFi:', e)
+                  }
+                }
               }
-            } else if (currentSSID.ssid && ssid === currentSSID.ssid) {
-              // 如果 SSID 已匹配，自動獲取密碼
-              const savedPassword = await WiFiScanner.getSavedPassword(currentSSID.ssid)
-              if (savedPassword && !password) {
-                setPassword(savedPassword)
-                toast.success(t('wifiPasswordAutoFilled') || '已自動填充 WiFi 密碼')
+            } catch (wifiError: any) {
+              console.error('❌ ProvisioningModal: WiFi plugin error:', wifiError)
+              // Fallback to localStorage
+              const lastWiFi = localStorage.getItem('last_provisioned_wifi')
+              if (lastWiFi && !ssid) {
+                try {
+                  const wifiData = JSON.parse(lastWiFi)
+                  if (wifiData.ssid) {
+                    setSsid(wifiData.ssid)
+                    if (wifiData.password) {
+                      setPassword(wifiData.password)
+                      toast.success(t('wifiAutoFilled') || '已自動填充上次使用的 WiFi')
+                    }
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
               }
             }
-          } else if (Capacitor.getPlatform() === 'web') {
+          } else {
             // Web 平台：嘗試從 localStorage 獲取最後使用的 WiFi
             const lastWiFi = localStorage.getItem('last_provisioned_wifi')
             if (lastWiFi && !ssid) {
@@ -202,12 +259,29 @@ export default function ProvisioningModal({
             }
           }
         } catch (error) {
-          // 靜默失敗，不影響用戶體驗
-          console.log('Could not get current WiFi SSID:', error)
+          console.error('❌ ProvisioningModal: Error getting WiFi SSID:', error)
+          // Try localStorage as last resort
+          try {
+            const lastWiFi = localStorage.getItem('last_provisioned_wifi')
+            if (lastWiFi && !ssid) {
+              const wifiData = JSON.parse(lastWiFi)
+              if (wifiData.ssid) {
+                setSsid(wifiData.ssid)
+                if (wifiData.password) {
+                  setPassword(wifiData.password)
+                }
+              }
+            }
+          } catch (e) {
+            // Ignore all errors
+          }
         }
       }
       
-      getCurrentWiFi()
+      // Add small delay to ensure modal is fully rendered
+      setTimeout(() => {
+        getCurrentWiFi()
+      }, 100)
     }
   }, [isOpen, vendor, ssid, household?.id])
 

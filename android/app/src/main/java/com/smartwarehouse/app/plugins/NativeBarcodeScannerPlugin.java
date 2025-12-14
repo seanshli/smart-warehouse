@@ -152,7 +152,23 @@ public class NativeBarcodeScannerPlugin extends Plugin {
         // Check permission
         int permissionStatus = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA);
         if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
-            call.reject("Camera permission not granted");
+            // Request permission instead of rejecting
+            FragmentActivity activity = getActivity();
+            if (activity != null) {
+                ActivityCompat.requestPermissions(
+                    activity,
+                    new String[]{Manifest.permission.CAMERA},
+                    CAMERA_PERMISSION_REQUEST_CODE
+                );
+                // Store call to resolve after permission granted
+                // Note: Actual permission result will be handled by onRequestPermissionsResult
+                // For now, we'll resolve with a message indicating permission was requested
+                JSObject result = new JSObject();
+                result.put("permissionRequested", true);
+                call.resolve(result);
+            } else {
+                call.reject("Camera permission not granted and activity not available");
+            }
             return;
         }
 
@@ -176,6 +192,37 @@ public class NativeBarcodeScannerPlugin extends Plugin {
                 call.reject("Failed to start camera: " + e.getMessage());
             }
         });
+    }
+    
+    @Override
+    public void handleRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.handleRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, start scanning
+                FragmentActivity activity = getActivity();
+                if (activity != null && currentCall != null) {
+                    activity.runOnUiThread(() -> {
+                        try {
+                            setupCamera(activity);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error setting up camera after permission grant", e);
+                            if (currentCall != null) {
+                                currentCall.reject("Failed to start camera: " + e.getMessage());
+                                currentCall = null;
+                            }
+                        }
+                    });
+                }
+            } else {
+                // Permission denied
+                if (currentCall != null) {
+                    currentCall.reject("Camera permission denied");
+                    currentCall = null;
+                }
+            }
+        }
     }
 
     private void setupCamera(FragmentActivity activity) {

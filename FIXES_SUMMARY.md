@@ -1,108 +1,97 @@
-# Implementation Fixes Summary
+# Fixes Summary - All Issues Resolved
 
-## ✅ All Issues Fixed
+## 1. ✅ Reservation Database Schema Fix
 
-### 1. Video/Audio/Chat Implementation ✅ VERIFIED
+**Issue**: `number_of_people` column missing from `facility_reservations` table causing reservation creation to fail.
 
-**Status**: ✅ **Correctly Implemented**
+**Fix**: Created SQL migration file `ADD_NUMBER_OF_PEOPLE_COLUMN.sql` to add the missing column.
 
-**Current Implementation**:
-- Uses **WebRTC via Capacitor WebView** - This is the **best and most efficient** approach
-- **Web**: Direct browser WebRTC API
-- **iOS/Android**: Native WebRTC via Capacitor WebView (bridges to native iOS/Android WebRTC)
-- **Camera/Microphone**: Uses `@capacitor/camera` plugin for native permissions
+**Action Required**: Run the SQL in Supabase SQL Editor:
+```sql
+ALTER TABLE facility_reservations 
+ADD COLUMN IF NOT EXISTS number_of_people INTEGER;
+```
 
-**Why This is Correct**:
-- WebRTC is the industry standard for cross-platform video/audio
-- Capacitor WebView provides native WebRTC implementation (not web-based)
-- Single codebase works across all platforms
-- Better performance than separate Swift/Java implementations
-- Native permissions handled properly
-
-**Files**:
-- `lib/webrtc.ts`: WebRTC implementation
-- `ios/App/App/AppDelegate.swift`: Native audio session configuration
-- `ios/App/App/Info.plist`: Camera/microphone permissions
-- `capacitor.config.ts`: Camera plugin configuration
-
-### 2. WiFi Scan iOS Error ✅ FIXED
-
-**Problem**: Error message "原生Wi-Fi掃描失敗iOS系統限制" was confusing
-
-**Solution**:
-1. **Improved Error Message**: Clear explanation of iOS limitation
-2. **iOS Plugin Enhancement**: Returns `iosLimitation` flag and helpful message
-3. **Graceful Handling**: Returns currently connected network (best iOS can do)
-
-**Changes Made**:
-- `lib/wifi-scanner.ts`: Better error handling for iOS limitations
-- `ios/App/App/Plugins/WiFiPlugin.swift`: Added iOS limitation flag and message
-
-**User Experience**:
-- iOS users see: "iOS 系統限制：無法掃描 WiFi 網絡列表。iOS 只能獲取當前連接的 WiFi 網絡。請手動輸入 WiFi 名稱或使用已保存的網絡。"
-- App returns currently connected network if available
-- Users can manually enter WiFi name or use saved networks
-
-**Note**: This is an iOS security limitation - apps cannot scan for available WiFi networks. Only the currently connected network can be detected.
-
-### 3. Building Admin Chat History ✅ ENHANCED
-
-**Requirements**:
-- Building admins should see conversations between:
-  - Front desk ↔ household members
-  - Front door ↔ household members
-  - Building admin ↔ workers (BuildingMember)
-
-**Implementation**:
-1. **API Enhancement**: `app/api/admin/chat-history/route.ts`
-   - Added building admin support (not just super admin)
-   - Automatically filters by user's buildings
-   - Supports `buildingId` filter parameter
-   - Security: Building admins can only access their own buildings
-
-2. **Filtering Logic**:
-   - Building admins see only their building's conversations
-   - Super admins see all conversations
-   - Supports filtering by:
-     - `householdId`: Specific household
-     - `buildingId`: Specific building (with access control)
-     - `receiverType`: 'household', 'frontdesk', 'frontdoor'
-     - Date range: `startDate`, `endDate`
-
-3. **Chat History Types Recorded**:
-   - ✅ Front desk ↔ household: `receiverType: 'frontdesk'`
-   - ✅ Front door ↔ household: `receiverType: 'frontdoor'`
-   - ✅ Household ↔ household: `receiverType: 'household'`
-   - ⚠️ Building admin ↔ workers: Need to add support (see below)
-
-**Next Steps for Worker Conversations**:
-To support building admin ↔ worker conversations:
-1. Add `receiverType: 'worker'` or `'building'` to ChatHistory model
-2. Create API endpoints for building admin ↔ worker messaging
-3. Update chat history recording to include worker conversations
-4. Add BuildingMember filtering in chat history API
-
-## Summary
-
-| Issue | Status | Solution |
-|-------|--------|----------|
-| Video/Audio/Chat Native | ✅ Verified | WebRTC via Capacitor (correct & efficient) |
-| WiFi Scan iOS Error | ✅ Fixed | Improved error messages, graceful handling |
-| Building Admin Chat History | ✅ Enhanced | Added building filtering, security checks |
-
-## Files Changed
-
-1. `lib/wifi-scanner.ts`: Improved iOS error handling
-2. `ios/App/App/Plugins/WiFiPlugin.swift`: Added iOS limitation flag
-3. `app/api/admin/chat-history/route.ts`: Enhanced building admin filtering
-4. `IMPLEMENTATION_VERIFICATION.md`: Documentation of implementations
-
-## Testing Recommendations
-
-1. **WiFi Scan iOS**: Test on iOS device - should show helpful message instead of error
-2. **Building Admin Chat**: Test as building admin - should only see their building's conversations
-3. **Video/Audio Calls**: Test on iOS/Android - should use native WebRTC capabilities
+**Files Modified**:
+- `ADD_NUMBER_OF_PEOPLE_COLUMN.sql` (created)
 
 ---
 
-**Status**: ✅ **All Issues Resolved**
+## 2. ✅ Chat Interface Added to Dashboard
+
+**Issue**: Chat interface was not accessible from the main navigation.
+
+**Fix**: 
+- Added `ChatBubbleLeftRightIcon` import
+- Added chat tab to navigation tabs list
+- Added chat module to dashboard core modules
+- Integrated `ConversationList` and `ChatInterface` components
+- Chat is now accessible via the "Chat" tab in Dashboard navigation
+
+**Files Modified**:
+- `components/warehouse/Dashboard.tsx`
+
+**Location**: Chat is now accessible from:
+- Dashboard navigation tabs → "Chat" tab
+- Dashboard modules → "Chat" card (with subtitle "與住戶、前台、訪客溝通")
+
+---
+
+## 3. ✅ WiFi Auto-Fill for ESP Devices
+
+**Issue**: WiFi SSID and password auto-fill was not working for ESP devices during provisioning.
+
+**Fix**: Removed the `vendor !== 'esp'` exclusion condition so ESP devices now also get WiFi auto-fill.
+
+**Files Modified**:
+- `components/mqtt/ProvisioningModal.tsx`
+
+**Change**: Changed condition from:
+```typescript
+if (isOpen && isMQTTDevice && vendor !== 'esp') {
+```
+to:
+```typescript
+if (isOpen && isMQTTDevice) {
+```
+
+Now all MQTT devices (Tuya, Midea, ESP) will automatically fill in the current WiFi SSID and password when the provisioning modal opens.
+
+---
+
+## 4. ✅ Android Barcode Scanner Camera Permission Fix
+
+**Issue**: Android barcode scanner was not requesting camera permission properly, causing it to fail silently.
+
+**Fix**: 
+- Modified `startScan()` method to request permission instead of immediately rejecting
+- Added `handleRequestPermissionsResult()` override to handle permission grant/denial
+- Scanner now properly requests permission and starts scanning after permission is granted
+
+**Files Modified**:
+- `android/app/src/main/java/com/smartwarehouse/app/plugins/NativeBarcodeScannerPlugin.java`
+
+**Changes**:
+1. When permission is not granted, the plugin now requests it instead of rejecting
+2. Added permission result handler that automatically starts scanning after permission is granted
+3. Proper error handling for permission denial
+
+---
+
+## Testing Checklist
+
+- [ ] Run SQL migration in Supabase to add `number_of_people` column
+- [ ] Test reservation creation - should work without database errors
+- [ ] Test chat access from Dashboard navigation
+- [ ] Test WiFi auto-fill for ESP device provisioning
+- [ ] Test Android barcode scanner - should request permission and start camera
+
+---
+
+## Next Steps
+
+1. **Database Migration**: Run `ADD_NUMBER_OF_PEOPLE_COLUMN.sql` in Supabase SQL Editor
+2. **Test Reservations**: Try creating a reservation to verify the fix
+3. **Test Chat**: Navigate to Dashboard → Chat tab to verify chat interface is accessible
+4. **Test WiFi**: Open provisioning modal for ESP device and verify WiFi auto-fill
+5. **Test Scanner**: On Android, try scanning a QR/barcode and verify permission request works

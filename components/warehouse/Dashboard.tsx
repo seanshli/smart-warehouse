@@ -54,6 +54,7 @@ import AnnouncementBanner from '../AnnouncementBanner'
 import DoorBellPanel from '../household/DoorBellPanel'
 import ConversationList from '../messaging/ConversationList'
 import ChatInterface from '../messaging/ChatInterface'
+import TicketList from '../maintenance/TicketList'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -591,6 +592,9 @@ export default function Dashboard() {
                  />
                )}
                {activeTab === 'maintenance' && (
+                 <TicketList />
+               )}
+               {activeTab === 'maintenance-old' && (
                 <DashboardContent
                   household={household}
                   refreshTrigger={refreshTrigger}

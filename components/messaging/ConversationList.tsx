@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { ChatBubbleLeftRightIcon, EnvelopeIcon, CubeIcon, BellIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from '@/components/LanguageProvider'
+import { useHousehold } from '@/components/HouseholdProvider'
+import FrontDeskChatButton from '@/components/maintenance/FrontDeskChatButton'
 
 interface Conversation {
   id: string
@@ -40,6 +42,7 @@ interface ConversationListProps {
 
 export default function ConversationList({ buildingId, onSelectConversation }: ConversationListProps) {
   const { t } = useLanguage()
+  const { household } = useHousehold()
   const { data: session } = useSession()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)

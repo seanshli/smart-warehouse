@@ -112,6 +112,7 @@ export async function canMessageHousehold(
 
 /**
  * Get or create a conversation between frontdesk/admin and household
+ * Also allows household members to create conversations with front desk
  */
 export async function getOrCreateConversation(
   userId: string,
@@ -121,16 +122,56 @@ export async function getOrCreateConversation(
   relatedId: string | null = null
 ): Promise<string> {
   try {
-    // Check permission first
-    if (!(await canMessageHousehold(userId, householdId))) {
+    // Check if user is household member (can create conversation with front desk)
+    const isHouseholdMember = await prisma.householdMember.findUnique({
+      where: {
+        userId_householdId: {
+          userId,
+          householdId
+        }
+      }
+    })
+
+    // Check if user is frontdesk/admin (can message household)
+    const isFrontDesk = await canMessageHousehold(userId, householdId)
+
+    if (!isHouseholdMember && !isFrontDesk) {
       throw new Error('Insufficient permissions to create conversation')
+    }
+
+    // For household members creating front desk chat, find a front desk user
+    let creatorId = userId
+    if (isHouseholdMember && !isFrontDesk) {
+      // Find a building admin or front desk user to be the conversation creator
+      if (buildingId) {
+        const buildingAdmin = await prisma.buildingMember.findFirst({
+          where: {
+            buildingId,
+            role: { in: ['ADMIN', 'MANAGER'] },
+            memberClass: 'building'
+          },
+          select: { userId: true }
+        })
+        if (buildingAdmin) {
+          creatorId = buildingAdmin.userId
+        } else {
+          // Use first admin user as fallback
+          const adminUser = await prisma.user.findFirst({
+            where: { isAdmin: true },
+            select: { id: true }
+          })
+          if (adminUser) {
+            creatorId = adminUser.id
+          }
+        }
+      }
     }
 
     // Try to find existing active conversation
     const existing = await prisma.conversation.findFirst({
       where: {
         householdId,
-        createdBy: userId,
+        createdBy: creatorId,
         type,
         status: 'active',
         ...(relatedId ? { relatedId } : {}),
@@ -149,7 +190,7 @@ export async function getOrCreateConversation(
       data: {
         householdId,
         buildingId,
-        createdBy: userId,
+        createdBy: creatorId,
         type,
         relatedId,
         status: 'active',

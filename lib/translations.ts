@@ -222,7 +222,6 @@ export interface Translations {
   createFirstTicket: string
   supplier: string
   assignedCrew: string
-  location: string
   workLogs: string
   requested: string
   requestMaintenance: string

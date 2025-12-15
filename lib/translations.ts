@@ -4679,8 +4679,6 @@ const ja: Translations = {
   // Time
   ago: '前',
   item: 'アイテム',
-  locationPlaceholder: '問題の場所はどこですか？',
-  descriptionPlaceholder: '問題の詳細な説明を提供してください...',
   
   // Dashboard
   totalItems: '総アイテム数',

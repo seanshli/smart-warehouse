@@ -115,14 +115,25 @@ export default function ConversationList({ buildingId, onSelectConversation }: C
 
   if (conversations.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        {t('noConversations') || 'No conversations yet'}
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400 space-y-4">
+        <p>{t('noConversations') || 'No conversations yet'}</p>
+        {household && (
+          <div className="flex justify-center">
+            <FrontDeskChatButton />
+          </div>
+        )}
       </div>
     )
   }
 
   return (
     <div className="space-y-2">
+      {/* Front Desk Chat Button */}
+      {household && (
+        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <FrontDeskChatButton className="w-full justify-center" />
+        </div>
+      )}
       {conversations.map((conversation) => {
         const Icon = getTypeIcon(conversation.type)
         const lastMessage = conversation.messages[0]

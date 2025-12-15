@@ -120,7 +120,7 @@ export default function TicketRequestForm({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('title') || 'Title'} *
+              {t('title')} *
             </label>
             <input
               type="text"
@@ -128,13 +128,13 @@ export default function TicketRequestForm({
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
               required
-              placeholder={t('ticketTitlePlaceholder') || 'Brief description of the issue'}
+              placeholder={t('ticketTitlePlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('category') || 'Category'} *
+              {t('category')} *
             </label>
             <select
               value={formData.category}
@@ -142,7 +142,7 @@ export default function TicketRequestForm({
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
               required
             >
-              <option value="">{t('selectCategory') || 'Select category'}</option>
+              <option value="">{t('selectCategory')}</option>
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
                   {cat.label}
@@ -153,7 +153,7 @@ export default function TicketRequestForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('priority') || 'Priority'}
+              {t('priority')}
             </label>
             <select
               value={formData.priority}
@@ -170,27 +170,27 @@ export default function TicketRequestForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('location') || 'Location'}
+              {t('location')}
             </label>
             <input
               type="text"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-              placeholder={t('locationPlaceholder') || 'Where is the issue located?'}
+              placeholder={t('locationPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('description') || 'Description'}
+              {t('description')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-              placeholder={t('descriptionPlaceholder') || 'Provide detailed description of the issue...'}
+              placeholder={t('descriptionPlaceholder')}
             />
           </div>
 
@@ -200,14 +200,14 @@ export default function TicketRequestForm({
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
             >
-              {t('cancel') || 'Cancel'}
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (t('submitting') || 'Submitting...') : (t('submit') || 'Submit')}
+              {loading ? t('submitting') : t('submit')}
             </button>
           </div>
         </form>

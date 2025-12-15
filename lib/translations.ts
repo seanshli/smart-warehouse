@@ -226,6 +226,9 @@ export interface Translations {
   workLogs: string
   requested: string
   requestMaintenance: string
+  ticketTitlePlaceholder: string
+  locationPlaceholder: string
+  descriptionPlaceholder: string
   adminBackToAdmin: string
   adminDuplicateItems: string
   adminDuplicateRooms: string
@@ -733,6 +736,14 @@ export interface Translations {
   // Time
   ago: string
   item: string
+  title: string
+  description: string
+  cancel: string
+  submit: string
+  submitting: string
+  ticketTitlePlaceholder: string
+  locationPlaceholder: string
+  descriptionPlaceholder: string
   
   // Dashboard
   totalItems: string
@@ -4662,6 +4673,14 @@ const ja: Translations = {
   // Time
   ago: '前',
   item: 'アイテム',
+  title: 'タイトル',
+  description: '説明',
+  cancel: 'キャンセル',
+  submit: '送信',
+  submitting: '送信中...',
+  ticketTitlePlaceholder: '問題の簡単な説明',
+  locationPlaceholder: '問題の場所はどこですか？',
+  descriptionPlaceholder: '問題の詳細な説明を提供してください...',
   
   // Dashboard
   totalItems: '総アイテム数',

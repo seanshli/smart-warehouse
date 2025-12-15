@@ -3,6 +3,7 @@
   "version": "1.0.66",
   "private": true,
   "scripts": {
+    "verify:all": "tsx scripts/verify-all-connections.ts",
     "verify:wifi-tuya": "tsx scripts/verify-wifi-tuya-connection.ts",
     "verify:tuya-token": "tsx scripts/verify-tuya-token.ts",
     "verify:vercel-env": "tsx scripts/verify-vercel-tuya-env.ts",

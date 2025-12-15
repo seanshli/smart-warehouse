@@ -1660,6 +1660,7 @@ const en: Translations = {
   // Time
   ago: 'ago',
   item: 'Item',
+  submit: 'Submit',
   
   // Dashboard
   totalItems: 'Total Items',

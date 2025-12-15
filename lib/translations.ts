@@ -198,12 +198,31 @@ export interface Translations {
   adminCopyright: string
   adminAccess: string
   adminFilters: string
+  filter: string
   adminHousehold: string
   adminSecure: string
   
   // Admin Duplicates
   adminDuplicateManagement: string
   adminDuplicateDescription: string
+  adminMaintenance: string
+  maintenanceTicketManagement: string
+  pendingEvaluation: string
+  evaluated: string
+  assigned: string
+  inProgress: string
+  noTickets: string
+  chatWithFrontDesk: string
+  connecting: string
+  frontDesk: string
+  maintenanceTickets: string
+  createTicket: string
+  workCompleted: string
+  closed: string
+  createFirstTicket: string
+  supplier: string
+  assignedCrew: string
+  location: string
   adminBackToAdmin: string
   adminDuplicateItems: string
   adminDuplicateRooms: string
@@ -704,6 +723,8 @@ export interface Translations {
   subcategory: string
   selectCategory: string
   selectSubcategory: string
+  household: string
+  priority: string
   orEnterCustom: string
   
   // Time
@@ -1175,6 +1196,7 @@ const en: Translations = {
   adminAdministrator: 'Administrator',
   adminCopyright: 'Smart Warehouse Admin Panel. All rights reserved.',
   adminFilters: 'Filters',
+  filter: 'Filter',
   adminHousehold: 'Household',
   adminAccess: 'Admin Access',
   adminSecure: 'Secure',
@@ -1182,6 +1204,16 @@ const en: Translations = {
   // Admin Duplicates
   adminDuplicateManagement: 'Duplicate Management',
   adminDuplicateDescription: 'Find and resolve duplicate items, rooms, and categories',
+  adminMaintenance: 'Maintenance Tickets',
+  maintenanceTicketManagement: 'Maintenance Ticket Management',
+  pendingEvaluation: 'Pending Evaluation',
+  evaluated: 'Evaluated',
+  assigned: 'Assigned',
+  inProgress: 'In Progress',
+  noTickets: 'No maintenance tickets found',
+  chatWithFrontDesk: 'Chat with Front Desk',
+  connecting: 'Connecting...',
+  frontDesk: 'Front Desk',
   adminBackToAdmin: 'Back to Admin',
   adminDuplicateItems: 'Duplicate Items',
   adminDuplicateRooms: 'Duplicate Rooms',
@@ -1398,6 +1430,7 @@ const en: Translations = {
   createNewItem: 'Create New Item',
   useExistingItem: 'Use Existing Item',
   location: 'Location',
+  workLogs: 'Work Logs',
   country: 'Country',
   city: 'City',
   district: 'District',
@@ -1599,6 +1632,8 @@ const en: Translations = {
   subcategory: 'Subcategory',
   selectCategory: 'Select Category',
   selectSubcategory: 'Select Subcategory',
+  household: 'Household',
+  priority: 'Priority',
   orEnterCustom: 'Or enter custom',
   
   // Time
@@ -1953,6 +1988,25 @@ const zhTW: Translations = {
   reservationTimeOccupied: '該時段已被其他住戶預約。您的預約已自動被拒絕。',
   adminChatHistory: '聊天記錄',
   adminChatHistoryDescription: '查看所有住戶、前台和訪客之間的文字聊天訊息',
+  adminMaintenance: '報修管理',
+  maintenanceTicketManagement: '報修單管理',
+  pendingEvaluation: '待評估',
+  evaluated: '已評估',
+  assigned: '已指派',
+  inProgress: '進行中',
+  noTickets: '找不到報修單',
+  chatWithFrontDesk: '與前台聊天',
+  connecting: '連接中...',
+  frontDesk: '前台',
+  maintenanceTickets: '報修單',
+  createTicket: '建立報修單',
+  workCompleted: '工作完成',
+  closed: '已關閉',
+  createFirstTicket: '建立您的第一張報修單',
+  supplier: '供應商',
+  assignedCrew: '工作團隊',
+  location: '位置',
+  workLogs: '工作記錄',
   adminReceiverType: '接收者類型',
   adminStartDate: '開始日期',
   adminEndDate: '結束日期',
@@ -2191,6 +2245,7 @@ const zhTW: Translations = {
   adminAdministrator: '管理員',
   adminCopyright: '智能倉庫管理面板。版權所有。',
   adminFilters: '篩選',
+  filter: '篩選',
   adminHousehold: '住戶',
   adminAccess: '管理員存取',
   adminSecure: '安全',
@@ -2612,6 +2667,8 @@ const zhTW: Translations = {
   itemName: '物品名稱',
   quantity: '數量',
   category: '分類',
+  household: '住戶',
+  priority: '優先級',
   subcategory: '子分類',
   selectCategory: '選擇分類',
   selectSubcategory: '選擇子分類',
@@ -2920,6 +2977,25 @@ const zh: Translations = {
   reservationTimeOccupied: '该时段已被其他住户预约。您的预约已自动被拒绝。',
   adminChatHistory: '聊天记录',
   adminChatHistoryDescription: '查看所有住户、前台和访客之间的文字聊天消息',
+  adminMaintenance: '报修管理',
+  maintenanceTicketManagement: '报修单管理',
+  pendingEvaluation: '待评估',
+  evaluated: '已评估',
+  assigned: '已指派',
+  inProgress: '进行中',
+  noTickets: '找不到报修单',
+  chatWithFrontDesk: '与前台聊天',
+  connecting: '连接中...',
+  frontDesk: '前台',
+  maintenanceTickets: '报修单',
+  createTicket: '创建报修单',
+  workCompleted: '工作完成',
+  closed: '已关闭',
+  createFirstTicket: '创建您的第一张报修单',
+  supplier: '供应商',
+  assignedCrew: '工作团队',
+  location: '位置',
+  workLogs: '工作记录',
   adminReceiverType: '接收者类型',
   adminStartDate: '开始日期',
   adminEndDate: '结束日期',
@@ -3160,6 +3236,7 @@ const zh: Translations = {
   adminAdministrator: '管理员',
   adminCopyright: '智能仓库管理面板。版权所有。',
   adminFilters: '筛选',
+  filter: '筛选',
   adminHousehold: '住户',
   adminAccess: '管理员访问',
   adminSecure: '安全',
@@ -3578,6 +3655,8 @@ const zh: Translations = {
   itemName: '物品名称',
   quantity: '数量',
   category: '分类',
+  household: '住户',
+  priority: '优先级',
   subcategory: '子分类',
   selectCategory: '选择分类',
   selectSubcategory: '选择子分类',
@@ -3886,6 +3965,25 @@ const ja: Translations = {
   reservationTimeOccupied: 'この時間帯は既に他の世帯によって予約されています。ご予約は自動的に拒否されました。',
   adminChatHistory: 'チャット履歴',
   adminChatHistoryDescription: '世帯、フロントデスク、訪問者間のすべてのテキストチャットメッセージを表示',
+  adminMaintenance: 'メンテナンスチケット',
+  maintenanceTicketManagement: 'メンテナンスチケット管理',
+  pendingEvaluation: '評価待ち',
+  evaluated: '評価済み',
+  assigned: '割り当て済み',
+  inProgress: '進行中',
+  noTickets: 'メンテナンスチケットが見つかりません',
+  chatWithFrontDesk: 'フロントデスクとチャット',
+  connecting: '接続中...',
+  frontDesk: 'フロントデスク',
+  maintenanceTickets: 'メンテナンスチケット',
+  createTicket: 'チケットを作成',
+  workCompleted: '作業完了',
+  closed: '閉鎖',
+  createFirstTicket: '最初のチケットを作成',
+  supplier: 'サプライヤー',
+  assignedCrew: 'クルー',
+  location: '場所',
+  workLogs: '作業ログ',
   adminReceiverType: '受信者タイプ',
   adminStartDate: '開始日',
   adminEndDate: '終了日',
@@ -4125,6 +4223,7 @@ const ja: Translations = {
   adminAdministrator: '管理者',
   adminCopyright: 'スマート倉庫管理パネル。全著作権所有。',
   adminFilters: 'フィルター',
+  filter: 'フィルター',
   adminHousehold: '世帯',
   adminAccess: '管理者アクセス',
   adminSecure: 'セキュア',
@@ -4542,6 +4641,8 @@ const ja: Translations = {
   itemName: 'アイテム名',
   quantity: '数量',
   category: 'カテゴリ',
+  household: '世帯',
+  priority: '優先度',
   subcategory: 'サブカテゴリ',
   selectCategory: 'カテゴリを選択',
   selectSubcategory: 'サブカテゴリを選択',

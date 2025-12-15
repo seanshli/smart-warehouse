@@ -143,7 +143,7 @@ export default function TicketList() {
       {/* Header with actions */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {t('maintenanceTickets') || 'Maintenance Tickets'}
+          {t('maintenanceTickets')}
         </h2>
         <div className="flex items-center space-x-2">
           <FrontDeskChatButton />
@@ -151,14 +151,14 @@ export default function TicketList() {
             onClick={() => setShowRequestForm(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
           >
-            {t('createTicket') || 'Create Ticket'}
+            {t('createTicket')}
           </button>
         </div>
       </div>
 
       {/* Status filter */}
       <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-700 dark:text-gray-300">{t('filter') || 'Filter'}:</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">{t('filter')}:</span>
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
@@ -169,8 +169,8 @@ export default function TicketList() {
           <option value="EVALUATED">{t('evaluated') || 'Evaluated'}</option>
           <option value="ASSIGNED">{t('assigned') || 'Assigned'}</option>
           <option value="IN_PROGRESS">{t('inProgress') || 'In Progress'}</option>
-          <option value="WORK_COMPLETED">{t('workCompleted') || 'Work Completed'}</option>
-          <option value="CLOSED">{t('closed') || 'Closed'}</option>
+          <option value="WORK_COMPLETED">{t('workCompleted')}</option>
+          <option value="CLOSED">{t('closed')}</option>
         </select>
       </div>
 
@@ -185,7 +185,7 @@ export default function TicketList() {
             onClick={() => setShowRequestForm(true)}
             className="mt-4 text-primary-600 hover:text-primary-700 dark:text-primary-400"
           >
-            {t('createFirstTicket') || 'Create your first ticket'}
+            {t('createFirstTicket')}
           </button>
         </div>
       ) : (
@@ -220,15 +220,15 @@ export default function TicketList() {
                     )}
                     <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                       <span>{t('category') || 'Category'}: {ticket.category.replace(/_/g, ' ')}</span>
-                      {ticket.location && <span>{t('location') || 'Location'}: {ticket.location}</span>}
+                      {ticket.location && <span>{t('location')}: {ticket.location}</span>}
                       {ticket.assignedCrew && (
-                        <span>{t('assignedCrew') || 'Crew'}: {ticket.assignedCrew.name}</span>
+                        <span>{t('assignedCrew')}: {ticket.assignedCrew.name}</span>
                       )}
                       {ticket.assignedSupplier && (
-                        <span>{t('supplier') || 'Supplier'}: {ticket.assignedSupplier.name}</span>
+                        <span>{t('supplier')}: {ticket.assignedSupplier.name}</span>
                       )}
                       {ticket._count && ticket._count.workLogs > 0 && (
-                        <span>{ticket._count.workLogs} {t('workLogs') || 'work logs'}</span>
+                        <span>{ticket._count.workLogs} {t('workLogs')}</span>
                       )}
                     </div>
                     <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">

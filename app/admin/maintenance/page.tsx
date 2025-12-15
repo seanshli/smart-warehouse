@@ -118,7 +118,7 @@ export default function AdminMaintenancePage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {t('maintenanceTicketManagement') || 'Maintenance Ticket Management'}
+          {t('maintenanceTicketManagement')}
         </h1>
         <select
           value={selectedStatus}
@@ -162,9 +162,9 @@ export default function AdminMaintenancePage() {
                 {ticket.title}
               </h3>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                <p>{t('household') || 'Household'}: {ticket.household.name}</p>
-                <p>{t('category') || 'Category'}: {ticket.category.replace(/_/g, ' ')}</p>
-                <p>{t('priority') || 'Priority'}: {ticket.priority}</p>
+                <p>{t('household')}: {ticket.household.name}</p>
+                <p>{t('category')}: {ticket.category.replace(/_/g, ' ')}</p>
+                <p>{t('priority')}: {ticket.priority}</p>
               </div>
             </div>
           ))}

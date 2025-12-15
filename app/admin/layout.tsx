@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: t('adminAnnouncements'), href: '/admin/announcements', icon: BellIcon, current: pathname === '/admin/announcements' },
     { name: t('adminChatHistory') || 'Chat History', href: '/admin/chat-history', icon: BellIcon, current: pathname === '/admin/chat-history' },
     { name: t('adminDuplicateManagement'), href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },
-    { name: t('adminMaintenance') || 'Maintenance Tickets', href: '/admin/maintenance', icon: ExclamationTriangleIcon, current: pathname === '/admin/maintenance' },
+    { name: t('adminMaintenance'), href: '/admin/maintenance', icon: ExclamationTriangleIcon, current: pathname === '/admin/maintenance' },
     { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
     { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
     { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },

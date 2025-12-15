@@ -740,7 +740,6 @@ export interface Translations {
   description: string
   cancel: string
   submit: string
-  submitting: string
   ticketTitlePlaceholder: string
   locationPlaceholder: string
   descriptionPlaceholder: string
@@ -4677,7 +4676,6 @@ const ja: Translations = {
   description: '説明',
   cancel: 'キャンセル',
   submit: '送信',
-  submitting: '送信中...',
   ticketTitlePlaceholder: '問題の簡単な説明',
   locationPlaceholder: '問題の場所はどこですか？',
   descriptionPlaceholder: '問題の詳細な説明を提供してください...',

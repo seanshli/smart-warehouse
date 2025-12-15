@@ -226,7 +226,6 @@ export interface Translations {
   requested: string
   requestMaintenance: string
   ticketTitlePlaceholder: string
-  descriptionPlaceholder: string
   adminBackToAdmin: string
   adminDuplicateItems: string
   adminDuplicateRooms: string

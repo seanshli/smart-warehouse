@@ -232,7 +232,7 @@ export default function TicketList() {
                       )}
                     </div>
                     <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      {t('requested') || 'Requested'}: {new Date(ticket.requestedAt).toLocaleString()}
+                      {t('requested')}: {new Date(ticket.requestedAt).toLocaleString()}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">

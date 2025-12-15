@@ -223,6 +223,9 @@ export interface Translations {
   supplier: string
   assignedCrew: string
   location: string
+  workLogs: string
+  requested: string
+  requestMaintenance: string
   adminBackToAdmin: string
   adminDuplicateItems: string
   adminDuplicateRooms: string
@@ -1431,6 +1434,8 @@ const en: Translations = {
   useExistingItem: 'Use Existing Item',
   location: 'Location',
   workLogs: 'Work Logs',
+  requested: 'Requested',
+  requestMaintenance: 'Request Maintenance',
   country: 'Country',
   city: 'City',
   district: 'District',
@@ -2007,6 +2012,8 @@ const zhTW: Translations = {
   assignedCrew: '工作團隊',
   location: '位置',
   workLogs: '工作記錄',
+  requested: '請求時間',
+  requestMaintenance: '請求報修',
   adminReceiverType: '接收者類型',
   adminStartDate: '開始日期',
   adminEndDate: '結束日期',
@@ -2996,6 +3003,8 @@ const zh: Translations = {
   assignedCrew: '工作团队',
   location: '位置',
   workLogs: '工作记录',
+  requested: '请求时间',
+  requestMaintenance: '请求报修',
   adminReceiverType: '接收者类型',
   adminStartDate: '开始日期',
   adminEndDate: '结束日期',
@@ -3984,6 +3993,8 @@ const ja: Translations = {
   assignedCrew: 'クルー',
   location: '場所',
   workLogs: '作業ログ',
+  requested: 'リクエスト',
+  requestMaintenance: 'メンテナンスをリクエスト',
   adminReceiverType: '受信者タイプ',
   adminStartDate: '開始日',
   adminEndDate: '終了日',

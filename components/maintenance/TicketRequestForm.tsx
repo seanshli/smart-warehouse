@@ -107,7 +107,7 @@ export default function TicketRequestForm({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {t('requestMaintenance') || 'Request Maintenance Support'}
+            {t('requestMaintenance')}
           </h2>
           <button
             onClick={onClose}

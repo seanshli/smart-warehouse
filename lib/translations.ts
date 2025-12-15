@@ -736,7 +736,6 @@ export interface Translations {
   ago: string
   item: string
   submit: string
-  ticketTitlePlaceholder: string
   locationPlaceholder: string
   descriptionPlaceholder: string
   
@@ -4669,7 +4668,6 @@ const ja: Translations = {
   ago: '前',
   item: 'アイテム',
   submit: '送信',
-  ticketTitlePlaceholder: '問題の簡単な説明',
   locationPlaceholder: '問題の場所はどこですか？',
   descriptionPlaceholder: '問題の詳細な説明を提供してください...',
   

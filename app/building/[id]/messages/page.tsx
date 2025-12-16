@@ -132,6 +132,7 @@ export default function BuildingMessagesPage() {
               <ConversationList
                 buildingId={buildingId}
                 onSelectConversation={handleSelectConversation}
+                showAllHouseholds={isAdmin}
               />
             </div>
           </div>

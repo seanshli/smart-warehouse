@@ -149,6 +149,9 @@ export interface Translations {
   inactive: string
   targetAudience: string
   allHouseholds: string
+  startChat: string
+  publicFacilities: string
+  adminToAdmin: string
   specificCommunity: string
   specificBuilding: string
   specificHousehold: string
@@ -1085,6 +1088,9 @@ const en: Translations = {
   inactive: 'Inactive',
   targetAudience: 'Target Audience',
   allHouseholds: 'All Households',
+  startChat: 'Start Chat',
+  publicFacilities: 'Public Facilities',
+  adminToAdmin: 'Admin to Admin',
   specificCommunity: 'Specific Community',
   specificBuilding: 'Specific Building',
   specificHousehold: 'Specific Household',
@@ -2132,6 +2138,9 @@ const zhTW: Translations = {
   inactive: '停用',
   targetAudience: '目標受眾',
   allHouseholds: '所有家庭',
+  startChat: '開始聊天',
+  publicFacilities: '公共設施',
+  adminToAdmin: '管理員對管理員',
   specificCommunity: '特定社區',
   specificBuilding: '特定大樓',
   specificHousehold: '特定住戶',
@@ -3205,6 +3214,9 @@ const zh: Translations = {
   inactive: '停用',
   targetAudience: '目标受众',
   allHouseholds: '所有家庭',
+  startChat: '开始聊天',
+  publicFacilities: '公共设施',
+  adminToAdmin: '管理员对管理员',
   specificCommunity: '特定社区',
   specificBuilding: '特定大楼',
   specificHousehold: '特定住户',
@@ -4220,6 +4232,9 @@ const ja: Translations = {
   inactive: '無効',
   targetAudience: '対象',
   allHouseholds: 'すべての世帯',
+  startChat: 'チャットを開始',
+  publicFacilities: '公共施設',
+  adminToAdmin: '管理者間',
   specificCommunity: '特定のコミュニティ',
   specificBuilding: '特定の建物',
   specificHousehold: '特定の世帯',

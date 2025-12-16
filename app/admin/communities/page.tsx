@@ -235,23 +235,32 @@ export default function AdminCommunitiesPage() {
                         className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                       >
                         <BuildingOfficeIcon className="h-3 w-3 mr-1" />
-                        公共設施
+                        {t('publicFacilities') || '公共設施'}
                       </Link>
                       <Link
                         href={`/community/${community.id}/messages`}
                         className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                       >
                         <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
-                        訊息
+                        {t('messages') || '訊息'}
                       </Link>
                     </div>
-                    <Link
-                      href={`/community/${community.id}`}
-                      className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
-                    >
-                      {t('adminViewDetails')}
-                      <ArrowRightIcon className="ml-2 h-4 w-4" />
-                    </Link>
+                    <div className="flex items-center space-x-2">
+                      <Link
+                        href={`/admin/buildings?communityId=${community.id}`}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        <BuildingOfficeIcon className="h-3 w-3 mr-1" />
+                        {t('adminBuildings') || '建築'}
+                      </Link>
+                      <Link
+                        href={`/community/${community.id}`}
+                        className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
+                      >
+                        {t('adminViewDetails') || '查看详情'}
+                        <ArrowRightIcon className="ml-2 h-4 w-4" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

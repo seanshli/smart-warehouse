@@ -42,9 +42,9 @@ END $$;
 -- This function can be called from the API to ensure all active households have conversations
 
 CREATE OR REPLACE FUNCTION ensure_household_conversations(
+  p_admin_user_id TEXT,
   p_building_id TEXT DEFAULT NULL,
-  p_community_id TEXT DEFAULT NULL,
-  p_admin_user_id TEXT
+  p_community_id TEXT DEFAULT NULL
 )
 RETURNS TABLE(
   created_count INTEGER,
@@ -207,8 +207,8 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 -- This is a one-time migration. Run manually for each building/community admin.
 -- Example usage:
--- SELECT * FROM ensure_household_conversations('building-id-here', NULL, 'admin-user-id-here');
--- SELECT * FROM ensure_household_conversations(NULL, 'community-id-here', 'admin-user-id-here');
+-- SELECT * FROM ensure_household_conversations('admin-user-id-here', 'building-id-here');
+-- SELECT * FROM ensure_household_conversations('admin-user-id-here', NULL, 'community-id-here');
 
 -- ============================================
 -- Verification Queries

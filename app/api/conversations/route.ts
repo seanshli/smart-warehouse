@@ -102,15 +102,15 @@ export async function GET(request: NextRequest) {
         // Call the SQL function to ensure conversations exist
         if (buildingId) {
           await prisma.$executeRawUnsafe(
-            `SELECT ensure_household_conversations($1, NULL, $2)`,
-            buildingId,
-            userId
+            `SELECT ensure_household_conversations($1, $2)`,
+            userId,
+            buildingId
           )
         } else if (communityId) {
           await prisma.$executeRawUnsafe(
-            `SELECT ensure_household_conversations(NULL, $1, $2)`,
-            communityId,
-            userId
+            `SELECT ensure_household_conversations($1, NULL, $2)`,
+            userId,
+            communityId
           )
         }
       } catch (error) {

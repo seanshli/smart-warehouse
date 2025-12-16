@@ -68,7 +68,7 @@ export default function ChatInterface({
   // Check if native chat is available and use it on mobile
   useEffect(() => {
     const checkNativeChat = async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (Capacitor.isNativePlatform() && householdId) {
         try {
           // Try to use native chat on iOS/Android
           await NativeChat.showChat({

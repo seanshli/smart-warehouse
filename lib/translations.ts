@@ -958,6 +958,12 @@ export interface Translations {
   facilityLoadError: string
   facilityLoading: string
   facilityNoFacilities: string
+  facilitiesFound: string
+  facilitiesList: string
+  facilities: string
+  facility: string
+  scrollDown: string
+  facilityCreateHint: string
   facilityDelete: string
   facilityDeleteConfirm: string
   facilityDeleted: string
@@ -1892,6 +1898,12 @@ const en: Translations = {
   facilityLoadError: 'Failed to load facilities',
   facilityLoading: 'Loading facilities...',
   facilityNoFacilities: 'No facilities yet',
+  facilitiesFound: 'Facilities Found',
+  facilitiesList: 'Facilities List',
+  facilities: 'facilities',
+  facility: 'facility',
+  scrollDown: 'Scroll down to view all facilities',
+  facilityCreateHint: 'Create a facility using the form above',
   facilityDelete: 'Remove facility',
   facilityDeleteConfirm: 'Remove this facility?',
   facilityDeleted: 'Facility removed',
@@ -2962,6 +2974,12 @@ const zhTW: Translations = {
   facilityLoadError: '載入設施失敗',
   facilityLoading: '載入設施資料中...',
   facilityNoFacilities: '尚未設定設施',
+  facilitiesFound: '找到設施',
+  facilitiesList: '設施列表',
+  facilities: '設施',
+  facility: '設施',
+  scrollDown: '向下滾動查看所有設施',
+  facilityCreateHint: '使用上方表單建立設施',
   facilityDelete: '移除設施',
   facilityDeleteConfirm: '確定要移除這個設施？',
   facilityDeleted: '設施已移除',
@@ -3968,6 +3986,12 @@ const zh: Translations = {
   facilityLoadError: '载入设施失败',
   facilityLoading: '载入设施中...',
   facilityNoFacilities: '尚未设置设施',
+  facilitiesFound: '找到设施',
+  facilitiesList: '设施列表',
+  facilities: '设施',
+  facility: '设施',
+  scrollDown: '向下滚动查看所有设施',
+  facilityCreateHint: '使用上方表单创建设施',
   facilityDelete: '移除设施',
   facilityDeleteConfirm: '确定移除此设施？',
   facilityDeleted: '设施已移除',
@@ -4974,6 +4998,12 @@ const ja: Translations = {
   facilityLoadError: '施設の読み込みに失敗しました',
   facilityLoading: '施設を読み込み中...',
   facilityNoFacilities: '施設はまだありません',
+  facilitiesFound: '施設が見つかりました',
+  facilitiesList: '施設リスト',
+  facilities: '施設',
+  facility: '施設',
+  scrollDown: '下にスクロールしてすべての施設を表示',
+  facilityCreateHint: '上記のフォームを使用して施設を作成',
   facilityDelete: '施設を削除',
   facilityDeleteConfirm: 'この施設を削除しますか？',
   facilityDeleted: '施設を削除しました',

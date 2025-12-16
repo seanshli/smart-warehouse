@@ -14,40 +14,83 @@ export async function POST(request: NextRequest) {
 
     const userId = (session.user as any).id
     const body = await request.json()
-    const { householdId, buildingId, initialMessage, ticketId } = body
+    const { householdId, buildingId, communityId, initialMessage, ticketId } = body
 
-    if (!householdId) {
-      return NextResponse.json({ error: 'householdId is required' }, { status: 400 })
+    // For building/community admin context, householdId might not be required
+    // But we need at least buildingId or communityId
+    if (!householdId && !buildingId && !communityId) {
+      return NextResponse.json({ error: 'householdId, buildingId, or communityId is required' }, { status: 400 })
     }
 
-    // Verify user belongs to household
-    const membership = await prisma.householdMember.findUnique({
-      where: {
-        userId_householdId: {
-          userId,
-          householdId
-        }
-      }
-    })
-
-    if (!membership) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
-
-    // Get building if not provided
     let effectiveBuildingId = buildingId
-    if (!effectiveBuildingId) {
-      const household = await prisma.household.findUnique({
-        where: { id: householdId },
-        select: { buildingId: true }
+    let effectiveHouseholdId = householdId
+
+    // If householdId provided, verify user belongs to household
+    if (householdId) {
+      const membership = await prisma.householdMember.findUnique({
+        where: {
+          userId_householdId: {
+            userId,
+            householdId
+          }
+        }
       })
-      effectiveBuildingId = household?.buildingId || null
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+
+      // Get building from household if not provided
+      if (!effectiveBuildingId) {
+        const household = await prisma.household.findUnique({
+          where: { id: householdId },
+          select: { buildingId: true }
+        })
+        effectiveBuildingId = household?.buildingId || null
+      }
+    } else {
+      // For admin context without household, use buildingId or communityId
+      // Find a household in this building/community to use for conversation
+      if (effectiveBuildingId) {
+        const building = await prisma.building.findUnique({
+          where: { id: effectiveBuildingId },
+          include: {
+            households: {
+              take: 1,
+              select: { id: true }
+            }
+          }
+        })
+        // Use first household in building as placeholder (for conversation structure)
+        effectiveHouseholdId = building?.households[0]?.id || null
+      } else if (communityId) {
+        const community = await prisma.community.findUnique({
+          where: { id: communityId },
+          include: {
+            buildings: {
+              take: 1,
+              include: {
+                households: {
+                  take: 1,
+                  select: { id: true }
+                }
+              }
+            }
+          }
+        })
+        effectiveHouseholdId = community?.buildings[0]?.households[0]?.id || null
+        effectiveBuildingId = community?.buildings[0]?.id || null
+      }
+    }
+
+    if (!effectiveHouseholdId) {
+      return NextResponse.json({ error: 'Could not determine household context for conversation' }, { status: 400 })
     }
 
     // Create or get conversation with front desk
     const conversationId = await getOrCreateConversation(
       userId,
-      householdId,
+      effectiveHouseholdId,
       effectiveBuildingId,
       ticketId ? 'maintenance_ticket' : 'front_desk',
       ticketId || null

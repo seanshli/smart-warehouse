@@ -10,10 +10,12 @@ import toast from 'react-hot-toast'
 
 interface FrontDeskChatButtonProps {
   ticketId?: string // Optional: if provided, links chat to maintenance ticket
+  buildingId?: string // Optional: explicit building ID (for building-level front desk)
+  communityId?: string // Optional: explicit community ID (for community-level front desk)
   className?: string
 }
 
-export default function FrontDeskChatButton({ ticketId, className = '' }: FrontDeskChatButtonProps) {
+export default function FrontDeskChatButton({ ticketId, buildingId: propBuildingId, communityId, className = '' }: FrontDeskChatButtonProps) {
   const { t } = useLanguage()
   const { household } = useHousehold()
   const { data: session } = useSession()
@@ -22,8 +24,18 @@ export default function FrontDeskChatButton({ ticketId, className = '' }: FrontD
   const [loading, setLoading] = useState(false)
 
   const handleRequestChat = async () => {
-    if (!household?.id) {
-      toast.error('No household selected')
+    // Use prop buildingId if provided, otherwise fall back to household's buildingId
+    const effectiveBuildingId = propBuildingId || household?.buildingId
+
+    if (!household?.id && !effectiveBuildingId && !communityId) {
+      toast.error('No household or building context available')
+      return
+    }
+
+    // For building/community admin context, we might not have a household
+    // In that case, we need to handle it differently
+    if (!household?.id && !effectiveBuildingId && !communityId) {
+      toast.error('Cannot create front desk chat without household or building context')
       return
     }
 
@@ -34,12 +46,17 @@ export default function FrontDeskChatButton({ ticketId, className = '' }: FrontD
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          householdId: household.id,
-          buildingId: household.buildingId,
+          householdId: household?.id || null, // May be null for admin context
+          buildingId: effectiveBuildingId || null,
+          communityId: communityId || null,
           ticketId: ticketId || null,
           initialMessage: ticketId 
             ? `I would like to discuss maintenance ticket ${ticketId}`
-            : 'Hello, I need assistance from the front desk'
+            : effectiveBuildingId 
+              ? 'Hello, I need assistance from the building front desk'
+              : communityId
+              ? 'Hello, I need assistance from the community front desk'
+              : 'Hello, I need assistance from the front desk'
         }),
       })
 

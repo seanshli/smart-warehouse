@@ -21,6 +21,7 @@ interface Building {
   floorCount?: number
   unitCount?: number
   householdCount: number
+  facilityCount?: number
   community: {
     id: string
     name: string
@@ -264,7 +265,7 @@ export default function AdminBuildingsPage() {
                             className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                           >
                             <BuildingOfficeIcon className="h-3 w-3 mr-1" />
-                            公共設施
+                            公共設施 {building.facilityCount !== undefined && `(${building.facilityCount})`}
                           </Link>
                         </div>
                         <div className="mt-1 flex items-center text-xs text-gray-400">

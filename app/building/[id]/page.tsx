@@ -1768,6 +1768,7 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
   const { t } = useLanguage()
   const [facilities, setFacilities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [facilityError, setFacilityError] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '',
     type: 'custom',
@@ -1789,11 +1790,17 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
   const fetchFacilities = async () => {
     try {
       setLoading(true)
+      setFacilityError(null)
       const response = await fetch(`/api/building/${buildingId}/facility`)
       if (!response.ok) {
-        throw new Error('Failed to load facilities')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Failed to load facilities'
+        console.error('Facility API error:', errorMessage, errorData)
+        setFacilityError(errorMessage)
+        throw new Error(errorMessage)
       }
       const data = await response.json()
+      console.log('[FacilitiesTab] Loaded facilities:', data.data?.length || 0, data.data)
       setFacilities(data.data || [])
       const map: Record<string, any[]> = {}
       data.data?.forEach((facility: any) => {
@@ -1802,7 +1809,9 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
       setHoursState(map)
     } catch (error) {
       console.error('Error loading facilities:', error)
-      toast.error(t('facilityLoadError'))
+      const errorMessage = error instanceof Error ? error.message : t('facilityLoadError') || 'Failed to load facilities'
+      setFacilityError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -1932,6 +1941,27 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Facilities Summary */}
+      {!loading && facilities.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-blue-900">
+                {t('facilitiesFound') || 'Facilities Found'}
+              </h4>
+              <p className="text-sm text-blue-700 mt-1">
+                {facilities.length} {facilities.length === 1 ? t('facility') || 'facility' : t('facilities') || 'facilities'} {t('available') || 'available'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-blue-600">
+                {t('scrollDown') || 'Scroll down to view all facilities'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="border border-gray-200 rounded-lg p-4">
         <h4 className="text-base font-semibold text-gray-900 mb-4">{t('facilityAddNew')}</h4>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1985,12 +2015,48 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
         </div>
       </div>
 
+      {facilityError && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <XCircleIcon className="h-5 w-5 text-red-400 mr-3" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800">{t('facilityLoadError') || 'Failed to load facilities'}</h3>
+              <p className="text-sm text-red-700 mt-1">{facilityError}</p>
+              <button
+                onClick={fetchFacilities}
+                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              >
+                {t('retry') || 'Retry'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
-        <div className="text-center py-8 text-gray-500">{t('facilityLoading')}</div>
+        <div className="text-center py-8 text-gray-500">{t('facilityLoading') || 'Loading facilities...'}</div>
       ) : facilities.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">{t('facilityNoFacilities')}</div>
+        <div className="text-center py-8 text-gray-500">
+          {facilityError ? (
+            <div>
+              <p className="text-red-600">{t('facilityLoadError') || 'Failed to load facilities'}</p>
+              <p className="text-sm text-gray-500 mt-2">{t('facilityNoFacilities') || 'No facilities found'}</p>
+            </div>
+          ) : (
+            <div>
+              <p>{t('facilityNoFacilities') || 'No facilities found'}</p>
+              <p className="text-sm text-gray-400 mt-2">{t('facilityCreateHint') || 'Create a facility using the form above'}</p>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-4">
+          {/* Facilities List Header */}
+          <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+            <h4 className="text-base font-semibold text-gray-900">
+              {t('facilitiesList') || 'Facilities List'} ({facilities.length})
+            </h4>
+          </div>
           {facilities.map((facility) => (
             <div key={facility.id} className="border border-gray-200 rounded-lg p-4">
               {editingFacility === facility.id ? (

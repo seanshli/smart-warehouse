@@ -117,9 +117,9 @@ export default function ConversationList({ buildingId, onSelectConversation }: C
     return (
       <div className="text-center py-8 text-gray-500 dark:text-gray-400 space-y-4">
         <p>{t('noConversations') || 'No conversations yet'}</p>
-        {household && (
+        {(household || buildingId) && (
           <div className="flex justify-center">
-            <FrontDeskChatButton />
+            <FrontDeskChatButton buildingId={buildingId} />
           </div>
         )}
       </div>
@@ -127,11 +127,14 @@ export default function ConversationList({ buildingId, onSelectConversation }: C
   }
 
   return (
-    <div className="space-y-2">
+      <div className="space-y-2">
       {/* Front Desk Chat Button */}
-      {household && (
+      {(household || buildingId) && (
         <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-          <FrontDeskChatButton className="w-full justify-center" />
+          <FrontDeskChatButton 
+            buildingId={buildingId}
+            className="w-full justify-center" 
+          />
         </div>
       )}
       {conversations.map((conversation) => {

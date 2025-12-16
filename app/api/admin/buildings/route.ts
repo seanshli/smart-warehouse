@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
           _count: {
             select: {
               households: true,
+              facilities: true,
             },
           },
         },
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
           _count: {
             select: {
               households: true,
+              facilities: true,
             },
           },
         },
@@ -116,6 +118,7 @@ export async function GET(request: NextRequest) {
         latitude: b.latitude,
         longitude: b.longitude,
         householdCount: b._count.households,
+        facilityCount: b._count.facilities,
         community: b.community,
         communityId: b.communityId,
         createdAt: b.createdAt,

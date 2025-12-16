@@ -53,10 +53,13 @@ export async function GET(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    // Fetch facilities - include both active and inactive for admin view
+    // Filter can be applied on frontend if needed
     const facilities = await prisma.facility.findMany({
       where: { 
         buildingId,
-        isActive: true,
+        // Remove isActive filter to show all facilities
+        // Admin should see all facilities to manage them
       },
       include: {
         operatingHours: {
@@ -70,11 +73,19 @@ export async function GET(
       },
     })
 
+    console.log(`[Facility API] Found ${facilities.length} facilities for building ${buildingId}`)
+    if (facilities.length > 0) {
+      console.log(`[Facility API] Facility names:`, facilities.map(f => f.name))
+    }
     return NextResponse.json({ success: true, data: facilities })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching facilities:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch facilities' },
+      { 
+        error: 'Failed to fetch facilities',
+        details: error?.message || 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      },
       { status: 500 }
     )
   }

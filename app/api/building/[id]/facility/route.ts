@@ -72,14 +72,28 @@ export async function GET(
       }
     }
 
+    // Get floor filter if provided
+    const { searchParams } = new URL(request.url)
+    const floorFilter = searchParams.get('floor')
+
     // Fetch facilities - include both active and inactive for admin view
     // Filter can be applied on frontend if needed
+    const whereClause: any = { 
+      buildingId,
+      // Remove isActive filter to show all facilities
+      // Admin should see all facilities to manage them
+    }
+
+    // Add floor filter if provided
+    if (floorFilter) {
+      const floorNumber = parseInt(floorFilter, 10)
+      if (!isNaN(floorNumber)) {
+        whereClause.floorNumber = floorNumber
+      }
+    }
+
     const facilities = await prisma.facility.findMany({
-      where: { 
-        buildingId,
-        // Remove isActive filter to show all facilities
-        // Admin should see all facilities to manage them
-      },
+      where: whereClause,
       include: {
         operatingHours: {
           orderBy: {

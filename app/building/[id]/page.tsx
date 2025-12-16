@@ -64,6 +64,7 @@ export default function BuildingDetailPage() {
   const { data: session } = useSession()
   const { currentLanguage, setLanguage, t } = useLanguage()
   const buildingId = params.id as string
+  const floorFilter = searchParams?.get('floor')
   const initialTabFromQuery =
     (searchParams?.get('tab') as
       | 'overview'
@@ -253,7 +254,7 @@ export default function BuildingDetailPage() {
               />
             </div>
           )}
-          {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} />}
+          {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} floorFilter={floorFilter || undefined} />}
           {activeTab === 'working-groups' && buildingId && building && (
             <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} />
           )}
@@ -966,12 +967,30 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
         <div className="space-y-4">
           {floors.map((floor) => (
             <div key={floor.floorNumber} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center mb-3">
-                <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mr-2" />
-                <h4 className="font-semibold text-gray-900">
-                  {t('buildingFloor')} {floor.floorNumber}
-                  {floor.floor?.name && ` - ${floor.floor.name}`}
-                </h4>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mr-2" />
+                  <h4 className="font-semibold text-gray-900">
+                    {t('buildingFloor')} {floor.floorNumber}
+                    {floor.floor?.name && ` - ${floor.floor.name}`}
+                  </h4>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Link
+                    href={`/building/${buildingId}?tab=facilities&floor=${floor.floorNumber}`}
+                    className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    預定
+                  </Link>
+                  <Link
+                    href={`/admin/maintenance`}
+                    className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <WrenchScrewdriverIcon className="h-3 w-3 mr-1" />
+                    報修
+                  </Link>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <div className="flex gap-3 min-w-max">
@@ -1771,7 +1790,7 @@ function AnnouncementsTab({
   )
 }
 
-function FacilitiesTab({ buildingId }: { buildingId: string }) {
+function FacilitiesTab({ buildingId, floorFilter }: { buildingId: string; floorFilter?: string }) {
   const { t } = useLanguage()
   const [facilities, setFacilities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -1798,7 +1817,10 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
     try {
       setLoading(true)
       setFacilityError(null)
-      const response = await fetch(`/api/building/${buildingId}/facility`)
+      const url = floorFilter 
+        ? `/api/building/${buildingId}/facility?floor=${floorFilter}`
+        : `/api/building/${buildingId}/facility`
+      const response = await fetch(url)
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         const errorMessage = errorData.error || 'Failed to load facilities'
@@ -1827,7 +1849,7 @@ function FacilitiesTab({ buildingId }: { buildingId: string }) {
   useEffect(() => {
     fetchFacilities()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildingId])
+  }, [buildingId, floorFilter])
 
   const handleCreate = async () => {
     try {

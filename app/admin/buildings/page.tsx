@@ -10,7 +10,9 @@ import {
   UserGroupIcon,
   ArrowRightIcon,
   ClipboardDocumentIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  CalendarIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -274,6 +276,20 @@ export default function AdminBuildingsPage() {
                           >
                             <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
                             訊息
+                          </Link>
+                          <Link
+                            href={`/admin/facilities/building/${building.id}?tab=reservations`}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            <CalendarIcon className="h-3 w-3 mr-1" />
+                            預定
+                          </Link>
+                          <Link
+                            href={`/admin/maintenance`}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            <WrenchScrewdriverIcon className="h-3 w-3 mr-1" />
+                            報修
                           </Link>
                         </div>
                         <div className="mt-1 flex items-center text-xs text-gray-400">

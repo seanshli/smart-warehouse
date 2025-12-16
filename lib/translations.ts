@@ -569,6 +569,7 @@ export interface Translations {
   uploading: string
   photos: string
   noRooms: string
+  routingType: string
   
   // Room Management
   roomManagement: string
@@ -1544,6 +1545,7 @@ const en: Translations = {
   uploading: 'Uploading...',
   photos: 'Photos',
   noRooms: 'No rooms available',
+  routingType: 'Routing Type',
   
   // Room Management
   roomManagement: 'Room Management',
@@ -2608,6 +2610,7 @@ const zhTW: Translations = {
   uploading: '上傳中...',
   photos: '照片',
   noRooms: '尚無房間',
+  routingType: '路由類型',
   
   // Room Management
   roomManagement: '房間管理',
@@ -3623,6 +3626,7 @@ const zh: Translations = {
   uploading: '上传中...',
   photos: '照片',
   noRooms: '暂无房间',
+  routingType: '路由类型',
   
   // Room Management
   roomManagement: '房间管理',
@@ -4634,6 +4638,7 @@ const ja: Translations = {
   uploading: 'アップロード中...',
   photos: '写真',
   noRooms: '部屋がありません',
+  routingType: 'ルーティングタイプ',
   
   // Room Management
   roomManagement: '部屋管理',

@@ -165,6 +165,14 @@ export default function AdminMaintenancePage() {
                 <p>{t('household')}: {ticket.household.name}</p>
                 <p>{t('category')}: {ticket.category.replace(/_/g, ' ')}</p>
                 <p>{t('priority')}: {ticket.priority}</p>
+                {ticket.routingType && (
+                  <p className="mt-1">
+                    <span className="font-medium">{t('routingType') || 'Routing'}:</span>{' '}
+                    <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {ticket.routingType.replace(/_/g, ' ')}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           ))}

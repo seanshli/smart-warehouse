@@ -241,13 +241,6 @@ export default function ContextFacilitiesPage() {
     }
   }, [reservations])
 
-  const [commentModal, setCommentModal] = useState<{ open: boolean; reservationId: string | null; action: 'approve' | 'reject' | null }>({
-    open: false,
-    reservationId: null,
-    action: null,
-  })
-  const [comment, setComment] = useState('')
-
   const handleApproveReservation = async (reservationId: string, adminComment?: string) => {
     try {
       const response = await fetch(`/api/facility/reservation/${reservationId}/approve`, {

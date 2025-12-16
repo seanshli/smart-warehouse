@@ -3,12 +3,11 @@
 import { useState, useRef } from 'react'
 import { useLanguage } from '@/components/LanguageProvider'
 import ItemsList from '@/components/warehouse/ItemsList'
-import AddItemModal from '@/components/warehouse/AddItemModal'
 import EditItemModal from '@/components/warehouse/EditItemModal'
 import MoveItemModal from '@/components/warehouse/MoveItemModal'
 import CheckoutModal from '@/components/warehouse/CheckoutModal'
 import QuantityAdjustModal from '@/components/warehouse/QuantityAdjustModal'
-import { PlusIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
 
 interface Item {
   id: string
@@ -89,13 +88,6 @@ export default function ItemsPage() {
                   className="inline-flex items-center px-4 py-2 border border-orange-300 dark:border-orange-600 rounded-md shadow-sm text-sm font-medium text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                 >
                   🔍 {t('checkDuplicates') || 'Check Duplicates'}
-                </button>
-                <button
-                  onClick={() => setShowAddItem(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  {t('addItem')}
                 </button>
               </div>
             </div>
@@ -216,15 +208,6 @@ export default function ItemsPage() {
       </div>
 
       {/* Modals */}
-      {showAddItem && (
-        <AddItemModal onClose={() => {
-          setShowAddItem(false)
-          if (refreshItemsListRef.current) {
-            refreshItemsListRef.current()
-          }
-        }} />
-      )}
-      
       {showEditItem && selectedItem && (
         <EditItemModal 
           item={selectedItem} 

@@ -26,7 +26,6 @@ import {
   ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import AddItemModal from './AddItemModal'
 import SearchModal from './SearchModal'
 import EditItemModal from './EditItemModal'
 import MoveItemModal from './MoveItemModal'
@@ -318,7 +317,6 @@ export default function Dashboard() {
   }
   const [activeTab, setActiveTab] = useState('dashboard')
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
-  const [showAddItem, setShowAddItem] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [hasError, setHasError] = useState(false)
 
@@ -443,17 +441,6 @@ export default function Dashboard() {
             
             {/* Right side: Minimal buttons on mobile */}
             <div className="flex items-center space-x-1 sm:space-x-2">
-              {/* Add Item - Primary action */}
-              <button
-                onClick={() => setShowAddItem(true)}
-                className={`inline-flex items-center border border-transparent font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 flex-shrink-0 ${
-                  deviceInfo.isMobile ? 'px-1.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
-                }`}
-              >
-                <PlusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-                {!deviceInfo.isMobile && <span className="ml-1">{t('addItem')}</span>}
-              </button>
-              
               {/* Search - Icon only on mobile */}
               <button
                 onClick={() => setShowSearch(true)}
@@ -718,18 +705,6 @@ export default function Dashboard() {
              </main>
 
       {/* Modals */}
-      {showAddItem && (
-        <AddItemModal onClose={() => {
-          setShowAddItem(false)
-          // Refresh items list and dashboard stats after adding an item
-          console.log('AddItemModal closed, refreshing data...')
-          if (refreshItemsList && typeof refreshItemsList === 'function') {
-            refreshItemsList()
-          }
-          // Force a refresh of all household data (will trigger dashboard stats refresh)
-          forceRefresh()
-        }} />
-      )}
       {showSearch && (
         <SearchModal onClose={() => setShowSearch(false)} />
       )}

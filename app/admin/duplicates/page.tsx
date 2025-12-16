@@ -365,31 +365,38 @@ export default function AdminDuplicatesPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
-                >
-                  <span>{tab.name}</span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    tab.count > 0 
-                      ? 'bg-red-100 text-red-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </nav>
+        {/* Layout: Vertical Sidebar + Content */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Vertical Sidebar */}
+          <div className="lg:w-64 flex-shrink-0">
+            <div className="bg-white shadow rounded-lg p-2">
+              <nav className="space-y-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`${
+                      activeTab === tab.id
+                        ? 'bg-primary-50 text-primary-600 border-primary-500'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent'
+                    } w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md border-l-2 transition-colors`}
+                  >
+                    <span className="truncate">{tab.name}</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
+                      tab.count > 0 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
+
+          {/* Content */}
+          <div className="flex-1 bg-white shadow rounded-lg">
 
           <div className="p-6">
             {activeTab === 'items' && (
@@ -530,6 +537,7 @@ export default function AdminDuplicatesPage() {
                 )}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

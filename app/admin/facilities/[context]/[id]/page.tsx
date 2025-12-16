@@ -332,33 +332,41 @@ export default function ContextFacilitiesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {(['facilities', 'reservations', 'calendar', 'usage'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
-                  activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab === 'facilities' && <BuildingOfficeIcon className="h-5 w-5 inline mr-2" />}
-                {tab === 'reservations' && <ClockIcon className="h-5 w-5 inline mr-2" />}
-                {tab === 'calendar' && <CalendarIcon className="h-5 w-5 inline mr-2" />}
-                {tab === 'usage' && <ChartBarIcon className="h-5 w-5 inline mr-2" />}
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Content */}
+      {/* Layout: Vertical Sidebar + Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Vertical Sidebar */}
+          <div className="lg:w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+              <nav className="space-y-1">
+                {([
+                  { id: 'facilities', name: t('facilities') || 'Facilities', icon: BuildingOfficeIcon },
+                  { id: 'reservations', name: t('facilityReservations') || 'Reservations', icon: ClockIcon },
+                  { id: 'calendar', name: 'Calendar', icon: CalendarIcon },
+                  { id: 'usage', name: 'Usage', icon: ChartBarIcon },
+                ] as const).map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`${
+                        activeTab === tab.id
+                          ? 'bg-primary-50 text-primary-600 border-primary-500'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent'
+                      } w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md border-l-2 transition-colors capitalize`}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="truncate">{tab.name}</span>
+                    </button>
+                  )
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1">
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex">
@@ -573,6 +581,8 @@ export default function ContextFacilitiesPage() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   )

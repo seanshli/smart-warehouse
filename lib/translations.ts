@@ -268,6 +268,8 @@ export interface Translations {
   reasonPlaceholder: string
   approve: string
   reject: string
+  calendar: string
+  usage: string
   
   // Common
   commonLanguage: string
@@ -1107,6 +1109,8 @@ const en: Translations = {
   reasonPlaceholder: 'e.g., Time slot already occupied by another reservation',
   approve: 'Approve',
   reject: 'Reject',
+  calendar: 'Calendar',
+  usage: 'Usage',
   specificCommunity: 'Specific Community',
   specificBuilding: 'Specific Building',
   specificHousehold: 'Specific Household',
@@ -2165,6 +2169,8 @@ const zhTW: Translations = {
   reasonPlaceholder: '例如：時間段已被其他預約佔用',
   approve: '批准',
   reject: '拒絕',
+  calendar: '行事曆',
+  usage: '使用情況',
   specificCommunity: '特定社區',
   specificBuilding: '特定大樓',
   specificHousehold: '特定住戶',
@@ -3249,6 +3255,8 @@ const zh: Translations = {
   reasonPlaceholder: '例如：时间段已被其他预约占用',
   approve: '批准',
   reject: '拒绝',
+  calendar: '日历',
+  usage: '使用情况',
   specificCommunity: '特定社区',
   specificBuilding: '特定大楼',
   specificHousehold: '特定住户',
@@ -4275,6 +4283,8 @@ const ja: Translations = {
   reasonPlaceholder: '例：時間枠は別の予約で既に占有されています',
   approve: '承認',
   reject: '拒否',
+  calendar: 'カレンダー',
+  usage: '使用状況',
   specificCommunity: '特定のコミュニティ',
   specificBuilding: '特定の建物',
   specificHousehold: '特定の世帯',

@@ -1069,6 +1069,7 @@ model MaintenanceTicket {
   category              String // BUILDING_MAINTENANCE, HOUSE_CLEANING, FOOD_ORDER, CAR_SERVICE, APPLIANCE, WATER_FILTER, SMART_HOME, etc.
   priority              String?  @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
   location              String?
+  photos                String[]  // Array of photo URLs or base64 strings
   
   // Workflow state
   status                String?  @default("PENDING_EVALUATION") // PENDING_EVALUATION, EVALUATED, ASSIGNED, IN_PROGRESS, WORK_COMPLETED, SIGNED_OFF_BY_CREW, SIGNED_OFF_BY_SUPPLIER, SIGNED_OFF_BY_HOUSEHOLD, CLOSED, CANCELLED

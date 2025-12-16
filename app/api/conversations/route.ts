@@ -24,21 +24,54 @@ export async function GET(request: NextRequest) {
     const buildingId = searchParams.get('buildingId')
 
     // Build where clause
-    const where: any = {
-      OR: [
-        { createdBy: userId }, // User created the conversation (frontdesk/admin)
-      ],
-    }
+    // User can see conversations they created (as frontdesk/admin) OR conversations for their household
+    const whereConditions: any[] = [
+      { createdBy: userId }, // User created the conversation (frontdesk/admin)
+    ]
 
-    // If householdId is provided, add it to OR condition and filter
+    // If householdId is provided, check if user is a member
     if (householdId) {
-      where.OR.push({ householdId })
-      where.householdId = householdId
+      const membership = await prisma.householdMember.findUnique({
+        where: {
+          userId_householdId: {
+            userId,
+            householdId
+          }
+        }
+      })
+      
+      if (membership) {
+        // User is household member, can see conversations for this household
+        whereConditions.push({ householdId })
+      }
+    } else {
+      // No householdId provided, get all user's households
+      const userHouseholds = await prisma.householdMember.findMany({
+        where: { userId },
+        select: { householdId: true }
+      })
+      
+      if (userHouseholds.length > 0) {
+        // Add all user's households to OR condition
+        whereConditions.push({
+          householdId: { in: userHouseholds.map(h => h.householdId) }
+        })
+      }
     }
 
-    // Add buildingId filter if provided
+    // Build final where clause
+    const where: any = {
+      OR: whereConditions
+    }
+
+    // Add buildingId filter if provided (applies to all conditions)
     if (buildingId) {
       where.buildingId = buildingId
+    }
+    
+    // If householdId was provided, also filter by it directly
+    if (householdId) {
+      where.householdId = householdId
     }
 
     // Get conversations where user is creator (frontdesk/admin) or household member
@@ -52,12 +85,12 @@ export async function GET(request: NextRequest) {
             apartmentNo: true,
           },
         },
-        building: {
+        building: buildingId ? {
           select: {
             id: true,
             name: true,
           },
-        },
+        } : undefined,
         creator: {
           select: {
             id: true,

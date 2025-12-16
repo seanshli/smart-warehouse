@@ -176,6 +176,9 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
         return
       }
 
+      // Send timezone offset to help server convert correctly
+      const timezoneOffset = -startDateTime.getTimezoneOffset() // Minutes offset from UTC (positive for UTC+)
+      
       const response = await fetch(`/api/facility/${selectedFacility.id}/reservations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,6 +186,7 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
           householdId,
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
+          timezoneOffset, // Send client's timezone offset
           purpose: purpose || null,
           notes: notes || null,
           numberOfPeople: numberOfPeople || null,

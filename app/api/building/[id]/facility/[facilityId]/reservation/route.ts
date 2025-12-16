@@ -22,7 +22,7 @@ export async function POST(
 
     const userId = (session.user as any).id
     const facilityId = params.facilityId
-    const { householdId, startTime, endTime, purpose, notes, numberOfPeople } = await request.json()
+    const { householdId, startTime, endTime, timezoneOffset, purpose, notes, numberOfPeople } = await request.json()
 
     if (!householdId || !startTime || !endTime) {
       return NextResponse.json(
@@ -32,15 +32,25 @@ export async function POST(
     }
 
     // Validate times
-    const start = new Date(startTime)
-    const end = new Date(endTime)
+    // CRITICAL FIX: The client sends ISO string which is UTC time
+    // Example: User selects 13:00 local (UTC+8), client sends "2025-12-16T05:00:00.000Z" (UTC)
+    // We need to convert back to local time for operating hours check
+    const startISO = new Date(startTime)
+    const endISO = new Date(endTime)
     
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    if (isNaN(startISO.getTime()) || isNaN(endISO.getTime())) {
       return NextResponse.json(
         { error: 'Invalid date format' },
         { status: 400 }
       )
     }
+    
+    // Convert UTC time back to client's local time
+    // timezoneOffset is in minutes (positive for UTC+, negative for UTC-)
+    // Example: UTC+8 = +480 minutes
+    const clientTimezoneOffsetMs = (timezoneOffset || 0) * 60 * 1000
+    const start = new Date(startISO.getTime() + clientTimezoneOffsetMs)
+    const end = new Date(endISO.getTime() + clientTimezoneOffsetMs)
 
     if (start >= end) {
       return NextResponse.json(
@@ -267,59 +277,13 @@ export async function POST(
       const [openHour, openMinute] = operatingHours.openTime.split(':').map(Number)
       const [closeHour, closeMinute] = operatingHours.closeTime.split(':').map(Number)
       
-      // CRITICAL FIX: Extract the LOCAL time that was intended
-      // The ISO string is in UTC, but we need the local time that the user selected
-      // Parse the ISO string to extract the date and time components, then reconstruct in local timezone
-      
-      // Extract date components from ISO string
-      const startISO = start.toISOString()
-      const endISO = end.toISOString()
-      
-      // Parse ISO string: YYYY-MM-DDTHH:MM:SS.sssZ
-      const startMatch = startISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
-      const endMatch = endISO.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
-      
-      let reservationStartHour: number
-      let reservationStartMinute: number
-      let reservationEndHour: number
-      let reservationEndMinute: number
-      
-      if (startMatch && endMatch) {
-        // Extract UTC time from ISO string
-        const startUTCHour = parseInt(startMatch[4], 10)
-        const startUTCMinute = parseInt(startMatch[5], 10)
-        const endUTCHour = parseInt(endMatch[4], 10)
-        const endUTCMinute = parseInt(endMatch[5], 10)
-        
-        // Get timezone offset from the Date object (negative for timezones ahead of UTC)
-        // e.g., UTC+8 (Taiwan) = -480 minutes
-        const timezoneOffsetMinutes = start.getTimezoneOffset()
-        
-        // Convert UTC to local time: local = UTC - offset
-        // Since offset is negative for ahead-of-UTC, we subtract it (which adds)
-        let startLocalMinutes = startUTCHour * 60 + startUTCMinute - timezoneOffsetMinutes
-        let endLocalMinutes = endUTCHour * 60 + endUTCMinute - timezoneOffsetMinutes
-        
-        // Normalize to 0-1439 (minutes in a day)
-        startLocalMinutes = ((startLocalMinutes % 1440) + 1440) % 1440
-        endLocalMinutes = ((endLocalMinutes % 1440) + 1440) % 1440
-        
-        reservationStartHour = Math.floor(startLocalMinutes / 60)
-        reservationStartMinute = startLocalMinutes % 60
-        reservationEndHour = Math.floor(endLocalMinutes / 60)
-        reservationEndMinute = endLocalMinutes % 60
-      } else {
-        // Fallback: use local time methods (works if server is in same timezone as client)
-        reservationStartHour = start.getHours()
-        reservationStartMinute = start.getMinutes()
-        reservationEndHour = end.getHours()
-        reservationEndMinute = end.getMinutes()
-      }
-      
-      const finalStartHour = reservationStartHour
-      const finalStartMinute = reservationStartMinute
-      const finalEndHour = reservationEndHour
-      const finalEndMinute = reservationEndMinute
+      // CRITICAL FIX: Extract LOCAL time components from Date objects
+      // The Date objects now represent local time (after timezone conversion above)
+      // Extract hours and minutes directly
+      const finalStartHour = start.getHours()
+      const finalStartMinute = start.getMinutes()
+      const finalEndHour = end.getHours()
+      const finalEndMinute = end.getMinutes()
       
       // Convert to minutes for easier comparison
       const openTimeMinutes = openHour * 60 + openMinute

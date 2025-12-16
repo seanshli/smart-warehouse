@@ -113,7 +113,7 @@ export async function POST(
 
     const userId = (session.user as any).id
     const facilityId = params.id
-    const { householdId, startTime, endTime, purpose, notes, numberOfPeople } = await request.json()
+    const { householdId, startTime, endTime, timezoneOffset, purpose, notes, numberOfPeople } = await request.json()
 
     if (!householdId || !startTime || !endTime) {
       return NextResponse.json(
@@ -240,49 +240,19 @@ export async function POST(
       const [openHour, openMinute] = operatingHours.openTime.split(':').map(Number)
       const [closeHour, closeMinute] = operatingHours.closeTime.split(':').map(Number)
       
-      // CRITICAL FIX: Extract time from ISO string and convert to local time
-      // The frontend sends ISO string (UTC), but we need to extract the intended local time
-      // Parse ISO: YYYY-MM-DDTHH:MM:SS.sssZ
-      const startTimeMatch = startISO.match(/T(\d{2}):(\d{2}):(\d{2})/)
-      const endISO = end.toISOString()
-      const endTimeMatch = endISO.match(/T(\d{2}):(\d{2}):(\d{2})/)
+      // CRITICAL FIX: Convert UTC time back to client's local time
+      // The client sends ISO string (UTC) and timezone offset
+      // Example: User selects 13:00 local (UTC+8), client sends "2025-12-16T05:00:00.000Z" (UTC) and timezoneOffset: 480
+      // We need to convert back to local time for operating hours check
+      const clientTimezoneOffsetMs = (timezoneOffset || 0) * 60 * 1000 // Convert minutes to milliseconds
+      const startLocal = new Date(start.getTime() + clientTimezoneOffsetMs)
+      const endLocal = new Date(end.getTime() + clientTimezoneOffsetMs)
       
-      let reservationStartHour: number
-      let reservationStartMinute: number
-      let reservationEndHour: number
-      let reservationEndMinute: number
-      
-      if (startTimeMatch && endTimeMatch) {
-        // Extract UTC hours/minutes from ISO string
-        const startUTCHour = parseInt(startTimeMatch[1], 10)
-        const startUTCMinute = parseInt(startTimeMatch[2], 10)
-        const endUTCHour = parseInt(endTimeMatch[1], 10)
-        const endUTCMinute = parseInt(endTimeMatch[2], 10)
-        
-        // Get timezone offset (in minutes, negative for timezones ahead of UTC)
-        // e.g., UTC+8 (Taiwan) = -480 minutes
-        const timezoneOffsetMinutes = start.getTimezoneOffset()
-        
-        // Convert UTC to local: local = UTC - offset
-        // Since offset is negative for ahead-of-UTC, subtracting it adds hours
-        let startLocalMinutes = startUTCHour * 60 + startUTCMinute - timezoneOffsetMinutes
-        let endLocalMinutes = endUTCHour * 60 + endUTCMinute - timezoneOffsetMinutes
-        
-        // Normalize to 0-1439 (minutes in a day)
-        startLocalMinutes = ((startLocalMinutes % 1440) + 1440) % 1440
-        endLocalMinutes = ((endLocalMinutes % 1440) + 1440) % 1440
-        
-        reservationStartHour = Math.floor(startLocalMinutes / 60)
-        reservationStartMinute = startLocalMinutes % 60
-        reservationEndHour = Math.floor(endLocalMinutes / 60)
-        reservationEndMinute = endLocalMinutes % 60
-      } else {
-        // Fallback: use Date's local time methods (works if server is in same timezone as client)
-        reservationStartHour = start.getHours()
-        reservationStartMinute = start.getMinutes()
-        reservationEndHour = end.getHours()
-        reservationEndMinute = end.getMinutes()
-      }
+      // Extract local time components
+      const reservationStartHour = startLocal.getUTCHours()
+      const reservationStartMinute = startLocal.getUTCMinutes()
+      const reservationEndHour = endLocal.getUTCHours()
+      const reservationEndMinute = endLocal.getUTCMinutes()
       
       // Convert to minutes for easier comparison
       const openTimeMinutes = openHour * 60 + openMinute
@@ -301,9 +271,11 @@ export async function POST(
         reservationEnd: `${String(reservationEndHour).padStart(2, '0')}:${String(reservationEndMinute).padStart(2, '0')}`,
         reservationStartMinutes,
         reservationEndMinutes,
-        timezoneOffset: start.getTimezoneOffset(),
-        startISO,
-        endISO,
+        clientTimezoneOffset: timezoneOffset,
+        startISO: start.toISOString(),
+        endISO: end.toISOString(),
+        startLocal: startLocal.toISOString(),
+        endLocal: endLocal.toISOString(),
       })
       
       // Check if reservation is within operating hours

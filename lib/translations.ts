@@ -226,6 +226,18 @@ export interface Translations {
   requested: string
   requestMaintenance: string
   ticketTitlePlaceholder: string
+  buildingMaintenance: string
+  houseCleaning: string
+  foodOrder: string
+  carService: string
+  applianceRepair: string
+  waterFilter: string
+  smartHome: string
+  other: string
+  low: string
+  normal: string
+  high: string
+  urgent: string
   adminBackToAdmin: string
   adminDuplicateItems: string
   adminDuplicateRooms: string
@@ -555,6 +567,8 @@ export interface Translations {
   changePhoto: string
   removePhoto: string
   uploading: string
+  photos: string
+  noRooms: string
   
   // Room Management
   roomManagement: string
@@ -1232,6 +1246,18 @@ const en: Translations = {
   requestMaintenance: 'Request Maintenance',
   ticketTitlePlaceholder: 'Brief description of the issue',
   locationPlaceholder: 'Where is the issue located?',
+  buildingMaintenance: 'Building Maintenance',
+  houseCleaning: 'House Cleaning',
+  foodOrder: 'Food Order',
+  carService: 'Car Service',
+  applianceRepair: 'Appliance Repair',
+  waterFilter: 'Water Filter',
+  smartHome: 'Smart Home',
+  other: 'Other',
+  low: 'Low',
+  normal: 'Normal',
+  high: 'High',
+  urgent: 'Urgent',
   descriptionPlaceholder: 'Provide detailed description of the issue...',
   adminBackToAdmin: 'Back to Admin',
   adminDuplicateItems: 'Duplicate Items',
@@ -1510,6 +1536,8 @@ const en: Translations = {
   changePhoto: 'Change Photo',
   removePhoto: 'Remove',
   uploading: 'Uploading...',
+  photos: 'Photos',
+  noRooms: 'No rooms available',
   
   // Room Management
   roomManagement: 'Room Management',
@@ -2029,6 +2057,18 @@ const zhTW: Translations = {
   requestMaintenance: '請求報修',
   ticketTitlePlaceholder: '問題簡要描述',
   locationPlaceholder: '問題所在位置？',
+  buildingMaintenance: '建築維護',
+  houseCleaning: '房屋清潔',
+  foodOrder: '餐點訂購',
+  carService: '車輛服務',
+  applianceRepair: '電器維修',
+  waterFilter: '濾水器',
+  smartHome: '智慧家庭',
+  other: '其他',
+  low: '低',
+  normal: '正常',
+  high: '高',
+  urgent: '緊急',
   descriptionPlaceholder: '提供問題的詳細描述...',
   submit: '提交',
   adminReceiverType: '接收者類型',
@@ -2554,6 +2594,8 @@ const zhTW: Translations = {
   changePhoto: '更換照片',
   removePhoto: '移除',
   uploading: '上傳中...',
+  photos: '照片',
+  noRooms: '尚無房間',
   
   // Room Management
   roomManagement: '房間管理',
@@ -3023,6 +3065,18 @@ const zh: Translations = {
   requestMaintenance: '请求报修',
   ticketTitlePlaceholder: '问题简要描述',
   locationPlaceholder: '问题所在位置？',
+  buildingMaintenance: '建筑维护',
+  houseCleaning: '房屋清洁',
+  foodOrder: '餐点订购',
+  carService: '车辆服务',
+  applianceRepair: '电器维修',
+  waterFilter: '滤水器',
+  smartHome: '智慧家庭',
+  other: '其他',
+  low: '低',
+  normal: '正常',
+  high: '高',
+  urgent: '紧急',
   descriptionPlaceholder: '提供问题的详细描述...',
   submit: '提交',
   adminReceiverType: '接收者类型',
@@ -3549,6 +3603,8 @@ const zh: Translations = {
   changePhoto: '更换照片',
   removePhoto: '移除',
   uploading: '上传中...',
+  photos: '照片',
+  noRooms: '暂无房间',
   
   // Room Management
   roomManagement: '房间管理',
@@ -4016,6 +4072,18 @@ const ja: Translations = {
   requestMaintenance: 'メンテナンスをリクエスト',
   ticketTitlePlaceholder: '問題の簡単な説明',
   locationPlaceholder: '問題の場所はどこですか？',
+  buildingMaintenance: '建物メンテナンス',
+  houseCleaning: '家の清掃',
+  foodOrder: '食事注文',
+  carService: '車両サービス',
+  applianceRepair: '電器修理',
+  waterFilter: '浄水器',
+  smartHome: 'スマートホーム',
+  other: 'その他',
+  low: '低',
+  normal: '通常',
+  high: '高',
+  urgent: '緊急',
   descriptionPlaceholder: '問題の詳細な説明を提供してください...',
   submit: '送信',
   adminReceiverType: '受信者タイプ',
@@ -4540,6 +4608,8 @@ const ja: Translations = {
   changePhoto: '写真を変更',
   removePhoto: '削除',
   uploading: 'アップロード中...',
+  photos: '写真',
+  noRooms: '部屋がありません',
   
   // Room Management
   roomManagement: '部屋管理',

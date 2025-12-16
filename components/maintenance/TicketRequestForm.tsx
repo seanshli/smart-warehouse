@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { XMarkIcon, PaperClipIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+import { XMarkIcon, PaperClipIcon, CameraIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useHousehold } from '@/components/HouseholdProvider'
 import toast from 'react-hot-toast'
@@ -12,39 +12,87 @@ interface TicketRequestFormProps {
   onSuccess?: () => void
 }
 
-const CATEGORIES = [
-  { value: 'BUILDING_MAINTENANCE', label: 'Building Maintenance' },
-  { value: 'HOUSE_CLEANING', label: 'House Cleaning' },
-  { value: 'FOOD_ORDER', label: 'Food Order' },
-  { value: 'CAR_SERVICE', label: 'Car Service' },
-  { value: 'APPLIANCE', label: 'Appliance Repair' },
-  { value: 'WATER_FILTER', label: 'Water Filter' },
-  { value: 'SMART_HOME', label: 'Smart Home' },
-  { value: 'OTHER', label: 'Other' },
-]
-
-const PRIORITIES = [
-  { value: 'LOW', label: 'Low' },
-  { value: 'NORMAL', label: 'Normal' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'URGENT', label: 'Urgent' },
-]
-
 export default function TicketRequestForm({
   isOpen,
   onClose,
   onSuccess,
 }: TicketRequestFormProps) {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const { household } = useHousehold()
   const [loading, setLoading] = useState(false)
+  const [rooms, setRooms] = useState<Array<{ id: string; name: string }>>([])
+  const [loadingRooms, setLoadingRooms] = useState(false)
+  const [photos, setPhotos] = useState<string[]>([]) // Array of base64 image strings
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
     priority: 'NORMAL',
-    location: '',
+    location: '', // Will store room ID
   })
+
+  // Get translated categories and priorities using translation system
+  const CATEGORIES = [
+    { value: 'BUILDING_MAINTENANCE', label: t('buildingMaintenance') || 'Building Maintenance' },
+    { value: 'HOUSE_CLEANING', label: t('houseCleaning') || 'House Cleaning' },
+    { value: 'FOOD_ORDER', label: t('foodOrder') || 'Food Order' },
+    { value: 'CAR_SERVICE', label: t('carService') || 'Car Service' },
+    { value: 'APPLIANCE', label: t('applianceRepair') || 'Appliance Repair' },
+    { value: 'WATER_FILTER', label: t('waterFilter') || 'Water Filter' },
+    { value: 'SMART_HOME', label: t('smartHome') || 'Smart Home' },
+    { value: 'OTHER', label: t('other') || 'Other' },
+  ]
+
+  const PRIORITIES = [
+    { value: 'LOW', label: t('low') || 'Low' },
+    { value: 'NORMAL', label: t('normal') || 'Normal' },
+    { value: 'HIGH', label: t('high') || 'High' },
+    { value: 'URGENT', label: t('urgent') || 'Urgent' },
+  ]
+
+  // Fetch rooms when form opens
+  useEffect(() => {
+    if (isOpen && household?.id) {
+      fetchRooms()
+    }
+  }, [isOpen, household?.id])
+
+  const fetchRooms = async () => {
+    if (!household?.id) return
+    
+    setLoadingRooms(true)
+    try {
+      const response = await fetch(`/api/warehouse/rooms?householdId=${household.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setRooms(data.rooms || [])
+      }
+    } catch (error) {
+      console.error('Error fetching rooms:', error)
+    } finally {
+      setLoadingRooms(false)
+    }
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string
+          setPhotos(prev => [...prev, base64])
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index))
+  }
 
   if (!isOpen) return null
 
@@ -70,6 +118,7 @@ export default function TicketRequestForm({
         body: JSON.stringify({
           householdId: household.id,
           ...formData,
+          photos: photos, // Include photos in request
         }),
       })
 
@@ -89,6 +138,7 @@ export default function TicketRequestForm({
         priority: 'NORMAL',
         location: '',
       })
+      setPhotos([])
 
       if (onSuccess) {
         onSuccess()
@@ -142,7 +192,7 @@ export default function TicketRequestForm({
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
               required
             >
-              <option value="">{t('selectCategory')}</option>
+              <option value="">{t('selectCategory') || 'Select Category'}</option>
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
                   {cat.label}
@@ -172,13 +222,69 @@ export default function TicketRequestForm({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('location')}
             </label>
-            <input
-              type="text"
+            <select
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-              placeholder={t('locationPlaceholder')}
-            />
+            >
+              <option value="">{t('selectRoom') || 'Select Room'}</option>
+              {loadingRooms ? (
+                <option disabled>Loading rooms...</option>
+              ) : rooms.length === 0 ? (
+                <option disabled>{t('noRooms') || 'No rooms available'}</option>
+              ) : (
+                rooms.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('photos') || 'Photos'} ({photos.length})
+            </label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <label className="flex-1 cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <div className="flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md hover:border-primary-500 dark:hover:border-primary-500 transition-colors">
+                    <CameraIcon className="h-5 w-5 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {t('addPhoto') || 'Add Photo'}
+                    </span>
+                  </div>
+                </label>
+              </div>
+              {photos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {photos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div>

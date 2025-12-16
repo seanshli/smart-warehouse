@@ -14,6 +14,9 @@ interface Conversation {
     id: string
     name: string
     apartmentNo?: string
+    _count?: {
+      members: number
+    }
   }
   building?: {
     id: string
@@ -132,11 +135,26 @@ export default function ConversationList({ buildingId, communityId, onSelectConv
 
   return (
       <div className="space-y-2">
-      {/* Front Desk Chat Button */}
-      {(household || buildingId) && (
+      {/* Front Desk Chat Buttons */}
+      {communityId && (
+        <div className="mb-2">
+          <FrontDeskChatButton 
+            communityId={communityId}
+            className="w-full justify-center" 
+          />
+        </div>
+      )}
+      {buildingId && (
         <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
           <FrontDeskChatButton 
             buildingId={buildingId}
+            className="w-full justify-center" 
+          />
+        </div>
+      )}
+      {!buildingId && !communityId && household && (
+        <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <FrontDeskChatButton 
             className="w-full justify-center" 
           />
         </div>
@@ -145,25 +163,41 @@ export default function ConversationList({ buildingId, communityId, onSelectConv
         const Icon = getTypeIcon(conversation.type)
         const lastMessage = conversation.messages[0]
         const unreadCount = conversation._count?.messages || 0
+        const isActive = (conversation.household as any)?._count?.members > 0
 
         return (
           <button
             key={conversation.id}
             onClick={() => onSelectConversation(conversation)}
-            className="w-full text-left p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className={`w-full text-left p-4 border rounded-lg transition-colors ${
+              isActive
+                ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
                   <Icon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                    {conversation.household.name}
-                    {conversation.household.apartmentNo && (
-                      <span className="text-gray-500 dark:text-gray-400 ml-1">
-                        ({conversation.household.apartmentNo})
-                      </span>
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
+                    <h4 className={`font-semibold truncate ${
+                      isActive 
+                        ? 'text-gray-900 dark:text-gray-100' 
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {conversation.household.name}
+                      {conversation.household.apartmentNo && (
+                        <span className="text-gray-500 dark:text-gray-400 ml-1">
+                          ({conversation.household.apartmentNo})
+                        </span>
+                      )}
+                    </h4>
+                    {isActive ? (
+                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" title={t('active') || 'Active'} />
+                    ) : (
+                      <div className="w-2 h-2 bg-gray-400 rounded-full flex-shrink-0" title={t('inactive') || 'Inactive'} />
                     )}
-                  </h4>
+                  </div>
                 </div>
                 {lastMessage && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 truncate">

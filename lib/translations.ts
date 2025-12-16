@@ -570,6 +570,8 @@ export interface Translations {
   photos: string
   noRooms: string
   routingType: string
+  backToAdminHome: string
+  filteredByHousehold: string
   
   // Room Management
   roomManagement: string
@@ -1546,6 +1548,8 @@ const en: Translations = {
   photos: 'Photos',
   noRooms: 'No rooms available',
   routingType: 'Routing Type',
+  backToAdminHome: 'Back to Admin Home',
+  filteredByHousehold: 'Filtered by household',
   
   // Room Management
   roomManagement: 'Room Management',
@@ -2611,6 +2615,8 @@ const zhTW: Translations = {
   photos: '照片',
   noRooms: '尚無房間',
   routingType: '路由類型',
+  backToAdminHome: '返回管理首頁',
+  filteredByHousehold: '已篩選住戶',
   
   // Room Management
   roomManagement: '房間管理',
@@ -3627,6 +3633,8 @@ const zh: Translations = {
   photos: '照片',
   noRooms: '暂无房间',
   routingType: '路由类型',
+  backToAdminHome: '返回管理首页',
+  filteredByHousehold: '已筛选住户',
   
   // Room Management
   roomManagement: '房间管理',
@@ -4639,6 +4647,8 @@ const ja: Translations = {
   photos: '写真',
   noRooms: '部屋がありません',
   routingType: 'ルーティングタイプ',
+  backToAdminHome: '管理ホームに戻る',
+  filteredByHousehold: '世帯でフィルタリング',
   
   // Room Management
   roomManagement: '部屋管理',

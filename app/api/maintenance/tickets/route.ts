@@ -30,6 +30,10 @@ export async function GET(request: NextRequest) {
       // Admin can see all tickets
       if (status) where.status = status
       if (category) where.category = category
+      // Support householdId filter for admin view
+      if (householdId) {
+        where.householdId = householdId
+      }
     } else {
       // Household members can only see their household's tickets
       if (!householdId) {

@@ -32,9 +32,10 @@ interface Mailbox {
 
 interface MailboxManagerProps {
   buildingId: string
+  householdId?: string
 }
 
-export default function MailboxManager({ buildingId }: MailboxManagerProps) {
+export default function MailboxManager({ buildingId, householdId }: MailboxManagerProps) {
   const [mailboxes, setMailboxes] = useState<Mailbox[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)

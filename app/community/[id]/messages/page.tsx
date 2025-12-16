@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
+import { ArrowLeftIcon, HomeIcon } from '@heroicons/react/24/outline'
 import ConversationList from '@/components/messaging/ConversationList'
 import ChatInterface from '@/components/messaging/ChatInterface'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -33,12 +34,13 @@ interface Conversation {
 export default function CommunityMessagesPage() {
   const params = useParams()
   const router = useRouter()
-  const { t } = useLanguage()
+  const { t, currentLanguage, setLanguage } = useLanguage()
   const { data: session } = useSession()
   const communityId = params?.id as string
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [buildings, setBuildings] = useState<any[]>([])
   const [households, setHouseholds] = useState<any[]>([])
+  const isAdmin = (session?.user as any)?.isAdmin
 
   useEffect(() => {
     if (communityId) {
@@ -112,13 +114,41 @@ export default function CommunityMessagesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            {t('back') || 'Back'}
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.back()}
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              >
+                <ArrowLeftIcon className="h-5 w-5 mr-2" />
+                {t('back') || 'Back'}
+              </button>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                >
+                  <HomeIcon className="h-5 w-5 mr-2" />
+                  {t('backToAdminHome') || 'Back to Admin Home'}
+                </Link>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-600 dark:text-gray-400">
+                {t('commonLanguage') || 'Language'}:
+              </label>
+              <select
+                value={currentLanguage}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white"
+              >
+                <option value="en">English</option>
+                <option value="zh-TW">繁體中文</option>
+                <option value="zh">简体中文</option>
+                <option value="ja">日本語</option>
+              </select>
+            </div>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             {t('messages') || 'Messages'} - Community
           </h1>

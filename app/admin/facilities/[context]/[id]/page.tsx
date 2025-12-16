@@ -75,13 +75,20 @@ export default function ContextFacilitiesPage() {
   const context = params.context as string // 'building' or 'community'
   const id = params.id as string
 
+  // Get householdId from URL params
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const householdId = searchParams?.get('householdId')
+  const tabParam = searchParams?.get('tab')
+
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [contextInfo, setContextInfo] = useState<{ name: string; type: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'facilities' | 'reservations' | 'calendar' | 'usage'>('facilities')
+  const [activeTab, setActiveTab] = useState<'facilities' | 'reservations' | 'calendar' | 'usage'>(
+    (tabParam as any) || 'facilities'
+  )
   const [selectedDate, setSelectedDate] = useState(new Date())
 
   useEffect(() => {
@@ -89,7 +96,7 @@ export default function ContextFacilitiesPage() {
     fetchFacilities()
     fetchReservations()
     fetchUsageStats()
-  }, [context, id])
+  }, [context, id, householdId])
 
   const fetchContextInfo = async () => {
     try {
@@ -162,9 +169,19 @@ export default function ContextFacilitiesPage() {
         return
       }
 
-      // TODO: Implement API endpoint to fetch reservations by facility IDs
-      // For now, show empty list
-      setReservations([])
+      // Fetch reservations for each facility
+      const reservationPromises = facilityIds.map(facilityId =>
+        fetch(`/api/facility/${facilityId}/reservations`).then(r => r.json())
+      )
+      const reservationResults = await Promise.all(reservationPromises)
+      let allReservations = reservationResults.flatMap((result: any) => result.reservations || [])
+
+      // Filter by householdId if provided
+      if (householdId) {
+        allReservations = allReservations.filter((r: any) => r.householdId === householdId)
+      }
+
+      setReservations(allReservations)
     } catch (error: any) {
       console.error('Error fetching reservations:', error)
     }

@@ -91,6 +91,34 @@ export async function GET(request: NextRequest) {
       where.householdId = householdId
     }
 
+    // Auto-create conversations for active households if user is admin and buildingId/communityId is provided
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true }
+    })
+
+    if (user?.isAdmin && (buildingId || communityId)) {
+      try {
+        // Call the SQL function to ensure conversations exist
+        if (buildingId) {
+          await prisma.$executeRawUnsafe(
+            `SELECT ensure_household_conversations($1, NULL, $2)`,
+            buildingId,
+            userId
+          )
+        } else if (communityId) {
+          await prisma.$executeRawUnsafe(
+            `SELECT ensure_household_conversations(NULL, $1, $2)`,
+            communityId,
+            userId
+          )
+        }
+      } catch (error) {
+        // If function doesn't exist yet, log but don't fail
+        console.warn('ensure_household_conversations function not found, skipping auto-create:', error)
+      }
+    }
+
     // Get conversations where user is creator (frontdesk/admin) or household member
     const conversations = await prisma.conversation.findMany({
       where,
@@ -100,6 +128,11 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             apartmentNo: true,
+            _count: {
+              select: {
+                members: true
+              }
+            }
           },
         },
         building: buildingId ? {

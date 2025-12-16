@@ -34,9 +34,10 @@ interface Household {
 
 interface PackageManagerProps {
   buildingId: string
+  householdId?: string
 }
 
-export default function PackageManager({ buildingId }: PackageManagerProps) {
+export default function PackageManager({ buildingId, householdId }: PackageManagerProps) {
   const { t } = useLanguage()
   const [lockers, setLockers] = useState<PackageLocker[]>([])
   const [households, setHouseholds] = useState<Household[]>([])

@@ -54,9 +54,13 @@ export default function AdminMaintenancePage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [selectedTicket, setSelectedTicket] = useState<MaintenanceTicket | null>(null)
 
+  // Get householdId from URL params
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const householdId = searchParams?.get('householdId')
+
   useEffect(() => {
     fetchTickets()
-  }, [selectedStatus])
+  }, [selectedStatus, householdId])
 
   const fetchTickets = async () => {
     setLoading(true)
@@ -64,6 +68,9 @@ export default function AdminMaintenancePage() {
       const params = new URLSearchParams({ admin: 'true' })
       if (selectedStatus !== 'all') {
         params.append('status', selectedStatus)
+      }
+      if (householdId) {
+        params.append('householdId', householdId)
       }
 
       const response = await fetch(`/api/maintenance/tickets?${params.toString()}`)
@@ -117,9 +124,16 @@ export default function AdminMaintenancePage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {t('maintenanceTicketManagement')}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {t('maintenanceTicketManagement')}
+          </h1>
+          {householdId && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {t('filteredByHousehold') || 'Filtered by household'}
+            </p>
+          )}
+        </div>
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}

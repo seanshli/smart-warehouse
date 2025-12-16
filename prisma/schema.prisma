@@ -116,6 +116,7 @@ model Community {
   members       CommunityMember[]
   workingGroups WorkingGroup[]
   workingCrews  WorkingCrew[] // Working crews for this community
+  conversations Conversation[]
 
   @@map("communities")
 }
@@ -890,8 +891,9 @@ model Conversation {
   id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   householdId String    @map("household_id")
   buildingId  String?   @map("building_id") // Optional: for building-level conversations
+  communityId String?   @map("community_id") // Optional: for community-level conversations
   createdBy   String    @map("created_by") // User ID who created the conversation (frontdesk/admin)
-  type        String    @default("general") // 'general' | 'mail' | 'package' | 'doorbell' | 'meal' | 'taxi' | 'reservation'
+  type        String    @default("general") // 'general' | 'mail' | 'package' | 'doorbell' | 'meal' | 'taxi' | 'reservation' | 'admin_household'
   relatedId   String?   @map("related_id") // Related entity ID (package ID, reservation ID, etc.)
   status      String    @default("active") // 'active' | 'archived' | 'closed'
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -899,6 +901,7 @@ model Conversation {
 
   household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   building    Building?     @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  community   Community?    @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   creator     User          @relation("ConversationCreator", fields: [createdBy], references: [id], onDelete: Cascade, onUpdate: NoAction)
   messages    Message[]
   calls       CallSession[]
@@ -906,9 +909,12 @@ model Conversation {
 
   @@index([householdId])
   @@index([buildingId])
+  @@index([communityId])
   @@index([createdBy])
   @@index([type, relatedId])
   @@index([status, updatedAt])
+  @@index([householdId, buildingId])
+  @@index([householdId, communityId])
   @@map("conversations")
 }
 

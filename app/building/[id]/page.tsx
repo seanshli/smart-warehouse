@@ -242,9 +242,9 @@ export default function BuildingDetailPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} />}
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
-          {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} />}
-          {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} />}
-          {activeTab === 'packages' && <PackageManager buildingId={buildingId} />}
+          {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
+          {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
+          {activeTab === 'packages' && <PackageManager buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
           {activeTab === 'messages' && buildingId && (
             <div className="h-[600px]">
               <iframe
@@ -704,7 +704,7 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
   )
 }
 
-function HouseholdCard({ household, onManageMembers }: { household: any; onManageMembers?: (householdId: string) => void }) {
+function HouseholdCard({ household, buildingId, onManageMembers }: { household: any; buildingId?: string; onManageMembers?: (householdId: string) => void }) {
   const { t } = useLanguage()
   const [copiedId, setCopiedId] = useState(false)
   const [copiedCode, setCopiedCode] = useState(false)
@@ -857,7 +857,7 @@ function HouseholdCard({ household, onManageMembers }: { household: any; onManag
       
       <div className="grid grid-cols-3 gap-1 pt-2 border-t border-gray-100 text-xs">
         <Link
-          href={`/household/${household.id}/reservation`}
+          href={buildingId ? `/admin/facilities/building/${buildingId}?householdId=${household.id}&tab=reservations` : `/household/${household.id}/reservation`}
           onClick={(e) => e.stopPropagation()}
           className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
           title={t('householdReservation')}
@@ -866,7 +866,7 @@ function HouseholdCard({ household, onManageMembers }: { household: any; onManag
           <span className="hidden sm:inline">{t('householdReservation')}</span>
         </Link>
         <Link
-          href={`/household/${household.id}/maintenance`}
+          href={buildingId ? `/admin/maintenance?householdId=${household.id}` : `/household/${household.id}/maintenance`}
           onClick={(e) => e.stopPropagation()}
           className="flex flex-col items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
           title={t('householdMaintenance')}
@@ -885,7 +885,7 @@ function HouseholdCard({ household, onManageMembers }: { household: any; onManag
           </button>
           <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[140px]">
             <Link
-              href={`/household/${household.id}/property/mail`}
+              href={buildingId ? `/building/${buildingId}?tab=mailboxes&householdId=${household.id}` : `/household/${household.id}/property/mail`}
               onClick={(e) => e.stopPropagation()}
               className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
             >
@@ -893,7 +893,7 @@ function HouseholdCard({ household, onManageMembers }: { household: any; onManag
               {t('householdMail')}
             </Link>
             <Link
-              href={`/household/${household.id}/property/package`}
+              href={buildingId ? `/building/${buildingId}?tab=packages&householdId=${household.id}` : `/household/${household.id}/property/package`}
               onClick={(e) => e.stopPropagation()}
               className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
             >
@@ -901,7 +901,7 @@ function HouseholdCard({ household, onManageMembers }: { household: any; onManag
               {t('householdPackage')}
             </Link>
             <Link
-              href={`/household/${household.id}/property/visitor`}
+              href={buildingId ? `/building/${buildingId}?tab=frontdoor&householdId=${household.id}` : `/household/${household.id}/property/visitor`}
               onClick={(e) => e.stopPropagation()}
               className="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 rounded"
             >
@@ -997,7 +997,8 @@ function HouseholdsTab({ buildingId }: { buildingId: string }) {
                   {floor.households.map((household: any) => (
                     <HouseholdCard 
                       key={household.id} 
-                      household={household} 
+                      household={household}
+                      buildingId={buildingId}
                       onManageMembers={handleManageMembers}
                     />
                   ))}
@@ -1341,7 +1342,7 @@ function AddHouseholdModal({
   )
 }
 
-function FrontDoorTab({ buildingId }: { buildingId: string }) {
+function FrontDoorTab({ buildingId, householdId }: { buildingId: string; householdId?: string }) {
   const { t } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<any>(null)

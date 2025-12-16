@@ -77,14 +77,14 @@ export default function FrontDeskChatButton({ ticketId, buildingId: propBuilding
   }
 
   // For admin context, we might not have a household but still need to show chat
-  const effectiveHouseholdId: string | null | undefined = household?.id || null
+  const effectiveHouseholdId = household?.id || null
 
   if (showChat && conversationId) {
     return (
       <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50">
         <ChatInterface
           conversationId={conversationId}
-          householdId={effectiveHouseholdId ?? undefined}
+          householdId={effectiveHouseholdId as string | null | undefined}
           householdName="Front Desk"
           onClose={() => {
             setShowChat(false)

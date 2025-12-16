@@ -40,6 +40,43 @@ interface DuplicateCategory {
   similarity: number
 }
 
+// Normalize names for cross-language comparison (e.g., "kitchen" and "廚房" should match)
+function normalizeForComparison(name: string): string {
+  const normalized = name.toLowerCase().trim()
+  
+  // Map Chinese names to English equivalents for grouping
+  const chineseToEnglish: Record<string, string> = {
+    '車庫': 'garage',
+    '廚房': 'kitchen',
+    '客廳': 'living room',
+    '主臥室': 'master bedroom',
+    '臥室': 'bedroom',
+    '兒童房': 'kids room',
+    '小孩房': 'kids room',
+    '浴室': 'bathroom',
+    '廁所': 'bathroom',
+    '陽台': 'balcony',
+    '儲藏室': 'storage',
+    '書房': 'study',
+    '餐廳': 'dining room',
+    // Add more mappings as needed
+  }
+  
+  // Check if it's a Chinese name we know
+  if (chineseToEnglish[normalized]) {
+    return chineseToEnglish[normalized]
+  }
+  
+  // Check if it matches any Chinese name (reverse lookup)
+  for (const [chinese, english] of Object.entries(chineseToEnglish)) {
+    if (normalized === chinese) {
+      return english
+    }
+  }
+  
+  return normalized
+}
+
 export default function AdminDuplicatesPage() {
   const { t } = useLanguage()
   const [duplicateItems, setDuplicateItems] = useState<DuplicateItem[]>([])
@@ -119,39 +156,73 @@ export default function AdminDuplicatesPage() {
     loadDuplicates()
   }, [])
 
-  const handleMerge = async (type: 'items' | 'rooms' | 'categories', id: string) => {
+  const handleMerge = async (type: 'items' | 'rooms' | 'categories', id: string, primaryId?: string) => {
     setMerging(id)
     try {
       // Find the duplicate group to get primary and duplicate IDs
-      let primaryId = ''
+      let resolvedPrimaryId = primaryId || ''
       let duplicateId = id
       
       if (type === 'items') {
         const duplicateGroup = duplicateItems.find(item => item.id === id)
         if (duplicateGroup) {
-          // For now, use the first item in the group as primary
-          const group = duplicateItems.filter(item => item.name === duplicateGroup.name)
-          primaryId = group[0].id
-          duplicateId = id
+          // Find all items in the same duplicate group (by normalized name or similarity)
+          const group = duplicateItems.filter(item => {
+            // Check if items are similar (same name or cross-language equivalent)
+            const normalizedName1 = normalizeForComparison(duplicateGroup.name)
+            const normalizedName2 = normalizeForComparison(item.name)
+            return normalizedName1 === normalizedName2 && item.id !== id
+          })
+          
+          if (group.length > 0) {
+            // Use the first item in the group as primary (oldest or first alphabetically)
+            resolvedPrimaryId = group[0].id
+          } else {
+            // No other items found, can't merge
+            toast.error('No duplicate items found to merge with')
+            setMerging(null)
+            return
+          }
         }
       } else if (type === 'rooms') {
         const duplicateGroup = duplicateRooms.find(room => room.id === id)
         if (duplicateGroup) {
-          const group = duplicateRooms.filter(room => room.name === duplicateGroup.name)
-          primaryId = group[0].id
-          duplicateId = id
+          const group = duplicateRooms.filter(room => {
+            const normalizedName1 = normalizeForComparison(duplicateGroup.name)
+            const normalizedName2 = normalizeForComparison(room.name)
+            return normalizedName1 === normalizedName2 && room.id !== id
+          })
+          
+          if (group.length > 0) {
+            resolvedPrimaryId = group[0].id
+          } else {
+            toast.error('No duplicate rooms found to merge with')
+            setMerging(null)
+            return
+          }
         }
       } else if (type === 'categories') {
         const duplicateGroup = duplicateCategories.find(category => category.id === id)
         if (duplicateGroup) {
-          const group = duplicateCategories.filter(category => category.name === duplicateGroup.name)
-          primaryId = group[0].id
-          duplicateId = id
+          const group = duplicateCategories.filter(category => {
+            const normalizedName1 = normalizeForComparison(duplicateGroup.name)
+            const normalizedName2 = normalizeForComparison(category.name)
+            return normalizedName1 === normalizedName2 && category.id !== id
+          })
+          
+          if (group.length > 0) {
+            resolvedPrimaryId = group[0].id
+          } else {
+            toast.error('No duplicate categories found to merge with')
+            setMerging(null)
+            return
+          }
         }
       }
 
-      if (!primaryId || primaryId === duplicateId) {
+      if (!resolvedPrimaryId || resolvedPrimaryId === duplicateId) {
         toast.error('Cannot merge item with itself')
+        setMerging(null)
         return
       }
 
@@ -163,7 +234,7 @@ export default function AdminDuplicatesPage() {
         },
         body: JSON.stringify({
           type,
-          primaryId,
+          primaryId: resolvedPrimaryId,
           duplicateId
         })
       })

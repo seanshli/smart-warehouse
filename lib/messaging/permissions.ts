@@ -164,6 +164,18 @@ export async function getOrCreateConversation(
             creatorId = adminUser.id
           }
         }
+      } else {
+        // No buildingId provided, use first admin user as fallback
+        const adminUser = await prisma.user.findFirst({
+          where: { isAdmin: true },
+          select: { id: true }
+        })
+        if (adminUser) {
+          creatorId = adminUser.id
+        } else {
+          // Last resort: use the user themselves (shouldn't happen in production)
+          console.warn('No admin user found for front desk chat, using household member as creator')
+        }
       }
     }
 

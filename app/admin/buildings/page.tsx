@@ -258,6 +258,15 @@ export default function AdminBuildingsPage() {
                             <span>{building.unitCount} 单元</span>
                           )}
                         </div>
+                        <div className="mt-2 flex items-center space-x-2">
+                          <Link
+                            href={`/admin/facilities/building/${building.id}`}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            <BuildingOfficeIcon className="h-3 w-3 mr-1" />
+                            公共設施
+                          </Link>
+                        </div>
                         <div className="mt-1 flex items-center text-xs text-gray-400">
                           <span>所属社区: </span>
                           <Link

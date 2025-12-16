@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'items') {
+      // Prevent merging item with itself
+      if (primaryId === duplicateId) {
+        return NextResponse.json({ error: 'Cannot merge item with itself' }, { status: 400 })
+      }
+
       // Get the primary and duplicate items
       const primaryItem = await prisma.item.findUnique({
         where: { id: primaryId },
@@ -67,20 +72,41 @@ export async function POST(request: NextRequest) {
       })
 
     } else if (type === 'rooms') {
+      // Prevent merging room with itself
+      if (primaryId === duplicateId) {
+        return NextResponse.json({ error: 'Cannot merge room with itself' }, { status: 400 })
+      }
+
       // Get the primary and duplicate rooms
       const primaryRoom = await prisma.room.findUnique({
         where: { id: primaryId },
-        include: { items: true }
+        include: { 
+          items: true,
+          cabinets: {
+            include: { items: true }
+          }
+        }
       })
 
       const duplicateRoom = await prisma.room.findUnique({
         where: { id: duplicateId },
-        include: { items: true }
+        include: { 
+          items: true,
+          cabinets: {
+            include: { items: true }
+          }
+        }
       })
 
       if (!primaryRoom || !duplicateRoom) {
         return NextResponse.json({ error: 'Rooms not found' }, { status: 404 })
       }
+
+      // Move all cabinets from duplicate room to primary room
+      await prisma.cabinet.updateMany({
+        where: { roomId: duplicateId },
+        data: { roomId: primaryId }
+      })
 
       // Move all items from duplicate room to primary room
       await prisma.item.updateMany({
@@ -111,6 +137,11 @@ export async function POST(request: NextRequest) {
       })
 
     } else if (type === 'categories') {
+      // Prevent merging category with itself
+      if (primaryId === duplicateId) {
+        return NextResponse.json({ error: 'Cannot merge category with itself' }, { status: 400 })
+      }
+
       // Get the primary and duplicate categories
       const primaryCategory = await prisma.category.findUnique({
         where: { id: primaryId },

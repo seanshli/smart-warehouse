@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useLanguage } from '@/components/LanguageProvider'
+import Link from 'next/link'
 import { 
   CogIcon,
   ServerIcon,
@@ -11,7 +12,8 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   UserGroupIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  TruckIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -332,6 +334,50 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Super Admin Configuration */}
+      {(session?.user as any)?.adminRole === 'SUPERUSER' && (
+        <div className="bg-white shadow rounded-lg mt-8">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+              <ShieldCheckIcon className="h-5 w-5 inline mr-2" />
+              Super Admin Configuration
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Link
+                href="/admin/settings/job-routing"
+                className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Job Routing Configuration</h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Configure how maintenance tickets are routed (Building/Community/Supplier)
+                    </p>
+                  </div>
+                  <CogIcon className="h-6 w-6 text-gray-400" />
+                </div>
+              </Link>
+
+              <Link
+                href="/admin/settings/hardware-suppliers"
+                className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Hardware-Supplier Mapping</h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Map hardware types to suppliers for automatic ticket routing
+                    </p>
+                  </div>
+                  <TruckIcon className="h-6 w-6 text-gray-400" />
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* System Management */}
       <div className="bg-white shadow rounded-lg mt-8">

@@ -2024,6 +2024,7 @@ const zhTW: Translations = {
   createFirstTicket: '建立您的第一張報修單',
   supplier: '供應商',
   assignedCrew: '工作團隊',
+  location: '位置',
   workLogs: '工作記錄',
   requested: '請求時間',
   requestMaintenance: '請求報修',

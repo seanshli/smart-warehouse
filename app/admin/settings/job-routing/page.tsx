@@ -19,12 +19,20 @@ interface JobRoutingConfig {
   [key: string]: 'INTERNAL_BUILDING' | 'INTERNAL_COMMUNITY' | 'EXTERNAL_SUPPLIER'
 }
 
+interface Supplier {
+  id: string
+  name: string
+  serviceTypes: string[]
+}
+
 export default function JobRoutingPage() {
   const { t } = useLanguage()
   const { data: session } = useSession()
   const router = useRouter()
   const [jobCategories, setJobCategories] = useState<string[]>([])
   const [routingConfig, setRoutingConfig] = useState<JobRoutingConfig>({})
+  const [supplierAssignments, setSupplierAssignments] = useState<Record<string, string>>({})
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -41,6 +49,8 @@ export default function JobRoutingPage() {
       const data = await response.json()
       setJobCategories(data.jobCategories || [])
       setRoutingConfig(data.routingConfig || {})
+      setSupplierAssignments(data.supplierAssignments || {})
+      setSuppliers(data.suppliers || [])
     } catch (error: any) {
       console.error('Error fetching routing config:', error)
       toast.error('Failed to load routing configuration')
@@ -54,6 +64,22 @@ export default function JobRoutingPage() {
       ...prev,
       [category]: routingType as 'INTERNAL_BUILDING' | 'INTERNAL_COMMUNITY' | 'EXTERNAL_SUPPLIER'
     }))
+    
+    // Clear supplier assignment if routing type changes away from EXTERNAL_SUPPLIER
+    if (routingType !== 'EXTERNAL_SUPPLIER') {
+      setSupplierAssignments(prev => {
+        const updated = { ...prev }
+        delete updated[category]
+        return updated
+      })
+    }
+  }
+
+  const handleSupplierChange = (category: string, supplierId: string) => {
+    setSupplierAssignments(prev => ({
+      ...prev,
+      [category]: supplierId
+    }))
   }
 
   const handleSave = async () => {
@@ -62,7 +88,10 @@ export default function JobRoutingPage() {
       const response = await fetch('/api/admin/job-routing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ routingConfig })
+        body: JSON.stringify({ 
+          routingConfig,
+          supplierAssignments 
+        })
       })
 
       if (!response.ok) {
@@ -194,32 +223,66 @@ export default function JobRoutingPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-4">
-                    {(['INTERNAL_BUILDING', 'INTERNAL_COMMUNITY', 'EXTERNAL_SUPPLIER'] as const).map((routingType) => (
-                      <label
-                        key={routingType}
-                        className={`flex items-center space-x-2 cursor-pointer p-3 border-2 rounded-lg transition-colors ${
-                          routingConfig[category] === routingType
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`routing-${category}`}
-                          value={routingType}
-                          checked={routingConfig[category] === routingType}
-                          onChange={(e) => handleRoutingChange(category, e.target.value)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                        />
-                        <div className="flex items-center space-x-2">
-                          {getRoutingTypeIcon(routingType)}
-                          <span className="text-sm font-medium text-gray-700">
-                            {getRoutingTypeLabel(routingType)}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center space-x-4">
+                      {(['INTERNAL_BUILDING', 'INTERNAL_COMMUNITY', 'EXTERNAL_SUPPLIER'] as const).map((routingType) => (
+                        <label
+                          key={routingType}
+                          className={`flex items-center space-x-2 cursor-pointer p-3 border-2 rounded-lg transition-colors ${
+                            routingConfig[category] === routingType
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`routing-${category}`}
+                            value={routingType}
+                            checked={routingConfig[category] === routingType}
+                            onChange={(e) => handleRoutingChange(category, e.target.value)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div className="flex items-center space-x-2">
+                            {getRoutingTypeIcon(routingType)}
+                            <span className="text-sm font-medium text-gray-700">
+                              {getRoutingTypeLabel(routingType)}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    
+                    {/* Supplier Selection for EXTERNAL_SUPPLIER */}
+                    {routingConfig[category] === 'EXTERNAL_SUPPLIER' && (
+                      <div className="ml-4 mt-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Assign to Supplier:
+                        </label>
+                        <select
+                          value={supplierAssignments[category] || ''}
+                          onChange={(e) => handleSupplierChange(category, e.target.value)}
+                          className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select a supplier...</option>
+                          {suppliers
+                            .filter(supplier => 
+                              !supplier.serviceTypes || 
+                              supplier.serviceTypes.length === 0 ||
+                              supplier.serviceTypes.includes(category)
+                            )
+                            .map((supplier) => (
+                              <option key={supplier.id} value={supplier.id}>
+                                {supplier.name}
+                              </option>
+                            ))}
+                        </select>
+                        {supplierAssignments[category] && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            Selected supplier will be auto-assigned to tickets of this category
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

@@ -52,34 +52,86 @@ export async function POST(request: NextRequest) {
       // For admin context without household, use buildingId or communityId
       // Find a household in this building/community to use for conversation
       if (effectiveBuildingId) {
-        const building = await prisma.building.findUnique({
-          where: { id: effectiveBuildingId },
-          include: {
-            households: {
-              take: 1,
-              select: { id: true }
+        try {
+          const building = await prisma.building.findUnique({
+            where: { id: effectiveBuildingId },
+            include: {
+              households: {
+                take: 1,
+                select: { id: true }
+              }
             }
-          }
-        })
-        // Use first household in building as placeholder (for conversation structure)
-        effectiveHouseholdId = building?.households[0]?.id || null
+          })
+          // Use first household in building as placeholder (for conversation structure)
+          effectiveHouseholdId = building?.households[0]?.id || null
+        } catch (error) {
+          console.error('Error finding household in building:', error)
+          // If no households found, create a system conversation without household
+          // This requires schema change or we need to handle it differently
+        }
       } else if (communityId) {
-        const community = await prisma.community.findUnique({
-          where: { id: communityId },
-          include: {
-            buildings: {
-              take: 1,
-              include: {
-                households: {
-                  take: 1,
-                  select: { id: true }
+        try {
+          const community = await prisma.community.findUnique({
+            where: { id: communityId },
+            include: {
+              buildings: {
+                take: 1,
+                include: {
+                  households: {
+                    take: 1,
+                    select: { id: true }
+                  }
                 }
               }
             }
-          }
+          })
+          effectiveHouseholdId = community?.buildings[0]?.households[0]?.id || null
+          effectiveBuildingId = community?.buildings[0]?.id || null
+        } catch (error) {
+          console.error('Error finding household in community:', error)
+        }
+      }
+    }
+
+    // For admin-to-admin conversations, we might not have a household
+    // In this case, we need to create a special conversation type or use a system household
+    if (!effectiveHouseholdId) {
+      // Try to find or create a system household for admin conversations
+      try {
+        const systemHousehold = await prisma.household.findFirst({
+          where: {
+            name: { contains: 'System' },
+            buildingId: effectiveBuildingId || undefined
+          },
+          select: { id: true }
         })
-        effectiveHouseholdId = community?.buildings[0]?.households[0]?.id || null
-        effectiveBuildingId = community?.buildings[0]?.id || null
+        
+        if (systemHousehold) {
+          effectiveHouseholdId = systemHousehold.id
+        } else if (effectiveBuildingId) {
+          // Create a system household for this building if none exists
+          const building = await prisma.building.findUnique({
+            where: { id: effectiveBuildingId },
+            select: { id: true, name: true }
+          })
+          
+          if (building) {
+            const newSystemHousehold = await prisma.household.create({
+              data: {
+                name: `System - ${building.name}`,
+                buildingId: effectiveBuildingId,
+                description: 'System household for admin conversations'
+              }
+            })
+            effectiveHouseholdId = newSystemHousehold.id
+          }
+        }
+      } catch (error) {
+        console.error('Error creating system household:', error)
+        return NextResponse.json({ 
+          error: 'Could not determine household context for conversation',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 400 })
       }
     }
 

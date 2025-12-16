@@ -135,12 +135,14 @@ export async function GET(request: NextRequest) {
             }
           },
         },
-        building: buildingId ? {
-          select: {
-            id: true,
-            name: true,
+        ...(buildingId ? {
+          building: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
-        } : undefined,
+        } : {}),
         creator: {
           select: {
             id: true,

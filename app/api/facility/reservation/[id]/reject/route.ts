@@ -88,7 +88,9 @@ export async function POST(
         status: 'rejected',
         approvedBy: userId,
         approvedAt: new Date(),
-        notes: reason ? `${reservation.notes || ''}\nRejection reason: ${reason}`.trim() : reservation.notes,
+        notes: reason 
+          ? `${reservation.notes || ''}\n[Admin Rejection Reason] ${reason}`.trim()
+          : reservation.notes,
       },
     })
 

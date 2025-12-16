@@ -500,7 +500,14 @@ export async function POST(
       }
     }
 
-    // Create reservation (pending, needs building admin approval)
+    // Check if time slot is available (no conflicts)
+    // If available, auto-approve; otherwise create as pending for admin review
+    const hasConflicts = overlappingReservations.length > 0
+    
+    // Generate access code for approved reservations
+    const accessCode = !hasConflicts ? Math.random().toString(36).substring(2, 10).toUpperCase() : null
+    
+    // Create reservation (auto-approve if available, otherwise pending)
     const reservation = await prisma.facilityReservation.create({
       data: {
         facilityId,
@@ -511,7 +518,10 @@ export async function POST(
         purpose: purpose || null,
         notes: notes || null,
         numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
-        status: 'pending',
+        status: hasConflicts ? 'pending' : 'approved', // Auto-approve if no conflicts
+        accessCode: accessCode,
+        approvedBy: !hasConflicts ? userId : null, // Auto-approved by requester if no conflicts
+        approvedAt: !hasConflicts ? new Date() : null,
       },
       include: {
         facility: {
@@ -525,15 +535,38 @@ export async function POST(
             id: true,
             name: true,
             apartmentNo: true,
+            members: {
+              select: {
+                userId: true,
+              },
+            },
           },
         },
       },
     })
 
+    // If auto-approved, create notifications for household members
+    if (!hasConflicts && reservation.status === 'approved') {
+      const notifications = reservation.household.members.map(member => ({
+        userId: member.userId,
+        facilityReservationId: reservation.id,
+        type: 'facility_reservation_approved',
+        title: 'Reservation Approved',
+        message: `Your reservation for ${reservation.facility.name} has been automatically approved. Access code: ${accessCode}`,
+      }))
+
+      await prisma.notification.createMany({
+        data: notifications,
+      })
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Reservation request created. Waiting for building admin approval.',
+      message: hasConflicts 
+        ? 'Reservation request created. Waiting for building admin approval due to potential conflicts.'
+        : 'Reservation automatically approved. Access code: ' + accessCode,
       data: reservation,
+      autoApproved: !hasConflicts,
     })
   } catch (error: any) {
     console.error('Error creating reservation:', error)

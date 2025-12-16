@@ -260,6 +260,14 @@ export interface Translations {
   adminMergeFailed: string
   adminKeepSeparateSuccess: string
   adminKeepSeparateFailed: string
+  approveReservation: string
+  rejectReservation: string
+  approveReservationComment: string
+  rejectReservationReason: string
+  commentPlaceholder: string
+  reasonPlaceholder: string
+  approve: string
+  reject: string
   
   // Common
   commonLanguage: string
@@ -1091,6 +1099,14 @@ const en: Translations = {
   startChat: 'Start Chat',
   publicFacilities: 'Public Facilities',
   adminToAdmin: 'Admin to Admin',
+  approveReservation: 'Approve Reservation',
+  rejectReservation: 'Reject Reservation',
+  approveReservationComment: 'Add a comment or suggestion for the household (optional):',
+  rejectReservationReason: 'Provide a reason for rejection (optional):',
+  commentPlaceholder: 'e.g., Time slot OK but too many people. Consider reducing number of people.',
+  reasonPlaceholder: 'e.g., Time slot already occupied by another reservation',
+  approve: 'Approve',
+  reject: 'Reject',
   specificCommunity: 'Specific Community',
   specificBuilding: 'Specific Building',
   specificHousehold: 'Specific Household',
@@ -2141,6 +2157,14 @@ const zhTW: Translations = {
   startChat: '開始聊天',
   publicFacilities: '公共設施',
   adminToAdmin: '管理員對管理員',
+  approveReservation: '批准預約',
+  rejectReservation: '拒絕預約',
+  approveReservationComment: '為住戶添加評論或建議（可選）：',
+  rejectReservationReason: '提供拒絕原因（可選）：',
+  commentPlaceholder: '例如：時間段可以，但人數過多。建議減少人數。',
+  reasonPlaceholder: '例如：時間段已被其他預約佔用',
+  approve: '批准',
+  reject: '拒絕',
   specificCommunity: '特定社區',
   specificBuilding: '特定大樓',
   specificHousehold: '特定住戶',
@@ -3217,6 +3241,14 @@ const zh: Translations = {
   startChat: '开始聊天',
   publicFacilities: '公共设施',
   adminToAdmin: '管理员对管理员',
+  approveReservation: '批准预约',
+  rejectReservation: '拒绝预约',
+  approveReservationComment: '为住户添加评论或建议（可选）：',
+  rejectReservationReason: '提供拒绝原因（可选）：',
+  commentPlaceholder: '例如：时间段可以，但人数过多。建议减少人数。',
+  reasonPlaceholder: '例如：时间段已被其他预约占用',
+  approve: '批准',
+  reject: '拒绝',
   specificCommunity: '特定社区',
   specificBuilding: '特定大楼',
   specificHousehold: '特定住户',
@@ -4235,6 +4267,14 @@ const ja: Translations = {
   startChat: 'チャットを開始',
   publicFacilities: '公共施設',
   adminToAdmin: '管理者間',
+  approveReservation: '予約を承認',
+  rejectReservation: '予約を拒否',
+  approveReservationComment: '世帯へのコメントや提案を追加（オプション）：',
+  rejectReservationReason: '拒否理由を提供（オプション）：',
+  commentPlaceholder: '例：時間枠は問題ありませんが、人数が多すぎます。人数を減らすことを検討してください。',
+  reasonPlaceholder: '例：時間枠は別の予約で既に占有されています',
+  approve: '承認',
+  reject: '拒否',
   specificCommunity: '特定のコミュニティ',
   specificBuilding: '特定の建物',
   specificHousehold: '特定の世帯',

@@ -22,6 +22,8 @@ export async function POST(
 
     const userId = (session.user as any).id
     const reservationId = params.id
+    const body = await request.json().catch(() => ({}))
+    const { comment } = body // Admin comment/suggestion
 
     // Get reservation with facility and building info
     const reservation = await prisma.facilityReservation.findUnique({
@@ -116,6 +118,9 @@ export async function POST(
         approvedBy: userId,
         approvedAt: new Date(),
         accessCode,
+        notes: comment 
+          ? `${reservation.notes || ''}\n[Admin Comment] ${comment}`.trim()
+          : reservation.notes,
       },
       include: {
         facility: {

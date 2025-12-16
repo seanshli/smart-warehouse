@@ -37,7 +37,7 @@ export default function TicketRequestForm({
     { value: 'HOUSE_CLEANING', label: t('houseCleaning') || 'House Cleaning' },
     { value: 'FOOD_ORDER', label: t('foodOrder') || 'Food Order' },
     { value: 'CAR_SERVICE', label: t('carService') || 'Car Service' },
-    { value: 'APPLIANCE', label: t('applianceRepair') || 'Appliance Repair' },
+    { value: 'APPLIANCE_REPAIR', label: t('applianceRepair') || 'Appliance Repair' },
     { value: 'WATER_FILTER', label: t('waterFilter') || 'Water Filter' },
     { value: 'SMART_HOME', label: t('smartHome') || 'Smart Home' },
     { value: 'OTHER', label: t('other') || 'Other' },
@@ -62,7 +62,8 @@ export default function TicketRequestForm({
     
     setLoadingRooms(true)
     try {
-      const response = await fetch(`/api/warehouse/rooms?householdId=${household.id}`)
+      // Pass current language to get translated room names
+      const response = await fetch(`/api/warehouse/rooms?householdId=${household.id}&language=${currentLanguage}`)
       if (response.ok) {
         const data = await response.json()
         setRooms(data.rooms || [])

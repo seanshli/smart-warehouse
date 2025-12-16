@@ -15,6 +15,7 @@ import {
   UserGroupIcon,
   ArrowLeftIcon,
   ChartBarIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -90,6 +91,12 @@ export default function ContextFacilitiesPage() {
     (tabParam as any) || 'facilities'
   )
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [commentModal, setCommentModal] = useState<{ open: boolean; reservationId: string | null; action: 'approve' | 'reject' | null }>({
+    open: false,
+    reservationId: null,
+    action: null,
+  })
+  const [comment, setComment] = useState('')
 
   useEffect(() => {
     fetchContextInfo()
@@ -234,10 +241,19 @@ export default function ContextFacilitiesPage() {
     }
   }, [reservations])
 
-  const handleApproveReservation = async (reservationId: string) => {
+  const [commentModal, setCommentModal] = useState<{ open: boolean; reservationId: string | null; action: 'approve' | 'reject' | null }>({
+    open: false,
+    reservationId: null,
+    action: null,
+  })
+  const [comment, setComment] = useState('')
+
+  const handleApproveReservation = async (reservationId: string, adminComment?: string) => {
     try {
       const response = await fetch(`/api/facility/reservation/${reservationId}/approve`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: adminComment || undefined }),
       })
 
       if (!response.ok) {
@@ -245,6 +261,8 @@ export default function ContextFacilitiesPage() {
       }
 
       toast.success('Reservation approved')
+      setCommentModal({ open: false, reservationId: null, action: null })
+      setComment('')
       fetchReservations()
     } catch (error: any) {
       console.error('Error approving reservation:', error)
@@ -252,10 +270,12 @@ export default function ContextFacilitiesPage() {
     }
   }
 
-  const handleRejectReservation = async (reservationId: string) => {
+  const handleRejectReservation = async (reservationId: string, reason?: string) => {
     try {
       const response = await fetch(`/api/facility/reservation/${reservationId}/reject`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || undefined }),
       })
 
       if (!response.ok) {
@@ -263,10 +283,27 @@ export default function ContextFacilitiesPage() {
       }
 
       toast.success('Reservation rejected')
+      setCommentModal({ open: false, reservationId: null, action: null })
+      setComment('')
       fetchReservations()
     } catch (error: any) {
       console.error('Error rejecting reservation:', error)
       toast.error(error.message || 'Failed to reject reservation')
+    }
+  }
+
+  const openCommentModal = (reservationId: string, action: 'approve' | 'reject') => {
+    setCommentModal({ open: true, reservationId, action })
+    setComment('')
+  }
+
+  const submitWithComment = () => {
+    if (!commentModal.reservationId || !commentModal.action) return
+    
+    if (commentModal.action === 'approve') {
+      handleApproveReservation(commentModal.reservationId, comment)
+    } else {
+      handleRejectReservation(commentModal.reservationId, comment)
     }
   }
 
@@ -335,15 +372,15 @@ export default function ContextFacilitiesPage() {
       {/* Layout: Vertical Sidebar + Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Vertical Sidebar */}
+          {/* Vertical Sidebar - Scrollable */}
           <div className="lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 max-h-[calc(100vh-200px)] overflow-y-auto">
               <nav className="space-y-1">
                 {([
                   { id: 'facilities', name: t('facilities') || 'Facilities', icon: BuildingOfficeIcon },
                   { id: 'reservations', name: t('facilityReservations') || 'Reservations', icon: ClockIcon },
-                  { id: 'calendar', name: 'Calendar', icon: CalendarIcon },
-                  { id: 'usage', name: 'Usage', icon: ChartBarIcon },
+                  { id: 'calendar', name: t('calendar') || 'Calendar', icon: CalendarIcon },
+                  { id: 'usage', name: t('usage') || 'Usage', icon: ChartBarIcon },
                 ] as const).map((tab) => {
                   const Icon = tab.icon
                   return (
@@ -485,18 +522,18 @@ export default function ContextFacilitiesPage() {
                         {reservation.status === 'PENDING' && (
                           <>
                             <button
-                              onClick={() => handleApproveReservation(reservation.id)}
+                              onClick={() => openCommentModal(reservation.id, 'approve')}
                               className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
                             >
                               <CheckCircleIcon className="h-4 w-4 mr-1" />
-                              Approve
+                              {t('approve') || 'Approve'}
                             </button>
                             <button
-                              onClick={() => handleRejectReservation(reservation.id)}
+                              onClick={() => openCommentModal(reservation.id, 'reject')}
                               className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
                             >
                               <XCircleIcon className="h-4 w-4 mr-1" />
-                              Reject
+                              {t('reject') || 'Reject'}
                             </button>
                           </>
                         )}
@@ -591,6 +628,67 @@ export default function ContextFacilitiesPage() {
           </div>
         </div>
       </div>
+
+      {/* Comment Modal */}
+      {commentModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {commentModal.action === 'approve' 
+                  ? (t('approveReservation') || 'Approve Reservation')
+                  : (t('rejectReservation') || 'Reject Reservation')}
+              </h3>
+              <button
+                onClick={() => {
+                  setCommentModal({ open: false, reservationId: null, action: null })
+                  setComment('')
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {commentModal.action === 'approve'
+                ? (t('approveReservationComment') || 'Add a comment or suggestion for the household (optional):')
+                : (t('rejectReservationReason') || 'Provide a reason for rejection (optional):')}
+            </p>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white mb-4"
+              placeholder={commentModal.action === 'approve'
+                ? (t('commentPlaceholder') || 'e.g., Time slot OK but too many people. Consider reducing number of people.')
+                : (t('reasonPlaceholder') || 'e.g., Time slot already occupied by another reservation')}
+            />
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setCommentModal({ open: false, reservationId: null, action: null })
+                  setComment('')
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                {t('cancel') || 'Cancel'}
+              </button>
+              <button
+                onClick={submitWithComment}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
+                  commentModal.action === 'approve'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {commentModal.action === 'approve'
+                  ? (t('approve') || 'Approve')
+                  : (t('reject') || 'Reject')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

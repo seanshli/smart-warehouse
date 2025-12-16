@@ -164,60 +164,94 @@ export default function AdminDuplicatesPage() {
       let duplicateId = id
       
       if (type === 'items') {
-        const duplicateGroup = duplicateItems.find(item => item.id === id)
-        if (duplicateGroup) {
-          // Find all items in the same duplicate group (by normalized name or similarity)
-          const group = duplicateItems.filter(item => {
-            // Check if items are similar (same name or cross-language equivalent)
-            const normalizedName1 = normalizeForComparison(duplicateGroup.name)
-            const normalizedName2 = normalizeForComparison(item.name)
-            return normalizedName1 === normalizedName2 && item.id !== id
-          })
-          
-          if (group.length > 0) {
-            // Use the first item in the group as primary (oldest or first alphabetically)
-            resolvedPrimaryId = group[0].id
-          } else {
-            // No other items found, can't merge
-            toast.error('No duplicate items found to merge with')
-            setMerging(null)
-            return
-          }
+        const clickedItem = duplicateItems.find(item => item.id === id)
+        if (!clickedItem) {
+          toast.error('Item not found')
+          setMerging(null)
+          return
         }
+        
+        // Find ALL duplicates of the clicked item (including itself)
+        const normalizedName = normalizeForComparison(clickedItem.name)
+        const allDuplicates = duplicateItems.filter(item => {
+          return normalizeForComparison(item.name) === normalizedName
+        })
+        
+        if (allDuplicates.length < 2) {
+          toast.error('No duplicate items found to merge')
+          setMerging(null)
+          return
+        }
+        
+        // Use the clicked item as duplicate, find another as primary
+        const otherDuplicates = allDuplicates.filter(item => item.id !== id)
+        if (otherDuplicates.length === 0) {
+          toast.error('No other duplicate items found to merge with')
+          setMerging(null)
+          return
+        }
+        
+        // Use the first other duplicate as primary
+        resolvedPrimaryId = otherDuplicates[0].id
+        duplicateId = id
+        
       } else if (type === 'rooms') {
-        const duplicateGroup = duplicateRooms.find(room => room.id === id)
-        if (duplicateGroup) {
-          const group = duplicateRooms.filter(room => {
-            const normalizedName1 = normalizeForComparison(duplicateGroup.name)
-            const normalizedName2 = normalizeForComparison(room.name)
-            return normalizedName1 === normalizedName2 && room.id !== id
-          })
-          
-          if (group.length > 0) {
-            resolvedPrimaryId = group[0].id
-          } else {
-            toast.error('No duplicate rooms found to merge with')
-            setMerging(null)
-            return
-          }
+        const clickedRoom = duplicateRooms.find(room => room.id === id)
+        if (!clickedRoom) {
+          toast.error('Room not found')
+          setMerging(null)
+          return
         }
+        
+        const normalizedName = normalizeForComparison(clickedRoom.name)
+        const allDuplicates = duplicateRooms.filter(room => {
+          return normalizeForComparison(room.name) === normalizedName
+        })
+        
+        if (allDuplicates.length < 2) {
+          toast.error('No duplicate rooms found to merge')
+          setMerging(null)
+          return
+        }
+        
+        const otherDuplicates = allDuplicates.filter(room => room.id !== id)
+        if (otherDuplicates.length === 0) {
+          toast.error('No other duplicate rooms found to merge with')
+          setMerging(null)
+          return
+        }
+        
+        resolvedPrimaryId = otherDuplicates[0].id
+        duplicateId = id
+        
       } else if (type === 'categories') {
-        const duplicateGroup = duplicateCategories.find(category => category.id === id)
-        if (duplicateGroup) {
-          const group = duplicateCategories.filter(category => {
-            const normalizedName1 = normalizeForComparison(duplicateGroup.name)
-            const normalizedName2 = normalizeForComparison(category.name)
-            return normalizedName1 === normalizedName2 && category.id !== id
-          })
-          
-          if (group.length > 0) {
-            resolvedPrimaryId = group[0].id
-          } else {
-            toast.error('No duplicate categories found to merge with')
-            setMerging(null)
-            return
-          }
+        const clickedCategory = duplicateCategories.find(category => category.id === id)
+        if (!clickedCategory) {
+          toast.error('Category not found')
+          setMerging(null)
+          return
         }
+        
+        const normalizedName = normalizeForComparison(clickedCategory.name)
+        const allDuplicates = duplicateCategories.filter(category => {
+          return normalizeForComparison(category.name) === normalizedName
+        })
+        
+        if (allDuplicates.length < 2) {
+          toast.error('No duplicate categories found to merge')
+          setMerging(null)
+          return
+        }
+        
+        const otherDuplicates = allDuplicates.filter(category => category.id !== id)
+        if (otherDuplicates.length === 0) {
+          toast.error('No other duplicate categories found to merge with')
+          setMerging(null)
+          return
+        }
+        
+        resolvedPrimaryId = otherDuplicates[0].id
+        duplicateId = id
       }
 
       if (!resolvedPrimaryId || resolvedPrimaryId === duplicateId) {

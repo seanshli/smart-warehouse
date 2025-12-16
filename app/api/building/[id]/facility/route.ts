@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const buildingId = params.id
+    // Handle both sync and async params (Next.js 13+ compatibility)
+    const resolvedParams = await Promise.resolve(params)
+    const buildingId = resolvedParams.id
+
+    if (!buildingId || typeof buildingId !== 'string') {
+      return NextResponse.json({ error: 'Invalid building ID' }, { status: 400 })
+    }
 
     // Check if user has access to this building
     const building = await prisma.building.findUnique({
@@ -93,7 +99,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -103,7 +109,12 @@ export async function POST(
     }
 
     const userId = (session.user as any).id
-    const buildingId = params.id
+    const resolvedParams = await Promise.resolve(params)
+    const buildingId = resolvedParams.id
+
+    if (!buildingId || typeof buildingId !== 'string') {
+      return NextResponse.json({ error: 'Invalid building ID' }, { status: 400 })
+    }
     const { name, description, type, floorNumber, capacity } = await request.json()
 
     if (!name) {

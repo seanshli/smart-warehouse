@@ -20,29 +20,69 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id
 
-    // Get all communities where user is a member
-    const memberships = await prisma.communityMember.findMany({
-      where: { userId },
-      include: {
-        community: {
-          include: {
-            _count: {
-              select: {
-                buildings: true,
-                members: true,
-                workingGroups: true,
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true }
+    })
+
+    let communities
+    if (user?.isAdmin) {
+      // Super admin: get all communities
+      const allCommunities = await prisma.community.findMany({
+        include: {
+          _count: {
+            select: {
+              buildings: true,
+              members: true,
+              workingGroups: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+      communities = allCommunities.map(community => ({
+        id: community.id,
+        name: community.name,
+        description: community.description,
+        address: community.address,
+        city: community.city,
+        district: community.district,
+        country: community.country,
+        role: 'ADMIN' as const, // Super admin has admin role for all communities
+        joinedAt: community.createdAt,
+        stats: {
+          buildings: community._count.buildings,
+          members: community._count.members,
+          workingGroups: community._count.workingGroups,
+        },
+      }))
+    } else {
+      // Regular user: Get all communities where user is a member
+      const memberships = await prisma.communityMember.findMany({
+        where: { userId },
+        include: {
+          community: {
+            include: {
+              _count: {
+                select: {
+                  buildings: true,
+                  members: true,
+                  workingGroups: true,
+                },
               },
             },
           },
         },
-      },
-      orderBy: {
-        joinedAt: 'desc',
-      },
-    })
+        orderBy: {
+          joinedAt: 'desc',
+        },
+      })
 
-    return NextResponse.json({
-      communities: memberships.map(m => ({
+      communities = memberships.map(m => ({
         id: m.community.id,
         name: m.community.name,
         description: m.community.description,
@@ -57,7 +97,11 @@ export async function GET(request: NextRequest) {
           members: m.community._count.members,
           workingGroups: m.community._count.workingGroups,
         },
-      })),
+      }))
+    }
+
+    return NextResponse.json({
+      communities,
     })
   } catch (error) {
     console.error('Error fetching communities:', error)

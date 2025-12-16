@@ -37,10 +37,11 @@ interface Conversation {
 
 interface ConversationListProps {
   buildingId?: string
+  communityId?: string
   onSelectConversation: (conversation: Conversation) => void
 }
 
-export default function ConversationList({ buildingId, onSelectConversation }: ConversationListProps) {
+export default function ConversationList({ buildingId, communityId, onSelectConversation }: ConversationListProps) {
   const { t } = useLanguage()
   const { household } = useHousehold()
   const { data: session } = useSession()
@@ -52,13 +53,16 @@ export default function ConversationList({ buildingId, onSelectConversation }: C
     // Poll for new conversations every 10 seconds
     const interval = setInterval(fetchConversations, 10000)
     return () => clearInterval(interval)
-  }, [buildingId])
+  }, [buildingId, communityId])
 
   const fetchConversations = async () => {
     try {
       const params = new URLSearchParams()
       if (buildingId) {
         params.append('buildingId', buildingId)
+      }
+      if (communityId) {
+        params.append('communityId', communityId)
       }
 
       const response = await fetch(`/api/conversations?${params.toString()}`)

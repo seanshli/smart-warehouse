@@ -9,7 +9,8 @@ import {
   HomeIcon,
   UserGroupIcon,
   ArrowRightIcon,
-  ClipboardDocumentIcon
+  ClipboardDocumentIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -259,13 +260,20 @@ export default function AdminBuildingsPage() {
                             <span>{building.unitCount} 单元</span>
                           )}
                         </div>
-                        <div className="mt-2 flex items-center space-x-2">
+                        <div className="mt-2 flex items-center space-x-2 flex-wrap gap-2">
                           <Link
                             href={`/admin/facilities/building/${building.id}`}
                             className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                           >
                             <BuildingOfficeIcon className="h-3 w-3 mr-1" />
                             公共設施 {building.facilityCount !== undefined && `(${building.facilityCount})`}
+                          </Link>
+                          <Link
+                            href={`/building/${building.id}/messages`}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                          >
+                            <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
+                            訊息
                           </Link>
                         </div>
                         <div className="mt-1 flex items-center text-xs text-gray-400">

@@ -178,6 +178,13 @@ export default function BuildingDetailPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <Link
+                href={`/building/${buildingId}/messages`}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
+                {t('messages') || 'Messages'}
+              </Link>
               {/* Language Selection */}
               <div className="flex items-center space-x-2">
                 <label htmlFor="language-select-building" className="text-sm text-gray-500">{t('commonLanguage')}:</label>

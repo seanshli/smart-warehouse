@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const householdId = searchParams.get('householdId')
     const buildingId = searchParams.get('buildingId')
+    const communityId = searchParams.get('communityId')
 
     // Build where clause
     // User can see conversations they created (as frontdesk/admin) OR conversations for their household
@@ -67,6 +68,22 @@ export async function GET(request: NextRequest) {
     // Add buildingId filter if provided (applies to all conditions)
     if (buildingId) {
       where.buildingId = buildingId
+    }
+    
+    // Add communityId filter if provided (for community-level conversations)
+    if (communityId) {
+      // For community level, we need to get all buildings in the community
+      const buildings = await prisma.building.findMany({
+        where: { communityId },
+        select: { id: true }
+      })
+      const buildingIds = buildings.map(b => b.id)
+      if (buildingIds.length > 0) {
+        where.buildingId = { in: buildingIds }
+      } else {
+        // No buildings in community, return empty
+        return NextResponse.json({ success: true, conversations: [] })
+      }
     }
     
     // If householdId was provided, also filter by it directly

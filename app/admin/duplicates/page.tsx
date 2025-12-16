@@ -89,64 +89,17 @@ export default function AdminDuplicatesPage() {
   const loadDuplicates = async () => {
     setLoading(true)
     try {
-      // TODO: Implement API endpoints for duplicate detection
-      // For now, show placeholder data
-      setDuplicateItems([
-        {
-          id: '1',
-          name: 'iPhone 15',
-          quantity: 2,
-          household: 'Sean\'s Household',
-          room: 'Living Room',
-          cabinet: 'Main Cabinet',
-          category: 'Electronics',
-          similarity: 95
-        },
-        {
-          id: '2',
-          name: 'iPhone 15',
-          quantity: 1,
-          household: 'Sean\'s Household',
-          room: 'Bedroom',
-          cabinet: 'Side Cabinet',
-          category: 'Electronics',
-          similarity: 95
-        }
-      ])
-      
-      setDuplicateRooms([
-        {
-          id: '1',
-          name: 'Kitchen',
-          household: 'Sean\'s Household',
-          similarity: 100
-        },
-        {
-          id: '2',
-          name: '廚房',
-          household: 'Sean\'s Household',
-          similarity: 100
-        }
-      ])
-      
-      setDuplicateCategories([
-        {
-          id: '1',
-          name: 'Clothing',
-          household: 'Sean\'s Household',
-          level: 1,
-          similarity: 100
-        },
-        {
-          id: '2',
-          name: '服裝',
-          household: 'Sean\'s Household',
-          level: 1,
-          similarity: 100
-        }
-      ])
+      const response = await fetch('/api/admin/duplicates')
+      if (!response.ok) {
+        throw new Error('Failed to fetch duplicates')
+      }
+      const data = await response.json()
+      setDuplicateItems(data.items || [])
+      setDuplicateRooms(data.rooms || [])
+      setDuplicateCategories(data.categories || [])
     } catch (error) {
       console.error('Error loading duplicates:', error)
+      toast.error('Failed to load duplicates')
     } finally {
       setLoading(false)
     }

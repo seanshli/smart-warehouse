@@ -29,20 +29,12 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid building ID' }, { status: 400 })
     }
 
-    // Check if user has access to this building
+    // Check if building exists and user has access
     const building = await prisma.building.findUnique({
       where: { id: buildingId },
-      include: {
-        members: {
-          where: { userId: (session.user as any).id },
-        },
-        community: {
-          include: {
-            members: {
-              where: { userId: (session.user as any).id },
-            },
-          },
-        },
+      select: {
+        id: true,
+        communityId: true,
       },
     })
 
@@ -50,13 +42,34 @@ export async function GET(
       return NextResponse.json({ error: 'Building not found' }, { status: 404 })
     }
 
-    // Check access
-    const hasAccess = building.members.length > 0 || 
-                     building.community.members.length > 0 ||
-                     (session.user as any).isAdmin
+    // Check access - simplified to avoid nested query issues
+    const userId = (session.user as any).id
+    const isAdmin = (session.user as any).isAdmin
 
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    if (!isAdmin) {
+      // Check if user is building member
+      const buildingMember = await prisma.buildingMember.findUnique({
+        where: {
+          userId_buildingId: {
+            userId,
+            buildingId,
+          },
+        },
+      })
+
+      // Check if user is community member
+      const communityMember = await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId,
+            communityId: building.communityId,
+          },
+        },
+      })
+
+      if (!buildingMember && !communityMember) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
     }
 
     // Fetch facilities - include both active and inactive for admin view

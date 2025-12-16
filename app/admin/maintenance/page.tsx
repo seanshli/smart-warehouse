@@ -192,19 +192,30 @@ function TicketEvaluationModal({
   onClose: () => void
   onEvaluate: (ticketId: string, routingType: string, assignedId: string) => void
 }) {
-  const [routingType, setRoutingType] = useState<string>('')
+  // Use ticket's existing routingType if set, otherwise allow selection
+  const [routingType, setRoutingType] = useState<string>(ticket.routingType || '')
   const [assignedId, setAssignedId] = useState<string>('')
   const [crews, setCrews] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (routingType.startsWith('INTERNAL')) {
-      fetchCrews()
-    } else if (routingType === 'EXTERNAL_SUPPLIER') {
-      fetchSuppliers()
+    // If routingType is already set from ticket creation, fetch teams immediately
+    if (ticket.routingType) {
+      if (ticket.routingType.startsWith('INTERNAL')) {
+        fetchCrews()
+      } else if (ticket.routingType === 'EXTERNAL_SUPPLIER') {
+        fetchSuppliers()
+      }
+    } else if (routingType) {
+      // Otherwise fetch when user selects routing type
+      if (routingType.startsWith('INTERNAL')) {
+        fetchCrews()
+      } else if (routingType === 'EXTERNAL_SUPPLIER') {
+        fetchSuppliers()
+      }
     }
-  }, [routingType])
+  }, [routingType, ticket.routingType])
 
   const fetchCrews = async () => {
     try {
@@ -252,13 +263,19 @@ function TicketEvaluationModal({
                 setRoutingType(e.target.value)
                 setAssignedId('')
               }}
-              className="w-full px-3 py-2 border rounded-md"
+              disabled={!!ticket.routingType} // Disable if already set from ticket creation
+              className="w-full px-3 py-2 border rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">Select routing type</option>
               <option value="INTERNAL_BUILDING">Internal Building Crew</option>
               <option value="INTERNAL_COMMUNITY">Internal Community Crew</option>
               <option value="EXTERNAL_SUPPLIER">External Supplier</option>
             </select>
+            {ticket.routingType && (
+              <p className="mt-1 text-xs text-gray-500">
+                Routing type automatically set based on job category: {ticket.category}
+              </p>
+            )}
           </div>
 
           {routingType.startsWith('INTERNAL') && (

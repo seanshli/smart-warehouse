@@ -73,7 +73,7 @@ export default function ChatInterface({
           // Try to use native chat on iOS/Android
           await NativeChat.showChat({
             conversationId,
-            targetHouseholdId: householdId,
+            targetHouseholdId: householdId as string, // Type assertion safe because of check above
             targetHouseholdName: householdName,
           })
           setUseNativeChat(true)

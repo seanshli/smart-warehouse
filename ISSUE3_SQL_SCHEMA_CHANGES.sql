@@ -28,7 +28,7 @@ BEGIN
   ELSE
     RAISE NOTICE 'Column community_id already exists in conversations table';
   END IF;
-END $$;
+END $$ LANGUAGE plpgsql;
 
 -- ============================================
 -- 2. Add type for admin-household conversations

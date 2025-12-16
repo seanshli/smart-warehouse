@@ -38,6 +38,56 @@ export async function GET(
       return NextResponse.json({ error: 'Building not found' }, { status: 404 })
     }
 
+    // Check if user has permission to view working groups
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    let hasPermission = false
+
+    if (currentUser?.isAdmin) {
+      hasPermission = true
+    } else {
+      // Check if user is building admin/manager
+      const buildingMembership = await prisma.buildingMember.findUnique({
+        where: {
+          userId_buildingId: {
+            userId,
+            buildingId,
+          },
+        },
+        select: {
+          role: true,
+        },
+      })
+
+      if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
+        hasPermission = true
+      } else {
+        // Check if user is community admin/manager
+        const communityMembership = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId,
+              communityId: building.communityId,
+            },
+          },
+          select: {
+            role: true,
+          },
+        })
+
+        if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
+          hasPermission = true
+        }
+      }
+    }
+
+    if (!hasPermission) {
+      return NextResponse.json({ error: 'Insufficient permissions to view working groups' }, { status: 403 })
+    }
+
     // Get all working groups in the community
     const allWorkingGroups = await prisma.workingGroup.findMany({
       where: { communityId: building.communityId },

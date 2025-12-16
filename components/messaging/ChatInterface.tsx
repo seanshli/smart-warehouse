@@ -40,7 +40,7 @@ interface Conversation {
 
 interface ChatInterfaceProps {
   conversationId: string
-  householdId?: string | null
+  householdId?: string | null | undefined
   householdName: string
   onClose?: () => void
   onInitiateCall?: (callType: 'audio' | 'video') => void

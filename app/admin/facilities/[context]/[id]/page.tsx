@@ -169,12 +169,12 @@ export default function ContextFacilitiesPage() {
         return
       }
 
-      // Fetch reservations for each facility
+      // Fetch reservations for each facility - include pending for admin view
       const reservationPromises = facilityIds.map(facilityId =>
-        fetch(`/api/facility/${facilityId}/reservations`).then(r => r.json())
+        fetch(`/api/facility/${facilityId}/reservations?includePending=true`).then(r => r.json())
       )
       const reservationResults = await Promise.all(reservationPromises)
-      let allReservations = reservationResults.flatMap((result: any) => result.reservations || [])
+      let allReservations = reservationResults.flatMap((result: any) => result.data || [])
 
       // Filter by householdId if provided
       if (householdId) {
@@ -392,7 +392,14 @@ export default function ContextFacilitiesPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {facilities.map((facility) => (
-                  <div key={facility.id} className="bg-white shadow rounded-lg p-6">
+                  <button
+                    key={facility.id}
+                    onClick={() => {
+                      // Navigate to facility detail page
+                      router.push(`/admin/facilities/${context}/${id}/facility/${facility.id}`)
+                    }}
+                    className="bg-white shadow rounded-lg p-6 text-left hover:shadow-lg transition-shadow cursor-pointer"
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-medium text-gray-900">{facility.name}</h3>
@@ -427,7 +434,7 @@ export default function ContextFacilitiesPage() {
                         {facility.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

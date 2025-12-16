@@ -76,12 +76,15 @@ export default function FrontDeskChatButton({ ticketId, buildingId: propBuilding
     }
   }
 
-  if (showChat && conversationId && household) {
+  // For admin context, we might not have a household but still need to show chat
+  const effectiveHouseholdId = household?.id || null
+
+  if (showChat && conversationId) {
     return (
       <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50">
         <ChatInterface
           conversationId={conversationId}
-          householdId={household.id}
+          householdId={effectiveHouseholdId}
           householdName="Front Desk"
           onClose={() => {
             setShowChat(false)
@@ -96,7 +99,7 @@ export default function FrontDeskChatButton({ ticketId, buildingId: propBuilding
   return (
     <button
       onClick={handleRequestChat}
-      disabled={loading || !household}
+      disabled={loading}
       className={`inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       title={t('chatWithFrontDesk')}
     >

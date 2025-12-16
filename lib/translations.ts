@@ -2494,6 +2494,7 @@ const zhTW: Translations = {
   similar: '相似',
   createNewItem: '創建新物品',
   useExistingItem: '使用現有物品',
+  location: '位置',
   country: '國家',
   city: '城市',
   district: '區域',

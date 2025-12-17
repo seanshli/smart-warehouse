@@ -35,7 +35,7 @@ function normalizeLanguageCode(language?: string): string | undefined {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    let { query, audioBase64, language, history } = body as {
+    let { query, audioBase64: inputAudioBase64, language, history } = body as {
       query?: string // 文字查詢
       audioBase64?: string // Base64 編碼的音訊
       language?: string // 語言代碼
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
     let prompt = typeof query === 'string' ? query.trim() : ''
 
     // 如果沒有文字查詢但有音訊，先進行語音轉文字
-    if (!prompt && typeof audioBase64 === 'string' && audioBase64.length > 0) {
+    if (!prompt && typeof inputAudioBase64 === 'string' && inputAudioBase64.length > 0) {
       try {
-        const transcript = await transcribeAudioFormData(audioBase64, normalizedLanguage)
+        const transcript = await transcribeAudioFormData(inputAudioBase64, normalizedLanguage)
         if (transcript) {
           prompt = transcript.trim() // 使用轉錄的文字作為提示
         }

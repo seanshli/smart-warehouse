@@ -137,11 +137,35 @@ export default function FacilityDetailPage() {
     try {
       const response = await fetch(`/api/facility/reservation/${reservationId}/approve`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: '' }),
       })
-      if (!response.ok) throw new Error('Failed to approve reservation')
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.conflict) {
+          // Show conflict details
+          const conflict = errorData.conflict
+          const conflictDetails = conflict.conflictingReservations || []
+          const conflictMsg = conflictDetails.length > 0
+            ? `\n\nConflicts:\n${conflictDetails.map((c: any) => 
+                `- ${c.household}${c.apartmentNo ? ` (${c.apartmentNo})` : ''}: ${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()} (${c.numberOfPeople || 1} people)`
+              ).join('\n')}`
+            : conflict.totalPeople !== undefined
+              ? `\n\nCurrent: ${conflict.totalPeople}/${conflict.capacity} people\nAdding: ${conflict.reservationPeople} would exceed capacity`
+              : ''
+          
+          toast.error(`${errorData.error}${conflictMsg}`, { duration: 10000 })
+        } else {
+          throw new Error(errorData.error || 'Failed to approve reservation')
+        }
+        return
+      }
+      
       toast.success('Reservation approved')
       fetchReservations()
     } catch (error: any) {
+      console.error('Error approving reservation:', error)
       toast.error(error.message || 'Failed to approve reservation')
     }
   }
@@ -345,6 +369,13 @@ export default function FacilityDetailPage() {
                         )}
                         {reservation.numberOfPeople && (
                           <p className="text-sm text-gray-600">People: {reservation.numberOfPeople}</p>
+                        )}
+                        {/* Show conflict info if reservation is pending due to conflicts */}
+                        {reservation.status === 'pending' && (
+                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                            <p className="font-medium">Pending - Requires admin review</p>
+                            <p className="mt-1">Check for time slot conflicts or capacity issues</p>
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center space-x-2">

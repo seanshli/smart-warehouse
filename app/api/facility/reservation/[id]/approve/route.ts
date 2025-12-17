@@ -70,7 +70,8 @@ export async function POST(
     }
 
     // Check if time slot is still available (no conflicts)
-    const conflicting = await prisma.facilityReservation.findFirst({
+    // Also check capacity if facility has capacity limit
+    const conflicting = await prisma.facilityReservation.findMany({
       where: {
         facilityId: reservation.facilityId,
         id: { not: reservationId },
@@ -98,11 +99,67 @@ export async function POST(
           },
         ],
       },
+      include: {
+        household: {
+          select: {
+            name: true,
+            apartmentNo: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
     })
 
-    if (conflicting) {
+    if (conflicting.length > 0) {
+      // Check capacity if facility has capacity
+      const facility = await prisma.facility.findUnique({
+        where: { id: reservation.facilityId },
+        select: { capacity: true },
+      })
+
+      if (facility?.capacity && facility.capacity > 0) {
+        const totalPeopleInConflicts = conflicting.reduce((sum, r) => sum + (r.numberOfPeople || 1), 0)
+        const reservationPeople = reservation.numberOfPeople || 1
+        const totalPeople = totalPeopleInConflicts + reservationPeople
+
+        if (totalPeople > facility.capacity) {
+          return NextResponse.json(
+            { 
+              error: 'Time slot capacity exceeded. Cannot approve reservation.',
+              conflict: {
+                totalPeople: totalPeopleInConflicts,
+                capacity: facility.capacity,
+                reservationPeople: reservationPeople,
+                conflictingReservations: conflicting.map(r => ({
+                  household: r.household.name || r.household.apartmentNo,
+                  apartmentNo: r.household.apartmentNo,
+                  startTime: r.startTime,
+                  endTime: r.endTime,
+                  numberOfPeople: r.numberOfPeople || 1,
+                })),
+              },
+            },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Time conflict exists
       return NextResponse.json(
-        { error: 'Time slot is no longer available. Another reservation was approved first.' },
+        { 
+          error: 'Time slot is no longer available. Another reservation was approved first.',
+          conflict: {
+            conflictingReservations: conflicting.map(r => ({
+              household: r.household.name || r.household.apartmentNo,
+              apartmentNo: r.household.apartmentNo,
+              startTime: r.startTime,
+              endTime: r.endTime,
+              numberOfPeople: r.numberOfPeople || 1,
+            })),
+          },
+        },
         { status: 400 }
       )
     }

@@ -154,36 +154,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {navigation.map((item) => {
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  prefetch={false}
-                  className={`${
-                    item.current
-                      ? 'border-red-500 text-red-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
-          </nav>
+      {/* Layout: Vertical Sidebar + Content */}
+      <div className="flex">
+        {/* Vertical Sidebar Navigation */}
+        <div className="w-64 flex-shrink-0 bg-white shadow-sm border-r border-gray-200">
+          <div className="h-[calc(100vh-120px)] overflow-y-auto p-2">
+            <nav className="space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    prefetch={false}
+                    className={`${
+                      item.current
+                        ? 'bg-red-50 text-red-600 border-red-500'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent'
+                    } w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md border-l-2 transition-colors`}
+                    title={item.name}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {children}
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 min-w-0">
+          {children}
+        </main>
+      </div>
 
       {/* Admin Footer */}
       <footer className="bg-white border-t border-gray-200">

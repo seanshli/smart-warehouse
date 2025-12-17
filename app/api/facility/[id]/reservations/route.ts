@@ -337,6 +337,15 @@ export async function POST(
             apartmentNo: true,
           },
         },
+        requestedBy: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'asc',
       },
     })
 
@@ -413,11 +422,19 @@ export async function POST(
               totalPeople: totalPeopleInOverlapping,
               capacity: facility.capacity,
               newReservationPeople: newReservationPeople,
+              overlappingReservations: overlappingReservations.map(r => ({
+                household: r.household.name || r.household.apartmentNo,
+                apartmentNo: r.household.apartmentNo,
+                startTime: r.startTime,
+                endTime: r.endTime,
+                numberOfPeople: r.numberOfPeople || 1,
+              })),
             },
             nextAvailable: nextAvailable ? {
               startTime: nextAvailable.startTime,
               endTime: nextAvailable.endTime,
             } : null,
+            allowFrontDeskMessage: true, // Allow messaging front desk for conflicts
           },
           { status: 409 } // 409 Conflict status code
         )
@@ -487,13 +504,23 @@ export async function POST(
             reservation: rejectedReservation,
             conflict: {
               household: firstOverlapping.household.name || firstOverlapping.household.apartmentNo,
+              apartmentNo: firstOverlapping.household.apartmentNo,
               startTime: firstOverlapping.startTime,
               endTime: firstOverlapping.endTime,
+              numberOfPeople: firstOverlapping.numberOfPeople || 1,
+              overlappingReservations: overlappingReservations.map(r => ({
+                household: r.household.name || r.household.apartmentNo,
+                apartmentNo: r.household.apartmentNo,
+                startTime: r.startTime,
+                endTime: r.endTime,
+                numberOfPeople: r.numberOfPeople || 1,
+              })),
             },
             nextAvailable: nextAvailable ? {
               startTime: nextAvailable.startTime,
               endTime: nextAvailable.endTime,
             } : null,
+            allowFrontDeskMessage: true, // Allow messaging front desk for conflicts
           },
           { status: 409 } // 409 Conflict status code
         )

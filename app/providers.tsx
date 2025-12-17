@@ -8,6 +8,7 @@ import { HouseholdProvider } from '@/components/HouseholdProvider'
 import SettingsLoader from '@/components/SettingsLoader'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import ReceptionAnnouncementListener from '@/components/ReceptionAnnouncementListener'
+import GlobalVoiceCommentWrapper from '@/components/GlobalVoiceCommentWrapper'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <LanguageProvider>
             <HouseholdProvider>
               <SettingsLoader />
-              {children}
+              <GlobalVoiceCommentWrapper>
+                {children}
+              </GlobalVoiceCommentWrapper>
               <ReceptionAnnouncementListener />
               <Toaster position="top-right" />
             </HouseholdProvider>

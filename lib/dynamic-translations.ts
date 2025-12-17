@@ -31,6 +31,20 @@ async function translateWithAI(text: string, targetLanguage: string): Promise<st
   }
 
   try {
+    // Map language codes to proper language names for translation
+    const languageMap: Record<string, string> = {
+      'zh': 'Simplified Chinese',
+      'zh-CN': 'Simplified Chinese',
+      'zh-TW': 'Traditional Chinese',
+      '繁體中文': 'Traditional Chinese',
+      'en': 'English',
+      'English': 'English',
+      'ja': 'Japanese',
+      '日本語': 'Japanese',
+    }
+    
+    const targetLangName = languageMap[targetLanguage] || targetLanguage
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -42,14 +56,14 @@ async function translateWithAI(text: string, targetLanguage: string): Promise<st
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the following text to ${targetLanguage}. Only return the translation, no explanations or additional text.`
+            content: `You are a professional translator. Translate the following text to ${targetLangName}. Only return the translation, no explanations or additional text.`
           },
           {
             role: 'user',
             content: text
           }
         ],
-        max_tokens: 200,
+        max_tokens: 500, // Increased for longer responses
         temperature: 0.3
       })
     })

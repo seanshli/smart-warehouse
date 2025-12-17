@@ -420,6 +420,14 @@ export interface Translations {
   // Voice Comments
   voiceComment: string
   voiceCommentHint: string
+  voiceCommentSaved: string
+  voiceCommentError: string
+  reservationConflict: string
+  capacityExceededMessage: string
+  timeSlotOccupiedMessage: string
+  conflictingReservations: string
+  until: string
+  people: string
   startRecording: string
   stopRecording: string
   pauseRecording: string
@@ -1464,6 +1472,14 @@ const en: Translations = {
   // Voice Comments
   voiceComment: 'Voice Comment',
   voiceCommentHint: 'Record a voice note to explain why this item was checked out',
+  voiceCommentSaved: 'Voice comment saved',
+  voiceCommentError: 'Failed to process voice comment',
+  reservationConflict: 'Reservation Conflict',
+  capacityExceededMessage: 'The facility capacity would be exceeded. Would you like to message the front desk to discuss alternatives?',
+  timeSlotOccupiedMessage: 'The time slot is already occupied. Would you like to message the front desk to discuss alternatives?',
+  conflictingReservations: 'Conflicting Reservations:',
+  until: 'until',
+  people: 'people',
   startRecording: 'Start Recording',
   stopRecording: 'Stop Recording',
   pauseRecording: 'Pause',
@@ -2544,6 +2560,14 @@ const zhTW: Translations = {
   // Voice Comments
   voiceComment: '語音備註',
   voiceCommentHint: '錄製語音備註以說明此物品被取出的原因',
+  voiceCommentSaved: '語音備註已儲存',
+  voiceCommentError: '處理語音備註失敗',
+  reservationConflict: '預約衝突',
+  capacityExceededMessage: '設施容量將超出限制。您是否要與前台聯繫討論替代方案？',
+  timeSlotOccupiedMessage: '該時段已被佔用。您是否要與前台聯繫討論替代方案？',
+  conflictingReservations: '衝突的預約：',
+  until: '後',
+  people: '人',
   startRecording: '開始錄音',
   stopRecording: '停止錄音',
   pauseRecording: '暫停',
@@ -3575,6 +3599,14 @@ const zh: Translations = {
   // Voice Comments
   voiceComment: '语音备注',
   voiceCommentHint: '录制语音备注以说明此物品被取出的原因',
+  voiceCommentSaved: '语音备注已保存',
+  voiceCommentError: '处理语音备注失败',
+  reservationConflict: '预约冲突',
+  capacityExceededMessage: '设施容量将超出限制。您是否要与前台联系讨论替代方案？',
+  timeSlotOccupiedMessage: '该时段已被占用。您是否要与前台联系讨论替代方案？',
+  conflictingReservations: '冲突的预约：',
+  until: '后',
+  people: '人',
   startRecording: '开始录音',
   stopRecording: '停止录音',
   pauseRecording: '暂停',
@@ -4602,6 +4634,14 @@ const ja: Translations = {
   // Voice Comments
   voiceComment: '音声コメント',
   voiceCommentHint: 'このアイテムが取り出された理由を説明する音声メモを録音します',
+  voiceCommentSaved: '音声コメントが保存されました',
+  voiceCommentError: '音声コメントの処理に失敗しました',
+  reservationConflict: '予約の競合',
+  capacityExceededMessage: '施設の容量が超過します。フロントデスクに連絡して代替案を話し合いますか？',
+  timeSlotOccupiedMessage: '時間枠は既に占有されています。フロントデスクに連絡して代替案を話し合いますか？',
+  conflictingReservations: '競合する予約：',
+  until: 'まで',
+  people: '人',
   startRecording: '録音開始',
   stopRecording: '録音停止',
   pauseRecording: '一時停止',

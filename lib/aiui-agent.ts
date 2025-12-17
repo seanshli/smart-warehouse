@@ -4,6 +4,7 @@
 import crypto from 'crypto'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { getOpenAI } from './ai'
+import { translateText } from './dynamic-translations'
 
 // AIUI 代理端點
 const AIUI_AGENT_ENDPOINT = 'https://openai.xfyun.cn/v2/aiui'
@@ -192,18 +193,59 @@ async function callOpenAI(query: string, history: Array<{ role: 'user' | 'assist
 }
 
 // 查詢 AIUI 代理（主要使用 AIUI，失敗時使用 OpenAI 備援）
+// AIUI always requires Simplified Chinese (zh) input, then output is translated back to user's language
 export async function queryAIUIAgent(
   query: string,
   language?: string,
   history: Array<{ role: 'user' | 'assistant'; content: string }> = []
 ): Promise<AIUIAgentResult | null> {
-  // 首先嘗試 AIUI
-  const aiuiResult = await callAIUI(query, language)
+  // Always send Simplified Chinese (zh) to AIUI service
+  // First, translate user's query to Simplified Chinese if needed
+  let queryForAIUI = query
+  const userLanguage = language || 'zh'
+  
+  // If user's language is not Simplified Chinese, translate query to Simplified Chinese
+  if (userLanguage !== 'zh' && userLanguage !== 'zh-CN') {
+    try {
+      // Translate to Simplified Chinese
+      queryForAIUI = await translateText(query, 'zh', {})
+      console.log(`[AIUI] Translated query to Simplified Chinese: "${query}" -> "${queryForAIUI}"`)
+    } catch (error) {
+      console.error('[AIUI] Failed to translate query to Simplified Chinese, using original:', error)
+      // If translation fails, try with Simplified Chinese anyway
+      queryForAIUI = query
+    }
+  }
+  
+  // Call AIUI with Simplified Chinese
+  const aiuiResult = await callAIUI(queryForAIUI, 'zh') // Always use 'zh' for AIUI
+  
   if (aiuiResult) {
-    return aiuiResult
+    // Translate AIUI response back to user's selected language
+    let translatedResponse = aiuiResult.text
+    
+    if (userLanguage !== 'zh' && userLanguage !== 'zh-CN') {
+      try {
+        // Map language codes for translation
+        const targetLang = userLanguage === 'zh-TW' ? '繁體中文' : 
+                          userLanguage === 'en' ? 'English' :
+                          userLanguage === 'ja' ? '日本語' : userLanguage
+        translatedResponse = await translateText(aiuiResult.text, targetLang, {})
+        console.log(`[AIUI] Translated response to ${userLanguage}: "${aiuiResult.text.substring(0, 50)}..." -> "${translatedResponse.substring(0, 50)}..."`)
+      } catch (error) {
+        console.error('[AIUI] Failed to translate response, using original:', error)
+        // If translation fails, use original Simplified Chinese response
+      }
+    }
+    
+    return {
+      text: translatedResponse,
+      source: aiuiResult.source,
+      raw: aiuiResult.raw,
+    }
   }
 
-  // Fallback to OpenAI
+  // Fallback to OpenAI (no translation needed for OpenAI)
   return callOpenAI(query, history)
 }
 

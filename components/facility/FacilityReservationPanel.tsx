@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useLanguage } from '@/components/LanguageProvider'
-import { ClockIcon, CalendarIcon, CheckCircleIcon, XCircleIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, CalendarIcon, CheckCircleIcon, XCircleIcon, PencilIcon, ChatBubbleLeftRightIcon, BellIcon } from '@heroicons/react/24/outline'
+import FrontDeskChatButton from '@/components/maintenance/FrontDeskChatButton'
+import { useHousehold } from '@/components/HouseholdProvider'
 
 interface Facility {
   id: string
@@ -46,11 +48,14 @@ interface FacilityReservationPanelProps {
 
 export default function FacilityReservationPanel({ householdId }: FacilityReservationPanelProps) {
   const { t } = useLanguage()
+  const { household } = useHousehold()
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
   const [showReservationModal, setShowReservationModal] = useState(false)
+  const [conflictError, setConflictError] = useState<{ errorCode: string; conflict: any; allowFrontDeskMessage: boolean } | null>(null)
+  const [availableSlots, setAvailableSlots] = useState<Array<{ start: string; end: string }>>([])
   // Calculate default times: next hour start, 1 hour duration
   const getDefaultTimes = () => {
     const now = new Date()
@@ -219,7 +224,59 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
           // Refresh reservations to show the rejected one
           fetchReservations()
         } else if (data.errorCode === 'CAPACITY_EXCEEDED') {
-          alert(data.error || 'Facility capacity exceeded. Your reservation has been automatically rejected.')
+          // Show conflict details and allow frontdesk messaging
+          const conflictInfo = data.conflict
+          const conflictDetails = conflictInfo?.overlappingReservations || []
+          const conflictMsg = conflictDetails.length > 0
+            ? `\n\n${t('conflictingReservations') || 'Conflicts:'}\n${conflictDetails.map((c: any) => 
+                `- ${c.household}${c.apartmentNo ? ` (${c.apartmentNo})` : ''}: ${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()} (${c.numberOfPeople || 1} ${t('people') || 'people'})`
+              ).join('\n')}`
+            : ''
+          
+          const fullError = `${data.error}${conflictMsg}`
+          
+          if (data.allowFrontDeskMessage) {
+            const shouldMessage = confirm(
+              `${fullError}\n\n${t('capacityExceededMessage') || 'Would you like to message the front desk to discuss this reservation?'}`
+            )
+            if (shouldMessage) {
+              setConflictError({ errorCode: data.errorCode, conflict: conflictInfo, allowFrontDeskMessage: true })
+              setShowReservationModal(false)
+            } else {
+              alert(fullError)
+            }
+          } else {
+            alert(fullError)
+          }
+          // Refresh reservations to show the rejected one
+          fetchReservations()
+        } else if (data.errorCode === 'TIME_OCCUPIED') {
+          // Show conflict details and allow frontdesk messaging
+          const conflictInfo = data.conflict
+          const conflictDetails = conflictInfo?.overlappingReservations || []
+          const conflictMsg = conflictDetails.length > 0
+            ? `\n\nOccupied by:\n${conflictDetails.map((c: any) => 
+                `- ${c.household}${c.apartmentNo ? ` (${c.apartmentNo})` : ''}: ${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()} (${c.numberOfPeople || 1} ${t('people') || 'people'})`
+              ).join('\n')}`
+            : conflictInfo?.household
+              ? `\n\nOccupied by: ${conflictInfo.household}${conflictInfo.apartmentNo ? ` (${conflictInfo.apartmentNo})` : ''} (${conflictInfo.numberOfPeople || 1} ${t('people') || 'people'})`
+              : ''
+          
+          const fullError = `${data.error}${conflictMsg}`
+          
+          if (data.allowFrontDeskMessage) {
+            const shouldMessage = confirm(
+              `${fullError}\n\n${t('timeSlotOccupiedMessage') || 'Would you like to message the front desk to discuss this reservation?'}`
+            )
+            if (shouldMessage) {
+              setConflictError({ errorCode: data.errorCode, conflict: conflictInfo, allowFrontDeskMessage: true })
+              setShowReservationModal(false)
+            } else {
+              alert(fullError)
+            }
+          } else {
+            alert(fullError)
+          }
           // Refresh reservations to show the rejected one
           fetchReservations()
         } else {
@@ -373,39 +430,101 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
             {t('myReservations') || 'My Reservations'}
           </h3>
           <div className="space-y-3">
-            {reservations.map((reservation) => (
-              <div
-                key={reservation.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {reservation.facility.name}
-                      </h4>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(reservation.status)}`}>
-                        {getStatusIcon(reservation.status)}
-                        <span className="ml-1">{reservation.status}</span>
-                      </span>
+            {reservations.map((reservation) => {
+              const reservationDate = new Date(reservation.startTime)
+              const now = new Date()
+              const hoursUntilReservation = (reservationDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+              const isUpcoming = reservationDate > now && hoursUntilReservation <= 24 && hoursUntilReservation > 0
+              const isToday = reservationDate.toDateString() === now.toDateString()
+              
+              return (
+                <div
+                  key={reservation.id}
+                  className={`border rounded-lg p-4 ${
+                    isUpcoming || isToday
+                      ? 'border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {reservation.facility.name}
+                        </h4>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(reservation.status)}`}>
+                          {getStatusIcon(reservation.status)}
+                          <span className="ml-1">{reservation.status}</span>
+                        </span>
+                        {(isUpcoming || isToday) && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                            <BellIcon className="h-3 w-3 mr-1" />
+                            {isToday ? (t('today') || 'Today') : `${Math.round(hoursUntilReservation)}h ${t('until') || 'until'}`}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                        {new Date(reservation.startTime).toLocaleString()} - {new Date(reservation.endTime).toLocaleTimeString()}
+                      </p>
+                      {reservation.purpose && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          {t('purpose') || 'Purpose'}: {reservation.purpose}
+                        </p>
+                      )}
+                      {reservation.accessCode && (
+                        <p className="text-sm font-semibold text-primary-600 dark:text-primary-400 mt-1">
+                          {t('accessCode') || 'Access Code'}: {reservation.accessCode}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      {new Date(reservation.startTime).toLocaleString()} - {new Date(reservation.endTime).toLocaleTimeString()}
-                    </p>
-                    {reservation.purpose && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {t('purpose') || 'Purpose'}: {reservation.purpose}
-                      </p>
-                    )}
-                    {reservation.accessCode && (
-                      <p className="text-sm font-semibold text-primary-600 dark:text-primary-400 mt-1">
-                        {t('accessCode') || 'Access Code'}: {reservation.accessCode}
-                      </p>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Conflict Error Modal with Front Desk Messaging */}
+      {conflictError && conflictError.allowFrontDeskMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {t('reservationConflict') || 'Reservation Conflict'}
+            </h3>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {conflictError.errorCode === 'CAPACITY_EXCEEDED'
+                  ? t('capacityExceededMessage') || 'The facility capacity would be exceeded. Would you like to message the front desk to discuss alternatives?'
+                  : t('timeSlotOccupiedMessage') || 'The time slot is already occupied. Would you like to message the front desk to discuss alternatives?'}
+              </p>
+              {conflictError.conflict?.overlappingReservations && (
+                <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('conflictingReservations') || 'Conflicting Reservations:'}
+                  </p>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    {conflictError.conflict.overlappingReservations.map((c: any, idx: number) => (
+                      <li key={idx}>
+                        • {c.household}{c.apartmentNo ? ` (${c.apartmentNo})` : ''}: {new Date(c.startTime).toLocaleString()} - {new Date(c.endTime).toLocaleString()} ({c.numberOfPeople || 1} {t('people') || 'people'})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConflictError(null)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {t('cancel') || 'Cancel'}
+              </button>
+              <FrontDeskChatButton
+                buildingId={household?.buildingId || undefined}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
+              />
+            </div>
           </div>
         </div>
       )}

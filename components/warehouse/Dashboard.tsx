@@ -304,6 +304,21 @@ export default function Dashboard() {
     )
   }
 
+  // State declarations - must be before any conditional returns
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
+  const [showSearch, setShowSearch] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const [showEditItem, setShowEditItem] = useState(false)
+  const [showMoveItem, setShowMoveItem] = useState(false)
+  const [showCheckoutItem, setShowCheckoutItem] = useState(false)
+  const [showQuantityAdjust, setShowQuantityAdjust] = useState(false)
+  const [showItemHistory, setShowItemHistory] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
+  const [doorbellCallCount, setDoorbellCallCount] = useState(0)
+  const [doorbellRingingCount, setDoorbellRingingCount] = useState(0)
+
   // Show loading state if not authenticated
   if (status === 'unauthenticated' || !session || !session.user || !(session.user as any).id) {
     return (
@@ -315,10 +330,6 @@ export default function Dashboard() {
       </div>
     )
   }
-  const [activeTab, setActiveTab] = useState('dashboard')
-  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
-  const [showSearch, setShowSearch] = useState(false)
-  const [hasError, setHasError] = useState(false)
 
   // Add error boundary for component errors
   useEffect(() => {

@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { queryAIUIAgent } from '@/lib/aiui-agent'
-import { transcribeAudioFormData } from '@/lib/speech-to-text'
+import { transcribeAudioFormData, synthesizeSpeech } from '@/lib/speech-to-text'
 
 export const dynamic = 'force-dynamic' // 強制動態路由
 

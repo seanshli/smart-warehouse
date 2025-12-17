@@ -26,7 +26,7 @@ android {
         applicationId "com.smartwarehouse.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-    versionCode 72
+    versionCode 73
     versionName "1.0.69"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {

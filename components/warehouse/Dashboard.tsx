@@ -486,12 +486,13 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Navigation Tabs - Ultra-compact for mobile */}
-      <nav className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-1 sm:px-4 lg:px-6">
-          <div className={`flex overflow-x-auto whitespace-nowrap ${
-            deviceInfo.isMobile ? 'space-x-0.5' : deviceInfo.isTablet ? 'space-x-1' : 'space-x-2 sm:space-x-4'
-          }`}>
+      {/* Layout: Left Sidebar + Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar Navigation - Scrollable, Icon-based */}
+        <nav className={`hidden lg:block w-20 flex-shrink-0 bg-white dark:bg-gray-800 border-r dark:border-gray-700 overflow-y-auto ${
+          deviceInfo.isMobile ? 'pt-safe-top' : ''
+        }`}>
+          <div className="p-2 space-y-1">
             {tabs.map((tab) => {
               // Check if user has permission for this tab
               if (tab.permission && (!permissions || !permissions[tab.permission as keyof typeof permissions])) {
@@ -505,28 +506,21 @@ export default function Dashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 border-b-2 font-medium relative ${
-                    deviceInfo.isMobile 
-                      ? 'py-1.5 px-1.5 text-xs' 
-                      : deviceInfo.isTablet 
-                        ? 'py-2 px-2 text-xs'
-                        : 'py-3 px-3 text-sm'
-                  } ${
+                  className={`w-full flex flex-col items-center justify-center p-3 rounded-lg relative transition-colors ${
                     activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'
                   } ${isDoorbellTab && doorbellRingingCount > 0 ? 'animate-pulse' : ''}`}
+                  title={tab.name}
                 >
-                  <tab.icon className={`inline ${
-                    deviceInfo.isMobile ? 'h-3 w-3' : deviceInfo.isTablet ? 'h-4 w-4 mr-1' : 'h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-1.5'
-                  }`} />
-                  <span className={deviceInfo.isMobile ? 'hidden' : ''}>{tab.name}</span>
+                  <tab.icon className="h-5 w-5 mb-1" />
+                  <span className="text-xs truncate w-full text-center">{tab.name}</span>
                   {showBadge && (
-                    <span className={`absolute -top-1 -right-1 flex items-center justify-center rounded-full text-xs font-bold ${
+                    <span className={`absolute top-1 right-1 flex items-center justify-center rounded-full text-xs font-bold ${
                       doorbellRingingCount > 0 
                         ? 'bg-red-500 text-white animate-ping' 
                         : 'bg-indigo-500 text-white'
-                    } ${deviceInfo.isMobile ? 'h-3 w-3 text-[8px]' : 'h-4 w-4'}`}>
+                    } h-4 w-4`}>
                       {doorbellRingingCount > 0 ? doorbellRingingCount : doorbellCallCount}
                     </span>
                   )}
@@ -534,17 +528,16 @@ export default function Dashboard() {
               )
             })}
           </div>
-        </div>
-      </nav>
+        </nav>
 
-             {/* Main Content */}
-             <main className={`max-w-7xl mx-auto ${
-               deviceInfo.isMobile 
-                 ? 'py-2 px-2' 
-                 : deviceInfo.isTablet 
-                   ? 'py-4 px-4 sm:px-6' 
-                   : 'py-4 sm:py-6 px-2 sm:px-6 lg:px-8'
-             }`}>
+        {/* Main Content */}
+        <main className={`flex-1 overflow-y-auto ${
+          deviceInfo.isMobile 
+            ? 'py-2 px-2 pb-20' 
+            : deviceInfo.isTablet 
+              ? 'py-4 px-4 sm:px-6' 
+              : 'py-4 sm:py-6 px-2 sm:px-6 lg:px-8'
+        }`}>
                {activeTab === 'dashboard' && (
                 <DashboardContent
                   household={household}
@@ -702,7 +695,7 @@ export default function Dashboard() {
                    }}
                  />
                )}
-             </main>
+        </main>
 
       {/* Modals */}
       {showSearch && (
@@ -1598,9 +1591,8 @@ function DashboardContent({
                     {t('noRecentActivity')} {t('startByAddingFirstItem')}
                   </div>
                 )}
-        </div>
+        </main>
       </div>
-
     </div>
   )
 }

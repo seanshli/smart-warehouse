@@ -127,6 +127,7 @@ export interface Translations {
   createReservation: string
   submitting: string
   reservationCreated: string
+  viewReservations: string
   
   // Announcements
   announcements: string

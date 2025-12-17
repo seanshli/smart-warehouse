@@ -202,17 +202,25 @@ export async function POST(
     })
 
     // Create notifications for household members
-    const notifications = approved.household.members.map(member => ({
-      userId: member.userId,
-      facilityReservationId: approved.id,
-      type: 'facility_reservation_approved',
-      title: 'Reservation Approved',
-      message: `Your reservation for ${approved.facility.name} has been approved. Access code: ${accessCode}`,
-    }))
+    if (approved.household.members && approved.household.members.length > 0) {
+      try {
+        const notifications = approved.household.members.map(member => ({
+          userId: member.userId,
+          householdId: approved.householdId,
+          facilityReservationId: approved.id,
+          type: 'facility_reservation_approved',
+          title: 'Reservation Approved',
+          message: `Your reservation for ${approved.facility.name} has been approved. Access code: ${accessCode}`,
+        }))
 
-    await prisma.notification.createMany({
-      data: notifications,
-    })
+        await prisma.notification.createMany({
+          data: notifications,
+        })
+      } catch (notifError) {
+        // Log notification error but don't fail the approval
+        console.error('Error creating notifications:', notifError)
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -129,7 +129,14 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
           allReservations.push(...householdReservations)
         }
       }
-      setReservations(allReservations.sort((a, b) => 
+      // Filter to only show current/future reservations (pending or approved)
+      const now = new Date()
+      const activeReservations = allReservations.filter((r: Reservation) => {
+        const endTime = new Date(r.endTime)
+        // Include if: (pending OR approved) AND endTime is in the future
+        return (r.status === 'pending' || r.status === 'approved') && endTime >= now
+      })
+      setReservations(activeReservations.sort((a, b) => 
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       ))
     } catch (error) {
@@ -386,46 +393,79 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {facilities.map((facility) => (
-            <div
-              key={facility.id}
-              className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => {
-                setSelectedFacility(facility)
-                setShowReservationModal(true)
-              }}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {facility.name}
-                  </h3>
-                  {facility.floorNumber && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t('floor') || 'Floor'} {facility.floorNumber}
-                    </p>
-                  )}
-                  {facility.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      {facility.description}
-                    </p>
-                  )}
+          {facilities.map((facility) => {
+            // Check if this facility has active reservations
+            const facilityReservations = reservations.filter(r => r.facilityId === facility.id)
+            const hasActiveReservations = facilityReservations.length > 0
+            
+            return (
+              <div
+                key={facility.id}
+                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {facility.name}
+                    </h3>
+                    {facility.floorNumber && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {t('floor') || 'Floor'} {facility.floorNumber}
+                      </p>
+                    )}
+                    {facility.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                        {facility.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <PencilIcon className="h-5 w-5 text-gray-400" />
+                {facility.capacity && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    {t('capacity') || 'Capacity'}: {facility.capacity}
+                  </p>
+                )}
+                {hasActiveReservations && (
+                  <div className="mt-2 text-xs text-primary-600 dark:text-primary-400">
+                    {facilityReservations.length} {facilityReservations.length === 1 ? 'reservation' : 'reservations'}
+                  </div>
+                )}
+                <div className="flex space-x-2 mt-3">
+                  {hasActiveReservations ? (
+                    <button
+                      onClick={() => {
+                        // Scroll to reservations section instead of opening modal
+                        const reservationsSection = document.getElementById('my-reservations-section')
+                        if (reservationsSection) {
+                          reservationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }
+                      }}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    >
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      {t('viewReservations') || 'View Reservations'}
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => {
+                      setSelectedFacility(facility)
+                      setShowReservationModal(true)
+                    }}
+                    className={`${hasActiveReservations ? 'flex-1' : 'w-full'} inline-flex items-center justify-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700`}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-1" />
+                    {t('newReservation') || 'New Reservation'}
+                  </button>
+                </div>
               </div>
-              {facility.capacity && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  {t('capacity') || 'Capacity'}: {facility.capacity}
-                </p>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
       {/* Reservations List */}
       {reservations.length > 0 && (
-        <div className="mt-8">
+        <div id="my-reservations-section" className="mt-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {t('myReservations') || 'My Reservations'}
           </h3>
@@ -475,6 +515,45 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
                         <p className="text-sm font-semibold text-primary-600 dark:text-primary-400 mt-1">
                           {t('accessCode') || 'Access Code'}: {reservation.accessCode}
                         </p>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {reservation.status === 'pending' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/maintenance/front-desk-chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  householdId: reservation.householdId,
+                                  buildingId: household?.buildingId || undefined,
+                                  initialMessage: `Regarding my pending reservation for ${reservation.facility.name} on ${new Date(reservation.startTime).toLocaleDateString()} ${new Date(reservation.startTime).toLocaleTimeString()}`,
+                                }),
+                              })
+                              
+                              if (!response.ok) {
+                                const errorData = await response.json()
+                                throw new Error(errorData.error || errorData.details || 'Failed to create chat')
+                              }
+                              
+                              const data = await response.json()
+                              if (data.conversation?.id) {
+                                // Open chat interface
+                                window.location.href = `/building/${household?.buildingId || ''}/messages?conversation=${data.conversation.id}`
+                              } else {
+                                throw new Error('No conversation ID returned')
+                              }
+                            } catch (error: any) {
+                              console.error('Error starting chat:', error)
+                              alert(error.message || t('chatError') || 'Failed to start chat')
+                            }
+                          }}
+                          className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                          <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
+                          {t('chatWithFrontDesk') || 'Chat with Front Desk'}
+                        </button>
                       )}
                     </div>
                   </div>

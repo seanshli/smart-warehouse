@@ -93,6 +93,8 @@ export default function ContextFacilitiesPage() {
     (tabParam as any) || 'facilities'
   )
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedDayReservations, setSelectedDayReservations] = useState<Reservation[]>([])
+  const [showDayDetails, setShowDayDetails] = useState(false)
   const [commentModal, setCommentModal] = useState<{ open: boolean; reservationId: string | null; action: 'approve' | 'reject' | null }>({
     open: false,
     reservationId: null,
@@ -202,8 +204,8 @@ export default function ContextFacilitiesPage() {
       const stats: UsageStats = {
         totalReservations: reservations.length,
         upcomingReservations: reservations.filter(r => new Date(r.startTime) > new Date()).length,
-        completedReservations: reservations.filter(r => r.status === 'COMPLETED').length,
-        cancelledReservations: reservations.filter(r => r.status === 'CANCELLED').length,
+        completedReservations: reservations.filter(r => r.status === 'completed' || r.status === 'COMPLETED').length,
+        cancelledReservations: reservations.filter(r => r.status === 'cancelled' || r.status === 'CANCELLED').length,
         averageUsagePerWeek: 0,
         peakHours: []
       }
@@ -556,16 +558,16 @@ export default function ContextFacilitiesPage() {
                       <div className="flex items-center space-x-2">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            reservation.status === 'APPROVED'
+                            reservation.status === 'approved' || reservation.status === 'APPROVED'
                               ? 'bg-green-100 text-green-800'
-                              : reservation.status === 'PENDING'
+                              : reservation.status === 'pending' || reservation.status === 'PENDING'
                               ? 'bg-yellow-100 text-yellow-800'
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {reservation.status}
+                          {reservation.status.toUpperCase()}
                         </span>
-                        {reservation.status === 'PENDING' && (
+                        {(reservation.status === 'pending' || reservation.status === 'PENDING') && (
                           <>
                             <button
                               onClick={() => handleMessageHousehold(reservation)}
@@ -603,13 +605,145 @@ export default function ContextFacilitiesPage() {
         {activeTab === 'calendar' && (
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Facility Calendar</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t('calendar') || 'Calendar'}</h2>
             </div>
             <div className="p-6">
-              <p className="text-gray-500 text-center">
-                Calendar view will show facility bookings for the selected date range
-              </p>
-              {/* TODO: Implement calendar component */}
+              {/* Simple calendar grid */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                    {day}
+                  </div>
+                ))}
+                {Array.from({ length: 35 }, (_, i) => {
+                  const date = new Date(selectedDate)
+                  date.setDate(1) // Start of month
+                  const firstDay = date.getDay()
+                  const day = i - firstDay + 1
+                  const currentDate = new Date(date.getFullYear(), date.getMonth(), day)
+                  const dayReservations = reservations.filter(r => {
+                    const resDate = new Date(r.startTime)
+                    return resDate.toDateString() === currentDate.toDateString()
+                  })
+                  const isToday = currentDate.toDateString() === new Date().toDateString()
+                  const isCurrentMonth = currentDate.getMonth() === date.getMonth()
+                  
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (isCurrentMonth && dayReservations.length > 0) {
+                          setSelectedDayReservations(dayReservations)
+                          setShowDayDetails(true)
+                        }
+                      }}
+                      disabled={!isCurrentMonth || dayReservations.length === 0}
+                      className={`p-2 text-sm rounded-md border ${
+                        !isCurrentMonth
+                          ? 'text-gray-300 border-transparent'
+                          : isToday
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          : dayReservations.length > 0
+                          ? 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 cursor-pointer'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                      } ${dayReservations.length > 0 ? 'cursor-pointer' : ''}`}
+                    >
+                      <div className="font-medium">{day}</div>
+                      {dayReservations.length > 0 && (
+                        <div className="text-xs mt-1">{dayReservations.length}</div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              
+              {/* Day details modal */}
+              {showDayDetails && selectedDayReservations.length > 0 && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {new Date(selectedDayReservations[0].startTime).toLocaleDateString()} - Reservations
+                      </h3>
+                      <button
+                        onClick={() => {
+                          setShowDayDetails(false)
+                          setSelectedDayReservations([])
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <XMarkIcon className="h-6 w-6" />
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {selectedDayReservations.map((reservation) => (
+                        <div key={reservation.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">
+                                {reservation.facility.name}
+                              </h4>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {reservation.household.name} {reservation.household.apartmentNo && `(${reservation.household.apartmentNo})`}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {new Date(reservation.startTime).toLocaleTimeString()} - {new Date(reservation.endTime).toLocaleTimeString()}
+                              </p>
+                              {reservation.purpose && (
+                                <p className="text-sm text-gray-600 mt-1">{reservation.purpose}</p>
+                              )}
+                              {reservation.numberOfPeople && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {t('numberOfPeople') || 'People'}: {reservation.numberOfPeople}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  reservation.status === 'approved' || reservation.status === 'APPROVED'
+                                    ? 'bg-green-100 text-green-800'
+                                    : reservation.status === 'pending' || reservation.status === 'PENDING'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {reservation.status.toUpperCase()}
+                              </span>
+                              {(reservation.status === 'pending' || reservation.status === 'PENDING') && (
+                                <>
+                                  <button
+                                    onClick={() => handleMessageHousehold(reservation)}
+                                    disabled={chatLoading === reservation.id}
+                                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
+                                    {chatLoading === reservation.id ? (t('loading') || 'Loading...') : (t('messageHousehold') || 'Message Household')}
+                                  </button>
+                                  <button
+                                    onClick={() => openCommentModal(reservation.id, 'approve')}
+                                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                    {t('approve') || 'Approve'}
+                                  </button>
+                                  <button
+                                    onClick={() => openCommentModal(reservation.id, 'reject')}
+                                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+                                  >
+                                    <XCircleIcon className="h-4 w-4 mr-1" />
+                                    {t('reject') || 'Reject'}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

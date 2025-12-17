@@ -581,18 +581,23 @@ export async function POST(
     })
 
     // If auto-approved, create notifications for household members
-    if (!hasTimeConflicts && !hasCapacityIssue && reservation.status === 'approved') {
-      const notifications = reservation.household.members.map(member => ({
-        userId: member.userId,
-        facilityReservationId: reservation.id,
-        type: 'facility_reservation_approved',
-        title: 'Reservation Approved',
-        message: `Your reservation for ${reservation.facility.name} has been automatically approved. Access code: ${accessCode}`,
-      }))
+    if (!hasTimeConflicts && !hasCapacityIssue && reservation.status === 'approved' && reservation.household.members && reservation.household.members.length > 0) {
+      try {
+        const notifications = reservation.household.members.map(member => ({
+          userId: member.userId,
+          facilityReservationId: reservation.id,
+          type: 'facility_reservation_approved',
+          title: 'Reservation Approved',
+          message: `Your reservation for ${reservation.facility.name} has been automatically approved. Access code: ${accessCode}`,
+        }))
 
-      await prisma.notification.createMany({
-        data: notifications,
-      })
+        await prisma.notification.createMany({
+          data: notifications,
+        })
+      } catch (notifError) {
+        // Log notification error but don't fail the reservation creation
+        console.error('Error creating notifications:', notifError)
+      }
     }
 
     return NextResponse.json({

@@ -145,14 +145,24 @@ export async function getOrCreateConversation(
       throw new Error('Insufficient permissions to create conversation')
     }
 
+    // Get buildingId from household if not provided
+    let effectiveBuildingId = buildingId
+    if (!effectiveBuildingId) {
+      const household = await prisma.household.findUnique({
+        where: { id: householdId },
+        select: { buildingId: true }
+      })
+      effectiveBuildingId = household?.buildingId || null
+    }
+
     // For household members creating front desk chat, find a front desk user
     let creatorId = userId
     if (isHouseholdMember && !isFrontDesk) {
       // Find a building admin or front desk user to be the conversation creator
-      if (buildingId) {
+      if (effectiveBuildingId) {
         const buildingAdmin = await prisma.buildingMember.findFirst({
           where: {
-            buildingId,
+            buildingId: effectiveBuildingId,
             role: { in: ['ADMIN', 'MANAGER'] },
             memberClass: 'building'
           },
@@ -207,7 +217,7 @@ export async function getOrCreateConversation(
     const conversation = await prisma.conversation.create({
       data: {
         householdId,
-        buildingId,
+        buildingId: effectiveBuildingId,
         createdBy: creatorId,
         type,
         relatedId,

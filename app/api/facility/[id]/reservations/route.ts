@@ -355,9 +355,9 @@ export async function POST(
       const totalPeople = totalPeopleInOverlapping + newReservationPeople
       
       if (totalPeople > facility.capacity) {
-        // Automatically create reservation with rejected status
-        const rejectionReason = `Facility capacity exceeded. Current reservations: ${totalPeopleInOverlapping}/${facility.capacity}, adding ${newReservationPeople} would exceed capacity.`
-        const rejectedReservation = await prisma.facilityReservation.create({
+        // Create reservation as pending for admin review (not auto-rejected)
+        const pendingReason = `Facility capacity may be exceeded. Current reservations: ${totalPeopleInOverlapping}/${facility.capacity}, adding ${newReservationPeople} would exceed capacity. Requires front desk approval.`
+        const pendingReservation = await prisma.facilityReservation.create({
           data: {
             facilityId,
             householdId,
@@ -365,9 +365,9 @@ export async function POST(
             startTime: start,
             endTime: end,
             purpose: purpose || null,
-            notes: notes ? `${notes}\n[Auto-rejected] ${rejectionReason}` : `[Auto-rejected] ${rejectionReason}`,
+            notes: notes ? `${notes}\n[Pending Review] ${pendingReason}` : `[Pending Review] ${pendingReason}`,
             numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
-            status: 'rejected',
+            status: 'pending',
           },
           include: {
             facility: {
@@ -408,10 +408,10 @@ export async function POST(
 
         return NextResponse.json(
           { 
-            success: false,
-            error: rejectionReason,
+            success: true, // Changed to true - reservation created as pending
+            message: pendingReason || 'Reservation created and pending front desk approval due to capacity concerns',
             errorCode: 'CAPACITY_EXCEEDED',
-            reservation: rejectedReservation,
+            reservation: pendingReservation,
             conflict: {
               totalPeople: totalPeopleInOverlapping,
               capacity: facility.capacity,
@@ -430,7 +430,7 @@ export async function POST(
             } : null,
             allowFrontDeskMessage: true, // Allow messaging front desk for conflicts
           },
-          { status: 409 } // 409 Conflict status code
+          { status: 200 } // Changed to 200 - reservation created successfully as pending
         )
       }
       // If capacity allows, proceed with creating the reservation
@@ -439,9 +439,9 @@ export async function POST(
       if (overlappingReservations.length > 0) {
         const firstOverlapping = overlappingReservations[0]
         
-        // Automatically create reservation with rejected status
-        const rejectionReason = `Time slot occupied by ${firstOverlapping.household.name || firstOverlapping.household.apartmentNo}`
-        const rejectedReservation = await prisma.facilityReservation.create({
+        // Create reservation as pending for admin review (not auto-rejected)
+        const pendingReason = `Time slot is already reserved by ${firstOverlapping.household.name || firstOverlapping.household.apartmentNo}. Requires front desk approval.`
+        const pendingReservation = await prisma.facilityReservation.create({
           data: {
             facilityId,
             householdId,
@@ -449,9 +449,9 @@ export async function POST(
             startTime: start,
             endTime: end,
             purpose: purpose || null,
-            notes: notes ? `${notes}\n[Auto-rejected] ${rejectionReason}` : `[Auto-rejected] ${rejectionReason}`,
+            notes: notes ? `${notes}\n[Pending Review] ${pendingReason}` : `[Pending Review] ${pendingReason}`,
             numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
-            status: 'rejected',
+            status: 'pending',
           },
           include: {
             facility: {
@@ -492,10 +492,10 @@ export async function POST(
 
         return NextResponse.json(
           { 
-            success: false,
-            error: 'Time slot is already occupied',
+            success: true, // Changed to true - reservation created as pending
+            message: pendingReason || 'Reservation created and pending front desk approval. Time slot is already reserved by another household.',
             errorCode: 'TIME_OCCUPIED',
-            reservation: rejectedReservation,
+            reservation: pendingReservation,
             conflict: {
               household: firstOverlapping.household.name || firstOverlapping.household.apartmentNo,
               apartmentNo: firstOverlapping.household.apartmentNo,
@@ -516,7 +516,7 @@ export async function POST(
             } : null,
             allowFrontDeskMessage: true, // Allow messaging front desk for conflicts
           },
-          { status: 409 } // 409 Conflict status code
+          { status: 200 } // Changed to 200 - reservation created successfully as pending
         )
       }
     }

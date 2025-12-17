@@ -214,13 +214,14 @@ export async function getOrCreateConversation(
     }
 
     // Create new conversation
+    // Ensure buildingId is not null (Prisma requires it to be string | null, not undefined)
     const conversation = await prisma.conversation.create({
       data: {
         householdId,
-        buildingId: effectiveBuildingId,
+        buildingId: effectiveBuildingId || null, // Explicitly set to null if undefined
         createdBy: creatorId,
         type,
-        relatedId,
+        relatedId: relatedId || null,
         status: 'active',
       },
       select: {

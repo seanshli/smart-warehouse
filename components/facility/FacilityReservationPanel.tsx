@@ -213,24 +213,49 @@ export default function FacilityReservationPanel({ householdId }: FacilityReserv
         setNotes('')
         setNumberOfPeople('')
         fetchReservations()
-        alert(t('reservationCreated') || 'Reservation request created successfully')
+        
+        // Check if reservation was created as pending due to conflicts
+        if (data.errorCode === 'TIME_OCCUPIED' || data.errorCode === 'CAPACITY_EXCEEDED') {
+          const conflictInfo = data.conflict
+          let conflictMsg = ''
+          
+          if (data.errorCode === 'TIME_OCCUPIED') {
+            const conflictDetails = conflictInfo?.overlappingReservations || []
+            conflictMsg = conflictDetails.length > 0
+              ? `\n\n${t('occupiedBy') || 'Occupied by:'}\n${conflictDetails.map((c: any) => 
+                  `- ${c.household}${c.apartmentNo ? ` (${c.apartmentNo})` : ''}: ${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()}`
+                ).join('\n')}`
+              : conflictInfo?.household
+                ? `\n\n${t('occupiedBy') || 'Occupied by'}: ${conflictInfo.household}${conflictInfo.apartmentNo ? ` (${conflictInfo.apartmentNo})` : ''}`
+                : ''
+          } else if (data.errorCode === 'CAPACITY_EXCEEDED') {
+            const conflictDetails = conflictInfo?.overlappingReservations || []
+            conflictMsg = conflictDetails.length > 0
+              ? `\n\n${t('conflictingReservations') || 'Conflicts:'}\n${conflictDetails.map((c: any) => 
+                  `- ${c.household}${c.apartmentNo ? ` (${c.apartmentNo})` : ''}: ${new Date(c.startTime).toLocaleString()} - ${new Date(c.endTime).toLocaleString()} (${c.numberOfPeople || 1} ${t('people') || 'people'})`
+                ).join('\n')}`
+              : ''
+            conflictMsg += `\n${t('capacity') || 'Capacity'}: ${conflictInfo?.totalPeople || 0}/${conflictInfo?.capacity || 0}`
+          }
+          
+          const message = `${data.message || t('reservationCreated') || 'Reservation request created successfully'}${conflictMsg}\n\n${t('pendingFrontDeskApproval') || 'Your reservation is pending front desk approval. You can message the front desk to discuss.'}`
+          
+          if (data.allowFrontDeskMessage) {
+            const shouldMessage = confirm(
+              `${message}\n\n${t('messageFrontDesk') || 'Would you like to message the front desk now?'}`
+            )
+            if (shouldMessage) {
+              setConflictError({ errorCode: data.errorCode, conflict: conflictInfo, allowFrontDeskMessage: true })
+            }
+          } else {
+            alert(message)
+          }
+        } else {
+          alert(t('reservationCreated') || 'Reservation request created successfully')
+        }
       } else {
         // Handle specific error codes
         if (data.errorCode === 'TIME_OCCUPIED') {
-          const conflictInfo = data.conflict
-          const conflictTime = conflictInfo?.startTime 
-            ? new Date(conflictInfo.startTime).toLocaleString()
-            : 'unknown time'
-          const conflictHousehold = conflictInfo?.household || 'another household'
-          
-          alert(
-            t('reservationTimeOccupied') || 
-            `Time slot is already occupied by ${conflictHousehold} at ${conflictTime}. Your reservation has been automatically rejected.`
-          )
-          
-          // Refresh reservations to show the rejected one
-          fetchReservations()
-        } else if (data.errorCode === 'CAPACITY_EXCEEDED') {
           // Show conflict details and allow frontdesk messaging
           const conflictInfo = data.conflict
           const conflictDetails = conflictInfo?.overlappingReservations || []

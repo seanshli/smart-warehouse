@@ -61,16 +61,23 @@ export default function FrontDeskChatButton({ ticketId, buildingId: propBuilding
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to create chat')
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create chat' }))
+        const errorMessage = errorData.error || errorData.details || 'Failed to create chat'
+        console.error('Front desk chat creation error:', errorData)
+        throw new Error(errorMessage)
       }
 
-      const { conversation } = await response.json()
-      setConversationId(conversation.id)
+      const data = await response.json()
+      if (!data.conversation || !data.conversation.id) {
+        throw new Error('No conversation returned from server')
+      }
+      
+      setConversationId(data.conversation.id)
       setShowChat(true)
+      toast.success(t('chatStarted') || 'Chat started successfully')
     } catch (error: any) {
       console.error('Error creating front desk chat:', error)
-      toast.error(error.message || 'Failed to start chat')
+      toast.error(error.message || t('chatError') || 'Failed to start chat')
     } finally {
       setLoading(false)
     }

@@ -341,8 +341,13 @@ export default function ContextFacilitiesPage() {
       
       const data = await response.json()
       if (data.conversation?.id) {
-        // Navigate to chat interface
-        router.push(`/building/${id}/messages?conversation=${data.conversation.id}`)
+        // Navigate to chat interface - use building messages if building context, otherwise admin chat history
+        if (context === 'building') {
+          router.push(`/building/${id}/messages?conversation=${data.conversation.id}`)
+        } else {
+          // For community context or fallback, use admin chat history
+          router.push(`/admin/chat-history?conversation=${data.conversation.id}`)
+        }
         toast.success(t('chatStarted') || 'Chat started successfully')
       } else {
         throw new Error('No conversation ID returned')
@@ -635,22 +640,31 @@ export default function ContextFacilitiesPage() {
                         if (isCurrentMonth && dayReservations.length > 0) {
                           setSelectedDayReservations(dayReservations)
                           setShowDayDetails(true)
+                        } else if (isCurrentMonth) {
+                          // Allow clicking even if no reservations to show empty day message
+                          setSelectedDayReservations([])
+                          setShowDayDetails(true)
                         }
                       }}
-                      disabled={!isCurrentMonth || dayReservations.length === 0}
-                      className={`p-2 text-sm rounded-md border ${
+                      disabled={!isCurrentMonth}
+                      className={`p-2 text-sm rounded-md border transition-colors ${
                         !isCurrentMonth
-                          ? 'text-gray-300 border-transparent'
+                          ? 'text-gray-300 border-transparent cursor-default'
                           : isToday
-                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 cursor-pointer'
                           : dayReservations.length > 0
                           ? 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 cursor-pointer'
-                          : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                      } ${dayReservations.length > 0 ? 'cursor-pointer' : ''}`}
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50 cursor-pointer'
+                      }`}
+                      title={isCurrentMonth && dayReservations.length > 0 
+                        ? `Click to see ${dayReservations.length} reservation(s) for this day`
+                        : isCurrentMonth
+                        ? 'Click to see day details'
+                        : ''}
                     >
                       <div className="font-medium">{day}</div>
                       {dayReservations.length > 0 && (
-                        <div className="text-xs mt-1">{dayReservations.length}</div>
+                        <div className="text-xs mt-1 font-semibold">{dayReservations.length}</div>
                       )}
                     </button>
                   )
@@ -658,12 +672,14 @@ export default function ContextFacilitiesPage() {
               </div>
               
               {/* Day details modal */}
-              {showDayDetails && selectedDayReservations.length > 0 && (
+              {showDayDetails && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                   <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">
-                        {new Date(selectedDayReservations[0].startTime).toLocaleDateString()} - Reservations
+                        {selectedDayReservations.length > 0 
+                          ? `${new Date(selectedDayReservations[0].startTime).toLocaleDateString()} - Reservations`
+                          : 'Day Details - No Reservations'}
                       </h3>
                       <button
                         onClick={() => {
@@ -675,8 +691,14 @@ export default function ContextFacilitiesPage() {
                         <XMarkIcon className="h-6 w-6" />
                       </button>
                     </div>
-                    <div className="space-y-3">
-                      {selectedDayReservations.map((reservation) => (
+                    {selectedDayReservations.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p>No reservations for this day</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedDayReservations.map((reservation) => (
                         <div key={reservation.id} className="border rounded-lg p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -739,8 +761,9 @@ export default function ContextFacilitiesPage() {
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

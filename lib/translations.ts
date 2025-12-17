@@ -128,6 +128,9 @@ export interface Translations {
   submitting: string
   reservationCreated: string
   viewReservations: string
+  pendingFrontDeskApproval: string
+  occupiedBy: string
+  messageFrontDesk: string
   
   // Announcements
   announcements: string
@@ -1067,6 +1070,9 @@ const en: Translations = {
   submitting: 'Submitting...',
   reservationCreated: 'Reservation request created. Waiting for building admin approval.',
   viewReservations: 'View Reservations',
+  pendingFrontDeskApproval: 'Your reservation is pending front desk approval. You can message the front desk to discuss.',
+  occupiedBy: 'Occupied by',
+  messageFrontDesk: 'Would you like to message the front desk now?',
   use24HourFormat: 'Use 24-hour format (e.g., 09:00, 21:00)',
   minimum1Hour: 'Minimum 1 hour duration',
   reservationStartTimeMustBeFuture: 'Start time must be in the future',
@@ -2096,6 +2102,9 @@ const zhTW: Translations = {
   submitting: '提交中...',
   reservationCreated: '預約請求已建立，等待審核',
   viewReservations: '查看預約',
+  pendingFrontDeskApproval: '您的預約正在等待前台審核。您可以與前台聯繫討論。',
+  occupiedBy: '已被預約',
+  messageFrontDesk: '您現在想要聯繫前台嗎？',
   use24HourFormat: '使用 24 小時制（例如：09:00、21:00）',
   minimum1Hour: '最少 1 小時',
   reservationStartTimeMustBeFuture: '開始時間必須在未來',
@@ -3138,6 +3147,9 @@ const zh: Translations = {
   submitting: '提交中...',
   reservationCreated: '预约请求已建立，等待审核',
   viewReservations: '查看预约',
+  pendingFrontDeskApproval: '您的预约正在等待前台审核。您可以与前台联系讨论。',
+  occupiedBy: '已被预约',
+  messageFrontDesk: '您现在想要联系前台吗？',
   use24HourFormat: '使用 24 小时制（例如：09:00、21:00）',
   minimum1Hour: '最少 1 小时',
   reservationStartTimeMustBeFuture: '开始时间必须在未来',
@@ -4179,6 +4191,9 @@ const ja: Translations = {
   submitting: '送信中...',
   reservationCreated: '予約リクエストが作成されました。建物管理者の承認を待っています。',
   viewReservations: '予約を表示',
+  pendingFrontDeskApproval: '予約はフロントデスクの承認待ちです。フロントデスクに連絡して相談できます。',
+  occupiedBy: '予約済み',
+  messageFrontDesk: '今すぐフロントデスクに連絡しますか？',
   use24HourFormat: '24時間形式を使用（例：09:00、21:00）',
   minimum1Hour: '最低1時間',
   reservationStartTimeMustBeFuture: '開始時間は未来である必要があります',

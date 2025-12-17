@@ -337,12 +337,6 @@ export async function POST(
             apartmentNo: true,
           },
         },
-        requestedBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
       },
       orderBy: {
         startTime: 'asc',

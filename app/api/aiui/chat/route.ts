@@ -88,14 +88,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Import TTS function for text-to-speech
-    const { synthesizeSpeech } = await import('@/lib/speech-to-text')
-    
     // Generate TTS audio in user's selected language
-    let audioBase64: string | null = null
+    let ttsAudioBase64: string | undefined = undefined
     if (aiResponse.text && normalizedLanguage) {
       try {
-        audioBase64 = await synthesizeSpeech(aiResponse.text, normalizedLanguage)
+        const audioResult = await synthesizeSpeech(aiResponse.text, normalizedLanguage)
+        ttsAudioBase64 = audioResult || undefined
       } catch (error) {
         console.error('Failed to generate TTS audio:', error)
         // Continue without TTS if it fails
@@ -108,7 +106,7 @@ export async function POST(request: NextRequest) {
         response: aiResponse.text,
         source: aiResponse.source,
         raw: aiResponse.raw ?? undefined,
-        audioBase64: audioBase64 ?? undefined, // TTS audio in user's language
+        audioBase64: ttsAudioBase64, // TTS audio in user's language
       },
       { status: 200 }
     )

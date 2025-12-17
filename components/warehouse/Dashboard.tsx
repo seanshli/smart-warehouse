@@ -255,56 +255,7 @@ export default function Dashboard() {
   // API 不返回 accessToken（出于安全考虑），只检查 baseUrl 是否存在来判断是否有配置
   const hasHomeAssistant = !!haConfigData?.config?.baseUrl
 
-  // Add error boundary for client-side errors
-  useEffect(() => {
-    const handleError = (error: ErrorEvent) => {
-      console.error('Dashboard client error:', error)
-    }
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Dashboard unhandled promise rejection:', event.reason)
-    }
-
-    window.addEventListener('error', handleError)
-    window.addEventListener('unhandledrejection', handleUnhandledRejection)
-
-    return () => {
-      window.removeEventListener('error', handleError)
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
-    }
-  }, [])
-
-
-  // Handle authentication errors - with debugging and less aggressive redirects
-  useEffect(() => {
-    console.log('🔐 Dashboard: Auth status check - status:', status, 'session:', !!session, 'user:', !!(session?.user as any)?.id)
-    
-    if (status === 'unauthenticated') {
-      console.log('🔐 Dashboard: User not authenticated, but not redirecting immediately - waiting for API calls to complete')
-      // Don't redirect immediately - let the API calls complete first
-      return
-    }
-
-    if (status === 'authenticated' && (!session || !session.user || !(session.user as any).id)) {
-      console.log('🔐 Dashboard: Invalid session, but not redirecting immediately - waiting for API calls to complete')
-      // Don't redirect immediately - let the API calls complete first
-      return
-    }
-  }, [session, status])
-
-  // Show loading state while checking authentication
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // State declarations - must be before any conditional returns
+  // State declarations - MUST be before any conditional returns (React Rules of Hooks)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [showSearch, setShowSearch] = useState(false)
@@ -314,62 +265,6 @@ export default function Dashboard() {
   const [showCheckoutItem, setShowCheckoutItem] = useState(false)
   const [showQuantityAdjust, setShowQuantityAdjust] = useState(false)
   const [showItemHistory, setShowItemHistory] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
-  const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
-  const [doorbellCallCount, setDoorbellCallCount] = useState(0)
-  const [doorbellRingingCount, setDoorbellRingingCount] = useState(0)
-
-  // Show loading state if not authenticated
-  if (status === 'unauthenticated' || !session || !session.user || !(session.user as any).id) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Redirecting to login...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Add error boundary for component errors
-  useEffect(() => {
-    const handleComponentError = (error: any) => {
-      console.error('Dashboard component error:', error)
-      setHasError(true)
-    }
-
-    // Catch any unhandled errors in the component
-    try {
-      // Component logic here
-    } catch (error) {
-      handleComponentError(error)
-    }
-  }, [])
-
-  // If there's an error, show error state
-  if (hasError) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">An error occurred while loading the dashboard.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    )
-  }
-  const [showEditItem, setShowEditItem] = useState(false)
-  const [showMoveItem, setShowMoveItem] = useState(false)
-  const [showCheckoutItem, setShowCheckoutItem] = useState(false)
-  const [showQuantityAdjust, setShowQuantityAdjust] = useState(false)
-  const [showItemHistory, setShowItemHistory] = useState(false)
-
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [refreshItemsList, setRefreshItemsList] = useState<(() => void) | null>(null)
   const [doorbellCallCount, setDoorbellCallCount] = useState(0)
@@ -402,7 +297,102 @@ export default function Dashboard() {
     }
   }, [refreshTrigger, household, refreshItemsList])
 
-  const tabs = [
+  // Add error boundary for client-side errors
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Dashboard client error:', error)
+    }
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Dashboard unhandled promise rejection:', event.reason)
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
+  // Handle authentication errors - with debugging and less aggressive redirects
+  useEffect(() => {
+    console.log('🔐 Dashboard: Auth status check - status:', status, 'session:', !!session, 'user:', !!(session?.user as any)?.id)
+    
+    if (status === 'unauthenticated') {
+      console.log('🔐 Dashboard: User not authenticated, but not redirecting immediately - waiting for API calls to complete')
+      // Don't redirect immediately - let the API calls complete first
+      return
+    }
+
+    if (status === 'authenticated' && (!session || !session.user || !(session.user as any).id)) {
+      console.log('🔐 Dashboard: Invalid session, but not redirecting immediately - waiting for API calls to complete')
+      // Don't redirect immediately - let the API calls complete first
+      return
+    }
+  }, [session, status])
+
+  // Add error boundary for component errors
+  useEffect(() => {
+    const handleComponentError = (error: any) => {
+      console.error('Dashboard component error:', error)
+      setHasError(true)
+    }
+
+    // Catch any unhandled errors in the component
+    try {
+      // Component logic here
+    } catch (error) {
+      handleComponentError(error)
+    }
+  }, [])
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state if not authenticated
+  if (status === 'unauthenticated' || !session || !session.user || !(session.user as any).id) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Redirecting to login...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If there's an error, show error state
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">An error occurred while loading the dashboard.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Build tabs array
+  const tabs: Array<{ id: string; name: string; icon: any; permission?: string }> = [
     { id: 'dashboard', name: t('dashboard'), icon: HomeIcon },
     { id: 'search', name: t('search'), icon: MagnifyingGlassIcon },
     { id: 'items', name: t('items'), icon: ArchiveBoxIcon },
@@ -411,17 +401,22 @@ export default function Dashboard() {
     { id: 'activities', name: t('activities'), icon: ClockIcon },
     { id: 'notifications', name: t('notifications'), icon: BellIcon },
     { id: 'members', name: t('members'), icon: UsersIcon, permission: 'canManageMembers' },
-    // Only show Home Assistant tab if household has HA configuration
-    ...(hasHomeAssistant ? [{ id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon }] : []),
+  ]
+  
+  // Conditionally add Home Assistant tab
+  if (hasHomeAssistant) {
+    tabs.push({ id: 'homeassistant', name: t('homeAssistantPanelTitle'), icon: ShieldCheckIcon })
+  }
+  
+  // Add remaining tabs
+  tabs.push(
     { id: 'mqtt', name: t('mqttDevices') || 'MQTT Devices', icon: WifiIcon },
     { id: 'maintenance', name: (t as any)('maintenanceTickets') || '報修', icon: ExclamationTriangleIcon },
-    // Reservation entry point is now in the Property Services area on the dashboard
-    // { id: 'reservations', name: (t as any)('reservationCenter') || '預定', icon: ClockIcon },
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
     { id: 'household', name: t('householdSettings'), icon: HomeIcon, permission: 'canManageHousehold' },
     { id: 'doorbell', name: t('doorBell') || 'Door Bell', icon: BellIcon },
-    { id: 'chat', name: t('chat') || 'Chat', icon: ChatBubbleLeftRightIcon },
-  ]
+    { id: 'chat', name: t('chat') || 'Chat', icon: ChatBubbleLeftRightIcon }
+  )
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden mobile-portrait-content">
@@ -707,6 +702,7 @@ export default function Dashboard() {
                  />
                )}
         </main>
+      </div>
 
       {/* Modals */}
       {showSearch && (
@@ -1602,7 +1598,7 @@ function DashboardContent({
                     {t('noRecentActivity')} {t('startByAddingFirstItem')}
                   </div>
                 )}
-        </main>
+        </div>
       </div>
     </div>
   )

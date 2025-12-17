@@ -16,8 +16,10 @@ import {
   ArrowLeftIcon,
   ChartBarIcon,
   XMarkIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 
 interface Facility {
   id: string
@@ -75,6 +77,7 @@ export default function ContextFacilitiesPage() {
   const router = useRouter()
   const context = params.context as string // 'building' or 'community'
   const id = params.id as string
+  const [chatLoading, setChatLoading] = useState<string | null>(null)
 
   // Get householdId from URL params
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
@@ -250,7 +253,24 @@ export default function ContextFacilitiesPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to approve reservation')
+        const errorData = await response.json().catch(() => ({}))
+        // If there's conflict information, show detailed error
+        if (errorData.conflict) {
+          const conflict = errorData.conflict
+          let errorMsg = errorData.error || 'Cannot approve reservation due to conflicts:\n'
+          if (conflict.conflictingReservations && conflict.conflictingReservations.length > 0) {
+            errorMsg += '\nConflicting reservations:\n'
+            conflict.conflictingReservations.forEach((r: any) => {
+              errorMsg += `- ${r.household} (${r.apartmentNo || 'N/A'}): ${new Date(r.startTime).toLocaleString()} - ${new Date(r.endTime).toLocaleString()} (${r.numberOfPeople || 1} people)\n`
+            })
+          }
+          if (conflict.totalPeople && conflict.capacity) {
+            errorMsg += `\nTotal people: ${conflict.totalPeople}/${conflict.capacity}`
+          }
+          toast.error(errorMsg, { duration: 8000 })
+          return
+        }
+        throw new Error(errorData.error || errorData.details || 'Failed to approve reservation')
       }
 
       toast.success('Reservation approved')
@@ -297,6 +317,40 @@ export default function ContextFacilitiesPage() {
       handleApproveReservation(commentModal.reservationId, comment)
     } else {
       handleRejectReservation(commentModal.reservationId, comment)
+    }
+  }
+
+  const handleMessageHousehold = async (reservation: Reservation) => {
+    setChatLoading(reservation.id)
+    try {
+      const response = await fetch('/api/maintenance/front-desk-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId: reservation.householdId,
+          buildingId: id, // Use context ID as buildingId
+          initialMessage: `Regarding your reservation for ${reservation.facility.name} on ${new Date(reservation.startTime).toLocaleDateString()}`,
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || errorData.details || 'Failed to create chat')
+      }
+      
+      const data = await response.json()
+      if (data.conversation?.id) {
+        // Navigate to chat interface
+        router.push(`/building/${id}/messages?conversation=${data.conversation.id}`)
+        toast.success(t('chatStarted') || 'Chat started successfully')
+      } else {
+        throw new Error('No conversation ID returned')
+      }
+    } catch (error: any) {
+      console.error('Error starting chat:', error)
+      toast.error(error.message || t('chatError') || 'Failed to start chat')
+    } finally {
+      setChatLoading(null)
     }
   }
 
@@ -514,6 +568,14 @@ export default function ContextFacilitiesPage() {
                         </span>
                         {reservation.status === 'PENDING' && (
                           <>
+                            <button
+                              onClick={() => handleMessageHousehold(reservation)}
+                              disabled={chatLoading === reservation.id}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
+                              {chatLoading === reservation.id ? (t('loading') || 'Loading...') : (t('messageHousehold') || 'Message Household')}
+                            </button>
                             <button
                               onClick={() => openCommentModal(reservation.id, 'approve')}
                               className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"

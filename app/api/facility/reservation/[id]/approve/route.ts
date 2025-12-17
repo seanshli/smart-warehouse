@@ -221,8 +221,14 @@ export async function POST(
     })
   } catch (error) {
     console.error('Error approving reservation:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
-      { error: 'Failed to approve reservation' },
+      { 
+        error: 'Failed to approve reservation',
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: errorDetails })
+      },
       { status: 500 }
     )
   }

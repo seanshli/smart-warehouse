@@ -18,8 +18,14 @@ export async function canMessageHousehold(
   householdId: string
 ): Promise<boolean> {
   try {
-    // Super admins can always message
-    if (await isSuperAdmin(userId)) {
+    // Check if user is admin (super admin or regular admin)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true }
+    })
+    
+    // Super admins and regular admins can always message
+    if (user?.isAdmin || await isSuperAdmin(userId)) {
       return true
     }
 

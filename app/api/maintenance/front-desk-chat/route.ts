@@ -25,7 +25,18 @@ export async function POST(request: NextRequest) {
     let effectiveBuildingId = buildingId
     let effectiveHouseholdId = householdId
 
-    // If householdId provided, verify user belongs to household
+    // Check if user is admin (super admin or building/community admin)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true }
+    })
+    
+    // Check if user can message household (building/community admin)
+    const { canMessageHousehold } = await import('@/lib/messaging/permissions')
+    const canMessage = householdId ? await canMessageHousehold(userId, householdId) : false
+    const isAdminUser = user?.isAdmin || false
+
+    // If householdId provided, verify user belongs to household OR is admin/admin who can message
     if (householdId) {
       const membership = await prisma.householdMember.findUnique({
         where: {
@@ -36,8 +47,9 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      if (!membership) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      // Allow if user is household member OR is admin/admin who can message households
+      if (!membership && !isAdminUser && !canMessage) {
+        return NextResponse.json({ error: 'Access denied. You must be a household member or admin to create this chat.' }, { status: 403 })
       }
 
       // Get building from household if not provided
@@ -219,8 +231,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ conversation })
   } catch (error: any) {
     console.error('Error creating front desk chat:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
-      { error: 'Failed to create chat', details: error.message },
+      { 
+        error: 'Failed to create chat',
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: errorDetails })
+      },
       { status: 500 }
     )
   }

@@ -166,8 +166,14 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error fetching building admins:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
-      { error: 'Failed to fetch building admins' },
+      { 
+        error: 'Failed to fetch building admins',
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: errorDetails })
+      },
       { status: 500 }
     )
   }

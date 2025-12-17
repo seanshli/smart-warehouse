@@ -16,8 +16,11 @@ import {
   PlusIcon,
   KeyIcon,
   UserMinusIcon,
-  MapPinIcon
+  MapPinIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 interface AdminUser { id: string; email: string; name: string | null; createdAt?: string }
 interface AdminMember { id: string; role: string; joinedAt: string; user: AdminUser }
@@ -39,11 +42,14 @@ interface AdminHousehold {
   latitude?: number;
   longitude?: number;
   address?: string;
+  building?: { id: string; name: string } | null;
+  buildingId?: string | null;
 }
 
 export default function AdminHouseholdsPage() {
   const { data: session } = useSession()
   const { t } = useLanguage()
+  const router = useRouter()
   const [households, setHouseholds] = useState<AdminHousehold[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,6 +58,7 @@ export default function AdminHouseholdsPage() {
   const [selectedHousehold, setSelectedHousehold] = useState<string | null>(null)
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [sortBy, setSortBy] = useState<'name' | 'location' | 'members' | 'items' | 'created'>('name')
+  const [chatLoading, setChatLoading] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -324,6 +331,49 @@ export default function AdminHouseholdsPage() {
                 </div>
                 <div className="ml-4 flex-shrink-0">
                   <div className="flex space-x-2">
+                    <button
+                      onClick={async () => {
+                        setChatLoading(h.id)
+                        try {
+                          const response = await fetch('/api/maintenance/front-desk-chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              householdId: h.id,
+                              initialMessage: `Hello from admin - ${h.name}`,
+                            }),
+                          })
+                          
+                          if (!response.ok) {
+                            const errorData = await response.json()
+                            throw new Error(errorData.error || errorData.details || 'Failed to create chat')
+                          }
+                          
+                          const data = await response.json()
+                          if (data.conversation?.id) {
+                            const buildingId = h.building?.id || h.buildingId
+                            if (buildingId) {
+                              router.push(`/building/${buildingId}/messages?conversation=${data.conversation.id}`)
+                            } else {
+                              router.push(`/admin/chat-history?conversation=${data.conversation.id}`)
+                            }
+                            toast.success(t('chatStarted') || 'Chat started successfully')
+                          } else {
+                            throw new Error('No conversation ID returned')
+                          }
+                        } catch (error: any) {
+                          console.error('Error starting chat:', error)
+                          toast.error(error.message || t('chatError') || 'Failed to start chat')
+                        } finally {
+                          setChatLoading(null)
+                        }
+                      }}
+                      disabled={chatLoading === h.id}
+                      className="inline-flex items-center px-3 py-2 border border-blue-300 shadow-sm text-sm leading-4 font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
+                      {chatLoading === h.id ? (t('loading') || 'Loading...') : (t('startChat') || 'Start Chat')}
+                    </button>
                     <button
                       onClick={() => setSelectedHousehold(selectedHousehold === h.id ? null : h.id)}
                       className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"

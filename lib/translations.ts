@@ -270,6 +270,9 @@ export interface Translations {
   reject: string
   calendar: string
   usage: string
+  messageHousehold: string
+  chatStarted: string
+  chatError: string
   
   // Common
   commonLanguage: string
@@ -1119,6 +1122,9 @@ const en: Translations = {
   reject: 'Reject',
   calendar: 'Calendar',
   usage: 'Usage',
+  messageHousehold: 'Message Household',
+  chatStarted: 'Chat started successfully',
+  chatError: 'Failed to start chat',
   specificCommunity: 'Specific Community',
   specificBuilding: 'Specific Building',
   specificHousehold: 'Specific Household',
@@ -1621,7 +1627,6 @@ const en: Translations = {
   signOut: 'Sign out',
   itemAddedSuccessfully: 'Item added successfully!',
   failedToAddItem: 'Failed to add item',
-  loading: 'Loading...',
   
   // Form labels
   itemDetails: 'Item Details',
@@ -2187,6 +2192,9 @@ const zhTW: Translations = {
   reject: '拒絕',
   calendar: '行事曆',
   usage: '使用情況',
+  messageHousehold: '訊息住戶',
+  chatStarted: '聊天已開始',
+  chatError: '無法開始聊天',
   specificCommunity: '特定社區',
   specificBuilding: '特定大樓',
   specificHousehold: '特定住戶',
@@ -3281,6 +3289,9 @@ const zh: Translations = {
   reject: '拒绝',
   calendar: '日历',
   usage: '使用情况',
+  messageHousehold: '消息住户',
+  chatStarted: '聊天已开始',
+  chatError: '无法开始聊天',
   specificCommunity: '特定社区',
   specificBuilding: '特定大楼',
   specificHousehold: '特定住户',
@@ -4317,6 +4328,9 @@ const ja: Translations = {
   reject: '拒否',
   calendar: 'カレンダー',
   usage: '使用状況',
+  messageHousehold: '世帯にメッセージ',
+  chatStarted: 'チャットが開始されました',
+  chatError: 'チャットを開始できませんでした',
   specificCommunity: '特定のコミュニティ',
   specificBuilding: '特定の建物',
   specificHousehold: '特定の世帯',

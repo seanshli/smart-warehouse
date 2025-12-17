@@ -521,12 +521,26 @@ export async function POST(
       }
     }
 
-    // Check if time slot is available (no conflicts)
-    // If available, auto-approve; otherwise create as pending for admin review
-    const hasConflicts = overlappingReservations.length > 0
+    // Check if time slot is available (no conflicts) AND capacity allows
+    // If available and capacity allows, auto-approve; otherwise create as pending for admin review
+    const hasTimeConflicts = overlappingReservations.length > 0
+    
+    // Check capacity if facility has capacity limit and there are overlapping reservations
+    let hasCapacityIssue = false
+    if (facility.capacity && facility.capacity > 0 && hasTimeConflicts) {
+      const totalPeopleInOverlapping = overlappingReservations.reduce((sum, res) => {
+        return sum + (res.numberOfPeople || 1)
+      }, 0)
+      const newReservationPeople = numberOfPeople ? parseInt(numberOfPeople) : 1
+      const totalPeople = totalPeopleInOverlapping + newReservationPeople
+      hasCapacityIssue = totalPeople > facility.capacity
+    }
+    
+    // Auto-approve only if no time conflicts AND (no capacity limit OR capacity allows)
+    const canAutoApprove = !hasTimeConflicts && !hasCapacityIssue
     
     // Generate access code for approved reservations
-    const accessCode = !hasConflicts ? Math.random().toString(36).substring(2, 10).toUpperCase() : null
+    const accessCode = canAutoApprove ? Math.random().toString(36).substring(2, 10).toUpperCase() : null
     
     // Create reservation (auto-approve if available, otherwise pending)
     const reservation = await prisma.facilityReservation.create({
@@ -539,10 +553,10 @@ export async function POST(
         purpose: purpose || null,
         notes: notes || null,
         numberOfPeople: numberOfPeople ? parseInt(numberOfPeople) : null,
-        status: hasConflicts ? 'pending' : 'approved', // Auto-approve if no conflicts
+        status: canAutoApprove ? 'approved' : 'pending', // Auto-approve if no conflicts and capacity allows
         accessCode: accessCode,
-        approvedBy: !hasConflicts ? userId : null, // Auto-approved by requester if no conflicts
-        approvedAt: !hasConflicts ? new Date() : null,
+        approvedBy: canAutoApprove ? userId : null, // Auto-approved by requester if no conflicts
+        approvedAt: canAutoApprove ? new Date() : null,
       },
       include: {
         facility: {
@@ -567,7 +581,7 @@ export async function POST(
     })
 
     // If auto-approved, create notifications for household members
-    if (!hasConflicts && reservation.status === 'approved') {
+    if (!hasTimeConflicts && !hasCapacityIssue && reservation.status === 'approved') {
       const notifications = reservation.household.members.map(member => ({
         userId: member.userId,
         facilityReservationId: reservation.id,
@@ -583,11 +597,11 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: hasConflicts 
-        ? 'Reservation request created. Waiting for building admin approval due to potential conflicts.'
-        : 'Reservation automatically approved. Access code: ' + accessCode,
+      message: canAutoApprove
+        ? 'Reservation automatically approved. Access code: ' + accessCode
+        : 'Reservation request created. Waiting for building admin approval due to potential conflicts.',
       data: reservation,
-      autoApproved: !hasConflicts,
+      autoApproved: canAutoApprove,
     })
   } catch (error: any) {
     console.error('Error creating reservation:', error)

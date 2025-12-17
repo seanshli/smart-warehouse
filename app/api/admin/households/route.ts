@@ -46,6 +46,9 @@ export async function GET() {
         categories: { select: { id: true, name: true, level: true } },
         _count: {
           select: { items: true, members: true }
+        },
+        building: {
+          select: { id: true, name: true }
         }
       },
       orderBy: { createdAt: 'desc' }

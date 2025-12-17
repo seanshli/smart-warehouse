@@ -181,10 +181,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, conversations })
   } catch (error: any) {
     console.error('Error fetching conversations:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
       { 
         error: 'Failed to fetch conversations',
-        details: error.message 
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: errorDetails })
       },
       { status: 500 }
     )
@@ -261,10 +264,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, conversation })
   } catch (error: any) {
     console.error('Error creating conversation:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
       { 
         error: 'Failed to create conversation',
-        details: error.message 
+        details: errorMessage,
+        ...(process.env.NODE_ENV === 'development' && { stack: errorDetails })
       },
       { status: 500 }
     )

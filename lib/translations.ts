@@ -1125,6 +1125,7 @@ const en: Translations = {
   messageHousehold: 'Message Household',
   chatStarted: 'Chat started successfully',
   chatError: 'Failed to start chat',
+  loading: 'Loading...',
   specificCommunity: 'Specific Community',
   specificBuilding: 'Specific Building',
   specificHousehold: 'Specific Household',

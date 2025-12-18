@@ -344,9 +344,9 @@ async function executeAction(
       
       let commandMessage
       if (action.action === 'power_on') {
-        commandMessage = mqttAdapter.commands.powerOn(device.deviceId)
+        commandMessage = (mqttAdapter.commands as any).powerOn(device.deviceId)
       } else if (action.action === 'power_off') {
-        commandMessage = mqttAdapter.commands.powerOff(device.deviceId)
+        commandMessage = (mqttAdapter.commands as any).powerOff(device.deviceId)
       } else if (action.action === 'set_temperature' && action.value !== undefined) {
         // setTemperature is only available on Tuya, ESP, and Midea adapters
         if (device.vendor === 'tuya') {
@@ -359,10 +359,10 @@ async function executeAction(
           throw new Error(`set_temperature not supported for vendor: ${device.vendor}`)
         }
       } else {
-        commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+        commandMessage = (mqttAdapter as any).createCommandMessage(device.deviceId, {
           action: action.action,
           value: action.value
-        } as any)
+        })
       }
 
       await mqttClient.publish(commandMessage)

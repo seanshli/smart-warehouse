@@ -83,27 +83,27 @@ export class AdapterFactory {
       return null
     }
 
-    if (vendor === 'shelly' && typeof parseResult === 'object') {
+    if (vendor === 'shelly' && typeof parseResult === 'object' && 'deviceId' in parseResult) {
       // Shelly adapter returns { deviceId, channel, generation }
-      const { deviceId, channel, generation } = parseResult
-      if (!deviceId) {
+      const shellyResult = parseResult as { deviceId: string | null; channel?: number; generation?: 'gen1' | 'gen2' }
+      if (!shellyResult.deviceId) {
         return null
       }
-      return (Adapter as typeof ShellyAdapter).createDevice(deviceId, name, channel, generation)
-    } else if (vendor === 'philips' && typeof parseResult === 'object') {
+      return (Adapter as typeof ShellyAdapter).createDevice(shellyResult.deviceId, name, shellyResult.channel, shellyResult.generation)
+    } else if (vendor === 'philips' && typeof parseResult === 'object' && 'bridgeId' in parseResult) {
       // Philips adapter returns { bridgeId, lightId, sensorId }
-      const { bridgeId, lightId, sensorId } = parseResult
-      if (!bridgeId || (!lightId && !sensorId)) {
+      const philipsResult = parseResult as { bridgeId: string | null; lightId: string | null; sensorId: string | null }
+      if (!philipsResult.bridgeId || (!philipsResult.lightId && !philipsResult.sensorId)) {
         return null
       }
-      if (lightId) {
-        return (Adapter as typeof PhilipsMQTTAdapter).createDevice(bridgeId, lightId, name)
+      if (philipsResult.lightId) {
+        return (Adapter as typeof PhilipsMQTTAdapter).createDevice(philipsResult.bridgeId, philipsResult.lightId, name)
       }
       // For sensors, use bridgeId_sensorId as device ID
-      return (Adapter as typeof PhilipsMQTTAdapter).createDevice(bridgeId, sensorId!, name)
+      return (Adapter as typeof PhilipsMQTTAdapter).createDevice(philipsResult.bridgeId, philipsResult.sensorId!, name)
     } else if (typeof parseResult === 'string') {
       // Other adapters return string | null
-      return Adapter.createDevice(parseResult, name)
+      return (Adapter as any).createDevice(parseResult, name)
     }
 
     return null

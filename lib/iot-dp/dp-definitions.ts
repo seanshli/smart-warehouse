@@ -38,8 +38,8 @@ export interface DPDefinition {
   property: NormalizedPropertyType  // Normalized property type
   type: 'boolean' | 'number' | 'string' | 'enum' | 'object'
   range?: {                  // For numbers
-    min: number
-    max: number
+    min?: number
+    max?: number
     step?: number
     unit?: string
   }

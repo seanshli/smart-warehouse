@@ -41,17 +41,20 @@ export async function GET(
           deviceId: true,
           name: true,
           vendor: true,
-          category: true,
-          model: true,
+          metadata: true,
         },
       })
 
       if (device) {
+        // Extract category from metadata if available
+        const metadata = device.metadata as Record<string, any> | null
+        const category = metadata?.category || metadata?.deviceCategory || 'generic'
+        
         // Register from predefined definitions
         capabilities = dpManager.registerFromPredefined(
           device.deviceId || device.id,
           device.vendor || 'generic',
-          device.category || 'generic'
+          category
         )
       }
     }

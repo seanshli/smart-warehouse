@@ -1,6 +1,6 @@
 {
   "name": "smart-warehouse",
-  "version": "1.0.69",
+  "version": "1.0.70",
   "private": true,
   "scripts": {
     "verify:all": "tsx scripts/verify-all-connections.ts",
@@ -67,7 +67,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "jsqr": "^1.4.0",
-    "lucide-react": "^0.294.0",
+    "lucide-react": "^0.561.0",
     "mqtt": "^5.14.1",
     "next": "^14.2.33",
     "next-auth": "^4.24.5",

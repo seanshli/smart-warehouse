@@ -110,15 +110,17 @@ export async function POST(
       let commandMessage
       if (action === 'power_on') {
         if (device.vendor === 'shelly') {
-          commandMessage = mqttAdapter.commands.powerOn(device.deviceId, channel, generation)
+          // Use ShellyAdapter directly for Shelly devices
+          commandMessage = ShellyAdapter.commands.powerOn(device.deviceId, channel, generation)
         } else {
-          commandMessage = mqttAdapter.commands.powerOn(device.deviceId)
+          commandMessage = (mqttAdapter.commands as any).powerOn(device.deviceId)
         }
       } else if (action === 'power_off') {
         if (device.vendor === 'shelly') {
-          commandMessage = mqttAdapter.commands.powerOff(device.deviceId, channel, generation)
+          // Use ShellyAdapter directly for Shelly devices
+          commandMessage = ShellyAdapter.commands.powerOff(device.deviceId, channel, generation)
         } else {
-          commandMessage = mqttAdapter.commands.powerOff(device.deviceId)
+          commandMessage = (mqttAdapter.commands as any).powerOff(device.deviceId)
         }
       } else if (action === 'toggle' && device.vendor === 'shelly') {
         // For toggle, use ShellyAdapter directly since only Shelly supports it
@@ -141,23 +143,35 @@ export async function POST(
         // 通用命令：根據不同的適配器類型構建正確的命令格式
         if (device.vendor === 'esp') {
           // ESP 適配器需要 command 字段
-          commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+          commandMessage = ESPAdapter.createCommandMessage(device.deviceId, {
             command: action,
             value
-          } as any)
+          })
         } else if (device.vendor === 'shelly') {
           // Shelly 適配器使用 action 字段和 channel
-          commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+          commandMessage = ShellyAdapter.createCommandMessage(device.deviceId, {
             action,
             channel,
             generation
           } as any, generation)
-        } else {
-          // Tuya 和 Midea 適配器使用 action 字段
-          commandMessage = mqttAdapter.createCommandMessage(device.deviceId, {
+        } else if (device.vendor === 'tuya') {
+          // Tuya 適配器使用 action 字段
+          commandMessage = TuyaAdapter.createCommandMessage(device.deviceId, {
             action,
             value
-          } as any)
+          })
+        } else if (device.vendor === 'midea') {
+          // Midea 適配器使用 cmd 字段
+          commandMessage = MideaAdapter.createCommandMessage(device.deviceId, {
+            cmd: action,
+            data: { value }
+          })
+        } else {
+          // 其他適配器
+          commandMessage = (mqttAdapter as any).createCommandMessage(device.deviceId, {
+            action,
+            value
+          })
         }
       }
 

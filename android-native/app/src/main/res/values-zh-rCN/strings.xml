@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">智慧仓储</string>
+    
+    <!-- Navigation -->
+    <string name="dashboard">仪表板</string>
+    <string name="items">物品</string>
+    <string name="rooms">房间</string>
+    <string name="categories">分类</string>
+    <string name="settings">设置</string>
+    <string name="scan">扫描</string>
+    
+    <!-- Auth -->
+    <string name="sign_in">登录</string>
+    <string name="sign_up">注册</string>
+    <string name="sign_out">登出</string>
+    <string name="email">电子邮件</string>
+    <string name="password">密码</string>
+    <string name="confirm_password">确认密码</string>
+    <string name="name">姓名</string>
+    <string name="sign_in_to_account">登录您的账户</string>
+    <string name="dont_have_account">还没有账户？</string>
+    <string name="sign_in_failed">登录失败，请重试。</string>
+    <string name="registration_failed">注册失败，请重试。</string>
+    <string name="passwords_do_not_match">密码不一致</string>
+    <string name="join_existing_household">加入现有家庭（选填）</string>
+    <string name="invitation_code">邀请码</string>
+    
+    <!-- Items -->
+    <string name="all_items">所有物品</string>
+    <string name="add_item">添加物品</string>
+    <string name="edit_item">编辑物品</string>
+    <string name="item_name">物品名称</string>
+    <string name="description">描述</string>
+    <string name="quantity">数量</string>
+    <string name="min_quantity">最低数量</string>
+    <string name="barcode">条码</string>
+    <string name="category">分类</string>
+    <string name="location">位置</string>
+    <string name="no_items">没有物品</string>
+    <string name="add_first_item">添加第一个物品开始使用</string>
+    <string name="search_items">搜索物品…</string>
+    <string name="low_stock">库存不足</string>
+    <string name="low_stock_alert">库存不足警告</string>
+    <string name="low_stock_message">%d 项物品库存不足</string>
+    <string name="item_details">物品详情</string>
+    <string name="use_item">使用物品</string>
+    <string name="enter_quantity_to_use">输入要使用的数量</string>
+    <string name="total_items">物品总数</string>
+    <string name="recent_items">最近物品</string>
+    
+    <!-- Rooms -->
+    <string name="add_room">添加房间</string>
+    <string name="edit_room">编辑房间</string>
+    <string name="room_name">房间名称</string>
+    <string name="no_rooms">没有房间</string>
+    <string name="add_first_room">添加第一个房间来整理物品</string>
+    <string name="cabinets">柜子</string>
+    <string name="cabinet">柜子</string>
+    <string name="select_room">选择房间</string>
+    <string name="select_cabinet">选择柜子</string>
+    
+    <!-- Scanner -->
+    <string name="point_camera_at_barcode">将相机对准条码</string>
+    <string name="scanned_code">扫描结果</string>
+    <string name="look_up">查询</string>
+    <string name="scan_result">扫描结果</string>
+    
+    <!-- Settings -->
+    <string name="language">语言</string>
+    <string name="app_language">应用程序语言</string>
+    <string name="household">家庭</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="source_code">源代码</string>
+    
+    <!-- General -->
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="close">关闭</string>
+    <string name="confirm">确认</string>
+    <string name="error">错误</string>
+    <string name="success">成功</string>
+    <string name="loading">加载中…</string>
+</resources>

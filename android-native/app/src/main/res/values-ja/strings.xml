@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">スマート倉庫</string>
+    
+    <!-- Navigation -->
+    <string name="dashboard">ダッシュボード</string>
+    <string name="items">アイテム</string>
+    <string name="rooms">部屋</string>
+    <string name="categories">カテゴリ</string>
+    <string name="settings">設定</string>
+    <string name="scan">スキャン</string>
+    
+    <!-- Auth -->
+    <string name="sign_in">ログイン</string>
+    <string name="sign_up">登録</string>
+    <string name="sign_out">ログアウト</string>
+    <string name="email">メールアドレス</string>
+    <string name="password">パスワード</string>
+    <string name="confirm_password">パスワード確認</string>
+    <string name="name">名前</string>
+    <string name="sign_in_to_account">アカウントにログイン</string>
+    <string name="dont_have_account">アカウントをお持ちでない方</string>
+    <string name="sign_in_failed">ログインに失敗しました。再試行してください。</string>
+    <string name="registration_failed">登録に失敗しました。再試行してください。</string>
+    <string name="passwords_do_not_match">パスワードが一致しません</string>
+    <string name="join_existing_household">既存の家庭に参加（任意）</string>
+    <string name="invitation_code">招待コード</string>
+    
+    <!-- Items -->
+    <string name="all_items">全てのアイテム</string>
+    <string name="add_item">アイテム追加</string>
+    <string name="edit_item">アイテム編集</string>
+    <string name="item_name">アイテム名</string>
+    <string name="description">説明</string>
+    <string name="quantity">数量</string>
+    <string name="min_quantity">最小数量</string>
+    <string name="barcode">バーコード</string>
+    <string name="category">カテゴリ</string>
+    <string name="location">場所</string>
+    <string name="no_items">アイテムがありません</string>
+    <string name="add_first_item">最初のアイテムを追加して始めましょう</string>
+    <string name="search_items">アイテムを検索…</string>
+    <string name="low_stock">在庫不足</string>
+    <string name="low_stock_alert">在庫不足の警告</string>
+    <string name="low_stock_message">%d 個のアイテムが在庫不足です</string>
+    <string name="item_details">アイテム詳細</string>
+    <string name="use_item">アイテムを使用</string>
+    <string name="enter_quantity_to_use">使用する数量を入力</string>
+    <string name="total_items">合計アイテム</string>
+    <string name="recent_items">最近のアイテム</string>
+    
+    <!-- Rooms -->
+    <string name="add_room">部屋を追加</string>
+    <string name="edit_room">部屋を編集</string>
+    <string name="room_name">部屋の名前</string>
+    <string name="no_rooms">部屋がありません</string>
+    <string name="add_first_room">最初の部屋を追加してアイテムを整理しましょう</string>
+    <string name="cabinets">収納</string>
+    <string name="cabinet">収納</string>
+    <string name="select_room">部屋を選択</string>
+    <string name="select_cabinet">収納を選択</string>
+    
+    <!-- Scanner -->
+    <string name="point_camera_at_barcode">カメラをバーコードに向けてください</string>
+    <string name="scanned_code">スキャン結果</string>
+    <string name="look_up">検索</string>
+    <string name="scan_result">スキャン結果</string>
+    
+    <!-- Settings -->
+    <string name="language">言語</string>
+    <string name="app_language">アプリの言語</string>
+    <string name="household">家庭</string>
+    <string name="about">について</string>
+    <string name="version">バージョン</string>
+    <string name="source_code">ソースコード</string>
+    
+    <!-- General -->
+    <string name="save">保存</string>
+    <string name="cancel">キャンセル</string>
+    <string name="delete">削除</string>
+    <string name="edit">編集</string>
+    <string name="close">閉じる</string>
+    <string name="confirm">確認</string>
+    <string name="error">エラー</string>
+    <string name="success">成功</string>
+    <string name="loading">読み込み中…</string>
+</resources>

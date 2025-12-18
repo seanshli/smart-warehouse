@@ -1,0 +1,997 @@
+openapi: 3.0.3
+info:
+  title: Smart Warehouse API
+  description: |
+    API for Smart Warehouse mobile applications.
+    
+    ## Authentication
+    All authenticated endpoints require a valid session cookie or Bearer token.
+    
+    ## Language
+    Pass `language` parameter to get responses in user's preferred language.
+    Supported: `en`, `zh-TW`, `zh`, `ja`
+  version: 1.0.71
+  contact:
+    name: Smart Warehouse Team
+  license:
+    name: MIT
+
+servers:
+  - url: https://smart-warehouse-five.vercel.app/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Items
+    description: Inventory item management
+  - name: Rooms
+    description: Room management
+  - name: Categories
+    description: Category management
+  - name: IoT
+    description: IoT device management
+  - name: User
+    description: User profile management
+
+paths:
+  # ============ Authentication ============
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/signin:
+    post:
+      tags: [Auth]
+      summary: Sign in with credentials
+      operationId: signIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+      responses:
+        '200':
+          description: Sign in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============ Items ============
+  /warehouse/items:
+    get:
+      tags: [Items]
+      summary: List all items
+      operationId: listItems
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/householdId'
+        - name: roomId
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Items]
+      summary: Create new item
+      operationId: createItem
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /warehouse/items/{id}:
+    get:
+      tags: [Items]
+      summary: Get item by ID
+      operationId: getItem
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/itemId'
+        - $ref: '#/components/parameters/language'
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Items]
+      summary: Update item
+      operationId: updateItem
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/itemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Items]
+      summary: Delete item
+      operationId: deleteItem
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/itemId'
+      responses:
+        '200':
+          description: Item deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /warehouse/items/{id}/checkout:
+    post:
+      tags: [Items]
+      summary: Checkout/use item (decrease quantity)
+      operationId: checkoutItem
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/itemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                reason:
+                  type: string
+              required:
+                - quantity
+      responses:
+        '200':
+          description: Checkout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+
+  # ============ Rooms ============
+  /warehouse/rooms:
+    get:
+      tags: [Rooms]
+      summary: List all rooms
+      operationId: listRooms
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/householdId'
+      responses:
+        '200':
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+
+    post:
+      tags: [Rooms]
+      summary: Create new room
+      operationId: createRoom
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomRequest'
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+
+  /warehouse/rooms/{id}:
+    get:
+      tags: [Rooms]
+      summary: Get room by ID
+      operationId: getRoom
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/roomId'
+        - $ref: '#/components/parameters/language'
+      responses:
+        '200':
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+
+    put:
+      tags: [Rooms]
+      summary: Update room
+      operationId: updateRoom
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/roomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoomRequest'
+      responses:
+        '200':
+          description: Room updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+
+    delete:
+      tags: [Rooms]
+      summary: Delete room
+      operationId: deleteRoom
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/roomId'
+      responses:
+        '200':
+          description: Room deleted
+
+  /warehouse/rooms/{id}/items:
+    get:
+      tags: [Rooms, Items]
+      summary: Get items in a room
+      operationId: getRoomItems
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/roomId'
+        - $ref: '#/components/parameters/language'
+      responses:
+        '200':
+          description: Items in room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+
+  # ============ Categories ============
+  /warehouse/categories:
+    get:
+      tags: [Categories]
+      summary: List all categories
+      operationId: listCategories
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/householdId'
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags: [Categories]
+      summary: Create new category
+      operationId: createCategory
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+
+  # ============ AI Recognition ============
+  /ai/recognize:
+    post:
+      tags: [Items]
+      summary: AI-powered item recognition
+      operationId: recognizeItem
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [image, barcode, barcode-image]
+                imageBase64:
+                  type: string
+                  description: Base64 encoded image (for image and barcode-image types)
+                barcode:
+                  type: string
+                  description: Barcode string (for barcode type)
+              required:
+                - type
+      responses:
+        '200':
+          description: Recognition result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionResult'
+
+  # ============ IoT Devices ============
+  /mqtt/devices:
+    get:
+      tags: [IoT]
+      summary: List IoT devices
+      operationId: listIoTDevices
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/householdId'
+      responses:
+        '200':
+          description: List of IoT devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IoTDevice'
+
+  /mqtt/iot/devices/{id}/control:
+    post:
+      tags: [IoT]
+      summary: Control IoT device
+      operationId: controlIoTDevice
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceControlRequest'
+      responses:
+        '200':
+          description: Command sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  # ============ User ============
+  /user/language:
+    get:
+      tags: [User]
+      summary: Get user language preference
+      operationId: getUserLanguage
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: User language
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  language:
+                    type: string
+
+    patch:
+      tags: [User]
+      summary: Update user language preference
+      operationId: updateUserLanguage
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, zh-TW, zh, ja]
+              required:
+                - language
+      responses:
+        '200':
+          description: Language updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  language:
+                    type: string
+
+  # ============ Dashboard ============
+  /warehouse/dashboard/stats:
+    get:
+      tags: [Items]
+      summary: Get dashboard statistics
+      operationId: getDashboardStats
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/householdId'
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+
+  # ============ Search ============
+  /warehouse/search:
+    get:
+      tags: [Items]
+      summary: Search items
+      operationId: searchItems
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/language'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    language:
+      name: language
+      in: query
+      description: Response language
+      schema:
+        type: string
+        enum: [en, zh-TW, zh, ja]
+        default: en
+
+    householdId:
+      name: householdId
+      in: query
+      description: Household ID
+      schema:
+        type: string
+
+    itemId:
+      name: id
+      in: path
+      required: true
+      description: Item ID
+      schema:
+        type: string
+
+    roomId:
+      name: id
+      in: path
+      required: true
+      description: Room ID
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        invitationCode:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    SignInRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        household:
+          $ref: '#/components/schemas/Household'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        image:
+          type: string
+        language:
+          type: string
+
+    Household:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        invitationCode:
+          type: string
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+        minQuantity:
+          type: integer
+        barcode:
+          type: string
+        qrCode:
+          type: string
+        imageUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        buyDate:
+          type: string
+          format: date
+        buyCost:
+          type: number
+        buyLocation:
+          type: string
+        category:
+          $ref: '#/components/schemas/Category'
+        room:
+          $ref: '#/components/schemas/Room'
+        cabinet:
+          $ref: '#/components/schemas/Cabinet'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+          default: 1
+        minQuantity:
+          type: integer
+          default: 0
+        category:
+          type: string
+        subcategory:
+          type: string
+        room:
+          type: string
+        cabinet:
+          type: string
+        barcode:
+          type: string
+        qrCode:
+          type: string
+        imageUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        householdId:
+          type: string
+        buyDate:
+          type: string
+          format: date
+        buyCost:
+          type: number
+        buyLocation:
+          type: string
+      required:
+        - name
+        - room
+
+    UpdateItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+        minQuantity:
+          type: integer
+        category:
+          type: string
+        room:
+          type: string
+        cabinet:
+          type: string
+        barcode:
+          type: string
+        imageUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    ItemListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        cabinets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cabinet'
+        _count:
+          type: object
+          properties:
+            items:
+              type: integer
+            cabinets:
+              type: integer
+
+    CreateRoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        householdId:
+          type: string
+      required:
+        - name
+
+    UpdateRoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+
+    Cabinet:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        parentId:
+          type: string
+        parent:
+          $ref: '#/components/schemas/Category'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+
+    CreateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        icon:
+          type: string
+        parentId:
+          type: string
+        householdId:
+          type: string
+      required:
+        - name
+
+    RecognitionResult:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        confidence:
+          type: number
+        barcode:
+          type: string
+        language:
+          type: string
+
+    IoTDevice:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+          enum: [tuya, midea, shelly, esp, aqara, philips, panasonic, knx]
+        type:
+          type: string
+        status:
+          type: string
+          enum: [online, offline]
+        state:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    DeviceControlRequest:
+      type: object
+      properties:
+        command:
+          type: string
+          enum: [power_on, power_off, set_temperature, set_mode, set_brightness]
+        value:
+          oneOf:
+            - type: boolean
+            - type: number
+            - type: string
+      required:
+        - command
+
+    DashboardStats:
+      type: object
+      properties:
+        totalItems:
+          type: integer
+        totalRooms:
+          type: integer
+        totalCategories:
+          type: integer
+        lowStockItems:
+          type: integer
+        recentItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        aiInterpretation:
+          type: string

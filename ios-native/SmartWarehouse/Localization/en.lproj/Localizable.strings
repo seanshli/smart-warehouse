@@ -1,0 +1,112 @@
+/* Navigation */
+"dashboard" = "Dashboard";
+"items" = "Items";
+"rooms" = "Rooms";
+"categories" = "Categories";
+"settings" = "Settings";
+"scan" = "Scan";
+
+/* Auth */
+"signIn" = "Sign In";
+"signUp" = "Sign Up";
+"signOut" = "Sign Out";
+"email" = "Email";
+"password" = "Password";
+"confirmPassword" = "Confirm Password";
+"name" = "Name";
+"signInToYourAccount" = "Sign in to your account";
+"dontHaveAccount" = "Don't have an account?";
+"signInFailed" = "Sign in failed. Please try again.";
+"registrationFailed" = "Registration failed. Please try again.";
+"passwordsDoNotMatch" = "Passwords do not match";
+"joinExistingHousehold" = "Join existing household (optional)";
+"invitationCode" = "Invitation Code";
+
+/* Items */
+"allItems" = "All Items";
+"addItem" = "Add Item";
+"editItem" = "Edit Item";
+"itemName" = "Item Name";
+"description" = "Description";
+"quantity" = "Quantity";
+"minQuantity" = "Minimum Quantity";
+"barcode" = "Barcode";
+"category" = "Category";
+"location" = "Location";
+"noItems" = "No Items";
+"addFirstItem" = "Add your first item to get started";
+"searchItems" = "Search items...";
+"lowStock" = "Low Stock";
+"lowStockAlert" = "Low Stock Alert";
+"lowStockMessage" = "%d items are running low";
+"itemDetails" = "Item Details";
+"useItem" = "Use Item";
+"enterQuantityToUse" = "Enter the quantity to use";
+"failedToLoadItems" = "Failed to load items";
+"failedToCreateItem" = "Failed to create item";
+"failedToUpdateItem" = "Failed to update item";
+"failedToDeleteItem" = "Failed to delete item";
+"failedToCheckoutItem" = "Failed to checkout item";
+"tags" = "Tags";
+"purchaseDate" = "Purchase Date";
+"purchaseCost" = "Purchase Cost";
+"purchaseLocation" = "Purchase Location";
+
+/* Rooms */
+"addRoom" = "Add Room";
+"editRoom" = "Edit Room";
+"roomName" = "Room Name";
+"noRooms" = "No Rooms";
+"addFirstRoom" = "Add your first room to organize items";
+"cabinets" = "Cabinets";
+"cabinet" = "Cabinet";
+"selectRoom" = "Select a room";
+"selectCabinet" = "Select a cabinet";
+"roomDetails" = "Room Details";
+"noItemsInRoom" = "No items in this room";
+"failedToLoadRooms" = "Failed to load rooms";
+"failedToCreateRoom" = "Failed to create room";
+"failedToUpdateRoom" = "Failed to update room";
+"failedToDeleteRoom" = "Failed to delete room";
+"info" = "Info";
+"icon" = "Icon";
+
+/* Categories */
+"selectCategory" = "Select a category";
+"failedToLoadCategories" = "Failed to load categories";
+"failedToCreateCategory" = "Failed to create category";
+
+/* Dashboard */
+"totalItems" = "Total Items";
+"recentItems" = "Recent Items";
+"failedToLoadStats" = "Failed to load statistics";
+
+/* Scanner */
+"pointCameraAtBarcode" = "Point camera at barcode";
+"scannedCode" = "Scanned Code";
+"lookUp" = "Look Up";
+"scanResult" = "Scan Result";
+"recognizedItem" = "Recognized Item";
+"addToInventory" = "Add to Inventory";
+"confidence" = "Confidence";
+
+/* Settings */
+"language" = "Language";
+"appLanguage" = "App Language";
+"household" = "Household";
+"about" = "About";
+"version" = "Version";
+"sourceCode" = "Source Code";
+"user" = "User";
+
+/* General */
+"save" = "Save";
+"cancel" = "Cancel";
+"delete" = "Delete";
+"edit" = "Edit";
+"close" = "Close";
+"confirm" = "Confirm";
+"basicInfo" = "Basic Info";
+"error" = "Error";
+"success" = "Success";
+"loading" = "Loading...";

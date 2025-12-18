@@ -17,6 +17,7 @@ All brands (Tuya, Midea, Philips Hue, Panasonic, and Aqara) now have full MQTT s
 | **Philips Hue** | ✅ `philips-mqtt-adapter.ts` | ✅ `philips-bridge.ts` | ✅ Complete |
 | **Panasonic** | ✅ `panasonic-mqtt-adapter.ts` | ✅ `panasonic-bridge.ts` | ✅ Complete |
 | **Aqara** | ✅ `aqara-adapter.ts` | ✅ `aqara-bridge.ts` | ✅ Complete |
+| **Shelly** | ✅ `shelly-adapter.ts` | ✅ `shelly-bridge.ts` | ✅ Complete |
 
 ---
 
@@ -53,6 +54,7 @@ midea-bridge.ts               ✅ Existing: Midea Cloud API bridge
 philips-bridge.ts              ✅ NEW: Philips Hue RESTful API bridge
 panasonic-bridge.ts            ✅ NEW: Panasonic Cloud API bridge
 aqara-bridge.ts                ✅ NEW: Aqara/Zigbee2MQTT management bridge
+shelly-bridge.ts               ✅ NEW: Shelly device management bridge
 ```
 
 ---
@@ -88,6 +90,15 @@ panasonic/{device_id}/status   # Device status
 ```
 zigbee2mqtt/{device_friendly_name}        # Device status
 zigbee2mqtt/{device_friendly_name}/set     # Control commands
+```
+
+### Shelly
+```
+shellies/{device_id}/relay/{channel}              # Gen1: Device status
+shellies/{device_id}/relay/{channel}/command      # Gen1: Control commands
+{topic_prefix}/status/switch:{id}                 # Gen2: Device status
+{topic_prefix}/command/switch:{id}                # Gen2: Control commands
+{topic_prefix}/announce                            # Device announcement
 ```
 
 ---

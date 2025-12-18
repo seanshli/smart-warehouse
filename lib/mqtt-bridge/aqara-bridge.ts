@@ -139,7 +139,7 @@ export class AqaraMQTTBridge {
       // 处理设备状态更新
       if (topic.startsWith(`${this.zigbee2mqttPrefix}/`) && 
           !topic.includes('/bridge/') && 
-          !topic.includes('/set`)) {
+          !topic.includes('/set')) {
         const deviceId = AqaraAdapter.parseDeviceId(topic)
         if (deviceId) {
           await this.handleDeviceStatus(deviceId, payload)

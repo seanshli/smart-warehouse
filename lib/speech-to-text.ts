@@ -1,8 +1,10 @@
 // 語音轉文字模組
 // 支援 iFLYTEK AIUI（主要）和 OpenAI Whisper（備援）兩種語音識別引擎
+// Language handling: Uses user's configured language for speech recognition
 
 import OpenAI from 'openai'
 import crypto from 'crypto'
+import { getServiceLanguageCode } from './language'
 
 // 延遲初始化 OpenAI 客戶端
 let openai: OpenAI | null = null
@@ -109,9 +111,10 @@ function detectAudioFormat(audioBase64: string): { format: string; encoding: str
 /**
  * Generate X-Param for iFLYTEK API
  * Note: X-Param should NOT include the audio data in the base64 string
+ * @param iflytekLanguage - iFLYTEK language code (zh_tw, zh_cn, en_us, ja_jp)
  */
 function generateIFLYTEKParam(
-  language: string = 'zh_tw', // Default to Traditional Chinese
+  iflytekLanguage: string = 'en_us', // Default to English for internal coding
   format?: string,
   encoding?: string
 ): string {
@@ -122,7 +125,7 @@ function generateIFLYTEKParam(
       uid: AIUI_DEVICE_SERIAL,
     },
     business: {
-      language: language, // zh_cn, en_us, etc.
+      language: iflytekLanguage, // zh_cn, zh_tw, en_us, ja_jp
       domain: 'iat', // internet audio transcription
       accent: 'mandarin', // or 'cantonese' for Chinese
       vad_eos: 10000, // end of speech detection timeout
@@ -141,10 +144,12 @@ function generateIFLYTEKParam(
 
 /**
  * Transcribe audio using iFLYTEK ASR API (Primary)
+ * @param audioBase64 - Base64 encoded audio data
+ * @param userLanguage - User's configured language (en, zh-TW, zh, ja)
  */
 async function transcribeWithIFLYTEK(
   audioBase64: string,
-  language?: string
+  userLanguage: string = 'en' // Default to English for internal coding
 ): Promise<string | null> {
   try {
     // Check if iFLYTEK is configured
@@ -158,15 +163,8 @@ async function transcribeWithIFLYTEK(
       ? audioBase64.split(',')[1] 
       : audioBase64
 
-    // Map language codes to iFLYTEK format
-    const languageMap: Record<string, string> = {
-      'zh': 'zh_cn',
-      'zh-TW': 'zh_tw',
-      'zh-CN': 'zh_cn',
-      'en': 'en_us',
-      'ja': 'ja_jp',
-    }
-    const iflytekLang = language ? languageMap[language] || 'zh_tw' : 'zh_tw'
+    // Use LANGUAGE_CONFIG to get iFLYTEK-specific language code
+    const iflytekLang = getServiceLanguageCode(userLanguage, 'iflytek')
 
     const { format: detectedFormat, encoding: detectedEncoding } = detectAudioFormat(audioBase64)
 
@@ -261,10 +259,12 @@ function createFileFromBuffer(buffer: Buffer, filename: string, mimeType: string
 /**
  * Transcribe audio to text using OpenAI Whisper API
  * Supports multiple audio formats and languages
+ * @param audioBase64 - Base64 encoded audio data
+ * @param userLanguage - User's configured language (en, zh-TW, zh, ja)
  */
 export async function transcribeAudio(
   audioBase64: string,
-  language?: string
+  userLanguage: string = 'en' // Default to English for internal coding
 ): Promise<string | null> {
   // Check if OpenAI API key is configured
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key') {
@@ -284,12 +284,15 @@ export async function transcribeAudio(
     // Create a File object for OpenAI API (Node.js 18+ compatible)
     const audioFile = createFileFromBuffer(audioBuffer, 'audio.webm', 'audio/webm')
 
+    // Use LANGUAGE_CONFIG to get Whisper-specific language code
+    const whisperLang = getServiceLanguageCode(userLanguage, 'whisper')
+
     // Use OpenAI Whisper API for transcription
     const openai = getOpenAIClient()
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
-      language: language || undefined, // Optional: 'en', 'zh', 'ja', etc.
+      language: whisperLang || undefined, // Use configured language
       response_format: 'text', // Simple text response
       temperature: 0.0, // More deterministic transcription
     })
@@ -311,10 +314,12 @@ export async function transcribeAudio(
 
 /**
  * Transcribe audio using OpenAI Whisper API (Fallback)
+ * @param audioBase64 - Base64 encoded audio data
+ * @param userLanguage - User's configured language (en, zh-TW, zh, ja)
  */
 async function transcribeWithOpenAI(
   audioBase64: string,
-  language?: string
+  userLanguage: string = 'en' // Default to English for internal coding
 ): Promise<string | null> {
   // Check if OpenAI API key is configured
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key') {
@@ -337,10 +342,13 @@ async function transcribeWithOpenAI(
     // Create a File object compatible with OpenAI SDK
     const audioFile = createFileFromBuffer(audioBuffer, 'audio.webm', 'audio/webm')
 
+    // Use LANGUAGE_CONFIG to get Whisper-specific language code
+    const whisperLang = getServiceLanguageCode(userLanguage, 'whisper')
+
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: 'whisper-1',
-      language: language || undefined,
+      language: whisperLang || undefined,
       response_format: 'text',
       temperature: 0.0,
     })
@@ -362,14 +370,16 @@ async function transcribeWithOpenAI(
 /**
  * Main transcription function with dual engine support
  * Primary: iFLYTEK, Fallback: OpenAI
+ * @param audioBase64 - Base64 encoded audio data
+ * @param userLanguage - User's configured language (en, zh-TW, zh, ja)
  */
 export async function transcribeAudioFormData(
   audioBase64: string,
-  language?: string
+  userLanguage: string = 'en' // Default to English for internal coding
 ): Promise<string | null> {
   // Try iFLYTEK first (primary)
-  console.log('Attempting transcription with iFLYTEK...')
-  let transcript = await transcribeWithIFLYTEK(audioBase64, language)
+  console.log(`Attempting transcription with iFLYTEK (language: ${userLanguage})...`)
+  let transcript = await transcribeWithIFLYTEK(audioBase64, userLanguage)
   
   if (transcript && transcript.trim().length > 0) {
     console.log('✓ iFLYTEK transcription successful')
@@ -378,7 +388,7 @@ export async function transcribeAudioFormData(
 
   // Fallback to OpenAI if iFLYTEK fails
   console.log('iFLYTEK transcription failed or empty, falling back to OpenAI...')
-  transcript = await transcribeWithOpenAI(audioBase64, language)
+  transcript = await transcribeWithOpenAI(audioBase64, userLanguage)
   
   if (transcript && transcript.trim().length > 0) {
     console.log('✓ OpenAI transcription successful (fallback)')
@@ -389,32 +399,22 @@ export async function transcribeAudioFormData(
   return null
 }
 
-function getIFLYTEKVoiceForLanguage(language?: string): string {
-  if (!language) return 'xiaoyan'
-  const normalized = language.toLowerCase()
-
-  if (normalized.startsWith('ja')) return 'aisjinky'
-  if (normalized.startsWith('en')) return 'aisxping'
-  if (normalized.startsWith('zh-tw')) return 'xiaoyan'
-  if (normalized.startsWith('zh')) return 'xiaoyan'
-
-  return 'xiaoyan'
+// Voice mapping for TTS based on user's configured language
+function getIFLYTEKVoiceForLanguage(userLanguage: string = 'en'): string {
+  // Map user language to appropriate iFLYTEK voice
+  const voiceMap: Record<string, string> = {
+    'en': 'aisxping',      // English voice
+    'zh-TW': 'xiaoyan',    // Traditional Chinese voice
+    'zh': 'xiaoyan',       // Simplified Chinese voice
+    'ja': 'aisjinky',      // Japanese voice
+  }
+  return voiceMap[userLanguage] || 'aisxping' // Default to English voice
 }
 
-function getIFLYTEKLanguageCode(language?: string): string {
-  if (!language) return 'zh_tw' // Default to Traditional Chinese
-  const normalized = language.toLowerCase()
-
-  if (normalized.startsWith('ja')) return 'ja_jp'
-  if (normalized.startsWith('en')) return 'en_us'
-  if (normalized.startsWith('zh-tw') || normalized.startsWith('zh-hk')) return 'zh_tw'
-  if (normalized.startsWith('zh-cn') || normalized.startsWith('zh-sg')) return 'zh_cn'
-  if (normalized.startsWith('zh')) return 'zh_tw' // Default to Traditional Chinese for generic zh
-
-  return 'zh_tw' // Default to Traditional Chinese
-}
-
-function generateIFLYTEKTTSParam(voice: string, language?: string): string {
+function generateIFLYTEKTTSParam(voice: string, userLanguage: string = 'en'): string {
+  // Use LANGUAGE_CONFIG to get iFLYTEK-specific language code
+  const iflytekLang = getServiceLanguageCode(userLanguage, 'iflytek')
+  
   const param = {
     auf: 'audio/L16;rate=16000',
     aue: 'lame',
@@ -424,14 +424,19 @@ function generateIFLYTEKTTSParam(voice: string, language?: string): string {
     pitch: 50,
     volume: 77,
     text_type: 'text',
-    language: getIFLYTEKLanguageCode(language),
+    language: iflytekLang,
     serial_no: AIUI_DEVICE_SERIAL,
   }
 
   return Buffer.from(JSON.stringify(param)).toString('base64')
 }
 
-async function synthesizeWithIFLYTEK(text: string, language?: string): Promise<string | null> {
+/**
+ * Synthesize speech using iFLYTEK TTS API
+ * @param text - Text to synthesize
+ * @param userLanguage - User's configured language (en, zh-TW, zh, ja)
+ */
+async function synthesizeWithIFLYTEK(text: string, userLanguage: string = 'en'): Promise<string | null> {
   if (!text || !text.trim()) {
     return null
   }
@@ -443,9 +448,9 @@ async function synthesizeWithIFLYTEK(text: string, language?: string): Promise<s
     }
 
     const sanitizedText = text.trim()
-    const voice = getIFLYTEKVoiceForLanguage(language)
+    const voice = getIFLYTEKVoiceForLanguage(userLanguage)
     const curTime = Math.floor(Date.now() / 1000).toString()
-    const paramsBase64 = generateIFLYTEKTTSParam(voice, language)
+    const paramsBase64 = generateIFLYTEKTTSParam(voice, userLanguage)
     const textBase64 = Buffer.from(sanitizedText, 'utf-8').toString('base64')
 
     const checkSum = crypto
@@ -485,11 +490,16 @@ async function synthesizeWithIFLYTEK(text: string, language?: string): Promise<s
   }
 }
 
+/**
+ * Synthesize text to speech
+ * @param text - Text to synthesize
+ * @param userLanguage - User's configured language (en, zh-TW, zh, ja)
+ */
 export async function synthesizeSpeech(
   text: string,
-  language?: string
+  userLanguage: string = 'en' // Default to English for internal coding
 ): Promise<string | null> {
-  const audioBase64 = await synthesizeWithIFLYTEK(text, language)
+  const audioBase64 = await synthesizeWithIFLYTEK(text, userLanguage)
 
   if (audioBase64 && audioBase64.length > 0) {
     return audioBase64

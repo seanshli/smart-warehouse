@@ -1,10 +1,14 @@
 // iFLYTEK AIUI 代理模組
 // 處理與 iFLYTEK AIUI 服務的通訊，提供語音助理功能
+// IMPORTANT: AIUI only understands Simplified Chinese (zh)
+// All queries must be translated to Simplified Chinese before calling AIUI
+// All responses must be translated back to user's selected language
 
 import crypto from 'crypto'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { getOpenAI } from './ai'
 import { translateText } from './dynamic-translations'
+import { getLanguageConfig, LanguageCode } from './language'
 
 // AIUI 代理端點
 const AIUI_AGENT_ENDPOINT = 'https://openai.xfyun.cn/v2/aiui'
@@ -28,29 +32,23 @@ type AIUIAgentResult = {
   raw?: unknown // 原始回應（可選）
 }
 
-// 語言代碼映射表（將標準語言代碼轉換為 AIUI 格式）
-const LANGUAGE_MAP: Record<string, string> = {
-  'zh': 'zh_cn', // 中文（簡體）
-  'zh-CN': 'zh_cn', // 中文（簡體）
-  'zh-TW': 'zh_tw', // 中文（繁體）
-  'en': 'en_us', // 英語
-  'ja': 'ja_jp', // 日語
-}
+// AIUI only supports Simplified Chinese - always use zh_cn
+const AIUI_LANGUAGE = 'zh_cn'
 
 // 構建 AIUI API 請求標頭（包含認證資訊）
-function buildAIUIHeaders(language?: string) {
+// AIUI always uses Simplified Chinese (zh_cn)
+function buildAIUIHeaders() {
   if (!AIUI_CONFIG.APP_KEY || !AIUI_CONFIG.APP_SECRET) {
     throw new Error('IFLYTEK credentials are not configured')
   }
 
   const curTime = Math.floor(Date.now() / 1000).toString() // 當前時間戳（秒）
-  const lang = language ? (LANGUAGE_MAP[language] || LANGUAGE_MAP[language.split('-')[0]] || 'en_us') : 'en_us' // 標準化語言代碼
 
-  // 構建請求參數
+  // 構建請求參數 - AIUI only supports Simplified Chinese
   const param = {
     scene: 'main', // 場景：主要
     userid: AIUI_DEVICE_SERIAL, // 用戶 ID（使用裝置序號）
-    language: lang, // 語言
+    language: AIUI_LANGUAGE, // Always Simplified Chinese
     result_level: 'complete', // 結果級別：完整
     device_id: AIUI_DEVICE_SERIAL, // 裝置 ID
   }
@@ -72,7 +70,8 @@ function buildAIUIHeaders(language?: string) {
 }
 
 // 呼叫 AIUI 代理 API
-async function callAIUI(query: string, language?: string): Promise<AIUIAgentResult | null> {
+// Note: query should already be in Simplified Chinese
+async function callAIUI(query: string): Promise<AIUIAgentResult | null> {
   if (!AIUI_CONFIG.APP_KEY || !AIUI_CONFIG.APP_SECRET) {
     return null
   }
@@ -80,9 +79,9 @@ async function callAIUI(query: string, language?: string): Promise<AIUIAgentResu
   try {
     const response = await fetch(AIUI_AGENT_ENDPOINT, {
       method: 'POST',
-      headers: buildAIUIHeaders(language), // 構建認證標頭
+      headers: buildAIUIHeaders(), // 構建認證標頭 (always zh_cn)
       body: JSON.stringify({
-        text: query, // 查詢文字
+        text: query, // 查詢文字 (must be Simplified Chinese)
         device_serial: AIUI_DEVICE_SERIAL, // 裝置序號
       }),
     })
@@ -193,48 +192,48 @@ async function callOpenAI(query: string, history: Array<{ role: 'user' | 'assist
 }
 
 // 查詢 AIUI 代理（主要使用 AIUI，失敗時使用 OpenAI 備援）
-// AIUI always requires Simplified Chinese (zh) input, then output is translated back to user's language
+// IMPORTANT: AIUI only understands Simplified Chinese (zh)
+// - Queries are translated TO Simplified Chinese before calling AIUI
+// - Responses are translated FROM Simplified Chinese back to user's selected language
 export async function queryAIUIAgent(
   query: string,
-  language?: string,
+  userLanguage: string = 'en', // User's configured/selected language
   history: Array<{ role: 'user' | 'assistant'; content: string }> = []
 ): Promise<AIUIAgentResult | null> {
-  // Always send Simplified Chinese (zh) to AIUI service
-  // First, translate user's query to Simplified Chinese if needed
-  let queryForAIUI = query
-  const userLanguage = language || 'zh'
+  // Get language config for the user's selected language
+  const langConfig = getLanguageConfig(userLanguage)
+  const isSimplifiedChinese = userLanguage === 'zh' || userLanguage === 'zh-CN'
   
-  // If user's language is not Simplified Chinese, translate query to Simplified Chinese
-  if (userLanguage !== 'zh' && userLanguage !== 'zh-CN') {
+  // Step 1: Translate query to Simplified Chinese if needed
+  let queryForAIUI = query
+  
+  if (!isSimplifiedChinese) {
     try {
-      // Translate to Simplified Chinese
-      queryForAIUI = await translateText(query, 'zh', {})
-      console.log(`[AIUI] Translated query to Simplified Chinese: "${query}" -> "${queryForAIUI}"`)
+      // Translate user's query to Simplified Chinese for AIUI
+      queryForAIUI = await translateText(query, '简体中文', {})
+      console.log(`[AIUI] Translated query to Simplified Chinese: "${query.substring(0, 50)}..." -> "${queryForAIUI.substring(0, 50)}..."`)
     } catch (error) {
-      console.error('[AIUI] Failed to translate query to Simplified Chinese, using original:', error)
-      // If translation fails, try with Simplified Chinese anyway
-      queryForAIUI = query
+      console.error('[AIUI] Failed to translate query to Simplified Chinese:', error)
+      // Continue with original - AIUI may still partially understand
     }
   }
   
-  // Call AIUI with Simplified Chinese
-  const aiuiResult = await callAIUI(queryForAIUI, 'zh') // Always use 'zh' for AIUI
+  // Step 2: Call AIUI with Simplified Chinese query
+  const aiuiResult = await callAIUI(queryForAIUI)
   
   if (aiuiResult) {
-    // Translate AIUI response back to user's selected language
+    // Step 3: Translate AIUI response back to user's selected language
     let translatedResponse = aiuiResult.text
     
-    if (userLanguage !== 'zh' && userLanguage !== 'zh-CN') {
+    if (!isSimplifiedChinese) {
       try {
-        // Map language codes for translation
-        const targetLang = userLanguage === 'zh-TW' ? '繁體中文' : 
-                          userLanguage === 'en' ? 'English' :
-                          userLanguage === 'ja' ? '日本語' : userLanguage
-        translatedResponse = await translateText(aiuiResult.text, targetLang, {})
+        // Use the language config to get the AI prompt language name
+        const targetLangName = langConfig.aiPromptLanguage
+        translatedResponse = await translateText(aiuiResult.text, targetLangName, {})
         console.log(`[AIUI] Translated response to ${userLanguage}: "${aiuiResult.text.substring(0, 50)}..." -> "${translatedResponse.substring(0, 50)}..."`)
       } catch (error) {
-        console.error('[AIUI] Failed to translate response, using original:', error)
-        // If translation fails, use original Simplified Chinese response
+        console.error('[AIUI] Failed to translate response to user language:', error)
+        // Keep Simplified Chinese response if translation fails
       }
     }
     
@@ -245,7 +244,7 @@ export async function queryAIUIAgent(
     }
   }
 
-  // Fallback to OpenAI (no translation needed for OpenAI)
+  // Fallback to OpenAI (OpenAI understands all languages, no translation needed)
   return callOpenAI(query, history)
 }
 

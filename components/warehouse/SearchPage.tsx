@@ -35,7 +35,7 @@ interface SearchResult {
 }
 
 export default function SearchPage() {
-  const { t } = useLanguage()
+  const { t, currentLanguage } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -74,7 +74,7 @@ export default function SearchPage() {
           credentials: 'include',
           body: JSON.stringify({ 
             query: term,
-            userLanguage: 'en' // Default to English for now
+            userLanguage: currentLanguage // Use user's configured language
           })
         })
       } else {

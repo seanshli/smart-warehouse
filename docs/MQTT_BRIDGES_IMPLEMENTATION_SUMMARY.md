@@ -262,6 +262,7 @@ await bridge.start()
 - [x] Created Aqara MQTT bridge service
 - [x] Created Shelly MQTT bridge service
 - [x] Created KNX MQTT bridge service
+- [x] Created ESP MQTT bridge service
 - [x] Updated adapter factory to include new adapters
 - [x] Updated vendor detection for new topic prefixes
 - [x] Enhanced device creation from topics

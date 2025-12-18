@@ -1,4 +1,5 @@
 // Language detection and management utilities
+// 語言偵測與管理工具 - 統一語言設定
 
 export interface LanguageInfo {
   code: string // ISO 639-1 code (e.g., 'en', 'zh', 'ja')
@@ -6,12 +7,123 @@ export interface LanguageInfo {
   nativeName: string // Native name (e.g., 'English', '中文', '日本語')
 }
 
-// Supported languages with their metadata
+// Primary language codes used in the system
+export type LanguageCode = 'en' | 'zh-TW' | 'zh' | 'ja'
+
+// Extended language configuration with service-specific codes
+export interface LanguageConfig {
+  code: LanguageCode
+  name: string
+  nativeName: string
+  iflytekCode: string      // iFLYTEK speech service code
+  whisperCode: string      // OpenAI Whisper code
+  aiPromptLanguage: string // Language name for AI prompts
+  iosLocale: string        // iOS locale identifier
+  androidLocale: string    // Android locale identifier
+}
+
+// Comprehensive language configuration for all services
+export const LANGUAGE_CONFIG: Record<LanguageCode, LanguageConfig> = {
+  'en': {
+    code: 'en',
+    name: 'English',
+    nativeName: 'English',
+    iflytekCode: 'en_us',
+    whisperCode: 'en',
+    aiPromptLanguage: 'English',
+    iosLocale: 'en',
+    androidLocale: 'en',
+  },
+  'zh-TW': {
+    code: 'zh-TW',
+    name: 'Traditional Chinese',
+    nativeName: '繁體中文',
+    iflytekCode: 'zh_tw',
+    whisperCode: 'zh',
+    aiPromptLanguage: '繁體中文 (Traditional Chinese)',
+    iosLocale: 'zh-Hant',
+    androidLocale: 'zh-rTW',
+  },
+  'zh': {
+    code: 'zh',
+    name: 'Simplified Chinese',
+    nativeName: '简体中文',
+    iflytekCode: 'zh_cn',
+    whisperCode: 'zh',
+    aiPromptLanguage: '简体中文 (Simplified Chinese)',
+    iosLocale: 'zh-Hans',
+    androidLocale: 'zh-rCN',
+  },
+  'ja': {
+    code: 'ja',
+    name: 'Japanese',
+    nativeName: '日本語',
+    iflytekCode: 'ja_jp',
+    whisperCode: 'ja',
+    aiPromptLanguage: '日本語 (Japanese)',
+    iosLocale: 'ja',
+    androidLocale: 'ja',
+  },
+}
+
+// Get language configuration, with fallback to English
+export function getLanguageConfig(code: string): LanguageConfig {
+  return LANGUAGE_CONFIG[code as LanguageCode] || LANGUAGE_CONFIG['en']
+}
+
+// Get service-specific language code
+export type LanguageService = 'iflytek' | 'whisper' | 'ai' | 'ios' | 'android'
+
+export function getServiceLanguageCode(
+  userLanguage: string,
+  service: LanguageService
+): string {
+  const config = getLanguageConfig(userLanguage)
+  switch (service) {
+    case 'iflytek': return config.iflytekCode
+    case 'whisper': return config.whisperCode
+    case 'ai': return config.aiPromptLanguage
+    case 'ios': return config.iosLocale
+    case 'android': return config.androidLocale
+    default: return config.code
+  }
+}
+
+// Check if a language code is a primary supported language
+export function isPrimaryLanguage(code: string): code is LanguageCode {
+  return code in LANGUAGE_CONFIG
+}
+
+// Normalize language code to primary language
+export function normalizeToPrimaryLanguage(code: string): LanguageCode {
+  // Direct match
+  if (isPrimaryLanguage(code)) {
+    return code
+  }
+  
+  // Handle Chinese variants
+  if (code.startsWith('zh')) {
+    if (code.includes('CN') || code.includes('Hans') || code === 'zh-CN') {
+      return 'zh'
+    }
+    return 'zh-TW' // Default to Traditional Chinese
+  }
+  
+  // Handle base language codes
+  const baseLang = code.split('-')[0]
+  if (isPrimaryLanguage(baseLang)) {
+    return baseLang
+  }
+  
+  return 'en' // Default fallback
+}
+
+// Supported languages with their metadata (extended list for future)
 export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
   { code: 'en', name: 'English', nativeName: 'English' },
   { code: 'zh-TW', name: '繁體中文', nativeName: '繁體中文' },
   { code: 'zh', name: '简体中文', nativeName: '简体中文' },
-  { code: 'ja', name: '日文', nativeName: '日文' },
+  { code: 'ja', name: '日本語', nativeName: '日本語' },
   { code: 'ko', name: '한국어', nativeName: '한국어' },
   { code: 'es', name: 'Español', nativeName: 'Español' },
   { code: 'fr', name: 'Français', nativeName: 'Français' },

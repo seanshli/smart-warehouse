@@ -19,6 +19,7 @@ All brands (Tuya, Midea, Philips Hue, Panasonic, and Aqara) now have full MQTT s
 | **Aqara** | ✅ `aqara-adapter.ts` | ✅ `aqara-bridge.ts` | ✅ Complete |
 | **Shelly** | ✅ `shelly-adapter.ts` | ✅ `shelly-bridge.ts` | ✅ Complete |
 | **KNX** | ✅ `knx-adapter.ts` | ✅ `knx-bridge.ts` | ✅ Complete |
+| **ESP** | ✅ `esp-adapter.ts` | ✅ `esp-bridge.ts` | ✅ Complete |
 
 ---
 
@@ -57,6 +58,7 @@ panasonic-bridge.ts            ✅ NEW: Panasonic Cloud API bridge
 aqara-bridge.ts                ✅ NEW: Aqara/Zigbee2MQTT management bridge
 shelly-bridge.ts               ✅ NEW: Shelly device management bridge
 knx-bridge.ts                  ✅ NEW: KNX/KNX2MQTT management bridge
+esp-bridge.ts                  ✅ NEW: ESP device management bridge
 ```
 
 ---
@@ -239,6 +241,15 @@ await bridge.start()
 5. **Map**: Map KNX group addresses to MQTT topics
 6. **Manage**: Track device online/offline status
 7. **Control**: Send commands via KNX group addresses (converted to MQTT)
+
+### ESP Bridge Flow:
+1. **Start**: Connect to MQTT broker and subscribe to ESP topics
+2. **Request**: Request device announcements from ESP devices
+3. **Monitor**: Monitor device status updates (status, state, telemetry)
+4. **Discover**: Discover devices from announcements and status messages
+5. **Detect**: Auto-detect chip type (ESP32 vs ESP8266)
+6. **Manage**: Track device online/offline status, IP address, MAC address
+7. **Control**: Send commands via set/control topics
 
 ---
 

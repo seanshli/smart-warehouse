@@ -23,7 +23,7 @@ export type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisio
 // 配網配置
 export interface ProvisioningConfig {
   // 基本配置
-  vendor: 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant'
+  vendor: 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant' | 'knx'
   ssid?: string // Wi-Fi SSID（MQTT 設備需要）
   password?: string // Wi-Fi 密碼（MQTT 設備需要）
   mode?: ProvisioningMode // 配網模式

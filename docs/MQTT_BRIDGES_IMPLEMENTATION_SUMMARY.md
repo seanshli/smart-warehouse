@@ -56,6 +56,7 @@ philips-bridge.ts              ✅ NEW: Philips Hue RESTful API bridge
 panasonic-bridge.ts            ✅ NEW: Panasonic Cloud API bridge
 aqara-bridge.ts                ✅ NEW: Aqara/Zigbee2MQTT management bridge
 shelly-bridge.ts               ✅ NEW: Shelly device management bridge
+knx-bridge.ts                  ✅ NEW: KNX/KNX2MQTT management bridge
 ```
 
 ---
@@ -161,6 +162,21 @@ const bridge = getShellyBridge({
 await bridge.start()
 ```
 
+#### KNX Bridge
+```typescript
+import { getKNXBridge } from '@/lib/mqtt-bridge/knx-bridge'
+
+const bridge = getKNXBridge({
+  mqttBrokerUrl: process.env.MQTT_BROKER_URL!,
+  mqttUsername: process.env.MQTT_USERNAME,
+  mqttPassword: process.env.MQTT_PASSWORD,
+  knxPrefix: 'knx', // Default
+  pollInterval: 10000, // 10 seconds
+})
+
+await bridge.start()
+```
+
 ---
 
 ## ✅ Features Implemented
@@ -215,6 +231,15 @@ await bridge.start()
 6. **Manage**: Track device online/offline status and channel count
 7. **Control**: Send commands via appropriate topic format for each generation
 
+### KNX Bridge Flow:
+1. **Start**: Connect to MQTT broker and subscribe to KNX topics
+2. **Request**: Request device list from KNX2MQTT bridge
+3. **Monitor**: Monitor device status updates from KNX group addresses
+4. **Discover**: Discover devices from KNX2MQTT bridge device list
+5. **Map**: Map KNX group addresses to MQTT topics
+6. **Manage**: Track device online/offline status
+7. **Control**: Send commands via KNX group addresses (converted to MQTT)
+
 ---
 
 ## 📋 Integration Checklist
@@ -225,6 +250,7 @@ await bridge.start()
 - [x] Created Panasonic MQTT bridge
 - [x] Created Aqara MQTT bridge service
 - [x] Created Shelly MQTT bridge service
+- [x] Created KNX MQTT bridge service
 - [x] Updated adapter factory to include new adapters
 - [x] Updated vendor detection for new topic prefixes
 - [x] Enhanced device creation from topics

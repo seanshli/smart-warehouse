@@ -28,7 +28,7 @@ import type { TuyaStartProvisioningOptions } from '@/lib/plugins/tuya'
 type ProvisioningStatus = 'idle' | 'starting' | 'discovering' | 'provisioning' | 'pairing' | 'success' | 'failed' | 'timeout'
 
 // 支持的品牌
-type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant' | 'shelly' | 'aqara'
+type SupportedVendor = 'tuya' | 'midea' | 'philips' | 'panasonic' | 'esp' | 'homeassistant' | 'shelly' | 'aqara' | 'knx'
 
 interface ProvisioningModalProps {
   isOpen: boolean
@@ -58,7 +58,8 @@ export default function ProvisioningModal({
   // Debug: Log vendor and isRESTfulDevice
   useEffect(() => {
     const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant'
-    console.log('🔄 ProvisioningModal: vendor =', vendor, ', isRESTfulDevice =', isRESTfulDevice)
+    const isKNXDevice = vendor === 'knx'
+    console.log('🔄 ProvisioningModal: vendor =', vendor, ', isRESTfulDevice =', isRESTfulDevice, ', isKNXDevice =', isKNXDevice)
   }, [vendor])
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')
@@ -565,6 +566,13 @@ export default function ProvisioningModal({
         if (apiKey) deviceData.apiKey = apiKey
         if (accessToken) deviceData.accessToken = accessToken
         deviceData.connectionType = 'restful'
+      } else if (vendor === 'knx') {
+        // KNX 設備需要 MQTT broker 配置
+        if (baseUrl) deviceData.baseUrl = baseUrl // MQTT broker URL
+        if (apiKey) deviceData.apiKey = apiKey // MQTT username
+        if (accessToken) deviceData.accessToken = accessToken // MQTT password
+        if (deviceId) deviceData.groupAddress = deviceId // KNX group address
+        deviceData.connectionType = 'mqtt'
       } else {
         // MQTT 設備
         deviceData.connectionType = 'mqtt'
@@ -633,7 +641,7 @@ export default function ProvisioningModal({
         updateTuyaHomeMapping(data.householdId, data.tuyaHomeId)
       }
       
-      if (vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant') {
+      if (vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant' || vendor === 'knx') {
         setStatus('success')
         toast.success('配網成功！')
         
@@ -769,6 +777,16 @@ export default function ProvisioningModal({
     } else if (vendor === 'philips' || vendor === 'panasonic') {
       if (!baseUrl || !apiKey) {
         toast.error('Base URL 和 API Key 為必填項')
+        return
+      }
+    } else if (vendor === 'knx') {
+      if (!baseUrl) {
+        toast.error('MQTT Broker URL 為必填項')
+        return
+      }
+      // KNX 設備可以手動輸入 group address，也可以通過發現獲取
+      if (!deviceId && discoveredDevices.length === 0) {
+        toast.error('請輸入 KNX 群組地址或點擊「發現設備」')
         return
       }
     } else if (vendor === 'homeassistant') {
@@ -1136,6 +1154,7 @@ export default function ProvisioningModal({
 
   const isMQTTDevice = vendor === 'tuya' || vendor === 'midea' || vendor === 'esp'
   const isRESTfulDevice = vendor === 'philips' || vendor === 'panasonic' || vendor === 'homeassistant'
+  const isKNXDevice = vendor === 'knx'
 
   if (!isOpen) return null
 
@@ -1153,6 +1172,7 @@ export default function ProvisioningModal({
             {vendor === 'homeassistant' && 'Home Assistant 設備添加'}
             {vendor === 'shelly' && 'Shelly 設備添加'}
             {vendor === 'aqara' && 'Aqara 設備添加'}
+            {vendor === 'knx' && 'KNX 設備配網'}
           </h2>
           <button
             onClick={handleClose}
@@ -1239,6 +1259,7 @@ export default function ProvisioningModal({
                   <option value="philips">Philips Hue</option>
                   <option value="panasonic">Panasonic（松下）</option>
                   <option value="homeassistant">Home Assistant</option>
+                  <option value="knx">KNX（建築自動化）</option>
                 </select>
               </div>
             )}
@@ -2058,18 +2079,18 @@ export default function ProvisioningModal({
                   </>
                 )}
 
-            {/* RESTful 設備配置（Philips, Panasonic, Home Assistant） */}
-            {isRESTfulDevice && (
+            {/* RESTful 設備配置（Philips, Panasonic, Home Assistant）和 KNX 配置 */}
+            {(isRESTfulDevice || isKNXDevice) && (
               <>
                 {/* Debug info in development */}
                 {process.env.NODE_ENV === 'development' && (
                   <div className="text-xs text-gray-400 mb-2 p-2 bg-yellow-50 rounded">
-                    Debug: vendor={vendor}, isRESTfulDevice={isRESTfulDevice ? 'true' : 'false'}
+                    Debug: vendor={vendor}, isRESTfulDevice={isRESTfulDevice ? 'true' : 'false'}, isKNXDevice={isKNXDevice ? 'true' : 'false'}
                   </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    API Base URL <span className="text-red-500">*</span>
+                    {isKNXDevice ? 'MQTT Broker URL' : 'API Base URL'} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -2080,6 +2101,8 @@ export default function ProvisioningModal({
                         ? "e.g., http://192.168.1.100 (Hue Bridge IP)" 
                         : vendor === 'homeassistant'
                         ? "e.g., https://demoha.smtengo.com/"
+                        : vendor === 'knx'
+                        ? "e.g., mqtts://d0711c16.ala.asia-southeast1.emqxsl.com:8883"
                         : "e.g., https://api.panasonic.com"
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -2090,9 +2113,14 @@ export default function ProvisioningModal({
                       輸入 Home Assistant 服務器 URL
                     </p>
                   )}
+                  {vendor === 'knx' && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      輸入 EMQX MQTT Broker URL（KNX2MQTT 網關連接的 MQTT broker）
+                    </p>
+                  )}
                 </div>
 
-                {vendor !== 'homeassistant' && (
+                {vendor !== 'homeassistant' && vendor !== 'knx' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       API Key <span className="text-red-500">*</span>
@@ -2106,6 +2134,53 @@ export default function ProvisioningModal({
                       disabled={status !== 'idle'}
                     />
                   </div>
+                )}
+
+                {vendor === 'knx' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        MQTT Username ({t('optional')})
+                      </label>
+                      <input
+                        type="text"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="MQTT Broker Username"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        MQTT Password ({t('optional')})
+                      </label>
+                      <input
+                        type="password"
+                        value={accessToken}
+                        onChange={(e) => setAccessToken(e.target.value)}
+                        placeholder="MQTT Broker Password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        KNX 群組地址 ({t('optional')})
+                      </label>
+                      <input
+                        type="text"
+                        value={deviceId}
+                        onChange={(e) => setDeviceId(e.target.value)}
+                        placeholder="e.g., 1/2/3 或 1.2.3 (留空以自動發現)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={status !== 'idle'}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        輸入 KNX 群組地址（格式：區域/線路/設備，如 1/2/3）或留空以自動發現設備
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 {vendor === 'homeassistant' && (
@@ -2275,7 +2350,7 @@ export default function ProvisioningModal({
             <div>
               <button
                 onClick={handleDiscoverDevices}
-                disabled={isDiscovering || ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey))}
+                disabled={isDiscovering || ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey)) || (vendor === 'knx' && !baseUrl)}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 <MagnifyingGlassIcon className="h-5 w-5" />
@@ -2369,6 +2444,7 @@ export default function ProvisioningModal({
                     (isMQTTDevice && (!ssid || !password)) ||
                     ((vendor === 'philips' || vendor === 'panasonic') && (!baseUrl || !apiKey)) ||
                     (vendor === 'homeassistant' && (!baseUrl?.trim() || !accessToken?.trim()) && (!deviceId && selectedEntities.size === 0)) ||
+                    (vendor === 'knx' && !baseUrl) ||
                     status !== 'idle'
                   }
                   className="flex-1 bg-blue-600 text-white px-3 sm:px-4 py-2 text-sm sm:text-base rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"

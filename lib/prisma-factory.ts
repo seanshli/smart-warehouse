@@ -1,21 +1,30 @@
+// Prisma 7 Factory - Creates fresh Prisma clients
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 // Factory function to create fresh Prisma clients
 export function createPrismaClient(): PrismaClient {
-  // Create unique connection string with timestamp to avoid prepared statement conflicts
-  const timestamp = Date.now()
-  const randomId = Math.random().toString(36).substring(7)
-  const connectionParams = process.env.NODE_ENV === 'production' 
-    ? `?sslmode=require&connection_limit=1&pool_timeout=20&connect_timeout=60&prepared_statements=false&pgbouncer=true&statement_timeout=30000&timestamp=${timestamp}_${randomId}`
-    : ''
-  
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is required')
+  }
+
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  const pool = new Pool({
+    connectionString,
+    ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+    max: isProduction ? 1 : 10,
+    idleTimeoutMillis: isProduction ? 0 : 30000,
+    connectionTimeoutMillis: 60000,
+  })
+
+  const adapter = new PrismaPg(pool)
+
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL + connectionParams,
-      },
-    },
+    adapter,
     // Add transaction options to prevent prepared statement conflicts
     transactionOptions: {
       maxWait: 5000, // 5 seconds

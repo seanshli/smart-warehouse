@@ -1,14 +1,26 @@
+// Prisma 7 Safe Client with retry logic
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 // Create a safe Prisma client with retry logic for prepared statement conflicts
 export function createSafePrismaClient(): PrismaClient {
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is required')
+  }
+
+  const pool = new Pool({
+    connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+    max: 1,
+  })
+
+  const adapter = new PrismaPg(pool)
+
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
+    adapter,
   })
 
   // Add retry logic for prepared statement conflicts

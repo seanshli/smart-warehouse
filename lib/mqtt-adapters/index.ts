@@ -6,6 +6,8 @@ export { ESPAdapter, type ESPDeviceState, type ESPControlCommand } from './esp-a
 export { MideaAdapter, type MideaDeviceState, type MideaControlCommand } from './midea-adapter'
 export { ShellyAdapter, type ShellyDeviceState, type ShellyControlCommand } from './shelly-adapter'
 export { AqaraAdapter, type AqaraDeviceState, type AqaraControlCommand } from './aqara-adapter'
+export { PhilipsMQTTAdapter, type PhilipsMQTTDeviceState, type PhilipsMQTTControlCommand } from './philips-mqtt-adapter'
+export { PanasonicMQTTAdapter, type PanasonicMQTTDeviceState, type PanasonicMQTTControlCommand } from './panasonic-mqtt-adapter'
 
 import { DeviceVendor, IoTDevice } from '../mqtt-client'
 import { TuyaAdapter } from './tuya-adapter'
@@ -13,6 +15,8 @@ import { ESPAdapter } from './esp-adapter'
 import { MideaAdapter } from './midea-adapter'
 import { ShellyAdapter } from './shelly-adapter'
 import { AqaraAdapter } from './aqara-adapter'
+import { PhilipsMQTTAdapter } from './philips-mqtt-adapter'
+import { PanasonicMQTTAdapter } from './panasonic-mqtt-adapter'
 
 /**
  * 適配器工廠
@@ -31,6 +35,10 @@ export class AdapterFactory {
         return ShellyAdapter
       case 'aqara':
         return AqaraAdapter
+      case 'philips':
+        return PhilipsMQTTAdapter
+      case 'panasonic':
+        return PanasonicMQTTAdapter
       default:
         throw new Error(`Unsupported vendor: ${vendor}`)
     }
@@ -48,6 +56,10 @@ export class AdapterFactory {
       return 'shelly'
     } else if (topic.startsWith('zigbee2mqtt/')) {
       return 'aqara'
+    } else if (topic.startsWith('philips/')) {
+      return 'philips'
+    } else if (topic.startsWith('panasonic/')) {
+      return 'panasonic'
     }
     return null
   }
@@ -74,6 +86,17 @@ export class AdapterFactory {
         return null
       }
       return (Adapter as typeof ShellyAdapter).createDevice(deviceId, name, channel, generation)
+    } else if (vendor === 'philips' && typeof parseResult === 'object') {
+      // Philips adapter returns { bridgeId, lightId, sensorId }
+      const { bridgeId, lightId, sensorId } = parseResult
+      if (!bridgeId || (!lightId && !sensorId)) {
+        return null
+      }
+      if (lightId) {
+        return (Adapter as typeof PhilipsMQTTAdapter).createDevice(bridgeId, lightId, name)
+      }
+      // For sensors, use bridgeId_sensorId as device ID
+      return (Adapter as typeof PhilipsMQTTAdapter).createDevice(bridgeId, sensorId!, name)
     } else if (typeof parseResult === 'string') {
       // Other adapters return string | null
       return Adapter.createDevice(parseResult, name)

@@ -36,11 +36,22 @@ export async function GET(request: NextRequest) {
 
     // Get broker URL from config
     const brokerUrl = process.env.MQTT_BROKER_URL || 'not configured'
+    const brokerType = brokerUrl.includes('emqx') ? 'EMQX' : 
+                      brokerUrl.includes('hivemq') ? 'HiveMQ' :
+                      brokerUrl.includes('mosquitto') ? 'Mosquitto' : 'Unknown'
+    
+    // Get connection stats
+    const { getMQTTConnectionStats } = await import('@/lib/mqtt-client')
+    const connectionStats = getMQTTConnectionStats()
+    const activeConnections = connectionStats.filter(s => s.connected).length
     
     return NextResponse.json({
       connected: true,
       brokerUrl,
+      brokerType,
       clientId: process.env.MQTT_CLIENT_ID || 'smart-warehouse-dev',
+      activeConnections,
+      totalConnections: connectionStats.length,
       timestamp: new Date().toISOString(),
     })
   } catch (error: any) {

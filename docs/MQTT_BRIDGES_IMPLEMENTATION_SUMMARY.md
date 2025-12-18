@@ -18,6 +18,7 @@ All brands (Tuya, Midea, Philips Hue, Panasonic, and Aqara) now have full MQTT s
 | **Panasonic** | ✅ `panasonic-mqtt-adapter.ts` | ✅ `panasonic-bridge.ts` | ✅ Complete |
 | **Aqara** | ✅ `aqara-adapter.ts` | ✅ `aqara-bridge.ts` | ✅ Complete |
 | **Shelly** | ✅ `shelly-adapter.ts` | ✅ `shelly-bridge.ts` | ✅ Complete |
+| **KNX** | ✅ `knx-adapter.ts` | ✅ `knx-bridge.ts` | ✅ Complete |
 
 ---
 
@@ -92,15 +93,6 @@ zigbee2mqtt/{device_friendly_name}        # Device status
 zigbee2mqtt/{device_friendly_name}/set     # Control commands
 ```
 
-### Shelly
-```
-shellies/{device_id}/relay/{channel}              # Gen1: Device status
-shellies/{device_id}/relay/{channel}/command      # Gen1: Control commands
-{topic_prefix}/status/switch:{id}                 # Gen2: Device status
-{topic_prefix}/command/switch:{id}                # Gen2: Control commands
-{topic_prefix}/announce                            # Device announcement
-```
-
 ---
 
 ## 🚀 Usage Examples
@@ -154,6 +146,21 @@ const bridge = getAqaraBridge({
 await bridge.start()
 ```
 
+#### Shelly Bridge
+```typescript
+import { getShellyBridge } from '@/lib/mqtt-bridge/shelly-bridge'
+
+const bridge = getShellyBridge({
+  mqttBrokerUrl: process.env.MQTT_BROKER_URL!,
+  mqttUsername: process.env.MQTT_USERNAME,
+  mqttPassword: process.env.MQTT_PASSWORD,
+  shellyPrefix: 'shellies', // Default for Gen1
+  pollInterval: 10000, // 10 seconds
+})
+
+await bridge.start()
+```
+
 ---
 
 ## ✅ Features Implemented
@@ -199,6 +206,15 @@ await bridge.start()
 5. **Manage**: Track device online/offline status
 6. **Control**: Send commands via Zigbee2MQTT set topics
 
+### Shelly Bridge Flow:
+1. **Start**: Connect to MQTT broker and subscribe to Shelly topics
+2. **Request**: Request device announcements from Gen1 devices
+3. **Monitor**: Monitor device status updates (Gen1 and Gen2)
+4. **Discover**: Discover devices from announcements and status messages
+5. **Detect**: Auto-detect device generation (Gen1 vs Gen2)
+6. **Manage**: Track device online/offline status and channel count
+7. **Control**: Send commands via appropriate topic format for each generation
+
 ---
 
 ## 📋 Integration Checklist
@@ -208,6 +224,7 @@ await bridge.start()
 - [x] Created Philips MQTT bridge
 - [x] Created Panasonic MQTT bridge
 - [x] Created Aqara MQTT bridge service
+- [x] Created Shelly MQTT bridge service
 - [x] Updated adapter factory to include new adapters
 - [x] Updated vendor detection for new topic prefixes
 - [x] Enhanced device creation from topics

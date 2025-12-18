@@ -23,7 +23,7 @@ export interface MQTTMessage {
 }
 
 // 設備供應商類型
-export type DeviceVendor = 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant' | 'shelly' | 'aqara' | 'generic'
+export type DeviceVendor = 'tuya' | 'esp' | 'midea' | 'philips' | 'panasonic' | 'homeassistant' | 'shelly' | 'aqara' | 'knx' | 'generic'
 
 // 設備資訊介面
 export interface IoTDevice {

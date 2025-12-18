@@ -8,6 +8,7 @@ export { ShellyAdapter, type ShellyDeviceState, type ShellyControlCommand } from
 export { AqaraAdapter, type AqaraDeviceState, type AqaraControlCommand } from './aqara-adapter'
 export { PhilipsMQTTAdapter, type PhilipsMQTTDeviceState, type PhilipsMQTTControlCommand } from './philips-mqtt-adapter'
 export { PanasonicMQTTAdapter, type PanasonicMQTTDeviceState, type PanasonicMQTTControlCommand } from './panasonic-mqtt-adapter'
+export { KNXAdapter, type KNXDeviceState, type KNXControlCommand } from './knx-adapter'
 
 import { DeviceVendor, IoTDevice } from '../mqtt-client'
 import { TuyaAdapter } from './tuya-adapter'
@@ -17,6 +18,7 @@ import { ShellyAdapter } from './shelly-adapter'
 import { AqaraAdapter } from './aqara-adapter'
 import { PhilipsMQTTAdapter } from './philips-mqtt-adapter'
 import { PanasonicMQTTAdapter } from './panasonic-mqtt-adapter'
+import { KNXAdapter } from './knx-adapter'
 
 /**
  * 適配器工廠
@@ -60,6 +62,8 @@ export class AdapterFactory {
       return 'philips'
     } else if (topic.startsWith('panasonic/')) {
       return 'panasonic'
+    } else if (topic.startsWith('knx/')) {
+      return 'knx'
     }
     return null
   }

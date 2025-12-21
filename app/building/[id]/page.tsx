@@ -102,13 +102,21 @@ export default function BuildingDetailPage() {
 
   const checkCateringService = async () => {
     try {
-      const response = await fetch(`/api/catering/service?buildingId=${buildingId}`)
+      const response = await fetch(`/api/catering/service?buildingId=${buildingId}`, {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
-        setCateringServiceEnabled(data.service?.isActive || false)
+        const isEnabled = data.service?.isActive || false
+        setCateringServiceEnabled(isEnabled)
+        console.log('[BuildingPage] Catering service status:', isEnabled, data.service)
+      } else {
+        console.log('[BuildingPage] No catering service found')
+        setCateringServiceEnabled(false)
       }
     } catch (error) {
       console.error('Error checking catering service:', error)
+      setCateringServiceEnabled(false)
     }
   }
 
@@ -266,7 +274,7 @@ export default function BuildingDetailPage() {
 
           {/* Tab Content */}
           <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} onCateringEnabled={() => setSetupModalOpen(true)} />}
+          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} onCateringEnabled={() => setSetupModalOpen(true)} onServiceCheck={checkCateringService} />}
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
           {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
@@ -334,7 +342,7 @@ export default function BuildingDetailPage() {
   )
 }
 
-function OverviewTab({ building, buildingId, onNavigateTab, onCateringEnabled }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'working-groups') => void; onCateringEnabled?: () => void }) {
+function OverviewTab({ building, buildingId, onNavigateTab, onCateringEnabled, onServiceCheck }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'working-groups' | 'catering') => void; onCateringEnabled?: () => void; onServiceCheck?: () => void }) {
   const { t } = useLanguage()
   const [settingUp, setSettingUp] = useState(false)
   const [setupStatus, setSetupStatus] = useState<{
@@ -526,7 +534,17 @@ function OverviewTab({ building, buildingId, onNavigateTab, onCateringEnabled }:
             <dd className="mt-1">
               <CateringToggle
                 buildingId={buildingId}
-                onEnabled={onCateringEnabled}
+                onEnabled={() => {
+                  if (onCateringEnabled) {
+                    onCateringEnabled()
+                  }
+                  // Also refresh the service check
+                  if (onServiceCheck) {
+                    setTimeout(() => {
+                      onServiceCheck()
+                    }, 500)
+                  }
+                }}
               />
             </dd>
           </div>

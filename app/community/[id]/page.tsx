@@ -70,13 +70,21 @@ export default function CommunityDetailPage() {
 
   const checkCateringService = async () => {
     try {
-      const response = await fetch(`/api/catering/service?communityId=${communityId}`)
+      const response = await fetch(`/api/catering/service?communityId=${communityId}`, {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
-        setCateringServiceEnabled(data.service?.isActive || false)
+        const isEnabled = data.service?.isActive || false
+        setCateringServiceEnabled(isEnabled)
+        console.log('[CommunityPage] Catering service status:', isEnabled, data.service)
+      } else {
+        console.log('[CommunityPage] No catering service found')
+        setCateringServiceEnabled(false)
       }
     } catch (error) {
       console.error('Error checking catering service:', error)
+      setCateringServiceEnabled(false)
     }
   }
 
@@ -248,7 +256,7 @@ export default function CommunityDetailPage() {
 
           {/* Tab Content */}
           <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && community && <OverviewTab community={community} onCateringEnabled={() => setSetupModalOpen(true)} />}
+          {activeTab === 'overview' && community && <OverviewTab community={community} onCateringEnabled={() => setSetupModalOpen(true)} onServiceCheck={checkCateringService} />}
           {activeTab === 'buildings' && communityId && <BuildingsTab communityId={communityId} />}
           {activeTab === 'members' && communityId && <MembersTab communityId={communityId} />}
           {activeTab === 'working-groups' && communityId && <WorkingGroupsTab communityId={communityId} />}
@@ -302,7 +310,7 @@ export default function CommunityDetailPage() {
   )
 }
 
-function OverviewTab({ community, onCateringEnabled }: { community: Community; onCateringEnabled?: () => void }) {
+function OverviewTab({ community, onCateringEnabled, onServiceCheck }: { community: Community; onCateringEnabled?: () => void; onServiceCheck?: () => void }) {
   const { t, currentLanguage } = useLanguage()
   const communityId = community.id
   const [buildings, setBuildings] = useState<any[]>([])
@@ -351,7 +359,17 @@ function OverviewTab({ community, onCateringEnabled }: { community: Community; o
             <dd className="mt-1">
               <CateringToggle
                 communityId={communityId}
-                onEnabled={onCateringEnabled}
+                onEnabled={() => {
+                  if (onCateringEnabled) {
+                    onCateringEnabled()
+                  }
+                  // Also refresh the service check
+                  if (onServiceCheck) {
+                    setTimeout(() => {
+                      onServiceCheck()
+                    }, 500)
+                  }
+                }}
               />
             </dd>
           </div>

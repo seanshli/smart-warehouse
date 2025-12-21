@@ -1,5 +1,8 @@
 'use client'
 
+// For static export compatibility
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
@@ -47,6 +50,14 @@ export default function AdminBuildingsPage() {
 
   useEffect(() => {
     fetchCommunities()
+    // If communityId is in URL, use it
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const urlCommunityId = urlParams.get('communityId')
+      if (urlCommunityId) {
+        setSelectedCommunity(urlCommunityId)
+      }
+    }
   }, [])
 
   useEffect(() => {

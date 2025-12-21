@@ -72,6 +72,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     name: '',
     description: '',
     imageUrl: '',
+    imageFile: null as File | null,
     cost: '',
     quantityAvailable: 0,
     categoryId: '',
@@ -79,6 +80,30 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     availableAllDay: true,
     timeSlots: [] as Array<{ dayOfWeek: number; startTime: string; endTime: string }>
   })
+  
+  // Batch upload
+  const [showBatchUpload, setShowBatchUpload] = useState(false)
+  const [batchItems, setBatchItems] = useState<Array<{
+    name: string
+    description: string
+    imageFile: File | null
+    imageUrl: string
+    cost: string
+    quantityAvailable: number
+    categoryId: string
+    isActive: boolean
+    availableAllDay: boolean
+  }>>([{
+    name: '',
+    description: '',
+    imageFile: null,
+    imageUrl: '',
+    cost: '',
+    quantityAvailable: 0,
+    categoryId: '',
+    isActive: true,
+    availableAllDay: true,
+  }])
 
   useEffect(() => {
     loadData()
@@ -330,6 +355,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       name: item.name,
       description: item.description || '',
       imageUrl: item.imageUrl || '',
+      imageFile: null,
       cost: item.cost.toString(),
       quantityAvailable: item.quantityAvailable || 0,
       categoryId: item.category?.id || '',
@@ -349,6 +375,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       name: '',
       description: '',
       imageUrl: '',
+      imageFile: null,
       cost: '',
       quantityAvailable: 0,
       categoryId: '',
@@ -356,6 +383,135 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       availableAllDay: true,
       timeSlots: [],
     })
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isBatch = false, batchIndex?: number) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('請選擇圖片檔案')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast.error('圖片大小不能超過 5MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      if (isBatch && batchIndex !== undefined) {
+        const newBatch = [...batchItems]
+        newBatch[batchIndex] = {
+          ...newBatch[batchIndex],
+          imageFile: file,
+          imageUrl: base64,
+        }
+        setBatchItems(newBatch)
+      } else {
+        setItemForm({
+          ...itemForm,
+          imageFile: file,
+          imageUrl: base64,
+        })
+      }
+    }
+    reader.onerror = () => {
+      toast.error('讀取圖片失敗')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const addBatchItem = () => {
+    setBatchItems([...batchItems, {
+      name: '',
+      description: '',
+      imageFile: null,
+      imageUrl: '',
+      cost: '',
+      quantityAvailable: 0,
+      categoryId: '',
+      isActive: true,
+      availableAllDay: true,
+    }])
+  }
+
+  const removeBatchItem = (index: number) => {
+    if (batchItems.length > 1) {
+      setBatchItems(batchItems.filter((_, i) => i !== index))
+    }
+  }
+
+  const handleBatchUpload = async () => {
+    if (!service?.id) {
+      toast.error('服務不存在')
+      return
+    }
+
+    // Validate all items
+    for (let i = 0; i < batchItems.length; i++) {
+      const item = batchItems[i]
+      if (!item.name.trim() || !item.cost) {
+        toast.error(`第 ${i + 1} 個項目：名稱和價格為必填`)
+        return
+      }
+    }
+
+    try {
+      let successCount = 0
+      let failCount = 0
+
+      for (const item of batchItems) {
+        try {
+          const response = await fetch('/api/catering/menu', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              serviceId: service.id,
+              categoryId: item.categoryId || undefined,
+              name: item.name,
+              description: item.description || undefined,
+              imageUrl: item.imageUrl || undefined,
+              cost: parseFloat(item.cost),
+              quantityAvailable: parseInt(item.quantityAvailable.toString()) || 0,
+              isActive: item.isActive,
+              availableAllDay: item.availableAllDay,
+              timeSlots: [],
+            }),
+          })
+
+          if (response.ok) {
+            successCount++
+          } else {
+            failCount++
+          }
+        } catch (error) {
+          console.error('Error creating batch item:', error)
+          failCount++
+        }
+      }
+
+      toast.success(`批次上傳完成：成功 ${successCount} 個，失敗 ${failCount} 個`)
+      setShowBatchUpload(false)
+      setBatchItems([{
+        name: '',
+        description: '',
+        imageFile: null,
+        imageUrl: '',
+        cost: '',
+        quantityAvailable: 0,
+        categoryId: '',
+        isActive: true,
+        availableAllDay: true,
+      }])
+      loadData()
+    } catch (error) {
+      console.error('Error in batch upload:', error)
+      toast.error('批次上傳失敗')
+    }
   }
 
   const addTimeSlot = () => {
@@ -582,17 +738,28 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">管理菜單項目</h3>
-            <button
-              onClick={() => {
-                setEditingItem(null)
-                resetItemForm()
-                setShowItemForm(true)
-              }}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              新增項目
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setShowBatchUpload(true)
+                }}
+                className="inline-flex items-center px-4 py-2 border border-primary-600 text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50"
+              >
+                <PhotoIcon className="h-4 w-4 mr-2" />
+                批次上傳
+              </button>
+              <button
+                onClick={() => {
+                  setEditingItem(null)
+                  resetItemForm()
+                  setShowItemForm(true)
+                }}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                新增項目
+              </button>
+            </div>
           </div>
 
           {menuItems.length === 0 ? (
@@ -632,7 +799,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.description}</p>
                       )}
                       <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600 dark:text-gray-300">
-                        <span>價格: ${parseFloat(item.cost.toString()).toFixed(2)}</span>
+                        <span>售價: ${parseFloat(item.cost.toString()).toFixed(2)} 台幣</span>
                         <span>庫存: {item.quantityAvailable}</span>
                         {item.category && (
                           <span>分類: {item.category.name}</span>
@@ -734,16 +901,19 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          價格 (成本) *
+                          售價 (台幣) *
                         </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          required
-                          value={itemForm.cost}
-                          onChange={(e) => setItemForm({ ...itemForm, cost: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                        />
+                        <div className="flex items-center">
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            value={itemForm.cost}
+                            onChange={(e) => setItemForm({ ...itemForm, cost: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                          />
+                          <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">台幣</span>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -772,25 +942,42 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        圖片 URL
+                        圖片
                       </label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="url"
-                          value={itemForm.imageUrl}
-                          onChange={(e) => setItemForm({ ...itemForm, imageUrl: e.target.value })}
-                          placeholder="https://example.com/image.jpg"
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                        />
-                        {itemForm.imageUrl && (
-                          <img
-                            src={itemForm.imageUrl}
-                            alt="Preview"
-                            className="h-12 w-12 object-cover rounded"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none'
-                            }}
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
                           />
+                          {itemForm.imageFile && (
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {itemForm.imageFile.name}
+                            </span>
+                          )}
+                        </div>
+                        {itemForm.imageUrl && (
+                          <div className="relative">
+                            <img
+                              src={itemForm.imageUrl}
+                              alt="Preview"
+                              className="h-32 w-32 object-cover rounded border border-gray-300 dark:border-gray-600"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setItemForm({ ...itemForm, imageUrl: '', imageFile: null })
+                              }}
+                              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                            >
+                              <XMarkIcon className="h-4 w-4" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -877,6 +1064,259 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Batch Upload Modal */}
+          {showBatchUpload && (
+            <div className="fixed inset-0 z-50 overflow-y-auto">
+              <div className="flex items-center justify-center min-h-screen px-4">
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => {
+                  setShowBatchUpload(false)
+                  setBatchItems([{
+                    name: '',
+                    description: '',
+                    imageFile: null,
+                    imageUrl: '',
+                    cost: '',
+                    quantityAvailable: 0,
+                    categoryId: '',
+                    isActive: true,
+                    availableAllDay: true,
+                  }])
+                }} />
+                <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      批次上傳菜單項目
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowBatchUpload(false)
+                        setBatchItems([{
+                          name: '',
+                          description: '',
+                          imageFile: null,
+                          imageUrl: '',
+                          cost: '',
+                          quantityAvailable: 0,
+                          categoryId: '',
+                          isActive: true,
+                          availableAllDay: true,
+                        }])
+                      }}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <XMarkIcon className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {batchItems.map((item, index) => (
+                      <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-medium text-gray-900 dark:text-white">項目 {index + 1}</h4>
+                          {batchItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeBatchItem(index)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              項目名稱 *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={item.name}
+                              onChange={(e) => {
+                                const newBatch = [...batchItems]
+                                newBatch[index].name = e.target.value
+                                setBatchItems(newBatch)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              分類
+                            </label>
+                            <select
+                              value={item.categoryId}
+                              onChange={(e) => {
+                                const newBatch = [...batchItems]
+                                newBatch[index].categoryId = e.target.value
+                                setBatchItems(newBatch)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                            >
+                              <option value="">無分類</option>
+                              {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            描述
+                          </label>
+                          <textarea
+                            value={item.description}
+                            onChange={(e) => {
+                              const newBatch = [...batchItems]
+                              newBatch[index].description = e.target.value
+                              setBatchItems(newBatch)
+                            }}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              售價 (台幣) *
+                            </label>
+                            <div className="flex items-center">
+                              <input
+                                type="number"
+                                step="0.01"
+                                required
+                                value={item.cost}
+                                onChange={(e) => {
+                                  const newBatch = [...batchItems]
+                                  newBatch[index].cost = e.target.value
+                                  setBatchItems(newBatch)
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                              />
+                              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">台幣</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              可用數量
+                            </label>
+                            <input
+                              type="number"
+                              value={item.quantityAvailable}
+                              onChange={(e) => {
+                                const newBatch = [...batchItems]
+                                newBatch[index].quantityAvailable = parseInt(e.target.value) || 0
+                                setBatchItems(newBatch)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              狀態
+                            </label>
+                            <select
+                              value={item.isActive ? 'true' : 'false'}
+                              onChange={(e) => {
+                                const newBatch = [...batchItems]
+                                newBatch[index].isActive = e.target.value === 'true'
+                                setBatchItems(newBatch)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                            >
+                              <option value="true">啟用</option>
+                              <option value="false">停用</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            圖片
+                          </label>
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload(e, true, index)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
+                            />
+                            {item.imageFile && (
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {item.imageFile.name}
+                              </span>
+                            )}
+                            {item.imageUrl && (
+                              <div className="relative inline-block">
+                                <img
+                                  src={item.imageUrl}
+                                  alt="Preview"
+                                  className="h-24 w-24 object-cover rounded border border-gray-300 dark:border-gray-600"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newBatch = [...batchItems]
+                                    newBatch[index].imageUrl = ''
+                                    newBatch[index].imageFile = null
+                                    setBatchItems(newBatch)
+                                  }}
+                                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                >
+                                  <XMarkIcon className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-300 dark:border-gray-600">
+                      <button
+                        type="button"
+                        onClick={addBatchItem}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        新增項目
+                      </button>
+                      <div className="flex space-x-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowBatchUpload(false)
+                            setBatchItems([{
+                              name: '',
+                              description: '',
+                              imageFile: null,
+                              imageUrl: '',
+                              cost: '',
+                              quantityAvailable: 0,
+                              categoryId: '',
+                              isActive: true,
+                              availableAllDay: true,
+                            }])
+                          }}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                        >
+                          取消
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleBatchUpload}
+                          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                        >
+                          批次上傳 ({batchItems.length} 個項目)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

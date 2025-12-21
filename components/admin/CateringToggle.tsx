@@ -91,6 +91,13 @@ export default function CateringToggle({ buildingId, communityId, onEnabled }: C
           setService(newService)
           toast.success(t('cateringServiceEnabled') || 'Catering service enabled')
           
+          // Trigger page refresh to show catering tab
+          if (typeof window !== 'undefined') {
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
+          }
+          
           if (onEnabled) {
             onEnabled()
           }

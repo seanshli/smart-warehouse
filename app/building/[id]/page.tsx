@@ -24,7 +24,8 @@ import {
   UserGroupIcon,
   ChatBubbleLeftRightIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import PackageManager from '@/components/building/PackageManager'
@@ -37,6 +38,7 @@ import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
 import { BellIcon } from '@heroicons/react/24/outline'
 import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
+import CateringMenu from '@/components/catering/CateringMenu'
 
 interface Building {
   id: string
@@ -78,22 +80,37 @@ export default function BuildingDetailPage() {
       | 'facilities'
       | 'announcements'
       | 'working-groups'
+      | 'catering'
       | null) || 'overview'
 
   const [building, setBuilding] = useState<Building | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'catering'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
+  const [cateringServiceEnabled, setCateringServiceEnabled] = useState(false)
 
   useEffect(() => {
     if (buildingId) {
       fetchBuilding()
+      checkCateringService()
     }
   }, [buildingId])
+
+  const checkCateringService = async () => {
+    try {
+      const response = await fetch(`/api/catering/service?buildingId=${buildingId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setCateringServiceEnabled(data.service?.isActive || false)
+      }
+    } catch (error) {
+      console.error('Error checking catering service:', error)
+    }
+  }
 
   const fetchBuilding = async () => {
     try {
@@ -224,6 +241,8 @@ export default function BuildingDetailPage() {
                   { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups') || 'Working Groups', icon: UserGroupIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
+                  // Only show catering tab if service is enabled
+                  ...(cateringServiceEnabled ? [{ id: 'catering', name: t('catering'), icon: ShoppingBagIcon }] : []),
                 ].map((tab) => {
                   const Icon = tab.icon
                   return (
@@ -272,6 +291,13 @@ export default function BuildingDetailPage() {
               onShowCreate={() => setShowCreateAnnouncement(true)}
             />
           )}
+          {activeTab === 'catering' && buildingId && (
+            <CateringMenu
+              buildingId={buildingId}
+              communityId={building?.community?.id}
+              householdId={undefined} // Building-level view, no specific household
+            />
+          )}
           </div>
         </div>
 
@@ -297,7 +323,10 @@ export default function BuildingDetailPage() {
         {setupModalOpen && buildingId && (
           <CateringSetupModal
             buildingId={buildingId}
-            onClose={() => setSetupModalOpen(false)}
+            onClose={() => {
+              setSetupModalOpen(false)
+              checkCateringService() // Refresh service status after setup
+            }}
           />
         )}
       </div>

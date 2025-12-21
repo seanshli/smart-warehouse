@@ -43,7 +43,7 @@ interface CateringMenuItem {
 interface CateringMenuProps {
   buildingId?: string
   communityId?: string
-  householdId: string
+  householdId?: string
 }
 
 export default function CateringMenu({ buildingId, communityId, householdId }: CateringMenuProps) {

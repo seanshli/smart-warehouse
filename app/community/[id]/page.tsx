@@ -15,7 +15,8 @@ import {
   ArrowLeftIcon,
   PlusIcon,
   BellIcon,
-  ClipboardDocumentIcon
+  ClipboardDocumentIcon,
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -25,6 +26,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
 import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
+import CateringMenu from '@/components/catering/CateringMenu'
 
 interface Community {
   id: string
@@ -53,16 +55,30 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<Community | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements' | 'catering'>('overview')
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
+  const [cateringServiceEnabled, setCateringServiceEnabled] = useState(false)
 
   useEffect(() => {
     if (communityId) {
       fetchCommunity()
+      checkCateringService()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [communityId])
+
+  const checkCateringService = async () => {
+    try {
+      const response = await fetch(`/api/catering/service?communityId=${communityId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setCateringServiceEnabled(data.service?.isActive || false)
+      }
+    } catch (error) {
+      console.error('Error checking catering service:', error)
+    }
+  }
 
   const fetchCommunity = async () => {
     if (!communityId) {
@@ -207,6 +223,8 @@ export default function CommunityDetailPage() {
                   { id: 'members', name: t('members'), icon: UserGroupIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups'), icon: CogIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
+                  // Only show catering tab if service is enabled
+                  ...(cateringServiceEnabled ? [{ id: 'catering', name: t('catering'), icon: ShoppingBagIcon }] : []),
                 ].map((tab) => {
                   const Icon = tab.icon
                   return (
@@ -241,6 +259,13 @@ export default function CommunityDetailPage() {
               onShowCreate={() => setShowCreateAnnouncement(true)}
             />
           )}
+          {activeTab === 'catering' && communityId && (
+            <CateringMenu
+              communityId={communityId}
+              buildingId={undefined}
+              householdId={undefined} // Community-level view, no specific household
+            />
+          )}
           </div>
         </div>
 
@@ -266,7 +291,10 @@ export default function CommunityDetailPage() {
         {setupModalOpen && communityId && (
           <CateringSetupModal
             communityId={communityId}
-            onClose={() => setSetupModalOpen(false)}
+            onClose={() => {
+              setSetupModalOpen(false)
+              checkCateringService() // Refresh service status after setup
+            }}
           />
         )}
       </div>

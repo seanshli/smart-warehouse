@@ -390,13 +390,18 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('請選擇圖片檔案')
+    // Only accept JPG/JPEG format
+    const validTypes = ['image/jpeg', 'image/jpg']
+    const validExtensions = ['.jpg', '.jpeg']
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+    
+    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+      toast.error('請選擇 JPG 格式的圖片檔案')
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      toast.error('圖片大小不能超過 5MB')
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast.error('圖片大小不能超過 2MB')
       return
     }
 
@@ -1016,13 +1021,13 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        圖片
+                        圖片 (JPG 格式，最大 2MB)
                       </label>
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,.jpg,.jpeg"
                             onChange={handleImageUpload}
                             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
                           />
@@ -1309,12 +1314,12 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            圖片
+                            圖片 (JPG 格式，最大 2MB)
                           </label>
                           <div className="space-y-2">
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/jpeg,.jpg,.jpeg"
                               onChange={(e) => handleImageUpload(e, true, index)}
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
                             />

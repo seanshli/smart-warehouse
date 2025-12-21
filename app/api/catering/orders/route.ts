@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
         deliveryType: deliveryType || 'immediate',
         scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
         totalAmount: finalTotal,
-        status: 'submitted', // Changed from 'pending' to 'submitted' to match workflow
+        status: 'pending', // Use 'pending' to match database constraint, will be updated to 'submitted' after constraint fix
         notes: notes || null,
         items: {
           create: cart.items.map((item: any) => ({

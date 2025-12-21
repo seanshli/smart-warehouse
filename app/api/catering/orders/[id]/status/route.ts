@@ -29,7 +29,7 @@ export async function PUT(
     const { status } = body
 
     // Valid status transitions based on workflow
-    const validStatuses = ['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed', 'cancelled']
+    const validStatuses = ['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed', 'cancelled', 'pending', 'confirmed']
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },

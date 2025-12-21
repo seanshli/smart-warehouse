@@ -39,6 +39,7 @@ import { BellIcon } from '@heroicons/react/24/outline'
 import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
 import CateringMenu from '@/components/catering/CateringMenu'
+import CateringAdminManager from '@/components/admin/CateringAdminManager'
 
 interface Building {
   id: string
@@ -92,13 +93,21 @@ export default function BuildingDetailPage() {
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
   const [cateringServiceEnabled, setCateringServiceEnabled] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     if (buildingId) {
       fetchBuilding()
       checkCateringService()
+      checkAdminStatus()
     }
-  }, [buildingId])
+  }, [buildingId, session])
+
+  const checkAdminStatus = () => {
+    // Check admin status from session
+    const userIsAdmin = (session?.user as any)?.isAdmin || false
+    setIsAdmin(userIsAdmin)
+  }
 
   const checkCateringService = async () => {
     try {
@@ -300,11 +309,18 @@ export default function BuildingDetailPage() {
             />
           )}
           {activeTab === 'catering' && buildingId && (
-            <CateringMenu
-              buildingId={buildingId}
-              communityId={building?.community?.id}
-              householdId={undefined} // Building-level view, no specific household
-            />
+            isAdmin ? (
+              <CateringAdminManager
+                buildingId={buildingId}
+                communityId={building?.community?.id}
+              />
+            ) : (
+              <CateringMenu
+                buildingId={buildingId}
+                communityId={building?.community?.id}
+                householdId={undefined} // Building-level view, no specific household
+              />
+            )
           )}
           </div>
         </div>

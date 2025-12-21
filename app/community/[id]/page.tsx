@@ -27,6 +27,7 @@ import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
 import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
 import CateringMenu from '@/components/catering/CateringMenu'
+import CateringAdminManager from '@/components/admin/CateringAdminManager'
 
 interface Community {
   id: string
@@ -59,14 +60,22 @@ export default function CommunityDetailPage() {
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
   const [cateringServiceEnabled, setCateringServiceEnabled] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     if (communityId) {
       fetchCommunity()
       checkCateringService()
+      checkAdminStatus()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [communityId])
+  }, [communityId, session])
+
+  const checkAdminStatus = () => {
+    // Check admin status from session
+    const userIsAdmin = (session?.user as any)?.isAdmin || false
+    setIsAdmin(userIsAdmin)
+  }
 
   const checkCateringService = async () => {
     try {
@@ -268,11 +277,18 @@ export default function CommunityDetailPage() {
             />
           )}
           {activeTab === 'catering' && communityId && (
-            <CateringMenu
-              communityId={communityId}
-              buildingId={undefined}
-              householdId={undefined} // Community-level view, no specific household
-            />
+            isAdmin ? (
+              <CateringAdminManager
+                communityId={communityId}
+                buildingId={undefined}
+              />
+            ) : (
+              <CateringMenu
+                communityId={communityId}
+                buildingId={undefined}
+                householdId={undefined} // Community-level view, no specific household
+              />
+            )
           )}
           </div>
         </div>

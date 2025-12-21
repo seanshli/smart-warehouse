@@ -76,6 +76,7 @@ export interface Translations {
   homeAssistantShowLess: string // 顯示較少
   homeAssistantShowAll: string // 顯示全部
   homeAssistantAllDomains: string // 所有類型
+  catering: string // 餐飲服務
   mqttDevices: string // MQTT 設備
   mqttDeviceName: string // 設備名稱
   mqttDeviceId: string // 設備 ID
@@ -1216,6 +1217,7 @@ const en: Translations = {
   homeAssistantShowLess: 'Show Less',
   homeAssistantShowAll: 'Show All',
   homeAssistantAllDomains: 'All Types',
+  catering: 'Catering',
   mqttDevices: 'MQTT Devices',
   mqttDeviceName: 'Device Name',
   mqttDeviceId: 'Device ID',
@@ -2344,6 +2346,7 @@ const zhTW: Translations = {
   homeAssistantShowLess: '顯示較少',
   homeAssistantShowAll: '顯示全部',
   homeAssistantAllDomains: '所有類型',
+  catering: '餐飲服務',
   mqttDevices: 'MQTT 設備',
   mqttDeviceName: '設備名稱',
   mqttDeviceId: '設備 ID',
@@ -3391,6 +3394,7 @@ const zh: Translations = {
   homeAssistantShowLess: '显示较少',
   homeAssistantShowAll: '显示全部',
   homeAssistantAllDomains: '所有类型',
+  catering: '餐饮服务',
   mqttDevices: 'MQTT 设备',
   mqttDeviceName: '设备名称',
   mqttDeviceId: '设备 ID',
@@ -4434,6 +4438,7 @@ const ja: Translations = {
   homeAssistantShowLess: '少なく表示',
   homeAssistantShowAll: 'すべて表示',
   homeAssistantAllDomains: 'すべてのタイプ',
+  catering: 'ケータリング',
   mqttDevices: 'MQTT デバイス',
   mqttDeviceName: 'デバイス名',
   mqttDeviceId: 'デバイス ID',

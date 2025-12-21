@@ -55,6 +55,7 @@ model User {
   ticketsHouseholdSignoff MaintenanceTicket[] @relation("HouseholdSignoff")
   workLogs              MaintenanceTicketWorkLog[] @relation("WorkLogAuthor")
   signoffs              MaintenanceTicketSignoff[] @relation("SignoffAuthor")
+  cateringOrders        CateringOrder[] @relation("CateringOrderUser")
 
   @@map("users")
 }
@@ -116,6 +117,7 @@ model Community {
   workingGroups WorkingGroup[]
   workingCrews  WorkingCrew[] // Working crews for this community
   conversations Conversation[]
+  cateringService CateringService? // Catering service for this community
 
   @@map("communities")
 }
@@ -147,6 +149,7 @@ model Building {
   doorUnlockLogs DoorUnlockLog[]
   conversations  Conversation[]
   workingCrews   WorkingCrew[] // Working crews for this building
+  cateringService CateringService? // Catering service for this building
 
   @@map("buildings")
 }
@@ -280,6 +283,7 @@ model Household {
   chatHistory          ChatHistory[]         @relation("ChatHistoryHousehold") // Chat history for this household
   homeAssistantConfig  HomeAssistantConfig? // Home Assistant configuration for this household
   maintenanceTickets   MaintenanceTicket[] // Maintenance tickets requested by this household
+  cateringOrders       CateringOrder[] // Catering orders for this household
 
   @@map("households")
 }
@@ -473,6 +477,7 @@ model Notification {
   packageId             String?              @map("package_id") // Package ID for package notifications
   facilityReservationId String?              @map("facility_reservation_id") // Facility reservation ID
   maintenanceTicketId   String?              @map("maintenance_ticket_id") // Maintenance ticket ID
+  cateringOrderId       String?              @map("catering_order_id") // Catering order ID
   type                  String
   title                 String
   message               String
@@ -484,6 +489,7 @@ model Notification {
   maintenanceTicket     MaintenanceTicket?   @relation(fields: [maintenanceTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   package               Package?             @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   facilityReservation   FacilityReservation? @relation(fields: [facilityReservationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  cateringOrder         CateringOrder?       @relation(fields: [cateringOrderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("notifications")
@@ -1160,4 +1166,146 @@ model MaintenanceTicketSignoff {
 
   @@index([ticketId])
   @@map("maintenance_ticket_signoffs")
+}
+
+// ============================================
+// Food Catering Order Module
+// ============================================
+
+// Catering Service - Service availability per building or community
+model CateringService {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  buildingId  String?   @unique @map("building_id")
+  communityId String?   @unique @map("community_id")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  building    Building?  @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories  CateringCategory[]
+  menuItems   CateringMenuItem[]
+  
+  @@map("catering_services")
+}
+
+// Catering Category - Categories for organizing menu items
+model CateringCategory {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  serviceId   String    @map("service_id")
+  name        String
+  description String?
+  displayOrder Int?     @default(0) @map("display_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  service     CateringService @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  menuItems   CateringMenuItem[]
+  
+  @@index([serviceId])
+  @@index([isActive])
+  @@map("catering_categories")
+}
+
+// Catering Menu Item - Individual menu items
+model CateringMenuItem {
+  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  serviceId         String    @map("service_id")
+  categoryId        String?   @map("category_id")
+  name              String
+  description       String?   // Short description
+  imageUrl          String?   @map("image_url")
+  cost              Decimal   @db.Decimal(10, 2) // Price
+  quantityAvailable Int       @default(0) @map("quantity_available")
+  isActive          Boolean   @default(true) @map("is_active")
+  
+  // Availability time settings
+  availableAllDay   Boolean   @default(true) @map("available_all_day") // If true, available all day
+  // If availableAllDay is false, use time slots from CateringMenuItemTimeSlot
+  
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  service           CateringService @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category          CateringCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  timeSlots         CateringMenuItemTimeSlot[] // Time slots when item is available
+  orderItems        CateringOrderItem[]
+  
+  @@index([serviceId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("catering_menu_items")
+}
+
+// Catering Menu Item Time Slot - Specific time slots when item is available
+model CateringMenuItemTimeSlot {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  menuItemId  String    @map("menu_item_id")
+  dayOfWeek   Int       @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday, -1 = All days
+  startTime   String    @map("start_time") // Time in HH:mm format (e.g., "09:00")
+  endTime     String    @map("end_time") // Time in HH:mm format (e.g., "17:00")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  menuItem    CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  
+  @@index([menuItemId])
+  @@index([dayOfWeek])
+  @@map("catering_menu_item_time_slots")
+}
+
+// Catering Order - Orders placed by households
+model CateringOrder {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  householdId     String    @map("household_id")
+  orderedById     String    @map("ordered_by_id")
+  orderNumber     String    @unique @map("order_number") // e.g., "ORD-2025-001234"
+  
+  // Delivery options
+  deliveryType    String    @default("immediate") @map("delivery_type") // "immediate" | "scheduled"
+  scheduledTime   DateTime? @map("scheduled_time") @db.Timestamptz(6) // For scheduled orders
+  
+  // Order details
+  totalAmount     Decimal   @map("total_amount") @db.Decimal(10, 2)
+  status          String    @default("pending") // "pending", "confirmed", "preparing", "ready", "delivered", "cancelled"
+  notes           String?   // Special instructions
+  
+  // Timestamps
+  orderedAt       DateTime? @default(now()) @map("ordered_at") @db.Timestamptz(6)
+  confirmedAt     DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  preparedAt      DateTime? @map("prepared_at") @db.Timestamptz(6)
+  deliveredAt     DateTime? @map("delivered_at") @db.Timestamptz(6)
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  household       Household         @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orderedBy       User              @relation("CateringOrderUser", fields: [orderedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  items           CateringOrderItem[]
+  notifications   Notification[]
+  
+  @@index([householdId])
+  @@index([orderedById])
+  @@index([status])
+  @@index([orderedAt])
+  @@map("catering_orders")
+}
+
+// Catering Order Item - Items in each order
+model CateringOrderItem {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  orderId     String    @map("order_id")
+  menuItemId String    @map("menu_item_id")
+  quantity    Int       @default(1)
+  unitPrice   Decimal   @map("unit_price") @db.Decimal(10, 2) // Price at time of order
+  subtotal    Decimal   @db.Decimal(10, 2) // quantity * unitPrice
+  
+  order       CateringOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  menuItem    CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("catering_order_items")
 }

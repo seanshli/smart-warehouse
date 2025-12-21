@@ -16,6 +16,7 @@ import {
   ExclamationTriangleIcon,
   BuildingOfficeIcon,
   BellIcon,
+  ShoppingBagIcon,
 } from '@heroicons/react/24/outline'
 
 interface AdminContext {
@@ -78,6 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: t('adminChatHistory') || 'Chat History', href: '/admin/chat-history', icon: BellIcon, current: pathname === '/admin/chat-history' },
     { name: t('adminDuplicateManagement'), href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },
     { name: t('adminMaintenance'), href: '/admin/maintenance', icon: ExclamationTriangleIcon, current: pathname === '/admin/maintenance' },
+    { name: 'Catering', href: '/admin/catering', icon: ShoppingBagIcon, current: pathname.startsWith('/admin/catering') },
     { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
     { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
     { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },

@@ -164,6 +164,7 @@ export const config = {
     '/duplicates/:path*',
     '/household/:path*',
     '/join/:path*',
+    '/catering/:path*',
     // Explicitly DO NOT match:
     // - /auth/* (signin, signup, etc.)
     // - /admin-auth/* (admin auth pages)

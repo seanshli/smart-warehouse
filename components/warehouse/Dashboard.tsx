@@ -24,6 +24,7 @@ import {
   WifiIcon,
   BuildingOfficeIcon,
   ChatBubbleLeftRightIcon,
+  ShoppingBagIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import SearchModal from './SearchModal'
@@ -54,6 +55,8 @@ import DoorBellPanel from '../household/DoorBellPanel'
 import ConversationList from '../messaging/ConversationList'
 import ChatInterface from '../messaging/ChatInterface'
 import TicketList from '../maintenance/TicketList'
+import Link from 'next/link'
+import CateringMenu from '../catering/CateringMenu'
 
 // 家庭切換器組件（用於在多個家庭之間切換）
 function HouseholdSwitcher() {
@@ -410,6 +413,7 @@ export default function Dashboard() {
   
   // Add remaining tabs
   tabs.push(
+    { id: 'catering', name: t('catering') || 'Catering', icon: ShoppingBagIcon },
     { id: 'mqtt', name: t('mqttDevices') || 'MQTT Devices', icon: WifiIcon },
     { id: 'maintenance', name: (t as any)('maintenanceTickets') || '報修', icon: ExclamationTriangleIcon },
     { id: 'assistant', name: t('assistant'), icon: SparklesIcon },
@@ -612,6 +616,18 @@ export default function Dashboard() {
                  <FacilityReservationPanel householdId={household.id} />
                )}
               {activeTab === 'search' && <SearchPage />}
+              {activeTab === 'catering' && household?.id && (
+                <CateringMenu
+                  buildingId={household.buildingId || undefined}
+                  communityId={undefined} // Will be fetched by component if needed
+                  householdId={household.id}
+                />
+              )}
+              {activeTab === 'catering' && !household?.id && (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400">Please select a household to view the menu</p>
+                </div>
+              )}
               {activeTab === 'assistant' && <VoiceAssistantPanel />}
               {activeTab === 'homeassistant' && <HomeAssistantPanel />}
               {activeTab === 'mqtt' && <MQTTPanel />}

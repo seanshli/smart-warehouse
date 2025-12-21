@@ -1,0 +1,153 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { cookies } from 'next/headers'
+
+// Shopping cart stored in cookies (session-based)
+// Format: { items: [{ menuItemId, quantity, unitPrice }] }
+
+const CART_COOKIE_NAME = 'catering_cart'
+
+// GET /api/catering/cart - Get current cart
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const cookieStore = await cookies()
+    const cartCookie = cookieStore.get(CART_COOKIE_NAME)
+    
+    if (!cartCookie) {
+      return NextResponse.json({ items: [], total: 0 })
+    }
+
+    const cart = JSON.parse(cartCookie.value)
+    return NextResponse.json(cart)
+  } catch (error) {
+    console.error('Error fetching cart:', error)
+    return NextResponse.json({ items: [], total: 0 })
+  }
+}
+
+// POST /api/catering/cart/add - Add item to cart
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { menuItemId, quantity = 1 } = body
+
+    if (!menuItemId) {
+      return NextResponse.json(
+        { error: 'menuItemId is required' },
+        { status: 400 }
+      )
+    }
+
+    // Fetch menu item to get current price
+    const { createPrismaClient } = await import('@/lib/prisma-factory')
+    const prisma = createPrismaClient()
+    const menuItem = await prisma.cateringMenuItem.findUnique({
+      where: { id: menuItemId },
+    })
+
+    if (!menuItem) {
+      return NextResponse.json(
+        { error: 'Menu item not found' },
+        { status: 404 }
+      )
+    }
+
+    if (!menuItem.isActive) {
+      return NextResponse.json(
+        { error: 'Menu item is not available' },
+        { status: 400 }
+      )
+    }
+
+    if (menuItem.quantityAvailable < quantity) {
+      return NextResponse.json(
+        { error: 'Insufficient quantity available' },
+        { status: 400 }
+      )
+    }
+
+    const cookieStore = await cookies()
+    const cartCookie = cookieStore.get(CART_COOKIE_NAME)
+    
+    let cart: { items: any[]; total?: number } = { items: [] }
+    if (cartCookie) {
+      cart = JSON.parse(cartCookie.value)
+    }
+
+    // Check if item already in cart
+    const existingIndex = cart.items.findIndex(
+      (item: any) => item.menuItemId === menuItemId
+    )
+
+    if (existingIndex >= 0) {
+      // Update quantity
+      cart.items[existingIndex].quantity += quantity
+      cart.items[existingIndex].subtotal = 
+        cart.items[existingIndex].quantity * cart.items[existingIndex].unitPrice
+    } else {
+      // Add new item
+      cart.items.push({
+        menuItemId,
+        name: menuItem.name,
+        imageUrl: menuItem.imageUrl,
+        quantity,
+        unitPrice: parseFloat(menuItem.cost.toString()),
+        subtotal: parseFloat(menuItem.cost.toString()) * quantity,
+      })
+    }
+
+    // Calculate total
+    cart.total = cart.items.reduce(
+      (sum: number, item: any) => sum + item.subtotal,
+      0
+    )
+
+    // Save cart to cookie
+    cookieStore.set(CART_COOKIE_NAME, JSON.stringify(cart), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    })
+
+    return NextResponse.json(cart)
+  } catch (error) {
+    console.error('Error adding to cart:', error)
+    return NextResponse.json(
+      { error: 'Failed to add item to cart' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/catering/cart - Clear cart
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const cookieStore = await cookies()
+    cookieStore.delete(CART_COOKIE_NAME)
+
+    return NextResponse.json({ message: 'Cart cleared', items: [], total: 0 })
+  } catch (error) {
+    console.error('Error clearing cart:', error)
+    return NextResponse.json(
+      { error: 'Failed to clear cart' },
+      { status: 500 }
+    )
+  }
+}

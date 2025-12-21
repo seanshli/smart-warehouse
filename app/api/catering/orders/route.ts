@@ -229,6 +229,18 @@ export async function POST(request: NextRequest) {
 
     const orderNumber = `ORD-${year}-${seqNum.toString().padStart(6, '0')}`
 
+    // Validate cart total
+    const calculatedTotal = cart.items.reduce(
+      (sum: number, item: any) => sum + (item.subtotal || 0),
+      0
+    )
+    
+    if (Math.abs(calculatedTotal - (cart.total || 0)) > 0.01) {
+      console.warn('Cart total mismatch:', { calculated: calculatedTotal, cart: cart.total })
+    }
+    
+    const finalTotal = calculatedTotal > 0 ? calculatedTotal : (cart.total || 0)
+    
     // Create order with items
     const order = await prisma.cateringOrder.create({
       data: {
@@ -237,9 +249,9 @@ export async function POST(request: NextRequest) {
         orderNumber,
         deliveryType: deliveryType || 'immediate',
         scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
-        totalAmount: cart.total,
+        totalAmount: finalTotal,
         status: 'submitted', // Changed from 'pending' to 'submitted' to match workflow
-        notes,
+        notes: notes || null,
         items: {
           create: cart.items.map((item: any) => ({
             menuItemId: item.menuItemId,
@@ -276,10 +288,27 @@ export async function POST(request: NextRequest) {
     cookieStore.delete(CART_COOKIE_NAME)
 
     return NextResponse.json(order, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error placing order:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    })
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to place order'
+    if (error?.code === 'P2002') {
+      errorMessage = 'Order number conflict. Please try again.'
+    } else if (error?.code === 'P2003') {
+      errorMessage = 'Invalid reference. Please refresh and try again.'
+    } else if (error?.message) {
+      errorMessage = error.message
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to place order' },
+      { error: errorMessage, details: process.env.NODE_ENV === 'development' ? error?.message : undefined },
       { status: 500 }
     )
   }

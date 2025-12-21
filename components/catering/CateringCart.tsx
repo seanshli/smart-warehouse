@@ -135,12 +135,14 @@ export default function CateringCart() {
         setCart({ items: [], total: 0 })
         router.push(`/catering/orders?orderId=${order.id}`)
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to submit order')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Order submission error:', errorData)
+        toast.error(errorData.error || errorData.details || 'Failed to submit order')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting order:', error)
-      toast.error('Failed to submit order')
+      const errorMessage = error?.message || 'Failed to submit order. Please check your connection and try again.'
+      toast.error(errorMessage)
     } finally {
       setSubmitting(false)
     }

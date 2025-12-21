@@ -8,7 +8,8 @@ import {
   TrashIcon, 
   XMarkIcon,
   PhotoIcon,
-  ClockIcon
+  ClockIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -444,6 +445,56 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     }
   }
 
+  const handleExport = async (format: 'json' | 'csv' = 'json') => {
+    if (!service?.id) {
+      toast.error('服務不存在')
+      return
+    }
+
+    try {
+      const params = new URLSearchParams()
+      if (buildingId) params.append('buildingId', buildingId)
+      if (communityId) params.append('communityId', communityId)
+      params.append('format', format)
+
+      const response = await fetch(`/api/catering/export?${params.toString()}`, {
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        toast.error(error.error || '匯出失敗')
+        return
+      }
+
+      // Get filename from Content-Disposition header or generate one
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = `catering-export-${Date.now()}.${format}`
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast.success(`資料已匯出為 ${format.toUpperCase()} 格式`)
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      toast.error('匯出失敗')
+    }
+  }
+
   const handleBatchUpload = async () => {
     if (!service?.id) {
       toast.error('服務不存在')
@@ -553,6 +604,29 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
 
   return (
     <div className="space-y-6">
+      {/* Header with Export */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">餐飲服務管理</h2>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleExport('json')}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            title="匯出為 JSON 格式"
+          >
+            <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+            匯出 JSON
+          </button>
+          <button
+            onClick={() => handleExport('csv')}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            title="匯出為 CSV 格式"
+          >
+            <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+            匯出 CSV
+          </button>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">

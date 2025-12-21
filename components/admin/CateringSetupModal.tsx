@@ -87,11 +87,11 @@ export default function CateringSetupModal({ buildingId, communityId, onClose }:
 
     const description = prompt('Enter category description (optional):') || undefined
 
-    fetch('/api/catering/menu', {
+    // Use the correct category endpoint - categories only need name and description
+    fetch('/api/catering/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        type: 'category',
         serviceId: serviceId,
         name,
         description,

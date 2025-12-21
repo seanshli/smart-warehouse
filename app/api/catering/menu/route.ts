@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
     const categoryId = searchParams.get('categoryId')
     const includeInactive = searchParams.get('includeInactive') === 'true'
 
-    // Find service based on building or community
+    // Find service based on building or community - ensures menu is scoped to specific building/community
     let service = null
     if (buildingId) {
       service = await prisma.cateringService.findUnique({
-        where: { buildingId },
+        where: { buildingId }, // Only get service for this specific building
         include: {
           categories: {
             where: includeInactive ? undefined : { isActive: true },
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       })
     } else if (communityId) {
       service = await prisma.cateringService.findUnique({
-        where: { communityId },
+        where: { communityId }, // Only get service for this specific community
         include: {
           categories: {
             where: includeInactive ? undefined : { isActive: true },
@@ -124,6 +124,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Check if this is a category creation request (should use /api/catering/categories)
+    if (body.type === 'category') {
+      return NextResponse.json(
+        { error: 'Use /api/catering/categories endpoint to create categories' },
+        { status: 400 }
+      )
+    }
+
     const {
       serviceId,
       categoryId,
@@ -137,11 +146,45 @@ export async function POST(request: NextRequest) {
       timeSlots = [],
     } = body
 
+    // Menu items require: serviceId, name, and cost
     if (!serviceId || !name || cost === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields: serviceId, name, cost' },
         { status: 400 }
       )
+    }
+
+    // Verify service exists and get it to ensure proper scoping
+    const service = await prisma.cateringService.findUnique({
+      where: { id: serviceId },
+    })
+
+    if (!service) {
+      return NextResponse.json(
+        { error: 'Catering service not found' },
+        { status: 404 }
+      )
+    }
+
+    // If categoryId is provided, verify it belongs to the same service
+    if (categoryId) {
+      const category = await prisma.cateringCategory.findUnique({
+        where: { id: categoryId },
+      })
+      
+      if (!category) {
+        return NextResponse.json(
+          { error: 'Category not found' },
+          { status: 404 }
+        )
+      }
+      
+      if (category.serviceId !== serviceId) {
+        return NextResponse.json(
+          { error: 'Category does not belong to this service' },
+          { status: 400 }
+        )
+      }
     }
 
     // Create menu item

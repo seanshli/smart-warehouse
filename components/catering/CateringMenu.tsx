@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import CateringMenuItemCard from './CateringMenuItemCard'
-import { FunnelIcon } from '@heroicons/react/24/outline'
+import { FunnelIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 
 interface CateringService {
   id: string
@@ -48,16 +49,33 @@ interface CateringMenuProps {
 
 export default function CateringMenu({ buildingId, communityId, householdId }: CateringMenuProps) {
   const { data: session } = useSession()
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [service, setService] = useState<CateringService | null>(null)
   const [categories, setCategories] = useState<CateringCategory[]>([])
   const [menuItems, setMenuItems] = useState<CateringMenuItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [cartItemCount, setCartItemCount] = useState(0)
 
   useEffect(() => {
     loadMenu()
+    loadCartCount()
   }, [buildingId, communityId])
+
+  const loadCartCount = async () => {
+    try {
+      const response = await fetch('/api/catering/cart', {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const cart = await response.json()
+        setCartItemCount(cart.items?.length || 0)
+      }
+    } catch (error) {
+      console.error('Error loading cart count:', error)
+    }
+  }
 
   const loadMenu = async () => {
     try {
@@ -106,7 +124,7 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
 
   const handleAddToCart = async (itemId: string, quantity: number) => {
     try {
-      const response = await fetch('/api/catering/cart/add', {
+      const response = await fetch('/api/catering/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -118,7 +136,9 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
         throw new Error(error.error || 'Failed to add to cart')
       }
 
-      return response.json()
+      const result = await response.json()
+      await loadCartCount()
+      return result
     } catch (error) {
       console.error('Error adding to cart:', error)
       throw error
@@ -176,6 +196,23 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
 
   return (
     <div className="space-y-6">
+      {/* Header with Cart Button */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Menu</h2>
+        <button
+          onClick={() => router.push('/catering/cart')}
+          className="relative inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition-colors"
+        >
+          <ShoppingCartIcon className="h-5 w-5 mr-2" />
+          Cart
+          {cartItemCount > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-white text-primary-600 rounded-full text-xs font-bold">
+              {cartItemCount}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">

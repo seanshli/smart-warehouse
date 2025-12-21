@@ -1268,7 +1268,7 @@ model CateringOrder {
   
   // Order details
   totalAmount     Decimal   @map("total_amount") @db.Decimal(10, 2)
-  status          String    @default("pending") // "pending", "confirmed", "preparing", "ready", "delivered", "cancelled"
+  status          String    @default("submitted") // "submitted", "accepted", "preparing", "ready", "delivered", "closed", "cancelled"
   notes           String?   // Special instructions
   
   // Timestamps

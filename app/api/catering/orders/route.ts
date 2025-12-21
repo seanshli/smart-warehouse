@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
         deliveryType: deliveryType || 'immediate',
         scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
         totalAmount: cart.total,
-        status: 'pending',
+        status: 'submitted', // Changed from 'pending' to 'submitted' to match workflow
         notes,
         items: {
           create: cart.items.map((item: any) => ({

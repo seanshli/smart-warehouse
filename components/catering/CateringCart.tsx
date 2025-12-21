@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
-import { TrashIcon, MinusIcon, PlusIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
-import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
+import { ShoppingCartIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
+import toast from 'react-hot-toast'
+import { useHousehold } from '@/components/HouseholdProvider'
 
 interface CartItem {
   menuItemId: string
@@ -22,9 +22,13 @@ interface Cart {
 
 export default function CateringCart() {
   const router = useRouter()
+  const { household } = useHousehold()
   const [cart, setCart] = useState<Cart>({ items: [], total: 0 })
   const [loading, setLoading] = useState(true)
-  const [updating, setUpdating] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [deliveryType, setDeliveryType] = useState<'immediate' | 'scheduled'>('immediate')
+  const [scheduledTime, setScheduledTime] = useState('')
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     loadCart()
@@ -32,9 +36,13 @@ export default function CateringCart() {
 
   const loadCart = async () => {
     try {
-      const response = await fetch('/api/catering/cart')
-      const data = await response.json()
-      setCart(data)
+      const response = await fetch('/api/catering/cart', {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCart(data)
+      }
     } catch (error) {
       console.error('Error loading cart:', error)
     } finally {
@@ -42,36 +50,39 @@ export default function CateringCart() {
     }
   }
 
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 0) return
+  const updateQuantity = async (menuItemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      await removeItem(menuItemId)
+      return
+    }
 
-    setUpdating(itemId)
     try {
-      const response = await fetch(`/api/catering/cart/${itemId}`, {
+      const response = await fetch(`/api/catering/cart/${menuItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ quantity: newQuantity }),
       })
 
       if (response.ok) {
         const updatedCart = await response.json()
         setCart(updatedCart)
+        toast.success('Cart updated')
       } else {
         const error = await response.json()
         toast.error(error.error || 'Failed to update cart')
       }
     } catch (error) {
+      console.error('Error updating cart:', error)
       toast.error('Failed to update cart')
-    } finally {
-      setUpdating(null)
     }
   }
 
-  const removeItem = async (itemId: string) => {
-    setUpdating(itemId)
+  const removeItem = async (menuItemId: string) => {
     try {
-      const response = await fetch(`/api/catering/cart/${itemId}`, {
+      const response = await fetch(`/api/catering/cart/${menuItemId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -83,26 +94,55 @@ export default function CateringCart() {
         toast.error(error.error || 'Failed to remove item')
       }
     } catch (error) {
+      console.error('Error removing item:', error)
       toast.error('Failed to remove item')
-    } finally {
-      setUpdating(null)
     }
   }
 
-  const clearCart = async () => {
-    if (!confirm('Are you sure you want to clear your cart?')) return
+  const handleSubmitOrder = async () => {
+    if (!household?.id) {
+      toast.error('Please select a household')
+      return
+    }
 
+    if (cart.items.length === 0) {
+      toast.error('Cart is empty')
+      return
+    }
+
+    if (deliveryType === 'scheduled' && !scheduledTime) {
+      toast.error('Please select a scheduled delivery time')
+      return
+    }
+
+    setSubmitting(true)
     try {
-      const response = await fetch('/api/catering/cart', {
-        method: 'DELETE',
+      const response = await fetch('/api/catering/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          householdId: household.id,
+          deliveryType,
+          scheduledTime: deliveryType === 'scheduled' ? scheduledTime : undefined,
+          notes: notes.trim() || undefined,
+        }),
       })
 
       if (response.ok) {
+        const order = await response.json()
+        toast.success(`Order ${order.orderNumber} submitted successfully!`)
         setCart({ items: [], total: 0 })
-        toast.success('Cart cleared')
+        router.push(`/catering/orders?orderId=${order.id}`)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to submit order')
       }
     } catch (error) {
-      toast.error('Failed to clear cart')
+      console.error('Error submitting order:', error)
+      toast.error('Failed to submit order')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -117,94 +157,131 @@ export default function CateringCart() {
   if (cart.items.length === 0) {
     return (
       <div className="text-center py-12">
-        <ShoppingBagIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Your cart is empty</p>
-        <button
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md"
-        >
-          Continue Shopping
-        </button>
+        <ShoppingCartIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">Your cart is empty</p>
+        <p className="text-sm text-gray-500 dark:text-gray-500">
+          Add items from the menu to get started
+        </p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Shopping Cart</h2>
-        <button
-          onClick={clearCart}
-          className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
-        >
-          Clear Cart
-        </button>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'}
+        </span>
       </div>
 
+      {/* Cart Items */}
       <div className="space-y-4">
         {cart.items.map((item) => (
           <div
             key={item.menuItemId}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex gap-4"
+            className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           >
             {item.imageUrl && (
-              <div className="relative h-24 w-24 flex-shrink-0">
-                <Image
-                  src={item.imageUrl}
-                  alt={item.name}
-                  fill
-                  className="object-cover rounded"
-                />
-              </div>
+              <img
+                src={item.imageUrl}
+                alt={item.name}
+                className="h-20 w-20 object-cover rounded"
+              />
             )}
-
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                {item.name}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <h3 className="font-medium text-gray-900 dark:text-white">{item.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 ${item.unitPrice.toFixed(2)} each
               </p>
-
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(item.menuItemId, item.quantity - 1)}
-                    disabled={updating === item.menuItemId || item.quantity <= 1}
-                    className="p-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
-                  >
-                    <MinusIcon className="h-4 w-4" />
-                  </button>
-                  <span className="w-12 text-center font-medium">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => updateQuantity(item.menuItemId, item.quantity + 1)}
-                    disabled={updating === item.menuItemId}
-                    className="p-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  ${item.subtotal.toFixed(2)}
-                </span>
-
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => removeItem(item.menuItemId)}
-                  disabled={updating === item.menuItemId}
-                  className="ml-auto p-2 text-red-600 hover:text-red-700 dark:text-red-400 disabled:opacity-50"
+                  onClick={() => updateQuantity(item.menuItemId, item.quantity - 1)}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
-                  <TrashIcon className="h-5 w-5" />
+                  -
+                </button>
+                <span className="w-12 text-center font-medium">{item.quantity}</span>
+                <button
+                  onClick={() => updateQuantity(item.menuItemId, item.quantity + 1)}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  +
                 </button>
               </div>
+              <span className="w-24 text-right font-semibold text-gray-900 dark:text-white">
+                ${item.subtotal.toFixed(2)}
+              </span>
+              <button
+                onClick={() => removeItem(item.menuItemId)}
+                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+      {/* Delivery Options */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delivery Options</h3>
+        <div className="space-y-3">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="deliveryType"
+              value="immediate"
+              checked={deliveryType === 'immediate'}
+              onChange={(e) => setDeliveryType(e.target.value as 'immediate')}
+              className="mr-3"
+            />
+            <span className="text-gray-900 dark:text-white">立即送達 (Immediate)</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="deliveryType"
+              value="scheduled"
+              checked={deliveryType === 'scheduled'}
+              onChange={(e) => setDeliveryType(e.target.value as 'scheduled')}
+              className="mr-3"
+            />
+            <span className="text-gray-900 dark:text-white">預約送達 (Scheduled)</span>
+          </label>
+        </div>
+        {deliveryType === 'scheduled' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Scheduled Delivery Time
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduledTime}
+              onChange={(e) => setScheduledTime(e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Special Instructions (Optional)
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Any special requests or instructions..."
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      </div>
+
+      {/* Order Summary */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg font-semibold text-gray-900 dark:text-white">Total</span>
           <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
@@ -212,11 +289,17 @@ export default function CateringCart() {
           </span>
         </div>
         <button
-          onClick={() => router.push('/catering/checkout')}
-          className="w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition-colors"
+          onClick={handleSubmitOrder}
+          disabled={submitting || !household?.id}
+          className="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Proceed to Checkout
+          {submitting ? 'Submitting Order...' : 'Submit Order'}
         </button>
+        {!household?.id && (
+          <p className="mt-2 text-sm text-red-600 text-center">
+            Please select a household to place an order
+          </p>
+        )}
       </div>
     </div>
   )

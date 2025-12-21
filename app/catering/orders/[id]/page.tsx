@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeftIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, XCircleIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
 interface OrderItem {
@@ -92,7 +92,7 @@ export default function CateringOrderDetailPage() {
     return new Date(dateString).toLocaleString()
   }
 
-  const canCancel = order && ['pending', 'confirmed'].includes(order.status)
+  const canCancel = order && ['pending', 'submitted', 'accepted'].includes(order.status)
 
   if (loading) {
     return (
@@ -128,11 +128,22 @@ export default function CateringOrderDetailPage() {
           </div>
           <div className="flex items-center gap-4">
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              order.status === 'delivered' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+              order.status === 'delivered' || order.status === 'closed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
               order.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+              order.status === 'submitted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+              order.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+              order.status === 'preparing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+              order.status === 'ready' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
               'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
             }`}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              {order.status === 'submitted' ? '已提交' :
+               order.status === 'accepted' ? '已接受' :
+               order.status === 'preparing' ? '準備中' :
+               order.status === 'ready' ? '已就緒' :
+               order.status === 'delivered' ? '已送達' :
+               order.status === 'closed' ? '已完成' :
+               order.status === 'cancelled' ? '已取消' :
+               order.status.charAt(0).toUpperCase() + order.status.slice(1)}
             </span>
             {canCancel && (
               <button
@@ -144,6 +155,42 @@ export default function CateringOrderDetailPage() {
                 {cancelling ? 'Cancelling...' : 'Cancel Order'}
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Workflow Progress */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">訂單流程 (Order Workflow)</h2>
+          <div className="flex items-center space-x-2 text-sm">
+            <div className={`flex items-center ${['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-blue-600' : 'text-gray-400'}`}>
+              <CheckCircleIcon className="h-5 w-5 mr-1" />
+              <span>已提交</span>
+            </div>
+            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className={`flex items-center ${['accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-green-600' : 'text-gray-400'}`}>
+              <CheckCircleIcon className="h-5 w-5 mr-1" />
+              <span>已接受</span>
+            </div>
+            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className={`flex items-center ${['preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-yellow-600' : 'text-gray-400'}`}>
+              <ClockIcon className="h-5 w-5 mr-1" />
+              <span>準備中</span>
+            </div>
+            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className={`flex items-center ${['ready', 'delivered', 'closed'].includes(order.status) ? 'text-purple-600' : 'text-gray-400'}`}>
+              <CheckCircleIcon className="h-5 w-5 mr-1" />
+              <span>已就緒</span>
+            </div>
+            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className={`flex items-center ${['delivered', 'closed'].includes(order.status) ? 'text-green-600' : 'text-gray-400'}`}>
+              <CheckCircleIcon className="h-5 w-5 mr-1" />
+              <span>已送達</span>
+            </div>
+            <div className="flex-1 h-px bg-gray-300"></div>
+            <div className={`flex items-center ${order.status === 'closed' ? 'text-gray-600' : 'text-gray-400'}`}>
+              <CheckCircleIcon className="h-5 w-5 mr-1" />
+              <span>已完成</span>
+            </div>
           </div>
         </div>
 

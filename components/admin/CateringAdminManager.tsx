@@ -608,7 +608,18 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Watermark */}
+      <div className="fixed inset-0 pointer-events-none z-0" style={{ opacity: 0.03 }}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-6xl font-bold text-gray-900 dark:text-white transform -rotate-45">
+            ADMIN
+          </div>
+        </div>
+      </div>
+      
+      {/* Content */}
+      <div className="relative z-10">
       {/* Header with Export */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">餐飲服務管理</h2>
@@ -1402,6 +1413,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }

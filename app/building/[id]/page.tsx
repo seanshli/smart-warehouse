@@ -298,8 +298,13 @@ export default function BuildingDetailPage() {
             </div>
           )}
           {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} floorFilter={floorFilter || undefined} />}
-          {activeTab === 'working-groups' && buildingId && building && (
+          {activeTab === 'working-groups' && buildingId && building && building.community && (
             <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} />
+          )}
+          {activeTab === 'working-groups' && buildingId && building && !building.community && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示工作組</p>
+            </div>
           )}
           {activeTab === 'announcements' && buildingId && (
             <AnnouncementsTab 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClockIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
-import Image from 'next/image'
+import toast from 'react-hot-toast'
 
 interface OrderItem {
   id: string
@@ -26,31 +26,38 @@ interface Order {
   totalAmount: number
   notes?: string
   orderedAt: string
+  confirmedAt?: string
+  preparedAt?: string
+  deliveredAt?: string
+  cancelledAt?: string
   items: OrderItem[]
 }
 
-export default function CateringOrderHistory({ householdId }: { householdId: string }) {
+interface CateringOrderHistoryProps {
+  householdId: string
+}
+
+export default function CateringOrderHistory({ householdId }: CateringOrderHistoryProps) {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedStatus, setSelectedStatus] = useState<string>('')
 
   useEffect(() => {
     loadOrders()
-  }, [householdId, selectedStatus])
+  }, [householdId])
 
   const loadOrders = async () => {
     try {
-      setLoading(true)
-      const params = new URLSearchParams()
-      params.append('householdId', householdId)
-      if (selectedStatus) params.append('status', selectedStatus)
-
-      const response = await fetch(`/api/catering/orders?${params.toString()}`)
-      const data = await response.json()
-      setOrders(data.orders || [])
+      const response = await fetch(`/api/catering/orders?householdId=${householdId}`, {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setOrders(data.orders || [])
+      }
     } catch (error) {
       console.error('Error loading orders:', error)
+      toast.error('Failed to load orders')
     } finally {
       setLoading(false)
     }
@@ -58,16 +65,18 @@ export default function CateringOrderHistory({ householdId }: { householdId: str
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-      case 'confirmed':
+      case 'submitted':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'preparing':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-      case 'ready':
+      case 'accepted':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+      case 'preparing':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+      case 'ready':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
       case 'delivered':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+      case 'closed':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
       default:
@@ -75,19 +84,23 @@ export default function CateringOrderHistory({ householdId }: { householdId: str
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'delivered':
-        return <CheckCircleIcon className="h-5 w-5" />
-      case 'cancelled':
-        return <XCircleIcon className="h-5 w-5" />
-      default:
-        return <ClockIcon className="h-5 w-5" />
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      submitted: '已提交',
+      accepted: '已接受',
+      preparing: '準備中',
+      ready: '已就緒',
+      delivered: '已送達',
+      closed: '已完成',
+      cancelled: '已取消',
+      pending: '待處理',
+      confirmed: '已確認',
     }
+    return statusMap[status] || status
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
+    return new Date(dateString).toLocaleString('zh-TW')
   }
 
   if (loading) {
@@ -101,89 +114,87 @@ export default function CateringOrderHistory({ householdId }: { householdId: str
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Order History</h2>
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-        >
-          <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="preparing">Preparing</option>
-          <option value="ready">Ready</option>
-          <option value="delivered">Delivered</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">訂單歷史 (Order History)</h2>
       </div>
 
       {orders.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400">No orders found</p>
+          <p className="text-gray-600 dark:text-gray-400">尚無訂單</p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">您的訂單將顯示在這裡</p>
         </div>
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
             <div
               key={order.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => router.push(`/catering/orders/${order.id}`)}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Order #{order.orderNumber}
+                    訂單 #{order.orderNumber}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {formatDate(order.orderedAt)}
                   </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(order.status)}`}>
-                  {getStatusIcon(order.status)}
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                  {getStatusText(order.status)}
                 </span>
               </div>
 
-              <div className="space-y-2 mb-4">
-                {order.items.slice(0, 3).map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 text-sm">
-                    {item.menuItem.imageUrl && (
-                      <div className="relative h-12 w-12 flex-shrink-0">
-                        <Image
-                          src={item.menuItem.imageUrl}
-                          alt={item.menuItem.name}
-                          fill
-                          className="object-cover rounded"
-                        />
-                      </div>
-                    )}
-                    <span className="flex-1 text-gray-700 dark:text-gray-300">
-                      {item.menuItem.name} × {item.quantity}
-                    </span>
-                    <span className="font-medium">${item.subtotal.toFixed(2)}</span>
+              {/* Workflow Progress */}
+              <div className="mb-4">
+                <div className="flex items-center space-x-2 text-xs">
+                  <div className={`flex items-center ${['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    <span>已提交</span>
                   </div>
-                ))}
-                {order.items.length > 3 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    +{order.items.length - 3} more items
-                  </p>
-                )}
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <div className={`flex items-center ${['accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-green-600' : 'text-gray-400'}`}>
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    <span>已接受</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <div className={`flex items-center ${['preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-yellow-600' : 'text-gray-400'}`}>
+                    <ClockIcon className="h-4 w-4 mr-1" />
+                    <span>準備中</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <div className={`flex items-center ${['ready', 'delivered', 'closed'].includes(order.status) ? 'text-purple-600' : 'text-gray-400'}`}>
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    <span>已就緒</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <div className={`flex items-center ${['delivered', 'closed'].includes(order.status) ? 'text-green-600' : 'text-gray-400'}`}>
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    <span>已送達</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <div className={`flex items-center ${order.status === 'closed' ? 'text-gray-600' : 'text-gray-400'}`}>
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    <span>已完成</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {order.deliveryType === 'scheduled' && order.scheduledTime && (
-                    <span>
-                      Scheduled: {formatDate(order.scheduledTime)}
-                    </span>
-                  )}
-                  {order.deliveryType === 'immediate' && (
-                    <span>Immediate delivery</span>
-                  )}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                    </p>
+                    {order.deliveryType === 'scheduled' && order.scheduledTime && (
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        預約時間: {formatDate(order.scheduledTime)}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                    ${parseFloat(order.totalAmount.toString()).toFixed(2)} 台幣
+                  </span>
                 </div>
-                <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                  ${parseFloat(order.totalAmount.toString()).toFixed(2)}
-                </span>
               </div>
             </div>
           ))}

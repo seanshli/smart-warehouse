@@ -90,7 +90,9 @@ export async function GET(
 
     // Get all working groups in the community
     const allWorkingGroups = await prisma.workingGroup.findMany({
-      where: { communityId: building.communityId },
+      where: { 
+        communityId: building.communityId,
+      },
       include: {
         permissions: {
           where: {

@@ -96,10 +96,10 @@ export async function PUT(
     const body = await request.json()
     const { status } = body
 
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']
+    const validStatuses = ['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed', 'cancelled', 'pending', 'confirmed']
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status' },
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
       )
     }
@@ -109,14 +109,21 @@ export async function PUT(
 
     // Set appropriate timestamp based on status
     switch (status) {
+      case 'accepted':
       case 'confirmed':
-        updateData.confirmedAt = now
+        if (!updateData.confirmedAt) {
+          updateData.confirmedAt = now
+        }
         break
       case 'preparing':
-        updateData.preparedAt = now
+        if (!updateData.preparedAt) {
+          updateData.preparedAt = now
+        }
         break
       case 'delivered':
-        updateData.deliveredAt = now
+        if (!updateData.deliveredAt) {
+          updateData.deliveredAt = now
+        }
         break
       case 'cancelled':
         updateData.cancelledAt = now

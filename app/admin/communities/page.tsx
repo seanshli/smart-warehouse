@@ -13,6 +13,8 @@ import {
   PlusIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
+import CateringToggle from '@/components/admin/CateringToggle'
+import CateringSetupModal from '@/components/admin/CateringSetupModal'
 
 interface Community {
   id: string
@@ -36,6 +38,8 @@ export default function AdminCommunitiesPage() {
   const [communities, setCommunities] = useState<Community[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [setupModalOpen, setSetupModalOpen] = useState(false)
+  const [setupTarget, setSetupTarget] = useState<{ buildingId?: string; communityId?: string } | null>(null)
 
   useEffect(() => {
     fetchCommunities()
@@ -244,6 +248,13 @@ export default function AdminCommunitiesPage() {
                         <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
                         {t('messages') || '訊息'}
                       </Link>
+                      <CateringToggle
+                        communityId={community.id}
+                        onEnabled={() => {
+                          setSetupTarget({ communityId: community.id })
+                          setSetupModalOpen(true)
+                        }}
+                      />
                     </div>
                     <div className="flex items-center space-x-2">
                       <Link
@@ -268,6 +279,18 @@ export default function AdminCommunitiesPage() {
           )}
         </div>
       </div>
+
+      {/* Catering Setup Modal */}
+      {setupModalOpen && setupTarget && (
+        <CateringSetupModal
+          buildingId={setupTarget.buildingId}
+          communityId={setupTarget.communityId}
+          onClose={() => {
+            setSetupModalOpen(false)
+            setSetupTarget(null)
+          }}
+        />
+      )}
     </div>
   )
 }

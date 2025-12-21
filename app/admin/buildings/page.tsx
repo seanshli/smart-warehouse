@@ -15,6 +15,8 @@ import {
   WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import CateringToggle from '@/components/admin/CateringToggle'
+import CateringSetupModal from '@/components/admin/CateringSetupModal'
 
 interface Building {
   id: string
@@ -40,6 +42,8 @@ export default function AdminBuildingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [communities, setCommunities] = useState<any[]>([])
   const [selectedCommunity, setSelectedCommunity] = useState<string>('all')
+  const [setupModalOpen, setSetupModalOpen] = useState(false)
+  const [setupTarget, setSetupTarget] = useState<{ buildingId?: string; communityId?: string } | null>(null)
 
   useEffect(() => {
     fetchCommunities()
@@ -291,6 +295,13 @@ export default function AdminBuildingsPage() {
                             <WrenchScrewdriverIcon className="h-3 w-3 mr-1" />
                             報修
                           </Link>
+                          <CateringToggle
+                            buildingId={building.id}
+                            onEnabled={() => {
+                              setSetupTarget({ buildingId: building.id })
+                              setSetupModalOpen(true)
+                            }}
+                          />
                         </div>
                         <div className="mt-1 flex items-center text-xs text-gray-400">
                           <span>所属社区: </span>
@@ -322,6 +333,18 @@ export default function AdminBuildingsPage() {
           )}
         </div>
       </div>
+
+      {/* Catering Setup Modal */}
+      {setupModalOpen && setupTarget && (
+        <CateringSetupModal
+          buildingId={setupTarget.buildingId}
+          communityId={setupTarget.communityId}
+          onClose={() => {
+            setSetupModalOpen(false)
+            setSetupTarget(null)
+          }}
+        />
+      )}
     </div>
   )
 }

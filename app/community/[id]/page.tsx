@@ -23,6 +23,8 @@ import QRCodeDisplay from '@/components/QRCode'
 import JoinRequestList from '@/components/community/JoinRequestList'
 import { useLanguage } from '@/components/LanguageProvider'
 import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
+import CateringToggle from '@/components/admin/CateringToggle'
+import CateringSetupModal from '@/components/admin/CateringSetupModal'
 
 interface Community {
   id: string
@@ -53,6 +55,7 @@ export default function CommunityDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements'>('overview')
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
+  const [setupModalOpen, setSetupModalOpen] = useState(false)
 
   useEffect(() => {
     if (communityId) {
@@ -227,7 +230,7 @@ export default function CommunityDetailPage() {
 
           {/* Tab Content */}
           <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && community && <OverviewTab community={community} />}
+          {activeTab === 'overview' && community && <OverviewTab community={community} onCateringEnabled={() => setSetupModalOpen(true)} />}
           {activeTab === 'buildings' && communityId && <BuildingsTab communityId={communityId} />}
           {activeTab === 'members' && communityId && <MembersTab communityId={communityId} />}
           {activeTab === 'working-groups' && communityId && <WorkingGroupsTab communityId={communityId} />}
@@ -258,16 +261,24 @@ export default function CommunityDetailPage() {
             targetType="ALL_HOUSEHOLDS"
           />
         )}
+
+        {/* Catering Setup Modal */}
+        {setupModalOpen && communityId && (
+          <CateringSetupModal
+            communityId={communityId}
+            onClose={() => setSetupModalOpen(false)}
+          />
+        )}
       </div>
     </div>
   )
 }
 
-function OverviewTab({ community }: { community: Community }) {
+function OverviewTab({ community, onCateringEnabled }: { community: Community; onCateringEnabled?: () => void }) {
   const { t, currentLanguage } = useLanguage()
+  const communityId = community.id
   const [buildings, setBuildings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const communityId = community.id
 
   useEffect(() => {
     fetchBuildings()
@@ -305,6 +316,15 @@ function OverviewTab({ community }: { community: Community }) {
             <dt className="text-sm font-medium text-gray-500">{t('communityCreatedAt')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
               {new Date(community.createdAt).toLocaleDateString(currentLanguage === 'zh-TW' ? 'zh-TW' : currentLanguage === 'zh' ? 'zh-CN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US')}
+            </dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-gray-500 mb-2">{t('catering')}</dt>
+            <dd className="mt-1">
+              <CateringToggle
+                communityId={communityId}
+                onEnabled={onCateringEnabled}
+              />
             </dd>
           </div>
           <div className="sm:col-span-2">

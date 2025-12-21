@@ -77,6 +77,11 @@ export interface Translations {
   homeAssistantShowAll: string // 顯示全部
   homeAssistantAllDomains: string // 所有類型
   catering: string // 餐飲服務
+  cateringServiceEnabled: string // 餐飲服務已啟用
+  cateringServiceDisabled: string // 餐飲服務已停用
+  enableCatering: string // 啟用餐飲服務
+  cateringUpdateFailed: string // 更新服務失敗
+  cateringEnableFailed: string // 啟用服務失敗
   mqttDevices: string // MQTT 設備
   mqttDeviceName: string // 設備名稱
   mqttDeviceId: string // 設備 ID
@@ -1218,6 +1223,11 @@ const en: Translations = {
   homeAssistantShowAll: 'Show All',
   homeAssistantAllDomains: 'All Types',
   catering: 'Catering',
+  cateringServiceEnabled: 'Catering service enabled',
+  cateringServiceDisabled: 'Catering service disabled',
+  enableCatering: 'Enable Catering',
+  cateringUpdateFailed: 'Failed to update service',
+  cateringEnableFailed: 'Failed to enable service',
   mqttDevices: 'MQTT Devices',
   mqttDeviceName: 'Device Name',
   mqttDeviceId: 'Device ID',
@@ -2347,6 +2357,11 @@ const zhTW: Translations = {
   homeAssistantShowAll: '顯示全部',
   homeAssistantAllDomains: '所有類型',
   catering: '餐飲服務',
+  cateringServiceEnabled: '餐飲服務已啟用',
+  cateringServiceDisabled: '餐飲服務已停用',
+  enableCatering: '啟用餐飲服務',
+  cateringUpdateFailed: '更新服務失敗',
+  cateringEnableFailed: '啟用服務失敗',
   mqttDevices: 'MQTT 設備',
   mqttDeviceName: '設備名稱',
   mqttDeviceId: '設備 ID',
@@ -3395,6 +3410,11 @@ const zh: Translations = {
   homeAssistantShowAll: '显示全部',
   homeAssistantAllDomains: '所有类型',
   catering: '餐饮服务',
+  cateringServiceEnabled: '餐饮服务已启用',
+  cateringServiceDisabled: '餐饮服务已停用',
+  enableCatering: '启用餐饮服务',
+  cateringUpdateFailed: '更新服务失败',
+  cateringEnableFailed: '启用服务失败',
   mqttDevices: 'MQTT 设备',
   mqttDeviceName: '设备名称',
   mqttDeviceId: '设备 ID',
@@ -4439,6 +4459,11 @@ const ja: Translations = {
   homeAssistantShowAll: 'すべて表示',
   homeAssistantAllDomains: 'すべてのタイプ',
   catering: 'ケータリング',
+  cateringServiceEnabled: 'ケータリングサービスが有効になりました',
+  cateringServiceDisabled: 'ケータリングサービスが無効になりました',
+  enableCatering: 'ケータリングを有効にする',
+  cateringUpdateFailed: 'サービスの更新に失敗しました',
+  cateringEnableFailed: 'サービスの有効化に失敗しました',
   mqttDevices: 'MQTT デバイス',
   mqttDeviceName: 'デバイス名',
   mqttDeviceId: 'デバイス ID',

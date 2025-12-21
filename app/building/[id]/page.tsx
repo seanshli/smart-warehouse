@@ -35,6 +35,8 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { XMarkIcon, UserIcon } from '@heroicons/react/24/outline'
 import CreateAnnouncementModal from '@/components/admin/CreateAnnouncementModal'
 import { BellIcon } from '@heroicons/react/24/outline'
+import CateringToggle from '@/components/admin/CateringToggle'
+import CateringSetupModal from '@/components/admin/CateringSetupModal'
 
 interface Building {
   id: string
@@ -85,6 +87,7 @@ export default function BuildingDetailPage() {
     'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
+  const [setupModalOpen, setSetupModalOpen] = useState(false)
 
   useEffect(() => {
     if (buildingId) {
@@ -244,7 +247,7 @@ export default function BuildingDetailPage() {
 
           {/* Tab Content */}
           <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} />}
+          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} onCateringEnabled={() => setSetupModalOpen(true)} />}
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
           {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
@@ -289,12 +292,20 @@ export default function BuildingDetailPage() {
             targetType="ALL_HOUSEHOLDS"
           />
         )}
+
+        {/* Catering Setup Modal */}
+        {setupModalOpen && buildingId && (
+          <CateringSetupModal
+            buildingId={buildingId}
+            onClose={() => setSetupModalOpen(false)}
+          />
+        )}
       </div>
     </div>
   )
 }
 
-function OverviewTab({ building, buildingId, onNavigateTab }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'working-groups') => void }) {
+function OverviewTab({ building, buildingId, onNavigateTab, onCateringEnabled }: { building: Building; buildingId: string; onNavigateTab: (tab: 'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'facilities' | 'working-groups') => void; onCateringEnabled?: () => void }) {
   const { t } = useLanguage()
   const [settingUp, setSettingUp] = useState(false)
   const [setupStatus, setSetupStatus] = useState<{
@@ -479,6 +490,15 @@ function OverviewTab({ building, buildingId, onNavigateTab }: { building: Buildi
             <dt className="text-sm font-medium text-gray-500">{t('buildingCreatedAt')}</dt>
             <dd className="mt-1 text-sm text-gray-900">
               {new Date(building.createdAt).toLocaleDateString('zh-TW')}
+            </dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-gray-500 mb-2">{t('catering')}</dt>
+            <dd className="mt-1">
+              <CateringToggle
+                buildingId={buildingId}
+                onEnabled={onCateringEnabled}
+              />
             </dd>
           </div>
           {building.invitationCode && (

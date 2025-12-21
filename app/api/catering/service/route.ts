@@ -129,17 +129,26 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, isActive } = body
+    const { id, buildingId, communityId, isActive } = body
 
-    if (!id) {
+    // Find service by ID, buildingId, or communityId (using unique constraints)
+    let whereClause: { id: string } | { buildingId: string } | { communityId: string }
+    
+    if (id) {
+      whereClause = { id }
+    } else if (buildingId) {
+      whereClause = { buildingId }
+    } else if (communityId) {
+      whereClause = { communityId }
+    } else {
       return NextResponse.json(
-        { error: 'Service ID is required' },
+        { error: 'Service ID, buildingId, or communityId is required' },
         { status: 400 }
       )
     }
 
     const service = await prisma.cateringService.update({
-      where: { id },
+      where: whereClause,
       data: { isActive },
     })
 

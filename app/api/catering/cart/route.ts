@@ -57,13 +57,17 @@ export async function POST(request: NextRequest) {
     })
 
     if (!menuItem) {
+      console.error(`[Cart API] Menu item not found: ${menuItemId}`)
       return NextResponse.json(
         { error: 'Menu item not found' },
         { status: 404 }
       )
     }
 
+    console.log(`[Cart API] Adding item to cart: ${menuItem.name} (ID: ${menuItemId}), isActive: ${menuItem.isActive}, quantityAvailable: ${menuItem.quantityAvailable}, requestedQuantity: ${quantity}`)
+
     if (!menuItem.isActive) {
+      console.error(`[Cart API] Menu item is inactive: ${menuItem.name} (ID: ${menuItemId})`)
       return NextResponse.json(
         { error: 'Menu item is not available' },
         { status: 400 }
@@ -71,6 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (menuItem.quantityAvailable < quantity) {
+      console.error(`[Cart API] Insufficient quantity: ${menuItem.name} (ID: ${menuItemId}), available: ${menuItem.quantityAvailable}, requested: ${quantity}`)
       return NextResponse.json(
         { error: 'Insufficient quantity available' },
         { status: 400 }

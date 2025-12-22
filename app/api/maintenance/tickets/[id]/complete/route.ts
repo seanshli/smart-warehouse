@@ -64,6 +64,32 @@ export async function POST(
       }
     })
 
+    // If this is a FOOD_ORDER ticket, sync with catering order status
+    if (ticket.category === 'FOOD_ORDER' && ticket.description) {
+      try {
+        // Extract order number from description (format: "Catering Order ORD-2025-000003")
+        const orderNumberMatch = ticket.description.match(/Order\s+([A-Z]+-\d+-\d+)/i)
+        if (orderNumberMatch) {
+          const orderNumber = orderNumberMatch[1]
+          const cateringOrder = await prisma.cateringOrder.findUnique({
+            where: { orderNumber },
+          })
+          
+          if (cateringOrder && cateringOrder.status === 'preparing') {
+            // Update catering order to "ready" when kitchen work is completed
+            await prisma.cateringOrder.update({
+              where: { id: cateringOrder.id },
+              data: { status: 'ready' },
+            })
+            console.log(`[Kitchen Work Order] Updated catering order ${orderNumber} to "ready" status`)
+          }
+        }
+      } catch (syncError) {
+        console.error('[Kitchen Work Order] Error syncing catering order status:', syncError)
+        // Don't fail the work order completion if sync fails
+      }
+    }
+
     // Notify household
     await prisma.notification.create({
       data: {

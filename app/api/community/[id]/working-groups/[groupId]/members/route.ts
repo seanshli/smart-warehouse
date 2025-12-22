@@ -155,14 +155,14 @@ export async function POST(
       const searchEmail = targetUserEmail || 'unknown'
       console.error(`User not found: ${searchEmail}`)
       return NextResponse.json({ 
-        error: 'Target user not found',
-        details: `The user with email "${searchEmail}" does not exist in the system.`,
+        error: 'User not found',
+        details: `The user with email "${searchEmail}" must exist in the system before they can be added as a working group member.`,
         steps: [
-          '1. Ensure the user has created an account (via signup page or Admin → Users)',
-          '2. Add the user to the Community first (Community page → Members tab → Add Member)',
-          '3. Then add them to this working group'
+          '1. Go to Admin → Users page to create the user first',
+          '2. Then return here to add them to this working group'
         ],
-        helpUrl: '/community/' + communityId + '?tab=members'
+        helpUrl: '/admin/users',
+        helpText: 'Go to Admin Users page to create user →'
       }, { status: 404 })
     }
 

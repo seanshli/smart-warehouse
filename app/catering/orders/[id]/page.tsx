@@ -45,6 +45,8 @@ export default function CateringOrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
+  const [creatingWorkOrder, setCreatingWorkOrder] = useState(false)
+  const [workOrder, setWorkOrder] = useState<any>(null)
 
   useEffect(() => {
     if (!params.id) return
@@ -53,19 +55,24 @@ export default function CateringOrderDetailPage() {
     const loadOrder = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/catering/orders/${params.id}`, {
-          credentials: 'include',
-        })
+        const [orderRes, workOrderRes] = await Promise.all([
+          fetch(`/api/catering/orders/${params.id}`, {
+            credentials: 'include',
+          }),
+          fetch(`/api/catering/orders/${params.id}/kitchen-work-order`, {
+            credentials: 'include',
+          }),
+        ])
         
         if (cancelled) return
         
-        if (response.ok) {
-          const data = await response.json()
+        if (orderRes.ok) {
+          const data = await orderRes.json()
           if (!cancelled) {
             setOrder(data)
           }
         } else {
-          const errorData = await response.json().catch(() => ({ error: 'Order not found' }))
+          const errorData = await orderRes.json().catch(() => ({ error: 'Order not found' }))
           console.error('Error loading order:', errorData)
           if (!cancelled) {
             toast.error(errorData.error || 'Order not found')
@@ -74,6 +81,13 @@ export default function CateringOrderDetailPage() {
                 router.push('/catering/orders')
               }
             }, 1000)
+          }
+        }
+
+        if (workOrderRes.ok) {
+          const workOrderData = await workOrderRes.json()
+          if (!cancelled && workOrderData.ticket) {
+            setWorkOrder(workOrderData.ticket)
           }
         }
       } catch (error) {
@@ -98,6 +112,39 @@ export default function CateringOrderDetailPage() {
       cancelled = true
     }
   }, [params.id, router])
+
+  const handleCreateKitchenWorkOrder = async () => {
+    if (!order) return
+    
+    setCreatingWorkOrder(true)
+    try {
+      const response = await fetch(`/api/catering/orders/${order.id}/kitchen-work-order`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setWorkOrder(data.ticket)
+        if (data.order) {
+          setOrder({ ...order, status: data.order.status })
+        }
+        toast.success('Kitchen work order created successfully')
+        // Open work order in new tab
+        if (data.ticket) {
+          window.open(`/admin/maintenance?ticketId=${data.ticket.id}`, '_blank')
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create work order' }))
+        toast.error(errorData.error || 'Failed to create kitchen work order')
+      }
+    } catch (error) {
+      console.error('Error creating kitchen work order:', error)
+      toast.error('Failed to create kitchen work order')
+    } finally {
+      setCreatingWorkOrder(false)
+    }
+  }
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this order?')) return
@@ -198,12 +245,24 @@ export default function CateringOrderDetailPage() {
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">訂單流程 (Order Workflow)</h2>
-            <a
-              href="/admin/maintenance"
-              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline"
-            >
-              工單派遣 (Work Order Dispatch)
-            </a>
+            {workOrder ? (
+              <a
+                href={`/admin/maintenance?ticketId=${workOrder.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline"
+              >
+                查看工單 #{workOrder.ticketNumber} (View Work Order)
+              </a>
+            ) : (
+              <button
+                onClick={handleCreateKitchenWorkOrder}
+                disabled={creatingWorkOrder}
+                className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline disabled:opacity-50"
+              >
+                {creatingWorkOrder ? '創建中...' : '創建廚房工單 (Create Kitchen Work Order)'}
+              </button>
+            )}
           </div>
           <div className="flex items-center space-x-2 text-sm">
             <div className={`flex items-center ${['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-blue-600' : 'text-gray-400'}`}>

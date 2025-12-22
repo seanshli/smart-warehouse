@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
 
     const userId = (session.user as any).id
     const body = await request.json()
-    const { name, email, phone, contact, password, isAdmin, communityMembership, buildingMembership } = body
+    let { name, email, phone, contact, password, isAdmin, communityMembership, buildingMembership } = body
 
     console.log('[Create User] Request body:', {
       name,

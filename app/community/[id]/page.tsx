@@ -705,6 +705,8 @@ function MembersTab({ communityId }: { communityId: string }) {
   const [loading, setLoading] = useState(true)
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMemberEmail, setNewMemberEmail] = useState('')
+  const [newMemberName, setNewMemberName] = useState('')
+  const [newMemberPassword, setNewMemberPassword] = useState('')
   const [newMemberRole, setNewMemberRole] = useState<'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER'>('MEMBER')
   const [newMemberClass, setNewMemberClass] = useState<'household' | 'building' | 'community'>('community')
   const [addingMember, setAddingMember] = useState(false)
@@ -747,20 +749,32 @@ function MembersTab({ communityId }: { communityId: string }) {
 
     try {
       setAddingMember(true)
+      const requestBody: any = {
+        targetUserEmail: newMemberEmail.trim(),
+        role: newMemberRole,
+        memberClass: newMemberClass,
+      }
+      
+      // If password is provided, include it to create new user
+      if (newMemberPassword.trim()) {
+        requestBody.password = newMemberPassword.trim()
+        if (newMemberName.trim()) {
+          requestBody.name = newMemberName.trim()
+        }
+      }
+      
       const response = await fetch(`/api/community/${communityId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          targetUserEmail: newMemberEmail.trim(),
-          role: newMemberRole,
-          memberClass: newMemberClass,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
         toast.success('Member added successfully')
         setShowAddMember(false)
         setNewMemberEmail('')
+        setNewMemberName('')
+        setNewMemberPassword('')
         setNewMemberRole('MEMBER')
         setNewMemberClass('community')
         fetchMembers()
@@ -924,6 +938,38 @@ function MembersTab({ communityId }: { communityId: string }) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    姓名 (可选，创建新用户时使用)
+                  </label>
+                  <input
+                    type="text"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="User Name"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    如果用户不存在，提供密码将自动创建新用户
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    密码 (可选，创建新用户时使用)
+                  </label>
+                  <input
+                    type="password"
+                    value={newMemberPassword}
+                    onChange={(e) => setNewMemberPassword(e.target.value)}
+                    placeholder="留空则仅添加现有用户"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    如果用户不存在且提供密码，将自动创建新用户并设置密码
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     角色 *
                   </label>
                   <select
@@ -968,6 +1014,8 @@ function MembersTab({ communityId }: { communityId: string }) {
                     onClick={() => {
                       setShowAddMember(false)
                       setNewMemberEmail('')
+                      setNewMemberName('')
+                      setNewMemberPassword('')
                       setNewMemberRole('MEMBER')
                       setNewMemberClass('community')
                     }}

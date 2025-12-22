@@ -87,6 +87,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
   const [batchItems, setBatchItems] = useState<Array<{
     name: string
     description: string
+    imageFile: File | null
+    imageUrl: string
     cost: string
     quantityAvailable: number
     categoryId: string
@@ -94,6 +96,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
   }>>([{
     name: '',
     description: '',
+    imageFile: null,
+    imageUrl: '',
     cost: '',
     quantityAvailable: 0,
     categoryId: '',
@@ -380,7 +384,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     })
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isBatch = false, batchIndex?: number) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -402,11 +406,21 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     const reader = new FileReader()
     reader.onload = (event) => {
       const base64 = event.target?.result as string
-      setItemForm({
-        ...itemForm,
-        imageFile: file,
-        imageUrl: base64,
-      })
+      if (isBatch && batchIndex !== undefined) {
+        const newBatch = [...batchItems]
+        newBatch[batchIndex] = {
+          ...newBatch[batchIndex],
+          imageFile: file,
+          imageUrl: base64,
+        }
+        setBatchItems(newBatch)
+      } else {
+        setItemForm({
+          ...itemForm,
+          imageFile: file,
+          imageUrl: base64,
+        })
+      }
     }
     reader.onerror = () => {
       toast.error('讀取圖片失敗')
@@ -418,6 +432,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     setBatchItems([...batchItems, {
       name: '',
       description: '',
+      imageFile: null,
+      imageUrl: '',
       cost: '',
       quantityAvailable: 0,
       categoryId: '',
@@ -468,6 +484,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
         const items: Array<{
           name: string
           description: string
+          imageFile: File | null
+          imageUrl: string
           cost: string
           quantityAvailable: number
           categoryId: string
@@ -489,6 +507,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
               cost: values[3] || '0',
               quantityAvailable: parseInt(values[4] || '0') || 0,
               isActive: values[5]?.toLowerCase() === '啟用' || values[5]?.toLowerCase() === 'true' || values[5] === '1',
+              imageFile: null,
+              imageUrl: '',
             })
           }
         }
@@ -629,6 +649,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
               categoryId: item.categoryId || undefined,
               name: item.name,
               description: item.description || undefined,
+              imageUrl: item.imageUrl || undefined,
               cost: parseFloat(item.cost),
               quantityAvailable: parseInt(item.quantityAvailable.toString()) || 0,
               isActive: item.isActive,
@@ -653,6 +674,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       setBatchItems([{
         name: '',
         description: '',
+        imageFile: null,
+        imageUrl: '',
         cost: '',
         quantityAvailable: 0,
         categoryId: '',
@@ -1263,6 +1286,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                   setBatchItems([{
                     name: '',
                     description: '',
+                    imageFile: null,
+                    imageUrl: '',
                     cost: '',
                     quantityAvailable: 0,
                     categoryId: '',
@@ -1280,6 +1305,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         setBatchItems([{
                           name: '',
                           description: '',
+                          imageFile: null,
+                          imageUrl: '',
                           cost: '',
                           quantityAvailable: 0,
                           categoryId: '',
@@ -1447,6 +1474,48 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                             </select>
                           </div>
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            圖片 (JPG 格式，最大 2MB)
+                          </label>
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/jpeg,.jpg,.jpeg"
+                              onChange={(e) => handleImageUpload(e, true, index)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
+                            />
+                            {item.imageFile && (
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {item.imageFile.name}
+                              </span>
+                            )}
+                            {item.imageUrl && (
+                              <div className="relative inline-block">
+                                <img
+                                  src={item.imageUrl}
+                                  alt="Preview"
+                                  className="h-24 w-24 object-cover rounded border border-gray-300 dark:border-gray-600"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newBatch = [...batchItems]
+                                    newBatch[index].imageUrl = ''
+                                    newBatch[index].imageFile = null
+                                    setBatchItems(newBatch)
+                                  }}
+                                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                >
+                                  <XMarkIcon className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                     <div className="flex justify-between items-center pt-4 border-t border-gray-300 dark:border-gray-600">
@@ -1466,6 +1535,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                             setBatchItems([{
                               name: '',
                               description: '',
+                              imageFile: null,
+                              imageUrl: '',
                               cost: '',
                               quantityAvailable: 0,
                               categoryId: '',

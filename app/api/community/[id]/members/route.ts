@@ -325,7 +325,6 @@ export async function POST(
     }
 
     // If user doesn't exist and password is provided, create the user
-    let targetUser = null
     const createPassword = body.password
     const createName = body.name || body.targetUserName
     

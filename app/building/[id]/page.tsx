@@ -2379,6 +2379,9 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
       setError(null)
       const response = await fetch(`/api/building/${buildingId}/working-groups`, {
         credentials: 'include',
+      }).catch((error) => {
+        console.error('[WorkingGroupsTab] Fetch error:', error)
+        throw error
       })
       if (response.ok) {
         const data = await response.json()

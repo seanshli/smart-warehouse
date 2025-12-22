@@ -69,8 +69,9 @@ export async function GET(request: NextRequest) {
       // }
 
       // Admin can see orders filtered by building/community or all orders
+      // If no filters, show all orders (super admin view)
       const orders = await prisma.cateringOrder.findMany({
-        where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+        where: Object.keys(whereClause).length > 0 ? whereClause : {},
         include: {
           household: {
             select: { 

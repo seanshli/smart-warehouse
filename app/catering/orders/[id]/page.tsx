@@ -160,7 +160,15 @@ export default function CateringOrderDetailPage() {
 
         {/* Workflow Progress */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">訂單流程 (Order Workflow)</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">訂單流程 (Order Workflow)</h2>
+            <a
+              href="/admin/maintenance"
+              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline"
+            >
+              工單派遣 (Work Order Dispatch)
+            </a>
+          </div>
           <div className="flex items-center space-x-2 text-sm">
             <div className={`flex items-center ${['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-blue-600' : 'text-gray-400'}`}>
               <CheckCircleIcon className="h-5 w-5 mr-1" />

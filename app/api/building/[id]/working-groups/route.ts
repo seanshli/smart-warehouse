@@ -38,6 +38,14 @@ export async function GET(
       return NextResponse.json({ error: 'Building not found' }, { status: 404 })
     }
 
+    // Check if building has communityId
+    if (!building.communityId) {
+      return NextResponse.json({ 
+        error: 'Building is not associated with a community',
+        workingGroups: []
+      }, { status: 200 })
+    }
+
     // Check if user has permission to view working groups
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
@@ -65,21 +73,23 @@ export async function GET(
       if (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) {
         hasPermission = true
       } else {
-        // Check if user is community admin/manager
-        const communityMembership = await prisma.communityMember.findUnique({
-          where: {
-            userId_communityId: {
-              userId,
-              communityId: building.communityId,
+        // Check if user is community admin/manager (only if building has communityId)
+        if (building.communityId) {
+          const communityMembership = await prisma.communityMember.findUnique({
+            where: {
+              userId_communityId: {
+                userId,
+                communityId: building.communityId,
+              },
             },
-          },
-          select: {
-            role: true,
-          },
-        })
+            select: {
+              role: true,
+            },
+          })
 
-        if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
-          hasPermission = true
+          if (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER')) {
+            hasPermission = true
+          }
         }
       }
     }

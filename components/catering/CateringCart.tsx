@@ -133,7 +133,8 @@ export default function CateringCart() {
         const order = await response.json()
         toast.success(`Order ${order.orderNumber} submitted successfully!`)
         setCart({ items: [], total: 0 })
-        router.push(`/catering/orders?orderId=${order.id}`)
+        // Use replace instead of push to avoid back button issues
+        router.replace(`/catering/orders/${order.id}`)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Order submission error:', errorData)

@@ -2377,17 +2377,22 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`/api/building/${buildingId}/working-groups`)
+      const response = await fetch(`/api/building/${buildingId}/working-groups`, {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
         setWorkingGroups(data.workingGroups || [])
       } else {
         const errorData = await response.json().catch(() => ({}))
-        setError(errorData.error || 'Failed to fetch working groups')
+        const errorMessage = errorData.error || 'Failed to fetch working groups'
+        setError(errorMessage)
+        console.error('Failed to fetch working groups:', errorMessage)
       }
     } catch (err) {
       console.error('Failed to fetch working groups:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load working groups')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load working groups'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

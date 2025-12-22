@@ -26,15 +26,53 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const householdId = searchParams.get('householdId')
     const status = searchParams.get('status')
+    const buildingId = searchParams.get('buildingId')
+    const communityId = searchParams.get('communityId')
     const isAdmin = searchParams.get('admin') === 'true' && user.isAdmin
 
     if (isAdmin) {
-      // Admin can see all orders
+      // Build where clause for admin filtering
+      const whereClause: any = {}
+      
+      if (status) {
+        whereClause.status = status
+      }
+
+      // Filter by building or community if provided
+      if (buildingId || communityId) {
+        whereClause.household = {}
+        if (buildingId) {
+          whereClause.household.buildingId = buildingId
+        }
+        if (communityId) {
+          whereClause.household.building = {
+            communityId: communityId
+          }
+        }
+      }
+
+      // Admin can see orders filtered by building/community or all orders
       const orders = await prisma.cateringOrder.findMany({
-        where: status ? { status } : undefined,
+        where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
         include: {
           household: {
-            select: { id: true, name: true, building: { select: { name: true } } },
+            select: { 
+              id: true, 
+              name: true, 
+              building: { 
+                select: { 
+                  id: true,
+                  name: true,
+                  communityId: true,
+                  community: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                } 
+              } 
+            },
           },
           orderedBy: {
             select: { id: true, name: true, email: true },

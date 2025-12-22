@@ -1726,9 +1726,16 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                     </span>
                   </div>
                   <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {order.items?.length || 0} 個項目
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {order.items?.length || 0} 個項目
+                      </span>
+                      {order.workgroup && (
+                        <span className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          工作組: {order.workgroup.name}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
                       ${parseFloat(order.totalAmount?.toString() || '0').toFixed(2)} 台幣
                     </span>

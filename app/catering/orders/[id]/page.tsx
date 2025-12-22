@@ -33,6 +33,10 @@ interface Order {
   deliveredAt?: string
   cancelledAt?: string
   items: OrderItem[]
+  workgroup?: {
+    id: string
+    name: string
+  }
 }
 
 export default function CateringOrderDetailPage() {
@@ -247,6 +251,14 @@ export default function CateringOrderDetailPage() {
 
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <div className="space-y-2">
+            {order.workgroup && (
+              <div className="flex justify-between">
+                <span className="text-gray-600 dark:text-gray-400">工作組 (Workgroup)</span>
+                <span className="font-medium">
+                  {order.workgroup.name}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Delivery Type</span>
               <span className="font-medium">

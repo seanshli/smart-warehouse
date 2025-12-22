@@ -270,17 +270,54 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
         </div>
       )}
 
-      {/* Menu Items Grid */}
+      {/* Menu Items by Category */}
       {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item) => (
-            <CateringMenuItemCard
-              key={item.id}
-              item={item}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
-        </div>
+        (() => {
+          // Group items by category
+          const itemsByCategory = filteredItems.reduce((acc, item) => {
+            const categoryId = item.category?.id || 'uncategorized'
+            const categoryName = item.category?.name || 'Uncategorized'
+            if (!acc[categoryId]) {
+              acc[categoryId] = {
+                id: categoryId,
+                name: categoryName,
+                items: []
+              }
+            }
+            acc[categoryId].items.push(item)
+            return acc
+          }, {} as Record<string, { id: string; name: string; items: CateringMenuItem[] }>)
+
+          // Sort categories by display order
+          const sortedCategories = Object.values(itemsByCategory).sort((a, b) => {
+            const categoryA = categories.find(c => c.id === a.id)
+            const categoryB = categories.find(c => c.id === b.id)
+            const orderA = categoryA?.displayOrder ?? 999
+            const orderB = categoryB?.displayOrder ?? 999
+            return orderA - orderB
+          })
+
+          return (
+            <div className="space-y-8">
+              {sortedCategories.map((category) => (
+                <div key={category.id} className="space-y-4">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                    {category.name}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {category.items.map((item) => (
+                      <CateringMenuItemCard
+                        key={item.id}
+                        item={item}
+                        onAddToCart={handleAddToCart}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()
       ) : (
         <div className="text-center py-12">
           <p className="text-gray-600 dark:text-gray-400">

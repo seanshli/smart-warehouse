@@ -384,48 +384,106 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     })
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isBatch = false, batchIndex?: number) => {
+  // Auto-scale image function
+  const scaleImage = (file: File, maxWidth: number = 800, maxHeight: number = 800, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width
+              width = maxWidth
+            }
+          } else {
+            if (height > maxHeight) {
+              width = (width * maxHeight) / height
+              height = maxHeight
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Failed to create blob'))
+                return
+              }
+              const reader = new FileReader()
+              reader.onload = () => resolve(reader.result as string)
+              reader.onerror = () => reject(new Error('Failed to read scaled image'))
+              reader.readAsDataURL(blob)
+            },
+            file.type,
+            quality
+          )
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+        img.src = e.target?.result as string
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isBatch = false, batchIndex?: number) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Only accept JPG/JPEG format
-    const validTypes = ['image/jpeg', 'image/jpg']
-    const validExtensions = ['.jpg', '.jpeg']
+    // Accept JPG/JPEG and PNG formats
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png']
+    const validExtensions = ['.jpg', '.jpeg', '.png']
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
     
     if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-      toast.error('請選擇 JPG 格式的圖片檔案')
+      toast.error('請選擇 JPG 或 PNG 格式的圖片檔案')
       return
     }
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-      toast.error('圖片大小不能超過 2MB')
+    // Check original file size (before scaling)
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit for original
+      toast.error('圖片大小不能超過 10MB')
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string
+    try {
+      // Auto-scale image to max 800x800 with quality 0.8
+      const scaledBase64 = await scaleImage(file, 800, 800, 0.8)
+      
       if (isBatch && batchIndex !== undefined) {
         const newBatch = [...batchItems]
         newBatch[batchIndex] = {
           ...newBatch[batchIndex],
           imageFile: file,
-          imageUrl: base64,
+          imageUrl: scaledBase64,
         }
         setBatchItems(newBatch)
       } else {
         setItemForm({
           ...itemForm,
           imageFile: file,
-          imageUrl: base64,
+          imageUrl: scaledBase64,
         })
       }
+    } catch (error) {
+      console.error('Error scaling image:', error)
+      toast.error('圖片處理失敗')
     }
-    reader.onerror = () => {
-      toast.error('讀取圖片失敗')
-    }
-    reader.readAsDataURL(file)
   }
 
   const addBatchItem = () => {
@@ -1156,7 +1214,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         <div className="flex items-center space-x-2">
                           <input
                             type="file"
-                            accept="image/jpeg,.jpg,.jpeg"
+                            accept="image/jpeg,.jpg,.jpeg,.png"
                             onChange={handleImageUpload}
                             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
                           />
@@ -1476,12 +1534,12 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            圖片 (JPG 格式，最大 2MB)
+                            圖片 (JPG/PNG 格式，最大 2MB)
                           </label>
                           <div className="space-y-2">
                             <input
                               type="file"
-                              accept="image/jpeg,.jpg,.jpeg"
+                              accept="image/jpeg,.jpg,.jpeg,.png"
                               onChange={(e) => handleImageUpload(e, true, index)}
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
                             />

@@ -84,12 +84,13 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       {item.imageUrl && (
-        <div className="relative h-48 w-full">
+        <div className="relative h-48 w-full overflow-hidden">
           <Image
             src={item.imageUrl}
             alt={item.name}
             fill
             className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         </div>
       )}

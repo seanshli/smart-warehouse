@@ -20,14 +20,38 @@ export async function GET(request: NextRequest) {
     const cartCookie = cookieStore.get(CART_COOKIE_NAME)
     
     if (!cartCookie) {
-      return NextResponse.json({ items: [], total: 0 })
+      return NextResponse.json({ items: [], total: 0 }, { 
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
     }
 
-    const cart = JSON.parse(cartCookie.value)
-    return NextResponse.json(cart)
+    try {
+      const cart = JSON.parse(cartCookie.value)
+      return NextResponse.json(cart, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+    } catch (parseError) {
+      console.error('[Cart API] Error parsing cart cookie:', parseError)
+      // Clear invalid cookie
+      cookieStore.delete(CART_COOKIE_NAME)
+      return NextResponse.json({ items: [], total: 0 }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+    }
   } catch (error) {
-    console.error('Error fetching cart:', error)
-    return NextResponse.json({ items: [], total: 0 })
+    console.error('[Cart API] Error fetching cart:', error)
+    return NextResponse.json({ items: [], total: 0, error: 'Failed to fetch cart' }, {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
   }
 }
 
@@ -126,7 +150,11 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
-    return NextResponse.json(cart)
+    return NextResponse.json(cart, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
   } catch (error) {
     console.error('Error adding to cart:', error)
     return NextResponse.json(

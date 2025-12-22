@@ -171,12 +171,21 @@ export async function GET(
 
     return NextResponse.json({
       workingGroups: buildingWorkingGroups,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching building working groups:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch working groups' },
-      { status: 500 }
+      { error: 'Failed to fetch working groups', details: error.message },
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
     )
   }
 }

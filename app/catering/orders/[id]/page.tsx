@@ -47,32 +47,57 @@ export default function CateringOrderDetailPage() {
   const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
-    loadOrder()
-  }, [params.id])
-
-  const loadOrder = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/catering/orders/${params.id}`, {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setOrder(data)
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Order not found' }))
-        console.error('Error loading order:', errorData)
-        toast.error(errorData.error || 'Order not found')
-        router.push('/catering/orders')
+    if (!params.id) return
+    let cancelled = false
+    
+    const loadOrder = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/catering/orders/${params.id}`, {
+          credentials: 'include',
+        })
+        
+        if (cancelled) return
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (!cancelled) {
+            setOrder(data)
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Order not found' }))
+          console.error('Error loading order:', errorData)
+          if (!cancelled) {
+            toast.error(errorData.error || 'Order not found')
+            setTimeout(() => {
+              if (!cancelled) {
+                router.push('/catering/orders')
+              }
+            }, 1000)
+          }
+        }
+      } catch (error) {
+        if (cancelled) return
+        console.error('Error loading order:', error)
+        toast.error('Failed to load order. Please try again.')
+        setTimeout(() => {
+          if (!cancelled) {
+            router.push('/catering/orders')
+          }
+        }, 1000)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
-    } catch (error) {
-      console.error('Error loading order:', error)
-      toast.error('Failed to load order. Please try again.')
-      router.push('/catering/orders')
-    } finally {
-      setLoading(false)
     }
-  }
+    
+    loadOrder()
+    
+    return () => {
+      cancelled = true
+    }
+  }, [params.id, router])
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this order?')) return

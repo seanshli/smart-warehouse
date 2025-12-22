@@ -132,16 +132,34 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to add to cart')
+        let errorMessage = 'Failed to add to cart'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          // Response is not JSON, try to get text
+          const text = await response.text().catch(() => 'Unknown error')
+          errorMessage = `Server error (${response.status}): ${text.substring(0, 100)}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('[CateringMenu] Non-JSON response:', text.substring(0, 200))
+        throw new Error('Invalid response format from server')
       }
 
       const result = await response.json()
       await loadCartCount()
       return result
     } catch (error) {
-      console.error('Error adding to cart:', error)
-      throw error
+      console.error('[CateringMenu] Error adding to cart:', error)
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('Failed to add item to cart')
     }
   }
 

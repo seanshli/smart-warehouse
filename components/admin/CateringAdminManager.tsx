@@ -87,23 +87,17 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
   const [batchItems, setBatchItems] = useState<Array<{
     name: string
     description: string
-    imageFile: File | null
-    imageUrl: string
     cost: string
     quantityAvailable: number
     categoryId: string
     isActive: boolean
-    availableAllDay: boolean
   }>>([{
     name: '',
     description: '',
-    imageFile: null,
-    imageUrl: '',
     cost: '',
     quantityAvailable: 0,
     categoryId: '',
     isActive: true,
-    availableAllDay: true,
   }])
 
   useEffect(() => {
@@ -386,7 +380,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     })
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isBatch = false, batchIndex?: number) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -408,21 +402,11 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     const reader = new FileReader()
     reader.onload = (event) => {
       const base64 = event.target?.result as string
-      if (isBatch && batchIndex !== undefined) {
-        const newBatch = [...batchItems]
-        newBatch[batchIndex] = {
-          ...newBatch[batchIndex],
-          imageFile: file,
-          imageUrl: base64,
-        }
-        setBatchItems(newBatch)
-      } else {
-        setItemForm({
-          ...itemForm,
-          imageFile: file,
-          imageUrl: base64,
-        })
-      }
+      setItemForm({
+        ...itemForm,
+        imageFile: file,
+        imageUrl: base64,
+      })
     }
     reader.onerror = () => {
       toast.error('讀取圖片失敗')
@@ -434,14 +418,129 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     setBatchItems([...batchItems, {
       name: '',
       description: '',
-      imageFile: null,
-      imageUrl: '',
       cost: '',
       quantityAvailable: 0,
       categoryId: '',
       isActive: true,
-      availableAllDay: true,
     }])
+  }
+
+  const handleDownloadBatchTemplate = () => {
+    // Create CSV template
+    const headers = ['項目名稱', '分類', '描述', '售價 (台幣)', '可用數量', '狀態']
+    const csv = [headers.join(',')].join('\n')
+    
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `catering-batch-template-${Date.now()}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    
+    toast.success('模板已下載')
+  }
+
+  const handleUploadBatchCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.csv')) {
+      toast.error('請選擇 CSV 檔案')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string
+        const lines = text.split('\n').filter(line => line.trim())
+        
+        if (lines.length < 2) {
+          toast.error('CSV 檔案格式錯誤：至少需要標題列和一行資料')
+          return
+        }
+
+        // Skip header row
+        const dataLines = lines.slice(1)
+        const items: Array<{
+          name: string
+          description: string
+          cost: string
+          quantityAvailable: number
+          categoryId: string
+          isActive: boolean
+        }> = []
+
+        for (const line of dataLines) {
+          // Handle CSV with potential commas in quoted fields
+          const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+          
+          if (values.length >= 4 && values[0]) {
+            const categoryName = values[1] || ''
+            const category = categories.find(c => c.name === categoryName)
+            
+            items.push({
+              name: values[0] || '',
+              categoryId: category?.id || '',
+              description: values[2] || '',
+              cost: values[3] || '0',
+              quantityAvailable: parseInt(values[4] || '0') || 0,
+              isActive: values[5]?.toLowerCase() === '啟用' || values[5]?.toLowerCase() === 'true' || values[5] === '1',
+            })
+          }
+        }
+
+        if (items.length > 0) {
+          setBatchItems(items)
+          toast.success(`已載入 ${items.length} 個項目`)
+        } else {
+          toast.error('CSV 檔案中沒有有效的資料')
+        }
+      } catch (error) {
+        console.error('Error parsing CSV:', error)
+        toast.error('CSV 檔案解析失敗')
+      }
+    }
+    reader.onerror = () => {
+      toast.error('讀取檔案失敗')
+    }
+    reader.readAsText(file, 'UTF-8')
+  }
+
+  const handleDownloadBatchCSV = () => {
+    if (batchItems.length === 0) {
+      toast.error('沒有項目可下載')
+      return
+    }
+
+    const headers = ['項目名稱', '分類', '描述', '售價 (台幣)', '可用數量', '狀態']
+    const rows = batchItems.map(item => {
+      const categoryName = categories.find(c => c.id === item.categoryId)?.name || ''
+      return [
+        `"${item.name}"`,
+        `"${categoryName}"`,
+        `"${item.description || ''}"`,
+        item.cost,
+        item.quantityAvailable.toString(),
+        item.isActive ? '啟用' : '停用'
+      ].join(',')
+    })
+
+    const csv = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `catering-batch-items-${Date.now()}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    
+    toast.success('批次項目已下載')
   }
 
   const removeBatchItem = (index: number) => {
@@ -530,11 +629,10 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
               categoryId: item.categoryId || undefined,
               name: item.name,
               description: item.description || undefined,
-              imageUrl: item.imageUrl || undefined,
               cost: parseFloat(item.cost),
               quantityAvailable: parseInt(item.quantityAvailable.toString()) || 0,
               isActive: item.isActive,
-              availableAllDay: item.availableAllDay,
+              availableAllDay: true, // Default to all day for batch items
               timeSlots: [],
             }),
           })
@@ -555,13 +653,10 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       setBatchItems([{
         name: '',
         description: '',
-        imageFile: null,
-        imageUrl: '',
         cost: '',
         quantityAvailable: 0,
         categoryId: '',
         isActive: true,
-        availableAllDay: true,
       }])
       loadData()
     } catch (error) {
@@ -1168,13 +1263,10 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                   setBatchItems([{
                     name: '',
                     description: '',
-                    imageFile: null,
-                    imageUrl: '',
                     cost: '',
                     quantityAvailable: 0,
                     categoryId: '',
                     isActive: true,
-                    availableAllDay: true,
                   }])
                 }} />
                 <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
@@ -1188,13 +1280,10 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         setBatchItems([{
                           name: '',
                           description: '',
-                          imageFile: null,
-                          imageUrl: '',
                           cost: '',
                           quantityAvailable: 0,
                           categoryId: '',
                           isActive: true,
-                          availableAllDay: true,
                         }])
                       }}
                       className="text-gray-400 hover:text-gray-500"
@@ -1202,6 +1291,41 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                       <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
+                  
+                  {/* CSV Upload/Download Controls */}
+                  <div className="flex justify-between items-center mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={handleDownloadBatchTemplate}
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                        下載模板
+                      </button>
+                      <label className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <ArrowDownTrayIcon className="h-4 w-4 mr-2 rotate-180" />
+                        上傳 CSV
+                        <input
+                          type="file"
+                          accept=".csv"
+                          onChange={handleUploadBatchCSV}
+                          className="hidden"
+                        />
+                      </label>
+                      {batchItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleDownloadBatchCSV}
+                          className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                          下載項目
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
                   <div className="space-y-4">
                     {batchItems.map((item, index) => (
                       <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 space-y-3">
@@ -1323,48 +1447,6 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                             </select>
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            圖片 (JPG 格式，最大 2MB)
-                          </label>
-                          <div className="space-y-2">
-                            <input
-                              type="file"
-                              accept="image/jpeg,.jpg,.jpeg"
-                              onChange={(e) => handleImageUpload(e, true, index)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm"
-                            />
-                            {item.imageFile && (
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                {item.imageFile.name}
-                              </span>
-                            )}
-                            {item.imageUrl && (
-                              <div className="relative inline-block">
-                                <img
-                                  src={item.imageUrl}
-                                  alt="Preview"
-                                  className="h-24 w-24 object-cover rounded border border-gray-300 dark:border-gray-600"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none'
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newBatch = [...batchItems]
-                                    newBatch[index].imageUrl = ''
-                                    newBatch[index].imageFile = null
-                                    setBatchItems(newBatch)
-                                  }}
-                                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                                >
-                                  <XMarkIcon className="h-3 w-3" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
                       </div>
                     ))}
                     <div className="flex justify-between items-center pt-4 border-t border-gray-300 dark:border-gray-600">
@@ -1384,13 +1466,10 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                             setBatchItems([{
                               name: '',
                               description: '',
-                              imageFile: null,
-                              imageUrl: '',
                               cost: '',
                               quantityAvailable: 0,
                               categoryId: '',
                               isActive: true,
-                              availableAllDay: true,
                             }])
                           }}
                           className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"

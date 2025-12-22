@@ -583,6 +583,61 @@ export async function POST(request: NextRequest) {
     const { storeUserPassword } = await import('@/lib/credentials')
     storeUserPassword(email.toLowerCase().trim(), hashedPassword)
 
+    // Auto-add to admin's community and building if not super admin and no explicit membership specified
+    if (!isSuperAdmin && !communityMembership && !buildingMembership) {
+      // Get current user's community and building memberships
+      const currentUserMemberships = await prisma.communityMember.findMany({
+        where: {
+          userId: userId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+        },
+        include: {
+          community: {
+            include: {
+              buildings: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      // If admin has community admin/manager role, auto-add new user to that community
+      if (currentUserMemberships.length > 0) {
+        const adminCommunity = currentUserMemberships[0]
+        communityMembership = {
+          communityId: adminCommunity.communityId,
+          role: 'MEMBER',
+          memberClass: 'community',
+        }
+
+        // Also auto-add to building if admin is building admin
+        const adminBuildingMemberships = await prisma.buildingMember.findMany({
+          where: {
+            userId: userId,
+            role: { in: ['ADMIN', 'MANAGER'] },
+            building: {
+              communityId: adminCommunity.communityId,
+            },
+          },
+          select: {
+            buildingId: true,
+          },
+        })
+
+        if (adminBuildingMemberships.length > 0) {
+          buildingMembership = {
+            buildingId: adminBuildingMemberships[0].buildingId,
+            role: 'MEMBER',
+            memberClass: 'building',
+          }
+        }
+      }
+    }
+
     // Create community membership if specified
     if (communityMembership) {
       try {

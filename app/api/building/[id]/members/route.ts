@@ -6,6 +6,113 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 /**
+ * GET /api/building/[id]/members
+ * Get all building members
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user || !(session.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = (session.user as any).id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
+
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    // Get building to find community
+    const building = await prisma.building.findUnique({
+      where: { id: buildingId },
+      select: { communityId: true },
+    })
+
+    if (!building) {
+      return NextResponse.json({ error: 'Building not found' }, { status: 404 })
+    }
+
+    // Super admins can view all members, otherwise check permission
+    if (!user?.isAdmin) {
+      // Check if user is a building admin or community admin
+      const buildingMembership = await prisma.buildingMember.findUnique({
+        where: {
+          userId_buildingId: {
+            userId: userId,
+            buildingId: buildingId,
+          },
+        },
+      })
+
+      const communityMembership = building.communityId ? await prisma.communityMember.findUnique({
+        where: {
+          userId_communityId: {
+            userId: userId,
+            communityId: building.communityId,
+          },
+        },
+      }) : null
+
+      const hasPermission = (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) ||
+        (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER'))
+
+      if (!hasPermission) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      }
+    }
+
+    // Get all building members
+    const members = await prisma.buildingMember.findMany({
+      where: {
+        buildingId: buildingId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: {
+        joinedAt: 'desc',
+      },
+    })
+
+    // Determine assignable roles based on user's role
+    const assignableRoles = user?.isAdmin 
+      ? ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']
+      : ['MEMBER', 'VIEWER']
+
+    return NextResponse.json({
+      members: members.map(m => ({
+        id: m.id,
+        role: m.role,
+        joinedAt: m.joinedAt,
+        user: m.user,
+      })),
+      assignableRoles,
+    })
+  } catch (error: any) {
+    console.error('[Get Building Members] Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch building members', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * POST /api/building/[id]/members
  * Add a member to the building
  */
@@ -646,3 +753,76 @@ export async function POST(
   }
 }
 
+/**
+ * DELETE /api/building/[id]/members/[memberId]
+ * Remove a member from the building
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; memberId: string }> | { id: string; memberId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user || !(session.user as any)?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const userId = (session.user as any).id
+    const resolvedParams = params instanceof Promise ? await params : params
+    const buildingId = resolvedParams.id
+    const memberId = resolvedParams.memberId
+
+    // Check permissions (similar to POST)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    if (!currentUser?.isAdmin) {
+      const building = await prisma.building.findUnique({
+        where: { id: buildingId },
+        select: { communityId: true },
+      })
+
+      if (building) {
+        const buildingMembership = await prisma.buildingMember.findUnique({
+          where: {
+            userId_buildingId: {
+              userId: userId,
+              buildingId: buildingId,
+            },
+          },
+        })
+
+        const communityMembership = await prisma.communityMember.findUnique({
+          where: {
+            userId_communityId: {
+              userId: userId,
+              communityId: building.communityId,
+            },
+          },
+        })
+
+        const hasPermission = (buildingMembership && (buildingMembership.role === 'ADMIN' || buildingMembership.role === 'MANAGER')) ||
+          (communityMembership && (communityMembership.role === 'ADMIN' || communityMembership.role === 'MANAGER'))
+
+        if (!hasPermission) {
+          return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+        }
+      }
+    }
+
+    await prisma.buildingMember.delete({
+      where: { id: memberId },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('[Delete Building Member] Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to remove building member', details: error.message },
+      { status: 500 }
+    )
+  }
+}

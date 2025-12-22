@@ -88,7 +88,7 @@ export default function BuildingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'catering'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'catering' | 'members'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
@@ -256,6 +256,7 @@ export default function BuildingDetailPage() {
                   { id: 'packages', name: t('packageLocker') || 'Packages', icon: CubeIcon },
                   { id: 'messages', name: t('messages') || 'Messages', icon: ChatBubbleLeftRightIcon },
                   { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
+                  { id: 'members', name: t('members') || '成員', icon: UserIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups') || 'Working Groups', icon: UserGroupIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
                   // Only show catering tab if service is enabled
@@ -298,6 +299,14 @@ export default function BuildingDetailPage() {
             </div>
           )}
           {activeTab === 'facilities' && <FacilitiesTab buildingId={buildingId} floorFilter={floorFilter || undefined} />}
+          {activeTab === 'members' && buildingId && building && building.community && (
+            <BuildingMembersTab buildingId={buildingId} communityId={building.community.id} />
+          )}
+          {activeTab === 'members' && buildingId && building && !building.community && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示成員</p>
+            </div>
+          )}
           {activeTab === 'working-groups' && buildingId && building && building.community && (
             <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} />
           )}
@@ -2329,6 +2338,319 @@ function FacilitiesTab({ buildingId, floorFilter }: { buildingId: string; floorF
 }
 
 
+function BuildingMembersTab({ buildingId, communityId }: { buildingId: string; communityId: string }) {
+  const { t } = useLanguage()
+  const [members, setMembers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddMember, setShowAddMember] = useState(false)
+  const [newMemberEmail, setNewMemberEmail] = useState('')
+  const [newMemberName, setNewMemberName] = useState('')
+  const [newMemberPassword, setNewMemberPassword] = useState('')
+  const [newMemberRole, setNewMemberRole] = useState<'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER'>('MEMBER')
+  const [addingMember, setAddingMember] = useState(false)
+  const [assignableRoles, setAssignableRoles] = useState<string[]>([])
+
+  useEffect(() => {
+    fetchMembers()
+  }, [buildingId])
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/building/${buildingId}/members`, {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setMembers(data.members || [])
+        setAssignableRoles(data.assignableRoles || ['MEMBER', 'VIEWER'])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `Failed to fetch building members (${response.status})`
+        console.error('Failed to fetch building members:', errorMessage, errorData)
+        toast.error(errorMessage)
+      }
+    } catch (err) {
+      console.error('Failed to fetch members:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch building members'
+      toast.error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddMember = async () => {
+    if (!newMemberEmail.trim()) {
+      toast.error('Please enter an email address')
+      return
+    }
+
+    try {
+      setAddingMember(true)
+      const requestBody: any = {
+        targetUserEmail: newMemberEmail.trim(),
+        role: newMemberRole,
+        memberClass: 'building',
+      }
+      
+      // If password is provided, include it to create new user
+      if (newMemberPassword.trim()) {
+        requestBody.password = newMemberPassword.trim()
+        if (newMemberName.trim()) {
+          requestBody.name = newMemberName.trim()
+        }
+      }
+      
+      const response = await fetch(`/api/building/${buildingId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (response.ok) {
+        toast.success('Member added successfully')
+        setShowAddMember(false)
+        setNewMemberEmail('')
+        setNewMemberName('')
+        setNewMemberPassword('')
+        setNewMemberRole('MEMBER')
+        fetchMembers()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Failed to add member'
+        
+        if (errorMessage.includes('User not found') || errorMessage.includes('must exist')) {
+          toast.error(
+            <div className="flex flex-col gap-2">
+              <span>{errorMessage}</span>
+              <a 
+                href="/admin/users" 
+                className="text-blue-600 hover:text-blue-800 underline text-sm"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Go to Admin Users page to create user →
+              </a>
+            </div>,
+            { duration: 8000 }
+          )
+        } else {
+          toast.error(errorMessage)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to add member:', err)
+      toast.error('Failed to add member')
+    } finally {
+      setAddingMember(false)
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!confirm('Remove this member from the building?')) return
+
+    try {
+      const response = await fetch(`/api/building/${buildingId}/members/${memberId}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        toast.success('Member removed')
+        fetchMembers()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast.error(errorData.error || 'Failed to remove member')
+      }
+    } catch (err) {
+      console.error('Failed to remove member:', err)
+      toast.error('Failed to remove member')
+    }
+  }
+
+  if (loading) {
+    return <div className="text-center py-8 text-gray-500">Loading members...</div>
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">成員列表</h2>
+        <button
+          onClick={() => setShowAddMember(true)}
+          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+        >
+          + 添加成員
+        </button>
+      </div>
+
+      {members.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <p>No building members yet.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  用户
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  角色
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  加入时间
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              {members.map((member) => (
+                <tr key={member.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {member.user?.name || 'No name'}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{member.user?.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      member.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                      member.role === 'MANAGER' ? 'bg-blue-100 text-blue-800' :
+                      member.role === 'MEMBER' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {member.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(member.joinedAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => handleRemoveMember(member.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowAddMember(false)}></div>
+            
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                添加成员
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    邮箱地址 *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    姓名 (可选，创建新用户时使用)
+                  </label>
+                  <input
+                    type="text"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="User Name"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    密码 (可选，创建新用户时使用)
+                  </label>
+                  <input
+                    type="password"
+                    value={newMemberPassword}
+                    onChange={(e) => setNewMemberPassword(e.target.value)}
+                    placeholder="留空则仅添加现有用户"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    如果用户不存在且提供密码，将自动创建新用户并设置密码
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    角色 *
+                  </label>
+                  <select
+                    value={newMemberRole}
+                    onChange={(e) => setNewMemberRole(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    {assignableRoles.length > 0 ? (
+                      assignableRoles.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="MEMBER">MEMBER</option>
+                        <option value="VIEWER">VIEWER</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMember(false)
+                      setNewMemberEmail('')
+                      setNewMemberName('')
+                      setNewMemberPassword('')
+                      setNewMemberRole('MEMBER')
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddMember}
+                    disabled={addingMember || !newMemberEmail.trim()}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {addingMember ? '添加中...' : '添加'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; communityId: string }) {
   const { t } = useLanguage()
   const [workingGroups, setWorkingGroups] = useState<any[]>([])
@@ -2393,6 +2715,7 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
   }
 
   const fetchWorkingGroups = async () => {
+    let cancelled = false
     try {
       setLoading(true)
       setError(null)

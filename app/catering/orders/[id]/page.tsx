@@ -48,17 +48,23 @@ export default function CateringOrderDetailPage() {
 
   const loadOrder = async () => {
     try {
-      const response = await fetch(`/api/catering/orders/${params.id}`)
+      setLoading(true)
+      const response = await fetch(`/api/catering/orders/${params.id}`, {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
         setOrder(data)
       } else {
-        toast.error('Order not found')
+        const errorData = await response.json().catch(() => ({ error: 'Order not found' }))
+        console.error('Error loading order:', errorData)
+        toast.error(errorData.error || 'Order not found')
         router.push('/catering/orders')
       }
     } catch (error) {
       console.error('Error loading order:', error)
-      toast.error('Failed to load order')
+      toast.error('Failed to load order. Please try again.')
+      router.push('/catering/orders')
     } finally {
       setLoading(false)
     }
@@ -71,6 +77,7 @@ export default function CateringOrderDetailPage() {
     try {
       const response = await fetch(`/api/catering/orders/${params.id}/cancel`, {
         method: 'PUT',
+        credentials: 'include',
       })
 
       if (response.ok) {

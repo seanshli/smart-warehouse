@@ -6,8 +6,9 @@ import { createPrismaClient } from '@/lib/prisma-factory'
 // GET /api/catering/orders/[id] - Get single order details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const resolvedParams = params instanceof Promise ? await params : params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -24,10 +25,27 @@ export async function GET(
     }
 
     const order = await prisma.cateringOrder.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         household: {
-          select: { id: true, name: true, building: { select: { name: true } } },
+          select: { 
+            id: true, 
+            name: true, 
+            buildingId: true,
+            building: { 
+              select: { 
+                id: true,
+                name: true,
+                communityId: true,
+                community: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              } 
+            } 
+          },
         },
         orderedBy: {
           select: { id: true, name: true, email: true },
@@ -61,6 +79,56 @@ export async function GET(
       if (!membership) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+    } else {
+      // For admins, check if they have access to this building/community
+      // Get household's building info
+      const householdWithBuilding = await prisma.household.findUnique({
+        where: { id: order.householdId },
+        select: {
+          buildingId: true,
+          building: {
+            select: {
+              id: true,
+              communityId: true,
+            },
+          },
+        },
+      })
+
+      if (householdWithBuilding?.buildingId) {
+        // Check if user is building admin
+        const buildingMember = await prisma.buildingMember.findUnique({
+          where: {
+            userId_buildingId: {
+              userId: user.id,
+              buildingId: householdWithBuilding.buildingId,
+            },
+          },
+          select: { role: true },
+        })
+
+        const isBuildingAdmin = !!(buildingMember && (buildingMember.role === 'ADMIN' || buildingMember.role === 'MANAGER'))
+
+        // Check if user is community admin
+        let isCommunityAdmin = false
+        if (householdWithBuilding.building?.communityId) {
+          const communityMember = await prisma.communityMember.findUnique({
+            where: {
+              userId_communityId: {
+                userId: user.id,
+                communityId: householdWithBuilding.building.communityId,
+              },
+            },
+            select: { role: true },
+          })
+          isCommunityAdmin = !!(communityMember && (communityMember.role === 'ADMIN' || communityMember.role === 'MANAGER'))
+        }
+
+        // Super admin can access all, but building/community admins can only access their own
+        if (!user.isAdmin && !isBuildingAdmin && !isCommunityAdmin) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      }
     }
 
     return NextResponse.json(order)
@@ -76,8 +144,9 @@ export async function GET(
 // PUT /api/catering/orders/[id]/status - Update order status (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const resolvedParams = params instanceof Promise ? await params : params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
@@ -129,7 +198,7 @@ export async function PUT(
         updateData.cancelledAt = now
         // Restore quantities
         const order = await prisma.cateringOrder.findUnique({
-          where: { id: params.id },
+          where: { id: resolvedParams.id },
           include: { items: true },
         })
         if (order) {
@@ -148,7 +217,7 @@ export async function PUT(
     }
 
     const updatedOrder = await prisma.cateringOrder.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: updateData,
       include: {
         items: {

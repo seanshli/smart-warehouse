@@ -324,10 +324,67 @@ export async function POST(
       }
     }
 
-    if (!targetUser) {
+    // If user doesn't exist and password is provided, create the user
+    let targetUser = null
+    const createPassword = body.password
+    const createName = body.name || body.targetUserName
+    
+    if (!targetUser && targetUserEmail && createPassword) {
+      // Check if current user has permission to create users
+      const canCreateUsers = currentUser?.isAdmin || 
+        (await checkCommunityPermission(userId, communityId, 'canAddMembers'))
+      
+      if (!canCreateUsers) {
+        return NextResponse.json({ 
+          error: 'Insufficient permissions to create new users',
+          details: 'Only admins can create new users with passwords'
+        }, { status: 403 })
+      }
+      
+      // Create new user with password
+      try {
+        const bcrypt = await import('bcryptjs')
+        const hashedPassword = await bcrypt.default.hash(createPassword, 12)
+        
+        targetUser = await prisma.user.create({
+          data: {
+            email: targetUserEmail.trim().toLowerCase(),
+            name: createName || targetUserEmail.split('@')[0],
+            language: 'en',
+            isAdmin: false, // Don't allow creating admins through this endpoint
+          },
+        })
+        
+        // Store password
+        await prisma.userCredentials.upsert({
+          where: { userId: targetUser.id },
+          update: { password: hashedPassword },
+          create: {
+            userId: targetUser.id,
+            password: hashedPassword,
+          },
+        })
+        
+        console.log('[Add Community Member] Created new user:', targetUser.email)
+      } catch (createError: any) {
+        console.error('[Add Community Member] Error creating user:', createError)
+        if (createError.code === 'P2002') {
+          return NextResponse.json({ 
+            error: 'User with this email already exists',
+            details: 'Please use the existing user or choose a different email'
+          }, { status: 409 })
+        }
+        return NextResponse.json({ 
+          error: 'Failed to create user',
+          details: createError.message
+        }, { status: 500 })
+      }
+    } else if (!targetUser) {
       const emailToSearch = targetUserEmail || targetUserId || 'unknown'
       return NextResponse.json({ 
-        error: `User not found. The user with email "${emailToSearch}" must exist in the system before they can be added as a community member. Please create the user first in the Admin Users page.` 
+        error: `User not found. The user with email "${emailToSearch}" must exist in the system before they can be added as a community member.`,
+        details: 'Please create the user first in the Admin Users page, or provide a password to create the user automatically.',
+        helpUrl: '/admin/users'
       }, { status: 404 })
     }
 

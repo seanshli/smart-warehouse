@@ -89,13 +89,29 @@ export async function POST(
     })
 
     let seqNum = 1
-    if (lastTicket) {
-      // Parse format: MT-YYYY####
-      const parts = lastTicket.ticketNumber.split('-')
-      if (parts.length === 2) {
-        const seqStr = parts[1].substring(4) // Get part after year
-        const lastSeq = parseInt(seqStr) || 0
-        seqNum = lastSeq + 1
+    if (lastTicket && lastTicket.ticketNumber) {
+      try {
+        // Parse format: MT-YYYY#### or MT-YYYY-####
+        const parts = lastTicket.ticketNumber.split('-')
+        if (parts.length >= 2) {
+          // Handle both MT-YYYY#### and MT-YYYY-#### formats
+          const yearPart = parts[1]
+          if (yearPart.length > 4) {
+            // Format: MT-YYYY####
+            const seqStr = yearPart.substring(4)
+            const lastSeq = parseInt(seqStr) || 0
+            seqNum = lastSeq + 1
+          } else if (parts.length === 3) {
+            // Format: MT-YYYY-####
+            const seqStr = parts[2]
+            const lastSeq = parseInt(seqStr) || 0
+            seqNum = lastSeq + 1
+          }
+        }
+      } catch (parseError) {
+        console.error('[Kitchen Work Order] Error parsing ticket number:', parseError)
+        // Fallback: just increment from 1
+        seqNum = 1
       }
     }
 
@@ -107,36 +123,74 @@ export async function POST(
     ).join(', ')
 
     // Create kitchen work order
-    const ticket = await prisma.maintenanceTicket.create({
-      data: {
-        ticketNumber,
-        householdId: order.householdId,
-        requestedById: order.orderedById,
-        title: `Kitchen Work Order: ${order.orderNumber}`,
-        description: `Catering Order ${order.orderNumber}\n\nItems:\n${itemList}\n\nDelivery Type: ${order.deliveryType === 'scheduled' ? 'Scheduled' : 'Immediate'}${order.scheduledTime ? `\nScheduled Time: ${new Date(order.scheduledTime).toLocaleString()}` : ''}${order.notes ? `\n\nNotes: ${order.notes}` : ''}`,
-        category: 'FOOD_ORDER',
-        priority: 'NORMAL',
-        status: 'ASSIGNED', // Start as assigned since order is already accepted
-        routingType: 'INTERNAL_BUILDING',
-        // Note: assignedCrewId is for WorkingCrew, not WorkingGroup
-        // Kitchen work orders are assigned to workgroups via the catering order's workgroupId
-        // The workgroup members will see this ticket in their assigned tickets
-      },
-      include: {
-        household: {
-          select: {
-            id: true,
-            name: true,
-            building: {
-              select: {
-                id: true,
-                name: true,
+    let ticket
+    try {
+      ticket = await prisma.maintenanceTicket.create({
+        data: {
+          ticketNumber: ticketNumber || '', // Use generated number or empty for trigger
+          householdId: order.householdId,
+          requestedById: order.orderedById,
+          title: `Kitchen Work Order: ${order.orderNumber}`,
+          description: `Catering Order ${order.orderNumber}\n\nItems:\n${itemList}\n\nDelivery Type: ${order.deliveryType === 'scheduled' ? 'Scheduled' : 'Immediate'}${order.scheduledTime ? `\nScheduled Time: ${new Date(order.scheduledTime).toLocaleString()}` : ''}${order.notes ? `\n\nNotes: ${order.notes}` : ''}`,
+          category: 'FOOD_ORDER',
+          priority: 'NORMAL',
+          status: 'ASSIGNED', // Start as assigned since order is already accepted
+          routingType: 'INTERNAL_BUILDING',
+          // Note: assignedCrewId is for WorkingCrew, not WorkingGroup
+          // Kitchen work orders are assigned to workgroups via the catering order's workgroupId
+          // The workgroup members will see this ticket in their assigned tickets
+        },
+        include: {
+          household: {
+            select: {
+              id: true,
+              name: true,
+              building: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      })
+    } catch (createError: any) {
+      console.error('[Kitchen Work Order] Error creating ticket:', createError)
+      // If ticketNumber constraint fails, try with empty string (database trigger)
+      if (createError.code === 'P2002' || createError.message?.includes('ticketNumber')) {
+        console.log('[Kitchen Work Order] Retrying with empty ticketNumber for database trigger')
+        ticket = await prisma.maintenanceTicket.create({
+          data: {
+            ticketNumber: '', // Let database trigger generate it
+            householdId: order.householdId,
+            requestedById: order.orderedById,
+            title: `Kitchen Work Order: ${order.orderNumber}`,
+            description: `Catering Order ${order.orderNumber}\n\nItems:\n${itemList}\n\nDelivery Type: ${order.deliveryType === 'scheduled' ? 'Scheduled' : 'Immediate'}${order.scheduledTime ? `\nScheduled Time: ${new Date(order.scheduledTime).toLocaleString()}` : ''}${order.notes ? `\n\nNotes: ${order.notes}` : ''}`,
+            category: 'FOOD_ORDER',
+            priority: 'NORMAL',
+            status: 'ASSIGNED',
+            routingType: 'INTERNAL_BUILDING',
+          },
+          include: {
+            household: {
+              select: {
+                id: true,
+                name: true,
+                building: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+      } else {
+        throw createError
+      }
+    }
 
     // Update order status to preparing if not already
     if (order.status === 'accepted') {
@@ -155,9 +209,9 @@ export async function POST(
       },
     }, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating kitchen work order:', error)
+    console.error('[Kitchen Work Order] Error creating kitchen work order:', error)
     return NextResponse.json(
-      { error: 'Failed to create kitchen work order', details: error.message },
+      { error: 'Failed to create kitchen work order', details: error.message, stack: error.stack },
       { status: 500 }
     )
   }

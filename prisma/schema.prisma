@@ -200,7 +200,7 @@ model WorkingGroup {
   community   Community                @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   members     WorkingGroupMember[]
   permissions WorkingGroupPermission[]
-  // cateringOrders CateringOrder[] // TEMPORARILY DISABLED until migration
+  cateringOrders CateringOrder[]
 
   @@map("working_groups")
 }
@@ -1262,7 +1262,7 @@ model CateringOrder {
   householdId     String    @map("household_id")
   orderedById     String    @map("ordered_by_id")
   orderNumber     String    @unique @map("order_number") // e.g., "ORD-2025-001234"
-  // workgroupId     String?   @map("workgroup_id") // Workgroup assigned to handle this order - TEMPORARILY DISABLED until migration
+  workgroupId     String?   @map("workgroup_id") // Workgroup assigned to handle this order
   
   // Delivery options
   deliveryType    String    @default("immediate") @map("delivery_type") // "immediate" | "scheduled"
@@ -1285,7 +1285,7 @@ model CateringOrder {
   
   household       Household         @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   orderedBy       User              @relation("CateringOrderUser", fields: [orderedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  // workgroup       WorkingGroup?     @relation(fields: [workgroupId], references: [id], onDelete: SetNull, onUpdate: NoAction) // TEMPORARILY DISABLED
+  workgroup       WorkingGroup?     @relation(fields: [workgroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   items           CateringOrderItem[]
   notifications   Notification[]
   

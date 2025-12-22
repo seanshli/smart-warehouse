@@ -51,22 +51,22 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Filter by workgroup if user is workgroup member (only if workgroupId column exists)
-      // Note: This will be enabled after database migration
-      // const workgroupId = searchParams.get('workgroupId')
-      // if (workgroupId) {
-      //   whereClause.workgroupId = workgroupId
-      // } else if (!buildingId && !communityId) {
-      //   const userWorkgroups = await prisma.workingGroupMember.findMany({
-      //     where: { userId: user.id },
-      //     select: { workingGroupId: true },
-      //   })
-      //   if (userWorkgroups.length > 0) {
-      //     whereClause.workgroupId = {
-      //       in: userWorkgroups.map(wg => wg.workingGroupId),
-      //     }
-      //   }
-      // }
+      // Filter by workgroup if user is workgroup member
+      const workgroupId = searchParams.get('workgroupId')
+      if (workgroupId) {
+        whereClause.workgroupId = workgroupId
+      } else if (!buildingId && !communityId) {
+        // If no building/community filter, check if user is in a workgroup
+        const userWorkgroups = await prisma.workingGroupMember.findMany({
+          where: { userId: user.id },
+          select: { workingGroupId: true },
+        })
+        if (userWorkgroups.length > 0) {
+          whereClause.workgroupId = {
+            in: userWorkgroups.map(wg => wg.workingGroupId),
+          }
+        }
+      }
 
       // Admin can see orders filtered by building/community or all orders
       // If no filters, show all orders (super admin view)
@@ -102,9 +102,9 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          // workgroup: {
-          //   select: { id: true, name: true },
-          // },
+          workgroup: {
+            select: { id: true, name: true },
+          },
         },
         orderBy: { orderedAt: 'desc' },
         take: 100,
@@ -304,46 +304,47 @@ export async function POST(request: NextRequest) {
     const finalTotal = calculatedTotal > 0 ? calculatedTotal : (cart.total || 0)
     
     // Find appropriate workgroup for this order (based on household's building/community)
-    // Note: This will be enabled after database migration adds workgroup_id column
-    // let workgroupId: string | null = null
-    // const household = await prisma.household.findUnique({
-    //   where: { id: householdId },
-    //   select: {
-    //     buildingId: true,
-    //     building: {
-    //       select: {
-    //         id: true,
-    //         communityId: true,
-    //       },
-    //     },
-    //   },
-    // })
+    let workgroupId: string | null = null
+    const household = await prisma.household.findUnique({
+      where: { id: householdId },
+      select: {
+        buildingId: true,
+        building: {
+          select: {
+            id: true,
+            communityId: true,
+          },
+        },
+      },
+    })
 
-    // if (household?.building?.communityId) {
-    //   const cateringWorkgroup = await prisma.workingGroup.findFirst({
-    //     where: {
-    //       communityId: household.building.communityId,
-    //       type: {
-    //         in: ['CATERING', 'FOOD_SERVICE', 'KITCHEN', 'ADMINISTRATION'],
-    //       },
-    //     },
-    //     orderBy: { createdAt: 'asc' },
-    //   })
-    //   
-    //   if (cateringWorkgroup) {
-    //     workgroupId = cateringWorkgroup.id
-    //   } else {
-    //     const anyWorkgroup = await prisma.workingGroup.findFirst({
-    //       where: {
-    //         communityId: household.building.communityId,
-    //       },
-    //       orderBy: { createdAt: 'asc' },
-    //     })
-    //     if (anyWorkgroup) {
-    //       workgroupId = anyWorkgroup.id
-    //     }
-    //   }
-    // }
+    if (household?.building?.communityId) {
+      // Find catering workgroup for this community (or building-specific workgroup)
+      const cateringWorkgroup = await prisma.workingGroup.findFirst({
+        where: {
+          communityId: household.building.communityId,
+          type: {
+            in: ['CATERING', 'FOOD_SERVICE', 'KITCHEN', 'ADMINISTRATION'],
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      })
+      
+      if (cateringWorkgroup) {
+        workgroupId = cateringWorkgroup.id
+      } else {
+        // Fallback: find any workgroup for this community
+        const anyWorkgroup = await prisma.workingGroup.findFirst({
+          where: {
+            communityId: household.building.communityId,
+          },
+          orderBy: { createdAt: 'asc' },
+        })
+        if (anyWorkgroup) {
+          workgroupId = anyWorkgroup.id
+        }
+      }
+    }
     
     // Create order with items
     const order = await prisma.cateringOrder.create({
@@ -356,7 +357,7 @@ export async function POST(request: NextRequest) {
         totalAmount: finalTotal,
         status: 'pending', // Use 'pending' to match database constraint, will be updated to 'submitted' after constraint fix
         notes: notes || null,
-        // workgroupId: workgroupId || null, // Will be enabled after migration
+        workgroupId: workgroupId || null,
         items: {
           create: cart.items.map((item: any) => ({
             menuItemId: item.menuItemId,

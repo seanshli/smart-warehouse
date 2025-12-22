@@ -123,14 +123,21 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('[CateringAdminManager] Loaded orders:', data.orders?.length || 0)
         setOrders(data.orders || [])
+        if (data.orders && data.orders.length === 0) {
+          console.log('[CateringAdminManager] No orders found with filters:', { buildingId, communityId })
+        }
       } else {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('[CateringAdminManager] Failed to load orders:', error)
         toast.error(error.error || 'Failed to load orders')
+        setOrders([])
       }
     } catch (error) {
       console.error('Error loading orders:', error)
       toast.error('Failed to load orders')
+      setOrders([])
     } finally {
       setOrdersLoading(false)
     }

@@ -2347,8 +2347,27 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
   const [loadingMembers, setLoadingMembers] = useState(false)
 
   useEffect(() => {
-    fetchWorkingGroups()
-    fetchCommunityMembers()
+    if (!buildingId || !communityId) return
+    let cancelled = false
+    
+    const loadData = async () => {
+      try {
+        await fetchWorkingGroups()
+        if (!cancelled) {
+          await fetchCommunityMembers()
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('[WorkingGroupsTab] Error loading data:', error)
+        }
+      }
+    }
+    
+    loadData()
+    
+    return () => {
+      cancelled = true
+    }
   }, [buildingId, communityId])
 
   const fetchCommunityMembers = async () => {

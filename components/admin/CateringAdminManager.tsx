@@ -108,7 +108,18 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
 
   useEffect(() => {
     loadData()
+    // Load orders if orders tab is active
+    if (activeTab === 'orders') {
+      loadOrders()
+    }
   }, [buildingId, communityId])
+
+  useEffect(() => {
+    // Load orders when orders tab becomes active
+    if (activeTab === 'orders' && orders.length === 0 && !ordersLoading) {
+      loadOrders()
+    }
+  }, [activeTab])
 
   const loadOrders = async () => {
     try {

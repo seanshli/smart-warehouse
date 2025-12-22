@@ -263,11 +263,11 @@ export default function CateringOrderDetailPage() {
                     </p>
                   )}
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Quantity: {item.quantity} × ${item.unitPrice.toFixed(2)}
+                    Quantity: {item.quantity} × ${parseFloat(item.unitPrice?.toString() || '0').toFixed(2)}
                   </p>
                 </div>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  ${item.subtotal.toFixed(2)}
+                  ${parseFloat(item.subtotal?.toString() || '0').toFixed(2)}
                 </span>
               </div>
             ))}

@@ -134,7 +134,20 @@ export default function CateringCart() {
         toast.success(`Order ${order.orderNumber} submitted successfully!`)
         setCart({ items: [], total: 0 })
         // Use replace instead of push to avoid back button issues
-        router.replace(`/catering/orders/${order.id}`)
+        // Clear cart after successful submission
+        try {
+          await fetch('/api/catering/cart', {
+            method: 'DELETE',
+            credentials: 'include',
+          })
+        } catch (error) {
+          console.error('Error clearing cart:', error)
+        }
+        
+        // Navigate to order detail page
+        setTimeout(() => {
+          router.replace(`/catering/orders/${order.id}`)
+        }, 100)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Order submission error:', errorData)
@@ -195,7 +208,7 @@ export default function CateringCart() {
             <div className="flex-1">
               <h3 className="font-medium text-gray-900 dark:text-white">{item.name}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                ${item.unitPrice.toFixed(2)} each
+                ${parseFloat(item.unitPrice?.toString() || '0').toFixed(2)} each
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -288,7 +301,7 @@ export default function CateringCart() {
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg font-semibold text-gray-900 dark:text-white">Total</span>
           <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-            ${cart.total.toFixed(2)}
+            ${parseFloat(cart.total?.toString() || '0').toFixed(2)}
           </span>
         </div>
         <button

@@ -57,9 +57,9 @@ export async function GET(
             },
           },
         },
-        workgroup: {
-          select: { id: true, name: true },
-        },
+        // workgroup: {
+        //   select: { id: true, name: true },
+        // },
       },
     })
 

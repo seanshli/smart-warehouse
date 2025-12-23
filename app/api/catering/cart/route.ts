@@ -216,11 +216,24 @@ export async function POST(request: NextRequest) {
       console.error(`[Cart API] WARNING: Cookie was not set!`)
     }
 
-    return NextResponse.json(cart, {
+    const response = NextResponse.json(cart, {
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
       }
     })
+    
+    // Ensure cookie is included in response headers
+    // The cookie was already set above, but we need to make sure it's in the response
+    cookieStore.set(CART_COOKIE_NAME, cartJson, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+    
+    return response
   } catch (error) {
     console.error('Error adding to cart:', error)
     return NextResponse.json(

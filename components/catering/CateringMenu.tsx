@@ -283,7 +283,13 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Menu</h2>
         <button
-          onClick={() => router.push('/catering/cart')}
+          onClick={async () => {
+            // Reload cart count before navigating to ensure we have latest data
+            await loadCartCount()
+            // Small delay to ensure any pending cart operations complete
+            await new Promise(resolve => setTimeout(resolve, 200))
+            router.push('/catering/cart')
+          }}
           className="relative inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition-colors"
         >
           <ShoppingCartIcon className="h-5 w-5 mr-2" />

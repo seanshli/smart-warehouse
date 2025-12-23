@@ -33,16 +33,28 @@ export default function CateringCart() {
   const [notes, setNotes] = useState('')
 
   useEffect(() => {
+    console.log('[CateringCart] Component mounted, loading cart...')
     loadCart()
+    
     // Also reload cart when component becomes visible (handles navigation)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        console.log('[CateringCart] Page became visible, reloading cart...')
         loadCart()
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Reload cart when window gains focus (handles tab switching)
+    const handleFocus = () => {
+      console.log('[CateringCart] Window gained focus, reloading cart...')
+      loadCart()
+    }
+    window.addEventListener('focus', handleFocus)
+    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [])
 

@@ -346,39 +346,87 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Create order with items
-    const order = await prisma.cateringOrder.create({
-      data: {
-        householdId,
-        orderedById: user.id,
-        orderNumber,
-        deliveryType: deliveryType || 'immediate',
-        scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
-        totalAmount: finalTotal,
-        status: 'pending', // Use 'pending' to match database constraint, will be updated to 'submitted' after constraint fix
-        notes: notes || null,
-        workgroupId: workgroupId || null,
-        items: {
-          create: cart.items.map((item: any) => ({
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-            isVegetarian: item.isVegetarian || false,
-            spiceLevel: item.spiceLevel || 'no',
-          })),
+    // Create order with items - try with selection options first, fallback without them if columns don't exist
+    let order
+    try {
+      order = await prisma.cateringOrder.create({
+        data: {
+          householdId,
+          orderedById: user.id,
+          orderNumber,
+          deliveryType: deliveryType || 'immediate',
+          scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
+          totalAmount: finalTotal,
+          status: 'pending', // Use 'pending' to match database constraint, will be updated to 'submitted' after constraint fix
+          notes: notes || null,
+          workgroupId: workgroupId || null,
+          items: {
+            create: cart.items.map((item: any) => {
+              const orderItemData: any = {
+                menuItemId: item.menuItemId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                subtotal: item.subtotal,
+              }
+              // Include selection options if provided
+              if (item.isVegetarian !== undefined) {
+                orderItemData.isVegetarian = item.isVegetarian || false
+              }
+              if (item.spiceLevel !== undefined) {
+                orderItemData.spiceLevel = item.spiceLevel || 'no'
+              }
+              return orderItemData
+            }),
+          },
         },
-      },
-      include: {
-        items: {
-          include: {
-            menuItem: {
-              select: { id: true, name: true, imageUrl: true },
+        include: {
+          items: {
+            include: {
+              menuItem: {
+                select: { id: true, name: true, imageUrl: true },
+              },
             },
           },
         },
-      },
-    })
+      })
+    } catch (createError: any) {
+      // If columns don't exist, create without selection options
+      if (createError.message?.includes('is_vegetarian') || createError.message?.includes('spice_level') || createError.code === 'P2022') {
+        console.log('[Create Order] Selection option columns not found, creating order without them')
+        order = await prisma.cateringOrder.create({
+          data: {
+            householdId,
+            orderedById: user.id,
+            orderNumber,
+            deliveryType: deliveryType || 'immediate',
+            scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
+            totalAmount: finalTotal,
+            status: 'pending',
+            notes: notes || null,
+            workgroupId: workgroupId || null,
+            items: {
+              create: cart.items.map((item: any) => ({
+                menuItemId: item.menuItemId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                subtotal: item.subtotal,
+              })),
+            },
+          },
+          include: {
+            items: {
+              include: {
+                menuItem: {
+                  select: { id: true, name: true, imageUrl: true },
+                },
+              },
+            },
+          },
+        })
+      } else {
+        throw createError
+      }
+    }
 
     // Update menu item quantities
     for (const item of cart.items) {

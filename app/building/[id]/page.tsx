@@ -2674,7 +2674,9 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
     
     const loadData = async () => {
       try {
-        await fetchWorkingGroups()
+        if (!cancelled) {
+          await fetchWorkingGroups()
+        }
         if (!cancelled) {
           await fetchCommunityMembers()
         }
@@ -2746,27 +2748,51 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
   const openGroupDetails = async (group: any) => {
     if (!group.communityId) {
       console.warn('Working group missing communityId', group)
+      toast.error('Working group is missing community information')
       return
     }
+    
+    let cancelled = false
     setSelectedGroup(group)
     setGroupError(null)
     setGroupLoading(true)
+    
     try {
       const response = await fetch(
-        `/api/community/${group.communityId}/working-groups/${group.id}/members`
+        `/api/community/${group.communityId}/working-groups/${group.id}/members`,
+        {
+          credentials: 'include',
+        }
       )
+      
+      if (cancelled) return
+      
       if (response.ok) {
         const data = await response.json()
-        setGroupMembers(data.members || [])
+        if (!cancelled) {
+          setGroupMembers(data.members || [])
+        }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        setGroupError(errorData.error || 'Failed to load members')
+        if (!cancelled) {
+          setGroupError(errorData.error || 'Failed to load members')
+          toast.error(errorData.error || 'Failed to load members')
+        }
       }
     } catch (err) {
+      if (cancelled) return
       console.error('Failed to load group members:', err)
-      setGroupError(err instanceof Error ? err.message : 'Failed to load members')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load members'
+      setGroupError(errorMessage)
+      toast.error(errorMessage)
     } finally {
-      setGroupLoading(false)
+      if (!cancelled) {
+        setGroupLoading(false)
+      }
+    }
+    
+    return () => {
+      cancelled = true
     }
   }
 

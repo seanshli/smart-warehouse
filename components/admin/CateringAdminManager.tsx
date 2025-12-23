@@ -147,7 +147,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       }
     } catch (error) {
       console.error('Error loading orders:', error)
-      toast.error('Failed to load orders')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load orders'
+      toast.error(errorMessage)
       setOrders([])
     } finally {
       setOrdersLoading(false)

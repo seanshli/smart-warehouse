@@ -490,6 +490,7 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
           isActive: itemForm.isActive,
           availableAllDay: itemForm.availableAllDay,
           timeSlots: itemForm.availableAllDay ? [] : itemForm.timeSlots,
+          options: itemForm.options || [],
         }),
       })
 
@@ -533,37 +534,113 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     }
   }
 
-  const startEditItem = (item: CateringMenuItem) => {
+  const startEditItem = async (item: CateringMenuItem) => {
     setEditingItem(item)
-    setItemForm({
-      name: item.name,
-      description: item.description || '',
-      imageUrl: item.imageUrl || '',
-      imageFile: null,
-      cost: item.cost.toString(),
-      quantityAvailable: item.quantityAvailable || 0,
-      categoryId: item.category?.id || '',
-      isActive: item.isActive,
-      availableAllDay: item.availableAllDay,
-      timeSlots: item.timeSlots?.map(ts => ({
-        dayOfWeek: ts.dayOfWeek,
-        startTime: ts.startTime,
-        endTime: ts.endTime,
-      })) || [],
-      options: (item as any).options?.map((opt: any) => ({
-        id: opt.id,
-        optionName: opt.optionName,
-        optionType: opt.optionType || 'select',
-        isRequired: opt.isRequired || false,
-        displayOrder: opt.displayOrder || 0,
-        selections: opt.selections?.map((sel: any) => ({
-          id: sel.id,
-          selectionName: sel.selectionName,
-          selectionValue: sel.selectionValue,
-          displayOrder: sel.displayOrder || 0,
+    
+    // Fetch full item with options from API to ensure we have all data
+    try {
+      const response = await fetch(`/api/catering/menu/${item.id}`, {
+        credentials: 'include',
+      })
+      
+      if (response.ok) {
+        const fullItem = await response.json()
+        setItemForm({
+          name: fullItem.name,
+          description: fullItem.description || '',
+          imageUrl: fullItem.imageUrl || '',
+          imageFile: null,
+          cost: fullItem.cost.toString(),
+          quantityAvailable: fullItem.quantityAvailable || 0,
+          categoryId: fullItem.category?.id || '',
+          isActive: fullItem.isActive,
+          availableAllDay: fullItem.availableAllDay,
+          timeSlots: fullItem.timeSlots?.map((ts: any) => ({
+            dayOfWeek: ts.dayOfWeek,
+            startTime: ts.startTime,
+            endTime: ts.endTime,
+          })) || [],
+          options: (fullItem.options || []).map((opt: any) => ({
+            id: opt.id,
+            optionName: opt.optionName,
+            optionType: opt.optionType || 'select',
+            isRequired: opt.isRequired || false,
+            displayOrder: opt.displayOrder || 0,
+            selections: (opt.selections || []).map((sel: any) => ({
+              id: sel.id,
+              selectionName: sel.selectionName,
+              selectionValue: sel.selectionValue,
+              displayOrder: sel.displayOrder || 0,
+            })),
+          })),
+        })
+      } else {
+        // Fallback to item data if API fails
+        console.warn('Failed to fetch full item, using cached data')
+        setItemForm({
+          name: item.name,
+          description: item.description || '',
+          imageUrl: item.imageUrl || '',
+          imageFile: null,
+          cost: item.cost.toString(),
+          quantityAvailable: item.quantityAvailable || 0,
+          categoryId: item.category?.id || '',
+          isActive: item.isActive,
+          availableAllDay: item.availableAllDay,
+          timeSlots: item.timeSlots?.map(ts => ({
+            dayOfWeek: ts.dayOfWeek,
+            startTime: ts.startTime,
+            endTime: ts.endTime,
+          })) || [],
+          options: (item as any).options?.map((opt: any) => ({
+            id: opt.id,
+            optionName: opt.optionName,
+            optionType: opt.optionType || 'select',
+            isRequired: opt.isRequired || false,
+            displayOrder: opt.displayOrder || 0,
+            selections: opt.selections?.map((sel: any) => ({
+              id: sel.id,
+              selectionName: sel.selectionName,
+              selectionValue: sel.selectionValue,
+              displayOrder: sel.displayOrder || 0,
+            })) || [],
+          })) || [],
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching item for edit:', error)
+      // Fallback to item data
+      setItemForm({
+        name: item.name,
+        description: item.description || '',
+        imageUrl: item.imageUrl || '',
+        imageFile: null,
+        cost: item.cost.toString(),
+        quantityAvailable: item.quantityAvailable || 0,
+        categoryId: item.category?.id || '',
+        isActive: item.isActive,
+        availableAllDay: item.availableAllDay,
+        timeSlots: item.timeSlots?.map(ts => ({
+          dayOfWeek: ts.dayOfWeek,
+          startTime: ts.startTime,
+          endTime: ts.endTime,
         })) || [],
-      })) || [],
-    })
+        options: (item as any).options?.map((opt: any) => ({
+          id: opt.id,
+          optionName: opt.optionName,
+          optionType: opt.optionType || 'select',
+          isRequired: opt.isRequired || false,
+          displayOrder: opt.displayOrder || 0,
+          selections: opt.selections?.map((sel: any) => ({
+            id: sel.id,
+            selectionName: sel.selectionName,
+            selectionValue: sel.selectionValue,
+            displayOrder: sel.displayOrder || 0,
+          })) || [],
+        })) || [],
+      })
+    }
+    
     setShowItemForm(true)
   }
 

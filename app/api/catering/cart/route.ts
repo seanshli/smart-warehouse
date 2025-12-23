@@ -29,13 +29,22 @@ export async function GET(request: NextRequest) {
 
     try {
       const cart = JSON.parse(cartCookie.value)
-      return NextResponse.json(cart, {
+      console.log(`[Cart API] Retrieved cart with ${cart.items?.length || 0} items, total: ${cart.total || 0}`)
+      
+      // Ensure cart has proper structure
+      const validCart = {
+        items: Array.isArray(cart.items) ? cart.items : [],
+        total: typeof cart.total === 'number' ? cart.total : (cart.items || []).reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0),
+      }
+      
+      return NextResponse.json(validCart, {
         headers: {
           'Content-Type': 'application/json',
         }
       })
     } catch (parseError) {
       console.error('[Cart API] Error parsing cart cookie:', parseError)
+      console.error('[Cart API] Cookie value:', cartCookie.value?.substring(0, 200))
       // Clear invalid cookie
       cookieStore.delete(CART_COOKIE_NAME)
       return NextResponse.json({ items: [], total: 0 }, {
@@ -163,7 +172,10 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/', // Ensure cookie is available for all paths
     })
+    
+    console.log(`[Cart API] Saved cart with ${cart.items.length} items, total: ${cart.total}`)
 
     return NextResponse.json(cart, {
       headers: {

@@ -246,7 +246,7 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json(menuItem)
+    return NextResponse.json(menuItemWithOptions)
   } catch (error) {
     console.error('Error updating menu item:', error)
     return NextResponse.json(

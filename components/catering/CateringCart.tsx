@@ -40,13 +40,29 @@ export default function CateringCart() {
     try {
       const response = await fetch('/api/catering/cart', {
         credentials: 'include',
+        cache: 'no-store',
       })
       if (response.ok) {
         const data = await response.json()
-        setCart(data)
+        console.log('[CateringCart] Loaded cart data:', data)
+        // Ensure cart has items array and total
+        if (data && typeof data === 'object') {
+          setCart({
+            items: Array.isArray(data.items) ? data.items : [],
+            total: typeof data.total === 'number' ? data.total : (data.items || []).reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0),
+          })
+        } else {
+          setCart({ items: [], total: 0 })
+        }
+      } else {
+        console.error('[CateringCart] Failed to load cart:', response.status, response.statusText)
+        const errorText = await response.text().catch(() => '')
+        console.error('[CateringCart] Error response:', errorText)
+        setCart({ items: [], total: 0 })
       }
     } catch (error) {
-      console.error('Error loading cart:', error)
+      console.error('[CateringCart] Error loading cart:', error)
+      setCart({ items: [], total: 0 })
     } finally {
       setLoading(false)
     }

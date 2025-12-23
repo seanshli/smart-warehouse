@@ -2755,47 +2755,35 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
       let response: Response
       
       // Handle both community-level and building-level workgroups
+      let membersUrl: string | null = null
+      
       if (group.communityId) {
         // Community-level workgroup
-        response = await fetch(
-          `/api/community/${group.communityId}/working-groups/${group.id}/members`,
-          {
-            credentials: 'include',
-          }
-        )
+        membersUrl = `/api/community/${group.communityId}/working-groups/${group.id}/members`
       } else if (buildingId && group.buildingId) {
         // Building-level workgroup - try building API
         // Note: Building workgroups might be accessed via community if building has a community
         if (building?.community?.id) {
-          response = await fetch(
-            `/api/community/${building.community.id}/working-groups/${group.id}/members`,
-            {
-              credentials: 'include',
-            }
-          )
+          membersUrl = `/api/community/${building.community.id}/working-groups/${group.id}/members`
         } else {
           // Building without community - try building API directly
-          response = await fetch(
-            `/api/building/${buildingId}/working-groups/${group.id}/members`,
-            {
-              credentials: 'include',
-            }
-          )
+          membersUrl = `/api/building/${buildingId}/working-groups/${group.id}/members`
         }
       } else if (communityId) {
         // Fallback: use communityId from props if group doesn't have it
-        response = await fetch(
-          `/api/community/${communityId}/working-groups/${group.id}/members`,
-          {
-            credentials: 'include',
-          }
-        )
-      } else {
+        membersUrl = `/api/community/${communityId}/working-groups/${group.id}/members`
+      }
+      
+      if (!membersUrl) {
         console.warn('Working group missing communityId or buildingId', group)
         toast.error('Working group is missing location information')
         setGroupLoading(false)
         return
       }
+      
+      response = await fetch(membersUrl, {
+        credentials: 'include',
+      })
       
       if (response.ok) {
         const data = await response.json()

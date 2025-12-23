@@ -36,6 +36,10 @@ interface Order {
   deliveredAt?: string
   cancelledAt?: string
   items: OrderItem[]
+  household: {
+    id: string
+    name: string
+  }
   workgroup?: {
     id: string
     name: string

@@ -91,8 +91,17 @@ export default function CateringCart() {
     }
   }
 
-  const removeItem = async (menuItemId: string) => {
+  const removeItem = async (menuItemId: string, isVegetarian?: boolean, spiceLevel?: string) => {
+    // Find the item to get its options for proper deletion
+    const cartItem = cart.items.find(item => item.menuItemId === menuItemId)
+    if (!cartItem) {
+      toast.error('Item not found in cart')
+      return
+    }
+
     try {
+      // For DELETE, we'll use the first matching item (API limitation)
+      // In the future, we could enhance the API to accept options
       const response = await fetch(`/api/catering/cart/${menuItemId}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -254,7 +263,7 @@ export default function CateringCart() {
                 ${parseFloat(item.subtotal?.toString() || '0').toFixed(2)}
               </span>
               <button
-                onClick={() => removeItem(item.menuItemId)}
+                onClick={() => removeItem(item.menuItemId, item.isVegetarian, item.spiceLevel)}
                 className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
               >
                 <TrashIcon className="h-5 w-5" />

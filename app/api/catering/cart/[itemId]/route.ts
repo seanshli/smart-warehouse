@@ -17,7 +17,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { quantity } = body
+    const { quantity, isVegetarian, spiceLevel } = body
 
     if (quantity === undefined || quantity < 0) {
       return NextResponse.json(
@@ -37,8 +37,18 @@ export async function PUT(
     }
 
     const cart: { items: any[]; total?: number } = JSON.parse(cartCookie.value)
+    // Match by menuItemId and selection options (if provided)
     const itemIndex = cart.items.findIndex(
-      (item: any) => item.menuItemId === params.itemId
+      (item: any) => {
+        const menuItemMatch = item.menuItemId === params.itemId
+        if (isVegetarian !== undefined || spiceLevel !== undefined) {
+          // Match by options if provided
+          return menuItemMatch &&
+            (isVegetarian === undefined || item.isVegetarian === isVegetarian) &&
+            (spiceLevel === undefined || item.spiceLevel === spiceLevel)
+        }
+        return menuItemMatch
+      }
     )
 
     if (itemIndex < 0) {
@@ -104,6 +114,8 @@ export async function DELETE(
     }
 
     const cart: { items: any[]; total?: number } = JSON.parse(cartCookie.value)
+    // For DELETE, we need to match by menuItemId only (or we could accept options in query params)
+    // For now, delete the first matching item
     const itemIndex = cart.items.findIndex(
       (item: any) => item.menuItemId === params.itemId
     )

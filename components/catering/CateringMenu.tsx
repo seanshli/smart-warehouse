@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import CateringMenuItemCard from './CateringMenuItemCard'
 import { FunnelIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
+import { useLanguage } from '@/components/LanguageProvider'
+import { useTranslation } from '@/lib/useTranslation'
 
 interface CateringService {
   id: string
@@ -50,10 +52,13 @@ interface CateringMenuProps {
 export default function CateringMenu({ buildingId, communityId, householdId }: CateringMenuProps) {
   const { data: session } = useSession()
   const router = useRouter()
+  const { currentLanguage } = useLanguage()
+  const { translateText } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [service, setService] = useState<CateringService | null>(null)
   const [categories, setCategories] = useState<CateringCategory[]>([])
   const [menuItems, setMenuItems] = useState<CateringMenuItem[]>([])
+  const [translatedItems, setTranslatedItems] = useState<CateringMenuItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [cartItemCount, setCartItemCount] = useState(0)
@@ -62,6 +67,40 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
     loadMenu()
     loadCartCount()
   }, [buildingId, communityId])
+
+  // Translate menu items when language or items change
+  useEffect(() => {
+    const translateItems = async () => {
+      if (menuItems.length === 0) {
+        setTranslatedItems([])
+        return
+      }
+
+      try {
+        const translated = await Promise.all(
+          menuItems.map(async (item) => {
+            const translatedName = await translateText(item.name, currentLanguage)
+            const translatedDescription = item.description 
+              ? await translateText(item.description, currentLanguage)
+              : item.description
+            
+            return {
+              ...item,
+              name: translatedName,
+              description: translatedDescription,
+            }
+          })
+        )
+        setTranslatedItems(translated)
+      } catch (error) {
+        console.error('Error translating menu items:', error)
+        // Fallback to original items
+        setTranslatedItems(menuItems)
+      }
+    }
+
+    translateItems()
+  }, [menuItems, currentLanguage, translateText])
 
   const loadCartCount = async () => {
     try {
@@ -168,7 +207,10 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
     }
   }
 
-  const filteredItems = menuItems.filter((item) => {
+  // Use translated items for filtering and display
+  const itemsToFilter = translatedItems.length > 0 ? translatedItems : menuItems
+  
+  const filteredItems = itemsToFilter.filter((item) => {
     const matchesCategory = !selectedCategory || item.category?.id === selectedCategory
     const matchesSearch = !searchTerm || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

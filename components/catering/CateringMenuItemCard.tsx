@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ShoppingCartIcon, ClockIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { useLanguage } from '@/components/LanguageProvider'
+import { useTranslation } from '@/lib/useTranslation'
 
 interface CateringMenuItem {
   id: string
@@ -32,10 +34,30 @@ interface CateringMenuItemCardProps {
 }
 
 export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenuItemCardProps) {
+  const { currentLanguage } = useLanguage()
+  const { translateText } = useTranslation()
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const [isVegetarian, setIsVegetarian] = useState(false)
   const [spiceLevel, setSpiceLevel] = useState('no')
+  const [translatedName, setTranslatedName] = useState(item.name)
+  const [translatedDescription, setTranslatedDescription] = useState(item.description || '')
+
+  // Translate item name and description when language changes
+  useEffect(() => {
+    const translateItem = async () => {
+      if (item.name) {
+        const translated = await translateText(item.name, currentLanguage)
+        setTranslatedName(translated)
+      }
+      if (item.description) {
+        const translated = await translateText(item.description, currentLanguage)
+        setTranslatedDescription(translated)
+      }
+    }
+    
+    translateItem()
+  }, [item.name, item.description, currentLanguage, translateText])
 
   const handleAddToCart = async () => {
     if (quantity <= 0) {
@@ -51,7 +73,7 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
     setIsAdding(true)
     try {
       await onAddToCart(item.id, quantity, isVegetarian, spiceLevel)
-      toast.success(`Added ${quantity} ${item.name} to cart`)
+      toast.success(`Added ${quantity} ${translatedName} to cart`)
       setQuantity(1)
       setIsVegetarian(false)
       setSpiceLevel('no')
@@ -91,7 +113,7 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
         <div className="relative h-48 w-full overflow-hidden">
           <Image
             src={item.imageUrl}
-            alt={item.name}
+            alt={translatedName}
             fill
             className="object-cover"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -102,16 +124,16 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {item.name}
+            {translatedName}
           </h3>
           <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
             ${typeof item.cost === 'string' ? parseFloat(item.cost).toFixed(2) : item.cost.toFixed(2)}
           </span>
         </div>
 
-        {item.description && (
+        {translatedDescription && (
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            {item.description}
+            {translatedDescription}
           </p>
         )}
 

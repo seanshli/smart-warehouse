@@ -96,6 +96,14 @@ export async function POST(request: NextRequest) {
     const prisma = createPrismaClient()
     const menuItem = await prisma.cateringMenuItem.findUnique({
       where: { id: menuItemId },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     })
 
     if (!menuItem) {
@@ -106,20 +114,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`[Cart API] Adding item to cart: ${menuItem.name} (ID: ${menuItemId}), isActive: ${menuItem.isActive}, quantityAvailable: ${menuItem.quantityAvailable}, requestedQuantity: ${quantity}`)
+    console.log(`[Cart API] Adding item to cart: ${menuItem.name} (ID: ${menuItemId}), Category: ${menuItem.category?.name || 'N/A'}, isActive: ${menuItem.isActive}, quantityAvailable: ${menuItem.quantityAvailable}, requestedQuantity: ${quantity}`)
 
     if (!menuItem.isActive) {
-      console.error(`[Cart API] Menu item is inactive: ${menuItem.name} (ID: ${menuItemId})`)
+      console.error(`[Cart API] Menu item is inactive: ${menuItem.name} (ID: ${menuItemId}), Category: ${menuItem.category?.name || 'N/A'}`)
       return NextResponse.json(
         { error: 'Menu item is not available' },
         { status: 400 }
       )
     }
 
-    if (menuItem.quantityAvailable < quantity) {
-      console.error(`[Cart API] Insufficient quantity: ${menuItem.name} (ID: ${menuItemId}), available: ${menuItem.quantityAvailable}, requested: ${quantity}`)
+    // Allow adding to cart even if quantityAvailable is 0 (for pre-orders or unlimited items)
+    // Only check if quantityAvailable is explicitly set and insufficient
+    if (menuItem.quantityAvailable > 0 && menuItem.quantityAvailable < quantity) {
+      console.error(`[Cart API] Insufficient quantity: ${menuItem.name} (ID: ${menuItemId}), Category: ${menuItem.category?.name || 'N/A'}, available: ${menuItem.quantityAvailable}, requested: ${quantity}`)
       return NextResponse.json(
-        { error: 'Insufficient quantity available' },
+        { error: `Insufficient quantity available. Only ${menuItem.quantityAvailable} available.` },
         { status: 400 }
       )
     }

@@ -215,8 +215,21 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
     const matchesSearch = !searchTerm || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Only filter by isActive - don't filter by quantityAvailable (allow items with 0 quantity for pre-orders)
     return matchesCategory && matchesSearch && item.isActive
   })
+  
+  // Log filtered items for debugging
+  useEffect(() => {
+    if (filteredItems.length > 0) {
+      console.log('[CateringMenu] Filtered items:', filteredItems.map(item => ({
+        name: item.name,
+        category: item.category?.name,
+        isActive: item.isActive,
+        quantityAvailable: item.quantityAvailable,
+      })))
+    }
+  }, [filteredItems])
 
   if (loading) {
     return (

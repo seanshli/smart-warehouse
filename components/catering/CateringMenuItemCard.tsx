@@ -65,7 +65,9 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
       return
     }
 
-    if (quantity > item.quantityAvailable) {
+    // Only check quantity if it's explicitly set and greater than 0
+    // Allow adding items with quantityAvailable = 0 (for pre-orders or unlimited items)
+    if (item.quantityAvailable > 0 && quantity > item.quantityAvailable) {
       toast.error(`Only ${item.quantityAvailable} available`)
       return
     }
@@ -77,8 +79,10 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
       setQuantity(1)
       setIsVegetarian(false)
       setSpiceLevel('no')
-    } catch (error) {
-      toast.error('Failed to add to cart')
+    } catch (error: any) {
+      console.error('[CateringMenuItemCard] Error adding to cart:', error)
+      const errorMessage = error?.message || error?.error || 'Failed to add to cart'
+      toast.error(errorMessage)
     } finally {
       setIsAdding(false)
     }
@@ -153,7 +157,7 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
           )}
         </div>
 
-        {item.quantityAvailable > 0 && (
+        {(item.quantityAvailable > 0 || item.quantityAvailable === 0) && (
           <div className="space-y-3">
             {/* Selection Options */}
             <div className="space-y-2">
@@ -200,7 +204,7 @@ export default function CateringMenuItemCard({ item, onAddToCart }: CateringMenu
               />
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding || item.quantityAvailable === 0}
+                disabled={isAdding}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ShoppingCartIcon className="h-5 w-5" />

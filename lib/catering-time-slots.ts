@@ -124,3 +124,112 @@ export function formatTimeSlot(slot: TimeSlot): string {
   
   return `${dayName}: ${timeRange}`
 }
+
+/**
+ * Calculate the next available time for a menu item based on time slots
+ * 
+ * @param timeSlots - Effective time slots for the item
+ * @param availableAllDay - Whether the item is available all day
+ * @param currentTime - Optional current time (defaults to now)
+ * @returns Date object representing the next available time, or null if available now
+ */
+export function getNextAvailableTime(
+  timeSlots: TimeSlot[],
+  availableAllDay: boolean,
+  currentTime: Date = new Date()
+): Date | null {
+  // If available all day and no time slots, available now
+  if (availableAllDay && timeSlots.length === 0) {
+    return null // Available now
+  }
+
+  // If no time slots and not available all day, not available
+  if (timeSlots.length === 0) {
+    return null // Not available
+  }
+
+  // Check if currently available
+  if (isItemAvailableNow(timeSlots, availableAllDay, currentTime)) {
+    return null // Available now
+  }
+
+  const currentDay = currentTime.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const currentHour = currentTime.getHours()
+  const currentMinute = currentTime.getMinutes()
+  const currentTimeMinutes = currentHour * 60 + currentMinute
+
+  // Find the next available time slot
+  let nextAvailable: Date | null = null
+
+  for (const slot of timeSlots) {
+    const [startHour, startMinute] = slot.startTime.split(':').map(Number)
+    const startMinutes = startHour * 60 + startMinute
+
+    // Determine which day this slot applies to
+    let targetDay = currentDay
+    let targetDate = new Date(currentTime)
+
+    if (slot.dayOfWeek === -1) {
+      // All days - check if today's slot has passed
+      if (currentTimeMinutes < startMinutes) {
+        // Slot starts later today
+        targetDate = new Date(currentTime)
+        targetDate.setHours(startHour, startMinute, 0, 0)
+        if (!nextAvailable || targetDate < nextAvailable) {
+          nextAvailable = targetDate
+        }
+      } else {
+        // Slot starts tomorrow
+        targetDate = new Date(currentTime)
+        targetDate.setDate(targetDate.getDate() + 1)
+        targetDate.setHours(startHour, startMinute, 0, 0)
+        if (!nextAvailable || targetDate < nextAvailable) {
+          nextAvailable = targetDate
+        }
+      }
+    } else {
+      // Specific day of week
+      const daysUntilTarget = (slot.dayOfWeek - currentDay + 7) % 7
+      
+      if (daysUntilTarget === 0) {
+        // Today - check if slot has passed
+        if (currentTimeMinutes < startMinutes) {
+          // Slot starts later today
+          targetDate = new Date(currentTime)
+          targetDate.setHours(startHour, startMinute, 0, 0)
+          if (!nextAvailable || targetDate < nextAvailable) {
+            nextAvailable = targetDate
+          }
+        } else {
+          // Slot starts next week
+          targetDate = new Date(currentTime)
+          targetDate.setDate(targetDate.getDate() + 7)
+          targetDate.setHours(startHour, startMinute, 0, 0)
+          if (!nextAvailable || targetDate < nextAvailable) {
+            nextAvailable = targetDate
+          }
+        }
+      } else {
+        // Slot starts on a future day
+        targetDate = new Date(currentTime)
+        targetDate.setDate(targetDate.getDate() + daysUntilTarget)
+        targetDate.setHours(startHour, startMinute, 0, 0)
+        if (!nextAvailable || targetDate < nextAvailable) {
+          nextAvailable = targetDate
+        }
+      }
+    }
+
+    // Check weekend/weekday filter
+    if (slot.isWeekend !== null && slot.isWeekend !== undefined) {
+      const targetDayOfWeek = targetDate.getDay()
+      const isWeekend = targetDayOfWeek === 0 || targetDayOfWeek === 6
+      if (slot.isWeekend !== isWeekend) {
+        // Skip this slot if it doesn't match weekend/weekday requirement
+        continue
+      }
+    }
+  }
+
+  return nextAvailable
+}

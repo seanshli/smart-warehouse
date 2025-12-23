@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ArrowLeftIcon, XCircleIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import CateringOrderWorkflow from '@/components/catering/CateringOrderWorkflow'
 
 interface OrderItem {
   id: string
@@ -246,7 +247,6 @@ export default function CateringOrderDetailPage() {
         {/* Workflow Progress */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">訂單流程 (Order Workflow)</h2>
             {workOrder ? (
               <a
                 href={`/admin/maintenance?ticketId=${workOrder.id}`}
@@ -266,37 +266,7 @@ export default function CateringOrderDetailPage() {
               </button>
             )}
           </div>
-          <div className="flex items-center space-x-2 text-sm">
-            <div className={`flex items-center ${['submitted', 'accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-blue-600' : 'text-gray-400'}`}>
-              <CheckCircleIcon className="h-5 w-5 mr-1" />
-              <span>已提交</span>
-            </div>
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <div className={`flex items-center ${['accepted', 'preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-green-600' : 'text-gray-400'}`}>
-              <CheckCircleIcon className="h-5 w-5 mr-1" />
-              <span>已接受</span>
-            </div>
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <div className={`flex items-center ${['preparing', 'ready', 'delivered', 'closed'].includes(order.status) ? 'text-yellow-600' : 'text-gray-400'}`}>
-              <ClockIcon className="h-5 w-5 mr-1" />
-              <span>準備中</span>
-            </div>
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <div className={`flex items-center ${['ready', 'delivered', 'closed'].includes(order.status) ? 'text-purple-600' : 'text-gray-400'}`}>
-              <CheckCircleIcon className="h-5 w-5 mr-1" />
-              <span>已就緒</span>
-            </div>
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <div className={`flex items-center ${['delivered', 'closed'].includes(order.status) ? 'text-green-600' : 'text-gray-400'}`}>
-              <CheckCircleIcon className="h-5 w-5 mr-1" />
-              <span>已送達</span>
-            </div>
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <div className={`flex items-center ${order.status === 'closed' ? 'text-gray-600' : 'text-gray-400'}`}>
-              <CheckCircleIcon className="h-5 w-5 mr-1" />
-              <span>已完成</span>
-            </div>
-          </div>
+          <CateringOrderWorkflow order={order} />
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
@@ -362,7 +332,11 @@ export default function CateringOrderDetailPage() {
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Delivery Type</span>
               <span className="font-medium">
-                {order.deliveryType === 'scheduled' ? 'Scheduled (預約)' : 'Immediate'}
+                {order.deliveryType === 'dine-in' 
+                  ? 'Dine-in at Restaurant (餐廳內用)'
+                  : order.deliveryType === 'scheduled' 
+                  ? 'Scheduled (預約送達)' 
+                  : 'Immediate (立即送達)'}
               </span>
             </div>
             {order.scheduledTime && (

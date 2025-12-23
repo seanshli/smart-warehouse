@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ShoppingCartIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ShoppingCartIcon, XMarkIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { useHousehold } from '@/components/HouseholdProvider'
+import { getEffectiveTimeSlots, isItemAvailableNow, getNextAvailableTime, TimeSlot } from '@/lib/catering-time-slots'
 
 interface CartItem {
   menuItemId: string
@@ -15,6 +16,9 @@ interface CartItem {
   subtotal: number
   isVegetarian?: boolean
   spiceLevel?: string
+  availableAllDay?: boolean
+  timeSlots?: TimeSlot[]
+  categoryTimeSlots?: TimeSlot[]
 }
 
 interface Cart {
@@ -28,9 +32,11 @@ export default function CateringCart() {
   const [cart, setCart] = useState<Cart>({ items: [], total: 0 })
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [deliveryType, setDeliveryType] = useState<'immediate' | 'scheduled'>('immediate')
+  const [deliveryType, setDeliveryType] = useState<'immediate' | 'scheduled' | 'dine-in'>('immediate')
   const [scheduledTime, setScheduledTime] = useState('')
   const [notes, setNotes] = useState('')
+  const [isPreOrder, setIsPreOrder] = useState(false)
+  const [preOrderMessage, setPreOrderMessage] = useState('')
 
   useEffect(() => {
     console.log('[CateringCart] Component mounted, loading cart...')
@@ -81,6 +87,9 @@ export default function CateringCart() {
             total,
           })
           
+          // Check if any items are pre-orders (outside available time)
+          checkPreOrderStatus(items)
+          
           // Log if cart is empty but we expected items
           if (items.length === 0 && data.items && data.items.length > 0) {
             console.error('[CateringCart] WARNING: Cart items array exists but is empty after processing!', data.items)
@@ -100,6 +109,74 @@ export default function CateringCart() {
       setCart({ items: [], total: 0 })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Check if cart contains pre-orders (items outside available time)
+  const checkPreOrderStatus = async (items: CartItem[]) => {
+    if (items.length === 0) {
+      setIsPreOrder(false)
+      setPreOrderMessage('')
+      return
+    }
+
+    const now = new Date()
+    let hasPreOrder = false
+    let earliestAvailableTime: Date | null = null
+
+    // Fetch menu items to get time slot information
+    for (const cartItem of items) {
+      try {
+        const menuResponse = await fetch(`/api/catering/menu/${cartItem.menuItemId}`, {
+          credentials: 'include',
+        })
+        if (menuResponse.ok) {
+          const menuItem = await menuResponse.json()
+          const effectiveTimeSlots = getEffectiveTimeSlots(
+            menuItem.timeSlots,
+            menuItem.category?.timeSlots,
+            menuItem.availableAllDay
+          )
+
+          const isAvailable = isItemAvailableNow(
+            effectiveTimeSlots,
+            menuItem.availableAllDay || false,
+            now
+          )
+
+          if (!isAvailable) {
+            hasPreOrder = true
+            const nextAvailable = getNextAvailableTime(
+              effectiveTimeSlots,
+              menuItem.availableAllDay || false,
+              now
+            )
+            if (nextAvailable && (!earliestAvailableTime || nextAvailable < earliestAvailableTime)) {
+              earliestAvailableTime = nextAvailable
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`[CateringCart] Error checking availability for item ${cartItem.menuItemId}:`, error)
+      }
+    }
+
+    setIsPreOrder(hasPreOrder)
+    if (hasPreOrder && earliestAvailableTime) {
+      const formattedTime = earliestAvailableTime.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      setPreOrderMessage(`此訂單為預訂單，將於 ${formattedTime} 開始準備`)
+      // Auto-set scheduled time to earliest available time
+      const isoString = earliestAvailableTime.toISOString().slice(0, 16)
+      setScheduledTime(isoString)
+      setDeliveryType('scheduled')
+    } else {
+      setPreOrderMessage('')
     }
   }
 
@@ -183,8 +260,15 @@ export default function CateringCart() {
       return
     }
 
+    // For scheduled orders, require scheduled time
     if (deliveryType === 'scheduled' && !scheduledTime) {
       toast.error('Please select a scheduled delivery time')
+      return
+    }
+
+    // For pre-orders, ensure scheduled time is set
+    if (isPreOrder && !scheduledTime) {
+      toast.error('Please select a scheduled time for pre-order')
       return
     }
 
@@ -196,8 +280,8 @@ export default function CateringCart() {
         credentials: 'include',
         body: JSON.stringify({
           householdId: household.id,
-          deliveryType,
-          scheduledTime: deliveryType === 'scheduled' ? scheduledTime : undefined,
+          deliveryType: deliveryType || (isPreOrder ? 'scheduled' : 'immediate'),
+          scheduledTime: (deliveryType === 'scheduled' || isPreOrder) && scheduledTime ? scheduledTime : undefined,
           notes: notes.trim() || undefined,
         }),
       })
@@ -324,6 +408,21 @@ export default function CateringCart() {
         ))}
       </div>
 
+      {/* Pre-order Notice */}
+      {isPreOrder && preOrderMessage && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-start">
+            <ClockIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                預訂單通知 (Pre-order Notice)
+              </h4>
+              <p className="text-sm text-blue-800 dark:text-blue-300">{preOrderMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delivery Options */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delivery Options</h3>
@@ -334,10 +433,16 @@ export default function CateringCart() {
               name="deliveryType"
               value="immediate"
               checked={deliveryType === 'immediate'}
-              onChange={(e) => setDeliveryType(e.target.value as 'immediate')}
+              onChange={(e) => setDeliveryType(e.target.value as 'immediate' | 'scheduled' | 'dine-in')}
+              disabled={isPreOrder}
               className="mr-3"
             />
-            <span className="text-gray-900 dark:text-white">立即送達 (Immediate)</span>
+            <span className={`text-gray-900 dark:text-white ${isPreOrder ? 'opacity-50' : ''}`}>
+              立即送達 (Immediate)
+            </span>
+            {isPreOrder && (
+              <span className="ml-2 text-xs text-gray-500">(目前不可用 - 預訂單)</span>
+            )}
           </label>
           <label className="flex items-center">
             <input
@@ -345,10 +450,21 @@ export default function CateringCart() {
               name="deliveryType"
               value="scheduled"
               checked={deliveryType === 'scheduled'}
-              onChange={(e) => setDeliveryType(e.target.value as 'scheduled')}
+              onChange={(e) => setDeliveryType(e.target.value as 'immediate' | 'scheduled' | 'dine-in')}
               className="mr-3"
             />
             <span className="text-gray-900 dark:text-white">預約送達 (Scheduled)</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="deliveryType"
+              value="dine-in"
+              checked={deliveryType === 'dine-in'}
+              onChange={(e) => setDeliveryType(e.target.value as 'immediate' | 'scheduled' | 'dine-in')}
+              className="mr-3"
+            />
+            <span className="text-gray-900 dark:text-white">餐廳內用 (Dine-in at Restaurant)</span>
           </label>
         </div>
         {deliveryType === 'scheduled' && (

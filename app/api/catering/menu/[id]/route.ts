@@ -19,7 +19,11 @@ export async function GET(
     let menuItem: any = await prisma.cateringMenuItem.findUnique({
       where: { id: params.id },
       include: {
-        category: true,
+        category: {
+          include: {
+            timeSlots: true,
+          },
+        },
         timeSlots: true,
         service: {
           include: {

@@ -224,6 +224,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate delivery type
+    const validDeliveryTypes = ['immediate', 'scheduled', 'dine-in']
+    if (deliveryType && !validDeliveryTypes.includes(deliveryType)) {
+      return NextResponse.json(
+        { error: `Invalid delivery type. Must be one of: ${validDeliveryTypes.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
     if (deliveryType === 'scheduled' && !scheduledTime) {
       return NextResponse.json(
         { error: 'scheduledTime is required for scheduled delivery' },
@@ -231,7 +239,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (deliveryType === 'scheduled') {
+    if (deliveryType === 'scheduled' && scheduledTime) {
       const scheduled = new Date(scheduledTime)
       if (scheduled < new Date()) {
         return NextResponse.json(
@@ -240,6 +248,11 @@ export async function POST(request: NextRequest) {
         )
       }
     }
+
+    // For dine-in, scheduledTime is not required (can be immediate or scheduled)
+    // For immediate, scheduledTime should be null
+    const finalDeliveryType = deliveryType || 'immediate'
+    const finalScheduledTime = (finalDeliveryType === 'scheduled' && scheduledTime) ? new Date(scheduledTime) : null
 
     // Validate cart items and check availability
     for (const item of cart.items) {
@@ -354,10 +367,10 @@ export async function POST(request: NextRequest) {
           householdId,
           orderedById: user.id,
           orderNumber,
-          deliveryType: deliveryType || 'immediate',
-          scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
+          deliveryType: finalDeliveryType,
+          scheduledTime: finalScheduledTime,
           totalAmount: finalTotal,
-          status: 'pending', // Use 'pending' to match database constraint, will be updated to 'submitted' after constraint fix
+          status: 'submitted', // Order starts as submitted, waiting for admin approval
           notes: notes || null,
           workgroupId: workgroupId || null,
           items: {
@@ -398,10 +411,10 @@ export async function POST(request: NextRequest) {
             householdId,
             orderedById: user.id,
             orderNumber,
-            deliveryType: deliveryType || 'immediate',
-            scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : null,
+            deliveryType: finalDeliveryType,
+            scheduledTime: finalScheduledTime,
             totalAmount: finalTotal,
-            status: 'pending',
+            status: 'submitted',
             notes: notes || null,
             workgroupId: workgroupId || null,
             items: {

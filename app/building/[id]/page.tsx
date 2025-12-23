@@ -307,13 +307,14 @@ export default function BuildingDetailPage() {
               <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示成員</p>
             </div>
           )}
-          {activeTab === 'working-groups' && buildingId && building && building.community && (
-            <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} />
-          )}
-          {activeTab === 'working-groups' && buildingId && building && !building.community && (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示工作組</p>
-            </div>
+          {activeTab === 'working-groups' && buildingId && building && (
+            building.community ? (
+              <WorkingGroupsTab buildingId={buildingId} communityId={building.community.id} building={building} />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示工作組</p>
+              </div>
+            )
           )}
           {activeTab === 'announcements' && buildingId && (
             <AnnouncementsTab 
@@ -2651,7 +2652,7 @@ function BuildingMembersTab({ buildingId, communityId }: { buildingId: string; c
   )
 }
 
-function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; communityId: string }) {
+function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: string; communityId: string; building?: Building | null }) {
   const { t } = useLanguage()
   const [workingGroups, setWorkingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -2746,53 +2747,72 @@ function WorkingGroupsTab({ buildingId, communityId }: { buildingId: string; com
   }
 
   const openGroupDetails = async (group: any) => {
-    if (!group.communityId) {
-      console.warn('Working group missing communityId', group)
-      toast.error('Working group is missing community information')
-      return
-    }
-    
-    let cancelled = false
     setSelectedGroup(group)
     setGroupError(null)
     setGroupLoading(true)
     
     try {
-      const response = await fetch(
-        `/api/community/${group.communityId}/working-groups/${group.id}/members`,
-        {
-          credentials: 'include',
-        }
-      )
+      let response: Response
       
-      if (cancelled) return
+      // Handle both community-level and building-level workgroups
+      if (group.communityId) {
+        // Community-level workgroup
+        response = await fetch(
+          `/api/community/${group.communityId}/working-groups/${group.id}/members`,
+          {
+            credentials: 'include',
+          }
+        )
+      } else if (buildingId && group.buildingId) {
+        // Building-level workgroup - try building API
+        // Note: Building workgroups might be accessed via community if building has a community
+        if (building?.community?.id) {
+          response = await fetch(
+            `/api/community/${building.community.id}/working-groups/${group.id}/members`,
+            {
+              credentials: 'include',
+            }
+          )
+        } else {
+          // Building without community - try building API directly
+          response = await fetch(
+            `/api/building/${buildingId}/working-groups/${group.id}/members`,
+            {
+              credentials: 'include',
+            }
+          )
+        }
+      } else if (communityId) {
+        // Fallback: use communityId from props if group doesn't have it
+        response = await fetch(
+          `/api/community/${communityId}/working-groups/${group.id}/members`,
+          {
+            credentials: 'include',
+          }
+        )
+      } else {
+        console.warn('Working group missing communityId or buildingId', group)
+        toast.error('Working group is missing location information')
+        setGroupLoading(false)
+        return
+      }
       
       if (response.ok) {
         const data = await response.json()
-        if (!cancelled) {
-          setGroupMembers(data.members || [])
-        }
+        setGroupMembers(data.members || [])
       } else {
         const errorData = await response.json().catch(() => ({}))
-        if (!cancelled) {
-          setGroupError(errorData.error || 'Failed to load members')
-          toast.error(errorData.error || 'Failed to load members')
-        }
+        const errorMsg = errorData.error || 'Failed to load members'
+        setGroupError(errorMsg)
+        toast.error(errorMsg)
       }
     } catch (err) {
-      if (cancelled) return
       console.error('Failed to load group members:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to load members'
       setGroupError(errorMessage)
       toast.error(errorMessage)
     } finally {
-      if (!cancelled) {
-        setGroupLoading(false)
-      }
-    }
-    
-    return () => {
-      cancelled = true
+      setGroupLoading(false)
     }
   }
 

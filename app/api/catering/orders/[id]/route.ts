@@ -186,6 +186,123 @@ export async function PUT(
         if (!updateData.confirmedAt) {
           updateData.confirmedAt = now
         }
+        // Auto-create kitchen work order when order is accepted
+        try {
+          const orderForWorkOrder = await prisma.cateringOrder.findUnique({
+            where: { id: resolvedParams.id },
+            include: {
+              household: {
+                include: {
+                  building: {
+                    include: {
+                      community: true,
+                    },
+                  },
+                },
+              },
+              workgroup: true,
+              items: {
+                include: {
+                  menuItem: true,
+                },
+              },
+            },
+          })
+
+          if (orderForWorkOrder) {
+            // Check if work order already exists
+            const existingTicket = await prisma.maintenanceTicket.findFirst({
+              where: {
+                householdId: orderForWorkOrder.householdId,
+                category: 'FOOD_ORDER',
+                description: {
+                  contains: orderForWorkOrder.orderNumber,
+                },
+              },
+            })
+
+            if (!existingTicket) {
+              // Generate ticket number
+              const year = new Date().getFullYear()
+              const lastTicket = await prisma.maintenanceTicket.findFirst({
+                where: {
+                  ticketNumber: {
+                    startsWith: `MT-${year}`,
+                  },
+                },
+                orderBy: { ticketNumber: 'desc' },
+                select: { ticketNumber: true },
+              })
+
+              let seqNum = 1
+              if (lastTicket && lastTicket.ticketNumber) {
+                try {
+                  const parts = lastTicket.ticketNumber.split('-')
+                  if (parts.length >= 2) {
+                    const yearPart = parts[1]
+                    if (yearPart.length > 4) {
+                      const seqStr = yearPart.substring(4)
+                      const lastSeq = parseInt(seqStr) || 0
+                      seqNum = lastSeq + 1
+                    } else if (parts.length === 3) {
+                      const seqStr = parts[2]
+                      const lastSeq = parseInt(seqStr) || 0
+                      seqNum = lastSeq + 1
+                    }
+                  }
+                } catch (parseError) {
+                  console.error('[Order Status Update] Error parsing ticket number:', parseError)
+                  seqNum = 1
+                }
+              }
+
+              const ticketNumber = `MT-${year}${seqNum.toString().padStart(4, '0')}`
+              const itemList = orderForWorkOrder.items.map(item => 
+                `${item.menuItem.name} x${item.quantity}`
+              ).join(', ')
+
+              // Create kitchen work order
+              try {
+                await prisma.maintenanceTicket.create({
+                  data: {
+                    ticketNumber: ticketNumber || '',
+                    householdId: orderForWorkOrder.householdId,
+                    requestedById: orderForWorkOrder.orderedById,
+                    title: `Kitchen Work Order: ${orderForWorkOrder.orderNumber}`,
+                    description: `Catering Order ${orderForWorkOrder.orderNumber}\n\nItems:\n${itemList}\n\nDelivery Type: ${orderForWorkOrder.deliveryType === 'scheduled' ? 'Scheduled' : 'Immediate'}${orderForWorkOrder.scheduledTime ? `\nScheduled Time: ${new Date(orderForWorkOrder.scheduledTime).toLocaleString()}` : ''}${orderForWorkOrder.notes ? `\n\nNotes: ${orderForWorkOrder.notes}` : ''}`,
+                    category: 'FOOD_ORDER',
+                    priority: 'NORMAL',
+                    status: 'ASSIGNED',
+                    routingType: 'INTERNAL_BUILDING',
+                  },
+                })
+                console.log(`[Order Status Update] Created kitchen work order for order ${orderForWorkOrder.orderNumber}`)
+              } catch (createError: any) {
+                console.error('[Order Status Update] Error creating kitchen work order:', createError)
+                // Try with empty ticketNumber if constraint fails
+                if (createError.code === 'P2002' || createError.message?.includes('ticketNumber')) {
+                  await prisma.maintenanceTicket.create({
+                    data: {
+                      ticketNumber: '',
+                      householdId: orderForWorkOrder.householdId,
+                      requestedById: orderForWorkOrder.orderedById,
+                      title: `Kitchen Work Order: ${orderForWorkOrder.orderNumber}`,
+                      description: `Catering Order ${orderForWorkOrder.orderNumber}\n\nItems:\n${itemList}\n\nDelivery Type: ${orderForWorkOrder.deliveryType === 'scheduled' ? 'Scheduled' : 'Immediate'}${orderForWorkOrder.scheduledTime ? `\nScheduled Time: ${new Date(orderForWorkOrder.scheduledTime).toLocaleString()}` : ''}${orderForWorkOrder.notes ? `\n\nNotes: ${orderForWorkOrder.notes}` : ''}`,
+                      category: 'FOOD_ORDER',
+                      priority: 'NORMAL',
+                      status: 'ASSIGNED',
+                      routingType: 'INTERNAL_BUILDING',
+                    },
+                  })
+                  console.log(`[Order Status Update] Created kitchen work order (with trigger) for order ${orderForWorkOrder.orderNumber}`)
+                }
+              }
+            }
+          }
+        } catch (workOrderError) {
+          // Don't fail the order update if work order creation fails
+          console.error('[Order Status Update] Error creating kitchen work order (non-blocking):', workOrderError)
+        }
         break
       case 'preparing':
         if (!updateData.preparedAt) {

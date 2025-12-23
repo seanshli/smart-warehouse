@@ -1305,7 +1305,11 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         {!categoryForm.availableAllDay && (
                           <div className="space-y-2 ml-6">
                             {categoryForm.timeSlots.map((slot, index) => (
-                              <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                              <div 
+                                key={index} 
+                                className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <select
                                   value={slot.dayOfWeek}
                                   onChange={(e) => updateCategoryTimeSlot(index, 'dayOfWeek', parseInt(e.target.value))}
@@ -1322,16 +1326,28 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                                 </select>
                                 <input
                                   type="time"
-                                  value={slot.startTime}
-                                  onChange={(e) => updateCategoryTimeSlot(index, 'startTime', e.target.value)}
-                                  className="text-sm px-2 py-1 border rounded"
+                                  value={slot.startTime || '09:00'}
+                                  onChange={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    updateCategoryTimeSlot(index, 'startTime', e.target.value)
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-sm px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white cursor-pointer"
+                                  style={{ minWidth: '100px' }}
                                 />
-                                <span>至</span>
+                                <span className="text-gray-600 dark:text-gray-400">至</span>
                                 <input
                                   type="time"
-                                  value={slot.endTime}
-                                  onChange={(e) => updateCategoryTimeSlot(index, 'endTime', e.target.value)}
-                                  className="text-sm px-2 py-1 border rounded"
+                                  value={slot.endTime || '17:00'}
+                                  onChange={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    updateCategoryTimeSlot(index, 'endTime', e.target.value)
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-sm px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white cursor-pointer"
+                                  style={{ minWidth: '100px' }}
                                 />
                                 <select
                                   value={slot.isWeekend === null ? 'all' : slot.isWeekend ? 'weekend' : 'weekday'}

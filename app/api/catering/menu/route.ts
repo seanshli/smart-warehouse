@@ -58,14 +58,6 @@ export async function GET(request: NextRequest) {
                 },
               },
               timeSlots: true,
-              options: {
-                include: {
-                  selections: true,
-                },
-                orderBy: {
-                  displayOrder: 'asc',
-                },
-              },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -109,14 +101,6 @@ export async function GET(request: NextRequest) {
                 },
               },
               timeSlots: true,
-              options: {
-                include: {
-                  selections: true,
-                },
-                orderBy: {
-                  displayOrder: 'asc',
-                },
-              },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -147,6 +131,60 @@ export async function GET(request: NextRequest) {
       }, { status: 200 })
     }
 
+    // Try to include options if table exists, otherwise return without options
+    let menuItemsWithOptions: any[] = service.menuItems
+    try {
+      // Try to fetch options for menu items if the table exists
+      const menuItemsWithOptionsData = await Promise.all(
+        service.menuItems.map(async (item) => {
+          try {
+            // Use $queryRaw to check if table exists first
+            const tableCheck = await prisma.$queryRaw`
+              SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'catering_menu_item_options'
+              )
+            `
+            const tableExists = (tableCheck as any[])[0]?.exists
+            
+            if (tableExists) {
+              const itemWithOptions = await (prisma as any).cateringMenuItem.findUnique({
+                where: { id: item.id },
+                include: {
+                  options: {
+                    include: {
+                      selections: true,
+                    },
+                    orderBy: {
+                      displayOrder: 'asc',
+                    },
+                  },
+                },
+              })
+              return itemWithOptions || item
+            }
+            return item
+          } catch (err: any) {
+            // If options table doesn't exist, return item without options
+            if (err.code === 'P2021' || err.message?.includes('does not exist') || err.message?.includes('Unknown arg')) {
+              return item
+            }
+            throw err
+          }
+        })
+      )
+      menuItemsWithOptions = menuItemsWithOptionsData
+    } catch (optionsError: any) {
+      // If options table doesn't exist, continue without options
+      if (optionsError.code === 'P2021' || optionsError.message?.includes('does not exist') || optionsError.message?.includes('Unknown arg')) {
+        console.log('[Menu API] Options table not found, returning items without options')
+        menuItemsWithOptions = service.menuItems
+      } else {
+        throw optionsError
+      }
+    }
+
     return NextResponse.json({
       service: {
         id: service.id,
@@ -155,12 +193,29 @@ export async function GET(request: NextRequest) {
         isActive: service.isActive,
       },
       categories: service.categories,
-      menuItems: service.menuItems,
+      menuItems: menuItemsWithOptions,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching catering menu:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+    })
+    
+    // If it's a schema error (table doesn't exist), return empty menu instead of 500
+    if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
+      console.log('[Menu API] Schema error detected, returning empty menu')
+      return NextResponse.json({
+        service: null,
+        categories: [],
+        menuItems: [],
+        message: 'Menu schema not ready. Please run database migrations.',
+      }, { status: 200 })
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch catering menu' },
+      { error: 'Failed to fetch catering menu', details: process.env.NODE_ENV === 'development' ? error?.message : undefined },
       { status: 500 }
     )
   }
@@ -248,60 +303,107 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create menu item with options
-    const menuItem = await prisma.cateringMenuItem.create({
-      data: {
-        serviceId,
-        categoryId: categoryId || null,
-        name,
-        description,
-        imageUrl,
-        cost: parseFloat(cost),
-        quantityAvailable: parseInt(quantityAvailable) || 0,
-        isActive,
-        availableAllDay,
-        timeSlots: {
-          create: timeSlots.map((slot: any) => ({
-            dayOfWeek: slot.dayOfWeek,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-          })),
-        },
-        options: {
-          create: options.map((opt: any) => ({
-            optionName: opt.optionName,
-            optionType: opt.optionType || 'select',
-            isRequired: opt.isRequired || false,
-            displayOrder: opt.displayOrder || 0,
-            selections: {
-              create: (opt.selections || []).map((sel: any) => ({
-                selectionName: sel.selectionName,
-                selectionValue: sel.selectionValue || sel.selectionName,
-                displayOrder: sel.displayOrder || 0,
-              })),
-            },
-          })),
-        },
+    // Check if options table exists before trying to create with options
+    let optionsTableExists = false
+    if (options && options.length > 0) {
+      try {
+        const tableCheck = await prisma.$queryRaw`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'catering_menu_item_options'
+          )
+        `
+        optionsTableExists = (tableCheck as any[])[0]?.exists
+      } catch (checkError) {
+        console.log('[Menu API] Could not check options table, will skip options')
+        optionsTableExists = false
+      }
+    }
+
+    // Create menu item (with options only if table exists)
+    const createData: any = {
+      serviceId,
+      categoryId: categoryId || null,
+      name,
+      description,
+      imageUrl,
+      cost: parseFloat(cost),
+      quantityAvailable: parseInt(quantityAvailable) || 0,
+      isActive,
+      availableAllDay,
+      timeSlots: {
+        create: timeSlots.map((slot: any) => ({
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        })),
       },
+    }
+
+    // Only include options if table exists and options are provided
+    if (optionsTableExists && options && options.length > 0) {
+      createData.options = {
+        create: options.map((opt: any) => ({
+          optionName: opt.optionName,
+          optionType: opt.optionType || 'select',
+          isRequired: opt.isRequired || false,
+          displayOrder: opt.displayOrder || 0,
+          selections: {
+            create: (opt.selections || []).map((sel: any) => ({
+              selectionName: sel.selectionName,
+              selectionValue: sel.selectionValue || sel.selectionName,
+              displayOrder: sel.displayOrder || 0,
+            })),
+          },
+        })),
+      }
+    }
+
+    const menuItem = await prisma.cateringMenuItem.create({
+      data: createData,
       include: {
         category: true,
         timeSlots: true,
-        options: {
-          include: {
-            selections: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
-        },
       },
     })
 
-    return NextResponse.json(menuItem, { status: 201 })
-  } catch (error) {
+    // Try to include options in response if table exists
+    let menuItemWithOptions: any = menuItem
+    if (optionsTableExists) {
+      try {
+        const itemWithOptions = await (prisma as any).cateringMenuItem.findUnique({
+          where: { id: menuItem.id },
+          include: {
+            options: {
+              include: {
+                selections: true,
+              },
+              orderBy: {
+                displayOrder: 'asc',
+              },
+            },
+          },
+        })
+        if (itemWithOptions) {
+          menuItemWithOptions = itemWithOptions
+        }
+      } catch (optionsError: any) {
+        console.log('[Menu API] Could not fetch options, returning item without options')
+      }
+    }
+
+    return NextResponse.json(menuItemWithOptions, { status: 201 })
+  } catch (error: any) {
     console.error('Error creating menu item:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+    })
+    
     return NextResponse.json(
-      { error: 'Failed to create menu item' },
+      { error: 'Failed to create menu item', details: process.env.NODE_ENV === 'development' ? error?.message : undefined },
       { status: 500 }
     )
   }

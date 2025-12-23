@@ -15,19 +15,12 @@ export async function GET(
     }
 
     const prisma = createPrismaClient()
-    const menuItem = await prisma.cateringMenuItem.findUnique({
+    // Fetch menu item without options first (to avoid schema errors)
+    let menuItem: any = await prisma.cateringMenuItem.findUnique({
       where: { id: params.id },
       include: {
         category: true,
         timeSlots: true,
-        options: {
-          include: {
-            selections: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
-        },
         service: {
           include: {
             building: true,
@@ -36,6 +29,45 @@ export async function GET(
         },
       },
     })
+
+    if (menuItem) {
+      // Try to include options if table exists
+      try {
+        // Check if options table exists
+        const tableCheck = await prisma.$queryRaw`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'catering_menu_item_options'
+          )
+        `
+        const tableExists = (tableCheck as any[])[0]?.exists
+        
+        if (tableExists) {
+          const itemWithOptions = await (prisma as any).cateringMenuItem.findUnique({
+            where: { id: params.id },
+            include: {
+              options: {
+                include: {
+                  selections: true,
+                },
+                orderBy: {
+                  displayOrder: 'asc',
+                },
+              },
+            },
+          })
+          if (itemWithOptions) {
+            menuItem = { ...menuItem, options: itemWithOptions.options }
+          }
+        }
+      } catch (optionsError: any) {
+        // If options table doesn't exist, continue without options
+        if (optionsError.code === 'P2021' || optionsError.message?.includes('does not exist') || optionsError.message?.includes('Unknown arg')) {
+          console.log('[Menu Item API] Options table not found, returning item without options')
+        }
+      }
+    }
 
     if (!menuItem) {
       return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
@@ -115,29 +147,54 @@ export async function PUT(
       }
     }
 
-    // Handle options update
+    // Handle options update (only if table exists)
     if (options !== undefined) {
-      // Delete existing options (cascades to selections)
-      await prisma.cateringMenuItemOption.deleteMany({
-        where: { menuItemId: params.id },
-      })
+      try {
+        // Check if options table exists
+        const tableCheck = await prisma.$queryRaw`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'catering_menu_item_options'
+          )
+        `
+        const tableExists = (tableCheck as any[])[0]?.exists
+        
+        if (tableExists) {
+          // Try to delete existing options (cascades to selections)
+          await (prisma as any).cateringMenuItemOption.deleteMany({
+            where: { menuItemId: params.id },
+          })
 
-      // Create new options
-      if (Array.isArray(options) && options.length > 0) {
-        updateData.options = {
-          create: options.map((opt: any) => ({
-            optionName: opt.optionName,
-            optionType: opt.optionType || 'select',
-            isRequired: opt.isRequired || false,
-            displayOrder: opt.displayOrder || 0,
-            selections: {
-              create: (opt.selections || []).map((sel: any) => ({
-                selectionName: sel.selectionName,
-                selectionValue: sel.selectionValue || sel.selectionName,
-                displayOrder: sel.displayOrder || 0,
+          // Create new options
+          if (Array.isArray(options) && options.length > 0) {
+            updateData.options = {
+              create: options.map((opt: any) => ({
+                optionName: opt.optionName,
+                optionType: opt.optionType || 'select',
+                isRequired: opt.isRequired || false,
+                displayOrder: opt.displayOrder || 0,
+                selections: {
+                  create: (opt.selections || []).map((sel: any) => ({
+                    selectionName: sel.selectionName,
+                    selectionValue: sel.selectionValue || sel.selectionName,
+                    displayOrder: sel.displayOrder || 0,
+                  })),
+                },
               })),
-            },
-          })),
+            }
+          }
+        } else {
+          console.log('[Menu Item Update] Options table not found, skipping options update')
+        }
+      } catch (optionsError: any) {
+        // If options table doesn't exist, skip options update
+        if (optionsError.code === 'P2021' || optionsError.message?.includes('does not exist') || optionsError.message?.includes('Unknown arg')) {
+          console.log('[Menu Item Update] Options table not found, skipping options update')
+          // Remove options from updateData if it was added
+          delete updateData.options
+        } else {
+          throw optionsError
         }
       }
     }
@@ -148,16 +205,46 @@ export async function PUT(
       include: {
         category: true,
         timeSlots: true,
-        options: {
-          include: {
-            selections: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
-        },
       },
     })
+
+    // Try to include options in response if table exists
+    let menuItemWithOptions: any = menuItem
+    try {
+      // Check if options table exists
+      const tableCheck = await prisma.$queryRaw`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'catering_menu_item_options'
+        )
+      `
+      const tableExists = (tableCheck as any[])[0]?.exists
+      
+      if (tableExists) {
+        const itemWithOptions = await (prisma as any).cateringMenuItem.findUnique({
+          where: { id: params.id },
+          include: {
+            options: {
+              include: {
+                selections: true,
+            },
+              orderBy: {
+                displayOrder: 'asc',
+              },
+            },
+          },
+        })
+        if (itemWithOptions) {
+          menuItemWithOptions = { ...menuItem, options: itemWithOptions.options }
+        }
+      }
+    } catch (optionsError: any) {
+      // If options table doesn't exist, return without options
+      if (optionsError.code === 'P2021' || optionsError.message?.includes('does not exist') || optionsError.message?.includes('Unknown arg')) {
+        console.log('[Menu Item Update] Options table not found, returning item without options')
+      }
+    }
 
     return NextResponse.json(menuItem)
   } catch (error) {

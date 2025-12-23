@@ -26,7 +26,22 @@ export async function GET(request: NextRequest) {
         include: {
           categories: {
             where: includeInactive ? undefined : { isActive: true },
-            orderBy: { displayOrder: 'asc' },
+            include: {
+              parent: {
+                select: { id: true, name: true, level: true },
+              },
+              children: {
+                where: includeInactive ? undefined : { isActive: true },
+                select: { id: true, name: true, level: true, displayOrder: true },
+                orderBy: { displayOrder: 'asc' },
+              },
+              timeSlots: true,
+            },
+            orderBy: [
+              { level: 'asc' },
+              { displayOrder: 'asc' },
+              { name: 'asc' },
+            ],
           },
           menuItems: {
             where: {
@@ -34,7 +49,14 @@ export async function GET(request: NextRequest) {
               ...(categoryId ? { categoryId } : {}),
             },
             include: {
-              category: true,
+              category: {
+                include: {
+                  parent: {
+                    select: { id: true, name: true, level: true },
+                  },
+                  timeSlots: true,
+                },
+              },
               timeSlots: true,
             },
             orderBy: { createdAt: 'desc' },
@@ -47,7 +69,22 @@ export async function GET(request: NextRequest) {
         include: {
           categories: {
             where: includeInactive ? undefined : { isActive: true },
-            orderBy: { displayOrder: 'asc' },
+            include: {
+              parent: {
+                select: { id: true, name: true, level: true },
+              },
+              children: {
+                where: includeInactive ? undefined : { isActive: true },
+                select: { id: true, name: true, level: true, displayOrder: true },
+                orderBy: { displayOrder: 'asc' },
+              },
+              timeSlots: true,
+            },
+            orderBy: [
+              { level: 'asc' },
+              { displayOrder: 'asc' },
+              { name: 'asc' },
+            ],
           },
           menuItems: {
             where: {
@@ -55,7 +92,14 @@ export async function GET(request: NextRequest) {
               ...(categoryId ? { categoryId } : {}),
             },
             include: {
-              category: true,
+              category: {
+                include: {
+                  parent: {
+                    select: { id: true, name: true, level: true },
+                  },
+                  timeSlots: true,
+                },
+              },
               timeSlots: true,
             },
             orderBy: { createdAt: 'desc' },

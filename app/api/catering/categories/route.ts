@@ -33,13 +33,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ categories: [] }, { status: 200 })
     }
 
-    // Get categories for this service
+    // Get categories for this service with hierarchy and time slots
     const categories = await prisma.cateringCategory.findMany({
       where: {
         serviceId: service.id,
         ...(includeInactive ? {} : { isActive: true }),
       },
-      orderBy: { displayOrder: 'asc' },
+      include: {
+        parent: {
+          select: { id: true, name: true, level: true },
+        },
+        children: {
+          where: includeInactive ? {} : { isActive: true },
+          select: { id: true, name: true, level: true, displayOrder: true },
+          orderBy: { displayOrder: 'asc' },
+        },
+        timeSlots: true,
+      },
+      orderBy: [
+        { level: 'asc' },
+        { displayOrder: 'asc' },
+        { name: 'asc' },
+      ],
     })
 
     return NextResponse.json({ categories })
@@ -70,7 +85,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { serviceId, name, description, displayOrder = 0, isActive = true } = body
+    const { 
+      serviceId, 
+      name, 
+      description, 
+      displayOrder = 0, 
+      isActive = true,
+      parentId = null,
+      level = null,
+      timeSlots = [],
+    } = body
 
     // Validate required fields - categories only need serviceId and name
     if (!serviceId || !name) {
@@ -92,7 +116,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create category
+    // Determine level and validate parent if provided
+    let finalLevel = level
+    if (parentId) {
+      // If parentId is provided, verify parent exists and set level to 2
+      const parent = await prisma.cateringCategory.findUnique({
+        where: { id: parentId },
+      })
+      
+      if (!parent) {
+        return NextResponse.json(
+          { error: 'Parent category not found' },
+          { status: 404 }
+        )
+      }
+      
+      if (parent.serviceId !== serviceId) {
+        return NextResponse.json(
+          { error: 'Parent category must belong to the same service' },
+          { status: 400 }
+        )
+      }
+      
+      if (parent.level === 2) {
+        return NextResponse.json(
+          { error: 'Cannot create sub-category of a sub-category (max 2 levels)' },
+          { status: 400 }
+        )
+      }
+      
+      finalLevel = 2
+    } else {
+      // If no parent, it's a top-level category
+      finalLevel = finalLevel || 1
+    }
+
+    // Create category with hierarchy and time slots
     const category = await prisma.cateringCategory.create({
       data: {
         serviceId,
@@ -100,6 +159,25 @@ export async function POST(request: NextRequest) {
         description: description || null,
         displayOrder: parseInt(displayOrder) || 0,
         isActive,
+        parentId: parentId || null,
+        level: finalLevel,
+        timeSlots: {
+          create: timeSlots.map((slot: any) => ({
+            dayOfWeek: slot.dayOfWeek !== undefined ? slot.dayOfWeek : -1,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isWeekend: slot.isWeekend !== undefined ? slot.isWeekend : null,
+          })),
+        },
+      },
+      include: {
+        parent: {
+          select: { id: true, name: true, level: true },
+        },
+        children: {
+          select: { id: true, name: true, level: true },
+        },
+        timeSlots: true,
       },
     })
 

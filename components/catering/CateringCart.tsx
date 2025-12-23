@@ -120,64 +120,69 @@ export default function CateringCart() {
       return
     }
 
-    const now = new Date()
-    let hasPreOrder = false
-    let earliestAvailableTime: Date | null = null
+    // Don't block cart display for pre-order checking - do it asynchronously
+    // This prevents slow API calls from making the cart appear empty
+    setTimeout(async () => {
+      const now = new Date()
+      let hasPreOrder = false
+      let earliestAvailableTime: Date | null = null
 
-    // Fetch menu items to get time slot information
-    for (const cartItem of items) {
-      try {
-        const menuResponse = await fetch(`/api/catering/menu/${cartItem.menuItemId}`, {
-          credentials: 'include',
-        })
-        if (menuResponse.ok) {
-          const menuItem = await menuResponse.json()
-          const effectiveTimeSlots = getEffectiveTimeSlots(
-            menuItem.timeSlots,
-            menuItem.category?.timeSlots,
-            menuItem.availableAllDay
-          )
+      // Fetch menu items to get time slot information
+      for (const cartItem of items) {
+        try {
+          const menuResponse = await fetch(`/api/catering/menu/${cartItem.menuItemId}`, {
+            credentials: 'include',
+          })
+          if (menuResponse.ok) {
+            const menuItem = await menuResponse.json()
+            const effectiveTimeSlots = getEffectiveTimeSlots(
+              menuItem.timeSlots,
+              menuItem.category?.timeSlots,
+              menuItem.availableAllDay
+            )
 
-          const isAvailable = isItemAvailableNow(
-            effectiveTimeSlots,
-            menuItem.availableAllDay || false,
-            now
-          )
-
-          if (!isAvailable) {
-            hasPreOrder = true
-            const nextAvailable = getNextAvailableTime(
+            const isAvailable = isItemAvailableNow(
               effectiveTimeSlots,
               menuItem.availableAllDay || false,
               now
             )
-            if (nextAvailable && (!earliestAvailableTime || nextAvailable < earliestAvailableTime)) {
-              earliestAvailableTime = nextAvailable
+
+            if (!isAvailable) {
+              hasPreOrder = true
+              const nextAvailable = getNextAvailableTime(
+                effectiveTimeSlots,
+                menuItem.availableAllDay || false,
+                now
+              )
+              if (nextAvailable && (!earliestAvailableTime || nextAvailable < earliestAvailableTime)) {
+                earliestAvailableTime = nextAvailable
+              }
             }
           }
+        } catch (error) {
+          console.error(`[CateringCart] Error checking availability for item ${cartItem.menuItemId}:`, error)
+          // Don't fail cart display if pre-order check fails
         }
-      } catch (error) {
-        console.error(`[CateringCart] Error checking availability for item ${cartItem.menuItemId}:`, error)
       }
-    }
 
-    setIsPreOrder(hasPreOrder)
-    if (hasPreOrder && earliestAvailableTime) {
-      const formattedTime = earliestAvailableTime.toLocaleString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-      setPreOrderMessage(`此訂單為預訂單，將於 ${formattedTime} 開始準備`)
-      // Auto-set scheduled time to earliest available time
-      const isoString = earliestAvailableTime.toISOString().slice(0, 16)
-      setScheduledTime(isoString)
-      setDeliveryType('scheduled')
-    } else {
-      setPreOrderMessage('')
-    }
+      setIsPreOrder(hasPreOrder)
+      if (hasPreOrder && earliestAvailableTime) {
+        const formattedTime = earliestAvailableTime.toLocaleString('zh-TW', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+        setPreOrderMessage(`此訂單為預訂單，將於 ${formattedTime} 開始準備`)
+        // Auto-set scheduled time to earliest available time
+        const isoString = earliestAvailableTime.toISOString().slice(0, 16)
+        setScheduledTime(isoString)
+        setDeliveryType('scheduled')
+      } else {
+        setPreOrderMessage('')
+      }
+    }, 100) // Small delay to not block cart rendering
   }
 
   const updateQuantity = async (menuItemId: string, newQuantity: number) => {

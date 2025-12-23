@@ -66,6 +66,31 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
   useEffect(() => {
     loadMenu()
     loadCartCount()
+    
+    // Poll cart count periodically to keep it updated
+    const cartPollInterval = setInterval(() => {
+      loadCartCount()
+    }, 2000) // Poll every 2 seconds
+    
+    // Also reload when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadCartCount()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Reload when window gains focus
+    const handleFocus = () => {
+      loadCartCount()
+    }
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(cartPollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [buildingId, communityId])
 
   // Translate menu items when language or items change
@@ -197,10 +222,13 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
 
       const result = await response.json()
       console.log('[CateringMenu] Add to cart response:', result)
-      await loadCartCount()
+      // Wait a bit for cookie to be set
+      await new Promise(resolve => setTimeout(resolve, 300))
       
-      // Small delay to ensure cookie is set before navigation
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Reload cart count multiple times to ensure it updates
+      await loadCartCount()
+      await new Promise(resolve => setTimeout(resolve, 200))
+      await loadCartCount()
       
       return result
     } catch (error) {

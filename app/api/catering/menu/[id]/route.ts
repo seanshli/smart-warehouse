@@ -20,6 +20,14 @@ export async function GET(
       include: {
         category: true,
         timeSlots: true,
+        options: {
+          include: {
+            selections: true,
+          },
+          orderBy: {
+            displayOrder: 'asc',
+          },
+        },
         service: {
           include: {
             building: true,
@@ -74,6 +82,7 @@ export async function PUT(
       isActive,
       availableAllDay,
       timeSlots,
+      options,
     } = body
 
     // Update menu item
@@ -106,12 +115,47 @@ export async function PUT(
       }
     }
 
+    // Handle options update
+    if (options !== undefined) {
+      // Delete existing options (cascades to selections)
+      await prisma.cateringMenuItemOption.deleteMany({
+        where: { menuItemId: params.id },
+      })
+
+      // Create new options
+      if (Array.isArray(options) && options.length > 0) {
+        updateData.options = {
+          create: options.map((opt: any) => ({
+            optionName: opt.optionName,
+            optionType: opt.optionType || 'select',
+            isRequired: opt.isRequired || false,
+            displayOrder: opt.displayOrder || 0,
+            selections: {
+              create: (opt.selections || []).map((sel: any) => ({
+                selectionName: sel.selectionName,
+                selectionValue: sel.selectionValue || sel.selectionName,
+                displayOrder: sel.displayOrder || 0,
+              })),
+            },
+          })),
+        }
+      }
+    }
+
     const menuItem = await prisma.cateringMenuItem.update({
       where: { id: params.id },
       data: updateData,
       include: {
         category: true,
         timeSlots: true,
+        options: {
+          include: {
+            selections: true,
+          },
+          orderBy: {
+            displayOrder: 'asc',
+          },
+        },
       },
     })
 

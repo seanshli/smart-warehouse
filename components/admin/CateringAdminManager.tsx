@@ -100,7 +100,20 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
     categoryId: '',
     isActive: true,
     availableAllDay: true,
-    timeSlots: [] as Array<{ dayOfWeek: number; startTime: string; endTime: string }>
+    timeSlots: [] as Array<{ dayOfWeek: number; startTime: string; endTime: string }>,
+    options: [] as Array<{
+      id?: string
+      optionName: string
+      optionType: 'select' | 'radio' | 'checkbox'
+      isRequired: boolean
+      displayOrder: number
+      selections: Array<{
+        id?: string
+        selectionName: string
+        selectionValue: string
+        displayOrder: number
+      }>
+    }>
   })
   
   // Batch upload
@@ -425,6 +438,19 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
           isActive: itemForm.isActive,
           availableAllDay: itemForm.availableAllDay,
           timeSlots: itemForm.availableAllDay ? [] : itemForm.timeSlots,
+          options: itemForm.options.map(opt => ({
+            id: opt.id,
+            optionName: opt.optionName,
+            optionType: opt.optionType,
+            isRequired: opt.isRequired,
+            displayOrder: opt.displayOrder,
+            selections: opt.selections.map(sel => ({
+              id: sel.id,
+              selectionName: sel.selectionName,
+              selectionValue: sel.selectionValue,
+              displayOrder: sel.displayOrder,
+            })),
+          })),
         }),
       })
 
@@ -524,6 +550,19 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
         startTime: ts.startTime,
         endTime: ts.endTime,
       })) || [],
+      options: (item as any).options?.map((opt: any) => ({
+        id: opt.id,
+        optionName: opt.optionName,
+        optionType: opt.optionType || 'select',
+        isRequired: opt.isRequired || false,
+        displayOrder: opt.displayOrder || 0,
+        selections: opt.selections?.map((sel: any) => ({
+          id: sel.id,
+          selectionName: sel.selectionName,
+          selectionValue: sel.selectionValue,
+          displayOrder: sel.displayOrder || 0,
+        })) || [],
+      })) || [],
     })
     setShowItemForm(true)
   }
@@ -540,7 +579,62 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
       isActive: true,
       availableAllDay: true,
       timeSlots: [],
+      options: [],
     })
+  }
+
+  const addMenuItemOption = () => {
+    setItemForm({
+      ...itemForm,
+      options: [...itemForm.options, {
+        optionName: '',
+        optionType: 'select',
+        isRequired: false,
+        displayOrder: itemForm.options.length,
+        selections: [],
+      }],
+    })
+  }
+
+  const removeMenuItemOption = (index: number) => {
+    setItemForm({
+      ...itemForm,
+      options: itemForm.options.filter((_, i) => i !== index),
+    })
+  }
+
+  const updateMenuItemOption = (index: number, field: string, value: any) => {
+    const newOptions = [...itemForm.options]
+    newOptions[index] = { ...newOptions[index], [field]: value }
+    setItemForm({ ...itemForm, options: newOptions })
+  }
+
+  const addOptionSelection = (optionIndex: number) => {
+    const newOptions = [...itemForm.options]
+    if (!newOptions[optionIndex].selections) {
+      newOptions[optionIndex].selections = []
+    }
+    newOptions[optionIndex].selections.push({
+      selectionName: '',
+      selectionValue: '',
+      displayOrder: newOptions[optionIndex].selections.length,
+    })
+    setItemForm({ ...itemForm, options: newOptions })
+  }
+
+  const removeOptionSelection = (optionIndex: number, selectionIndex: number) => {
+    const newOptions = [...itemForm.options]
+    newOptions[optionIndex].selections = newOptions[optionIndex].selections.filter((_, i) => i !== selectionIndex)
+    setItemForm({ ...itemForm, options: newOptions })
+  }
+
+  const updateOptionSelection = (optionIndex: number, selectionIndex: number, field: string, value: any) => {
+    const newOptions = [...itemForm.options]
+    newOptions[optionIndex].selections[selectionIndex] = {
+      ...newOptions[optionIndex].selections[selectionIndex],
+      [field]: value,
+    }
+    setItemForm({ ...itemForm, options: newOptions })
   }
 
   // Auto-scale image function
@@ -1729,6 +1823,103 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
                         ))}
                       </div>
                     )}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          選項設定 (Options/Selections)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={addMenuItemOption}
+                          className="text-sm text-primary-600 hover:text-primary-700"
+                        >
+                          + 新增選項
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {itemForm.options.map((option, optionIndex) => (
+                          <div key={optionIndex} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <input
+                                type="text"
+                                placeholder="選項名稱 (e.g., 素食, 辣度)"
+                                value={option.optionName}
+                                onChange={(e) => updateMenuItemOption(optionIndex, 'optionName', e.target.value)}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                              />
+                              <select
+                                value={option.optionType}
+                                onChange={(e) => updateMenuItemOption(optionIndex, 'optionType', e.target.value)}
+                                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                              >
+                                <option value="select">下拉選單</option>
+                                <option value="radio">單選</option>
+                                <option value="checkbox">複選</option>
+                              </select>
+                              <label className="flex items-center text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={option.isRequired}
+                                  onChange={(e) => updateMenuItemOption(optionIndex, 'isRequired', e.target.checked)}
+                                  className="mr-1"
+                                />
+                                必填
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => removeMenuItemOption(optionIndex)}
+                                className="p-1 text-red-600 hover:text-red-700"
+                              >
+                                <XMarkIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="ml-4 space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-600 dark:text-gray-400">選項值 (Selections):</span>
+                                <button
+                                  type="button"
+                                  onClick={() => addOptionSelection(optionIndex)}
+                                  className="text-xs text-primary-600 hover:text-primary-700"
+                                >
+                                  + 新增選項值
+                                </button>
+                              </div>
+                              {option.selections.map((selection, selIndex) => (
+                                <div key={selIndex} className="flex items-center space-x-2">
+                                  <input
+                                    type="text"
+                                    placeholder="顯示名稱"
+                                    value={selection.selectionName}
+                                    onChange={(e) => updateOptionSelection(optionIndex, selIndex, 'selectionName', e.target.value)}
+                                    className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="值 (API用)"
+                                    value={selection.selectionValue}
+                                    onChange={(e) => updateOptionSelection(optionIndex, selIndex, 'selectionValue', e.target.value)}
+                                    className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeOptionSelection(optionIndex, selIndex)}
+                                    className="p-1 text-red-600 hover:text-red-700"
+                                  >
+                                    <XMarkIcon className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                              {option.selections.length === 0 && (
+                                <p className="text-xs text-gray-500 italic">請至少新增一個選項值</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {itemForm.options.length === 0 && (
+                          <p className="text-sm text-gray-500 italic">目前無選項設定。點擊「新增選項」來新增選項 (如：素食、辣度等)</p>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex justify-end space-x-3 pt-4">
                       <button
                         type="button"

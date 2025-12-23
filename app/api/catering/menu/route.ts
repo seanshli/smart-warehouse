@@ -58,6 +58,14 @@ export async function GET(request: NextRequest) {
                 },
               },
               timeSlots: true,
+              options: {
+                include: {
+                  selections: true,
+                },
+                orderBy: {
+                  displayOrder: 'asc',
+                },
+              },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -101,6 +109,14 @@ export async function GET(request: NextRequest) {
                 },
               },
               timeSlots: true,
+              options: {
+                include: {
+                  selections: true,
+                },
+                orderBy: {
+                  displayOrder: 'asc',
+                },
+              },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -188,6 +204,7 @@ export async function POST(request: NextRequest) {
       isActive = true,
       availableAllDay = true,
       timeSlots = [],
+      options = [],
     } = body
 
     // Menu items require: serviceId, name, and cost
@@ -231,7 +248,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create menu item
+    // Create menu item with options
     const menuItem = await prisma.cateringMenuItem.create({
       data: {
         serviceId,
@@ -250,10 +267,33 @@ export async function POST(request: NextRequest) {
             endTime: slot.endTime,
           })),
         },
+        options: {
+          create: options.map((opt: any) => ({
+            optionName: opt.optionName,
+            optionType: opt.optionType || 'select',
+            isRequired: opt.isRequired || false,
+            displayOrder: opt.displayOrder || 0,
+            selections: {
+              create: (opt.selections || []).map((sel: any) => ({
+                selectionName: sel.selectionName,
+                selectionValue: sel.selectionValue || sel.selectionName,
+                displayOrder: sel.displayOrder || 0,
+              })),
+            },
+          })),
+        },
       },
       include: {
         category: true,
         timeSlots: true,
+        options: {
+          include: {
+            selections: true,
+          },
+          orderBy: {
+            displayOrder: 'asc',
+          },
+        },
       },
     })
 

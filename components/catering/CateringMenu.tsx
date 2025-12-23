@@ -196,7 +196,12 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
       }
 
       const result = await response.json()
+      console.log('[CateringMenu] Add to cart response:', result)
       await loadCartCount()
+      
+      // Small delay to ensure cookie is set before navigation
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
       return result
     } catch (error) {
       console.error('[CateringMenu] Error adding to cart:', error)

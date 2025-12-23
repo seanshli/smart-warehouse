@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 // Shopping cart stored in cookies (session-based)
 // Format: { items: [{ menuItemId, quantity, unitPrice }] }
 
@@ -17,19 +19,32 @@ export async function GET(request: NextRequest) {
     }
 
     const cookieStore = await cookies()
+    
+    // Debug: List all cookies
+    const allCookies = cookieStore.getAll()
+    console.log(`[Cart API GET] All cookies:`, allCookies.map(c => c.name).join(', '))
+    
     const cartCookie = cookieStore.get(CART_COOKIE_NAME)
     
     if (!cartCookie) {
+      console.log(`[Cart API GET] No cart cookie found. Cookie name: ${CART_COOKIE_NAME}`)
       return NextResponse.json({ items: [], total: 0 }, { 
         headers: {
           'Content-Type': 'application/json',
         }
       })
     }
+    
+    console.log(`[Cart API GET] Found cart cookie, length: ${cartCookie.value.length} bytes`)
 
     try {
       const cart = JSON.parse(cartCookie.value)
-      console.log(`[Cart API] Retrieved cart with ${cart.items?.length || 0} items, total: ${cart.total || 0}`)
+      console.log(`[Cart API GET] Retrieved cart with ${cart.items?.length || 0} items, total: ${cart.total || 0}`)
+      console.log(`[Cart API GET] Cart items:`, cart.items?.map((item: any) => ({
+        name: item.name,
+        quantity: item.quantity,
+        menuItemId: item.menuItemId,
+      })))
       
       // Ensure cart has proper structure
       const validCart = {
@@ -37,14 +52,18 @@ export async function GET(request: NextRequest) {
         total: typeof cart.total === 'number' ? cart.total : (cart.items || []).reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0),
       }
       
+      console.log(`[Cart API GET] Returning valid cart with ${validCart.items.length} items`)
+      
       return NextResponse.json(validCart, {
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
         }
       })
     } catch (parseError) {
-      console.error('[Cart API] Error parsing cart cookie:', parseError)
-      console.error('[Cart API] Cookie value:', cartCookie.value?.substring(0, 200))
+      console.error('[Cart API GET] Error parsing cart cookie:', parseError)
+      console.error('[Cart API GET] Cookie value (first 500 chars):', cartCookie.value?.substring(0, 500))
+      console.error('[Cart API GET] Cookie value length:', cartCookie.value?.length)
       // Clear invalid cookie
       cookieStore.delete(CART_COOKIE_NAME)
       return NextResponse.json({ items: [], total: 0 }, {
@@ -177,7 +196,8 @@ export async function POST(request: NextRequest) {
     )
 
     // Save cart to cookie
-    cookieStore.set(CART_COOKIE_NAME, JSON.stringify(cart), {
+    const cartJson = JSON.stringify(cart)
+    cookieStore.set(CART_COOKIE_NAME, cartJson, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -186,6 +206,15 @@ export async function POST(request: NextRequest) {
     })
     
     console.log(`[Cart API] Saved cart with ${cart.items.length} items, total: ${cart.total}`)
+    console.log(`[Cart API] Cart JSON length: ${cartJson.length} bytes`)
+    
+    // Verify cookie was set by reading it back
+    const verifyCookie = cookieStore.get(CART_COOKIE_NAME)
+    if (verifyCookie) {
+      console.log(`[Cart API] Cookie verified: ${verifyCookie.value.substring(0, 100)}...`)
+    } else {
+      console.error(`[Cart API] WARNING: Cookie was not set!`)
+    }
 
     return NextResponse.json(cart, {
       headers: {

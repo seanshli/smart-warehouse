@@ -34,6 +34,16 @@ export default function CateringCart() {
 
   useEffect(() => {
     loadCart()
+    // Also reload cart when component becomes visible (handles navigation)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadCart()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   const loadCart = async () => {
@@ -45,13 +55,26 @@ export default function CateringCart() {
       if (response.ok) {
         const data = await response.json()
         console.log('[CateringCart] Loaded cart data:', data)
+        console.log('[CateringCart] Cart items count:', data.items?.length || 0)
+        console.log('[CateringCart] Cart total:', data.total || 0)
+        
         // Ensure cart has items array and total
         if (data && typeof data === 'object') {
+          const items = Array.isArray(data.items) ? data.items : []
+          const total = typeof data.total === 'number' ? data.total : items.reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0)
+          
+          console.log('[CateringCart] Setting cart state with', items.length, 'items')
           setCart({
-            items: Array.isArray(data.items) ? data.items : [],
-            total: typeof data.total === 'number' ? data.total : (data.items || []).reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0),
+            items,
+            total,
           })
+          
+          // Log if cart is empty but we expected items
+          if (items.length === 0 && data.items && data.items.length > 0) {
+            console.error('[CateringCart] WARNING: Cart items array exists but is empty after processing!', data.items)
+          }
         } else {
+          console.warn('[CateringCart] Invalid cart data format:', data)
           setCart({ items: [], total: 0 })
         }
       } else {

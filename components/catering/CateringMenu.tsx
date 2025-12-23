@@ -122,13 +122,18 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
     }
   }
 
-  const handleAddToCart = async (itemId: string, quantity: number) => {
+  const handleAddToCart = async (itemId: string, quantity: number, isVegetarian: boolean, spiceLevel: string) => {
     try {
       const response = await fetch('/api/catering/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ menuItemId: itemId, quantity }),
+        body: JSON.stringify({ 
+          menuItemId: itemId, 
+          quantity,
+          isVegetarian,
+          spiceLevel,
+        }),
       })
 
       if (!response.ok) {

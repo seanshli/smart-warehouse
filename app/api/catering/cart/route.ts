@@ -64,11 +64,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { menuItemId, quantity = 1 } = body
+    const { menuItemId, quantity = 1, isVegetarian = false, spiceLevel = 'no' } = body
 
     if (!menuItemId) {
       return NextResponse.json(
         { error: 'menuItemId is required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate spice level
+    const validSpiceLevels = ['no', '1x pepper', '2x pepper', '3x pepper']
+    if (spiceLevel && !validSpiceLevels.includes(spiceLevel)) {
+      return NextResponse.json(
+        { error: 'Invalid spice level. Must be: no, 1x pepper, 2x pepper, or 3x pepper' },
         { status: 400 }
       )
     }
@@ -114,9 +123,13 @@ export async function POST(request: NextRequest) {
       cart = JSON.parse(cartCookie.value)
     }
 
-    // Check if item already in cart
+    // Check if item already in cart with same options
+    // Items with different selection options are treated as separate items
     const existingIndex = cart.items.findIndex(
-      (item: any) => item.menuItemId === menuItemId
+      (item: any) => 
+        item.menuItemId === menuItemId &&
+        item.isVegetarian === isVegetarian &&
+        item.spiceLevel === spiceLevel
     )
 
     if (existingIndex >= 0) {
@@ -133,6 +146,8 @@ export async function POST(request: NextRequest) {
         quantity,
         unitPrice: parseFloat(menuItem.cost.toString()),
         subtotal: parseFloat(menuItem.cost.toString()) * quantity,
+        isVegetarian: isVegetarian || false,
+        spiceLevel: spiceLevel || 'no',
       })
     }
 

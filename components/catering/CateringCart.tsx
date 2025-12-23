@@ -13,6 +13,8 @@ interface CartItem {
   quantity: number
   unitPrice: number
   subtotal: number
+  isVegetarian?: boolean
+  spiceLevel?: string
 }
 
 interface Cart {
@@ -56,12 +58,23 @@ export default function CateringCart() {
       return
     }
 
+    // Find the item to preserve its selection options
+    const cartItem = cart.items.find(item => item.menuItemId === menuItemId)
+    if (!cartItem) {
+      toast.error('Item not found in cart')
+      return
+    }
+
     try {
       const response = await fetch(`/api/catering/cart/${menuItemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ quantity: newQuantity }),
+        body: JSON.stringify({ 
+          quantity: newQuantity,
+          isVegetarian: cartItem.isVegetarian,
+          spiceLevel: cartItem.spiceLevel,
+        }),
       })
 
       if (response.ok) {
@@ -193,9 +206,9 @@ export default function CateringCart() {
 
       {/* Cart Items */}
       <div className="space-y-4">
-        {cart.items.map((item) => (
+        {cart.items.map((item, index) => (
           <div
-            key={item.menuItemId}
+            key={`${item.menuItemId}-${item.isVegetarian}-${item.spiceLevel}-${index}`}
             className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           >
             {item.imageUrl && (
@@ -210,6 +223,16 @@ export default function CateringCart() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 ${parseFloat(item.unitPrice?.toString() || '0').toFixed(2)} each
               </p>
+              {(item.isVegetarian || (item.spiceLevel && item.spiceLevel !== 'no')) && (
+                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                  {item.isVegetarian && (
+                    <div>Vegetarian: Yes</div>
+                  )}
+                  {item.spiceLevel && item.spiceLevel !== 'no' && (
+                    <div>Spice Level: {item.spiceLevel}</div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -228,7 +251,7 @@ export default function CateringCart() {
                 </button>
               </div>
               <span className="w-24 text-right font-semibold text-gray-900 dark:text-white">
-                ${item.subtotal.toFixed(2)}
+                ${parseFloat(item.subtotal?.toString() || '0').toFixed(2)}
               </span>
               <button
                 onClick={() => removeItem(item.menuItemId)}

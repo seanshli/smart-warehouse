@@ -11,6 +11,8 @@ interface OrderItem {
   quantity: number
   unitPrice: number
   subtotal: number
+  isVegetarian?: boolean
+  spiceLevel?: string
   menuItem: {
     id: string
     name: string
@@ -324,6 +326,20 @@ export default function CateringOrderDetailPage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Quantity: {item.quantity} × ${parseFloat(item.unitPrice?.toString() || '0').toFixed(2)}
                   </p>
+                  {(item.isVegetarian || (item.spiceLevel && item.spiceLevel !== 'no')) && (
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                      {item.isVegetarian && (
+                        <div className="inline-block px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
+                          Vegetarian: Yes
+                        </div>
+                      )}
+                      {item.spiceLevel && item.spiceLevel !== 'no' && (
+                        <div className="inline-block px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded ml-2">
+                          Spice: {item.spiceLevel}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   ${parseFloat(item.subtotal?.toString() || '0').toFixed(2)}

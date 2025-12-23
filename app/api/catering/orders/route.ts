@@ -364,6 +364,8 @@ export async function POST(request: NextRequest) {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             subtotal: item.subtotal,
+            isVegetarian: item.isVegetarian || false,
+            spiceLevel: item.spiceLevel || 'no',
           })),
         },
       },

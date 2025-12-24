@@ -70,7 +70,7 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
     // Poll cart count periodically to keep it updated
     const cartPollInterval = setInterval(() => {
       loadCartCount()
-    }, 2000) // Poll every 2 seconds
+    }, 1500) // Poll every 1.5 seconds for more responsive updates
     
     // Also reload when page becomes visible
     const handleVisibilityChange = () => {
@@ -222,13 +222,21 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
 
       const result = await response.json()
       console.log('[CateringMenu] Add to cart response:', result)
-      // Wait a bit for cookie to be set
-      await new Promise(resolve => setTimeout(resolve, 300))
       
-      // Reload cart count multiple times to ensure it updates
+      // Update cart count immediately from the response
+      if (result && Array.isArray(result.items)) {
+        const newCount = result.items.length
+        console.log('[CateringMenu] Updating cart count from response:', newCount)
+        setCartItemCount(newCount)
+      }
+      
+      // Also reload from server to ensure sync (with delays to allow cookie to be set)
+      await new Promise(resolve => setTimeout(resolve, 100))
       await loadCartCount()
-      await new Promise(resolve => setTimeout(resolve, 200))
+      await new Promise(resolve => setTimeout(resolve, 300))
       await loadCartCount()
+      await new Promise(resolve => setTimeout(resolve, 500))
+      await loadCartCount() // Third reload to ensure it's updated
       
       return result
     } catch (error) {
@@ -313,9 +321,12 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
         <button
           onClick={async () => {
             // Reload cart count before navigating to ensure we have latest data
-            await loadCartCount()
+            const count = await loadCartCount()
+            console.log('[CateringMenu] Cart count before navigation:', count)
             // Small delay to ensure any pending cart operations complete
-            await new Promise(resolve => setTimeout(resolve, 200))
+            await new Promise(resolve => setTimeout(resolve, 300))
+            // Reload one more time just before navigation
+            await loadCartCount()
             router.push('/catering/cart')
           }}
           className="relative inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition-colors"

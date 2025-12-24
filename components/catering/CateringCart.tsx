@@ -64,17 +64,26 @@ export default function CateringCart() {
     }
   }, [])
 
-  const loadCart = async () => {
+  const loadCart = async (retryCount = 0) => {
     try {
       const response = await fetch('/api/catering/cart', {
         credentials: 'include',
         cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
       })
       if (response.ok) {
         const data = await response.json()
         console.log('[CateringCart] Loaded cart data:', data)
         console.log('[CateringCart] Cart items count:', data.items?.length || 0)
         console.log('[CateringCart] Cart total:', data.total || 0)
+        console.log('[CateringCart] Cart items details:', data.items?.map((i: any) => ({
+          menuItemId: i.menuItemId,
+          name: i.name,
+          quantity: i.quantity,
+        })))
         
         // Ensure cart has items array and total
         if (data && typeof data === 'object') {
@@ -89,6 +98,15 @@ export default function CateringCart() {
           
           // Check if any items are pre-orders (outside available time)
           checkPreOrderStatus(items)
+          
+          // If cart is empty but we expected items, retry once after a delay
+          if (items.length === 0 && retryCount < 2) {
+            console.warn('[CateringCart] Cart appears empty, retrying in 500ms... (attempt', retryCount + 1, ')')
+            setTimeout(() => {
+              loadCart(retryCount + 1)
+            }, 500)
+            return
+          }
           
           // Log if cart is empty but we expected items
           if (items.length === 0 && data.items && data.items.length > 0) {
@@ -108,7 +126,9 @@ export default function CateringCart() {
       console.error('[CateringCart] Error loading cart:', error)
       setCart({ items: [], total: 0 })
     } finally {
-      setLoading(false)
+      if (retryCount === 0) {
+        setLoading(false)
+      }
     }
   }
 
@@ -334,12 +354,25 @@ export default function CateringCart() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="relative text-center py-12">
+        <button
+          onClick={() => router.back()}
+          className="absolute top-0 left-0 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        >
+          <XMarkIcon className="h-5 w-5" />
+          <span>Back</span>
+        </button>
         <ShoppingCartIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">Your cart is empty</p>
-        <p className="text-sm text-gray-500 dark:text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
           Add items from the menu to get started
         </p>
+        <button
+          onClick={() => router.push('/catering')}
+          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md font-medium transition-colors"
+        >
+          Go to Menu
+        </button>
       </div>
     )
   }
@@ -347,7 +380,17 @@ export default function CateringCart() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Shopping Cart</h2>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            title="Go back"
+          >
+            <XMarkIcon className="h-5 w-5" />
+            <span>Back</span>
+          </button>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Shopping Cart</h2>
+        </div>
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'}
         </span>

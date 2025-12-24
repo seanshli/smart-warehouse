@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     // Debug: List all cookies
     const allCookies = cookieStore.getAll()
     console.log(`[Cart API GET] All cookies:`, allCookies.map(c => c.name).join(', '))
+    console.log(`[Cart API GET] Looking for cookie: ${CART_COOKIE_NAME}`)
+    console.log(`[Cart API GET] Cookie exists in list:`, allCookies.some(c => c.name === CART_COOKIE_NAME))
     
     const cartCookie = cookieStore.get(CART_COOKIE_NAME)
     
@@ -197,25 +199,16 @@ export async function POST(request: NextRequest) {
 
     // Save cart to cookie
     const cartJson = JSON.stringify(cart)
-    cookieStore.set(CART_COOKIE_NAME, cartJson, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/', // Ensure cookie is available for all paths
-    })
     
     console.log(`[Cart API] Saved cart with ${cart.items.length} items, total: ${cart.total}`)
     console.log(`[Cart API] Cart JSON length: ${cartJson.length} bytes`)
-    
-    // Verify cookie was set by reading it back
-    const verifyCookie = cookieStore.get(CART_COOKIE_NAME)
-    if (verifyCookie) {
-      console.log(`[Cart API] Cookie verified: ${verifyCookie.value.substring(0, 100)}...`)
-    } else {
-      console.error(`[Cart API] WARNING: Cookie was not set!`)
-    }
+    console.log(`[Cart API] Cart items:`, cart.items.map((i: any) => ({
+      menuItemId: i.menuItemId,
+      name: i.name,
+      quantity: i.quantity,
+    })))
 
+    // Create response first
     const response = NextResponse.json(cart, {
       headers: {
         'Content-Type': 'application/json',
@@ -223,8 +216,16 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    // Ensure cookie is included in response headers
-    // The cookie was already set above, but we need to make sure it's in the response
+    // Set cookie on the response object (this is the correct way in Next.js App Router)
+    response.cookies.set(CART_COOKIE_NAME, cartJson, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/', // Ensure cookie is available for all paths
+    })
+    
+    // Also set via cookieStore for compatibility
     cookieStore.set(CART_COOKIE_NAME, cartJson, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -232,6 +233,15 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     })
+    
+    // Verify cookie was set
+    const verifyCookie = cookieStore.get(CART_COOKIE_NAME)
+    if (verifyCookie) {
+      console.log(`[Cart API] Cookie verified: ${verifyCookie.value.substring(0, 100)}...`)
+      console.log(`[Cart API] Cookie value length: ${verifyCookie.value.length} bytes`)
+    } else {
+      console.error(`[Cart API] WARNING: Cookie was not set!`)
+    }
     
     return response
   } catch (error) {

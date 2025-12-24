@@ -126,7 +126,10 @@ export async function PUT(
     if (categoryId !== undefined) updateData.categoryId = categoryId || null
     if (name !== undefined) updateData.name = name
     if (description !== undefined) updateData.description = description
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl
+    // Allow removing photo by setting imageUrl to null or empty string
+    if (imageUrl !== undefined) {
+      updateData.imageUrl = imageUrl === '' || imageUrl === null ? null : imageUrl
+    }
     if (cost !== undefined) updateData.cost = parseFloat(cost)
     if (quantityAvailable !== undefined) updateData.quantityAvailable = parseInt(quantityAvailable)
     if (isActive !== undefined) updateData.isActive = isActive
@@ -280,15 +283,88 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    await prisma.cateringMenuItem.delete({
+    // Check if menu item exists
+    const menuItem = await prisma.cateringMenuItem.findUnique({
       where: { id: params.id },
+      include: {
+        _count: {
+          select: {
+            orderItems: true,
+          },
+        },
+      },
+    })
+
+    if (!menuItem) {
+      return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
+    }
+
+    // Check if item is used in any orders
+    if (menuItem._count.orderItems > 0) {
+      return NextResponse.json(
+        { 
+          error: `Cannot delete menu item. It is used in ${menuItem._count.orderItems} order(s). Please deactivate it instead.`,
+          orderCount: menuItem._count.orderItems,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Delete using transaction to ensure all related data is removed
+    await prisma.$transaction(async (tx) => {
+      // Delete time slots (should cascade, but being explicit)
+      await tx.cateringMenuItemTimeSlot.deleteMany({
+        where: { menuItemId: params.id },
+      })
+
+      // Delete options and selections (if table exists)
+      try {
+        const tableCheck = await tx.$queryRaw`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'catering_menu_item_options'
+          )
+        `
+        const tableExists = (tableCheck as any[])[0]?.exists
+        
+        if (tableExists) {
+          await (tx as any).cateringMenuItemOption.deleteMany({
+            where: { menuItemId: params.id },
+          })
+        }
+      } catch (optionsError: any) {
+        // If options table doesn't exist, that's okay
+        if (optionsError.code !== 'P2021' && !optionsError.message?.includes('does not exist')) {
+          console.warn('[Menu Item Delete] Error deleting options (non-critical):', optionsError.message)
+        }
+      }
+
+      // Finally, delete the menu item
+      await tx.cateringMenuItem.delete({
+        where: { id: params.id },
+      })
     })
 
     return NextResponse.json({ message: 'Menu item deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting menu item:', error)
+  } catch (error: any) {
+    console.error('[Menu Item Delete] Error deleting menu item:', error)
+    console.error('[Menu Item Delete] Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+    })
+    
+    // Provide more specific error messages
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Cannot delete menu item: it is referenced by other records (e.g., orders). Please deactivate it instead.' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to delete menu item' },
+      { error: error?.message || 'Failed to delete menu item' },
       { status: 500 }
     )
   }

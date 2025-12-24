@@ -7,9 +7,18 @@ ADD COLUMN IF NOT EXISTS "parent_id" TEXT,
 ADD COLUMN IF NOT EXISTS "level" INTEGER DEFAULT 1;
 
 -- Add foreign key constraint for parent_id (self-referential)
-ALTER TABLE "catering_categories"
-ADD CONSTRAINT "fk_catering_category_parent"
-FOREIGN KEY ("parent_id") REFERENCES "catering_categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- Check if constraint already exists before creating
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'fk_catering_category_parent'
+  ) THEN
+    ALTER TABLE "catering_categories"
+    ADD CONSTRAINT "fk_catering_category_parent"
+    FOREIGN KEY ("parent_id") REFERENCES "catering_categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- Add index for parent_id for faster queries
 CREATE INDEX IF NOT EXISTS "idx_catering_categories_parent_id" ON "catering_categories"("parent_id");

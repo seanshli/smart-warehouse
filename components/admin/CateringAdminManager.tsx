@@ -432,7 +432,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
           categoryId: itemForm.categoryId || undefined,
           name: itemForm.name,
           description: itemForm.description || undefined,
-          imageUrl: itemForm.imageUrl || undefined,
+          // Send null explicitly if imageUrl is empty to remove photo
+          imageUrl: itemForm.imageUrl && itemForm.imageUrl.trim() !== '' ? itemForm.imageUrl : null,
           cost: parseFloat(itemForm.cost),
           quantityAvailable: parseInt(itemForm.quantityAvailable.toString()) || 0,
           isActive: itemForm.isActive,
@@ -484,7 +485,8 @@ export default function CateringAdminManager({ buildingId, communityId }: Cateri
           categoryId: itemForm.categoryId || null,
           name: itemForm.name,
           description: itemForm.description || undefined,
-          imageUrl: itemForm.imageUrl || undefined,
+          // Send null explicitly if imageUrl is empty to remove photo
+          imageUrl: itemForm.imageUrl && itemForm.imageUrl.trim() !== '' ? itemForm.imageUrl : null,
           cost: parseFloat(itemForm.cost),
           quantityAvailable: parseInt(itemForm.quantityAvailable.toString()) || 0,
           isActive: itemForm.isActive,

@@ -116,26 +116,62 @@ export async function POST(request: NextRequest) {
     // Fetch menu item to get current price
     const { createPrismaClient } = await import('@/lib/prisma-factory')
     const prisma = createPrismaClient()
-    // Fetch menu item with category (including parent category for subcategories)
-    const menuItem = await prisma.cateringMenuItem.findUnique({
-      where: { id: menuItemId },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            parentId: true,
-            level: true,
-            parent: {
-              select: {
-                id: true,
-                name: true,
-              },
+    // Fetch menu item with category
+    // Try to include parent category info, but handle gracefully if columns don't exist
+    let menuItem: any
+    try {
+      menuItem = await prisma.cateringMenuItem.findUnique({
+        where: { id: menuItemId },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
-      },
-    })
+      })
+      
+      // Try to fetch parent category info if it exists (for subcategories)
+      if (menuItem?.category) {
+        try {
+          const categoryWithParent = await (prisma as any).cateringCategory.findUnique({
+            where: { id: menuItem.category.id },
+            select: {
+              id: true,
+              name: true,
+              parentId: true,
+              level: true,
+              parent: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          })
+          if (categoryWithParent) {
+            menuItem.category = categoryWithParent
+          }
+        } catch (parentError: any) {
+          // If parentId/level columns don't exist, that's okay - just use basic category
+          if (parentError.code !== 'P2021' && !parentError.message?.includes('does not exist')) {
+            console.warn('[Cart API] Error fetching parent category (non-critical):', parentError.message)
+          }
+        }
+      }
+    } catch (queryError: any) {
+      console.error('[Cart API] Error fetching menu item:', queryError)
+      // If it's a schema error, try a simpler query
+      if (queryError.code === 'P2021' || queryError.message?.includes('does not exist')) {
+        console.log('[Cart API] Schema error detected, trying simpler query...')
+        menuItem = await prisma.cateringMenuItem.findUnique({
+          where: { id: menuItemId },
+        })
+      } else {
+        throw queryError
+      }
+    }
 
     if (!menuItem) {
       console.error(`[Cart API] Menu item not found: ${menuItemId}`)

@@ -223,11 +223,15 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
       const result = await response.json()
       console.log('[CateringMenu] Add to cart response:', result)
       
-      // Update cart count immediately from the response
+      // Update cart count immediately from the response (optimistic update)
       if (result && Array.isArray(result.items)) {
         const newCount = result.items.length
-        console.log('[CateringMenu] Updating cart count from response:', newCount)
+        console.log('[CateringMenu] Updating cart count from response:', newCount, 'items:', result.items.map((i: any) => i.name))
         setCartItemCount(newCount)
+        // Force a re-render by updating state
+        console.log('[CateringMenu] Cart count state updated to:', newCount)
+      } else {
+        console.warn('[CateringMenu] Add to cart response missing items array:', result)
       }
       
       // Also reload from server to ensure sync (with delays to allow cookie to be set)
@@ -334,7 +338,10 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
           <ShoppingCartIcon className="h-5 w-5 mr-2" />
           Cart
           {cartItemCount > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-white text-primary-600 rounded-full text-xs font-bold">
+            <span 
+              key={`cart-badge-${cartItemCount}`}
+              className="ml-2 px-2 py-0.5 bg-white text-primary-600 rounded-full text-xs font-bold"
+            >
               {cartItemCount}
             </span>
           )}

@@ -264,15 +264,17 @@ export async function POST(request: NextRequest) {
     })
     
     // Set cookie on the response object with explicit settings
-    // Use 'none' for sameSite in production if needed for cross-origin, otherwise 'lax'
-    const sameSiteValue = process.env.NODE_ENV === 'production' ? 'lax' : 'lax'
+    // Safari requires 'lax' or 'none' (with secure) for cookies to work properly
+    // Use 'lax' for same-origin requests (most common case)
+    const sameSiteValue = 'lax' // Safari-compatible
     
     response.cookies.set(CART_COOKIE_NAME, cartJson, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production', // Required for SameSite=None, but we use 'lax'
       sameSite: sameSiteValue,
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/', // Ensure cookie is available for all paths
+      // Safari-specific: ensure domain is not set (allows subdomain access)
     })
     
     console.log(`[Cart API] Cookie set on response: ${CART_COOKIE_NAME}, length: ${cartJson.length} bytes`)

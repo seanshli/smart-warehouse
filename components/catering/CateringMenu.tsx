@@ -234,13 +234,16 @@ export default function CateringMenu({ buildingId, communityId, householdId }: C
         console.warn('[CateringMenu] Add to cart response missing items array:', result)
       }
       
-      // Also reload from server to ensure sync (with delays to allow cookie to be set)
-      await new Promise(resolve => setTimeout(resolve, 100))
-      await loadCartCount()
-      await new Promise(resolve => setTimeout(resolve, 300))
-      await loadCartCount()
-      await new Promise(resolve => setTimeout(resolve, 500))
-      await loadCartCount() // Third reload to ensure it's updated
+              // Also reload from server to ensure sync (with delays to allow cookie to be set)
+              // Give more time for cookie to propagate
+              await new Promise(resolve => setTimeout(resolve, 200))
+              await loadCartCount()
+              await new Promise(resolve => setTimeout(resolve, 500))
+              await loadCartCount()
+              await new Promise(resolve => setTimeout(resolve, 800))
+              await loadCartCount() // Third reload to ensure it's updated
+              
+              console.log('[CateringMenu] Final cart count after reloads:', cartItemCount)
       
       return result
     } catch (error) {

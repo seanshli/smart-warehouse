@@ -254,7 +254,8 @@ export async function POST(request: NextRequest) {
       quantity: i.quantity,
     })))
 
-    // Create response first
+    // Set cookie FIRST before creating response (critical for Next.js App Router)
+    // In Next.js App Router, cookies must be set on the response object
     const response = NextResponse.json(cart, {
       headers: {
         'Content-Type': 'application/json',
@@ -262,31 +263,33 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    // Set cookie on the response object (this is the correct way in Next.js App Router)
+    // Set cookie on the response object with explicit settings
+    // Use 'none' for sameSite in production if needed for cross-origin, otherwise 'lax'
+    const sameSiteValue = process.env.NODE_ENV === 'production' ? 'lax' : 'lax'
+    
     response.cookies.set(CART_COOKIE_NAME, cartJson, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: sameSiteValue,
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/', // Ensure cookie is available for all paths
     })
     
-    // Also set via cookieStore for compatibility
-    cookieStore.set(CART_COOKIE_NAME, cartJson, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    })
+    console.log(`[Cart API] Cookie set on response: ${CART_COOKIE_NAME}, length: ${cartJson.length} bytes`)
+    console.log(`[Cart API] Cookie settings: httpOnly=true, secure=${process.env.NODE_ENV === 'production'}, sameSite=${sameSiteValue}, path=/`)
     
-    // Verify cookie was set
-    const verifyCookie = cookieStore.get(CART_COOKIE_NAME)
-    if (verifyCookie) {
-      console.log(`[Cart API] Cookie verified: ${verifyCookie.value.substring(0, 100)}...`)
-      console.log(`[Cart API] Cookie value length: ${verifyCookie.value.length} bytes`)
-    } else {
-      console.error(`[Cart API] WARNING: Cookie was not set!`)
+    // Also set via cookieStore for server-side access (but response.cookies is primary)
+    try {
+      cookieStore.set(CART_COOKIE_NAME, cartJson, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: sameSiteValue,
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
+      })
+      console.log(`[Cart API] Cookie also set via cookieStore`)
+    } catch (cookieStoreError) {
+      console.warn(`[Cart API] Warning: Could not set cookie via cookieStore (non-critical):`, cookieStoreError)
     }
     
     return response

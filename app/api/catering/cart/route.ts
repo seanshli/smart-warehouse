@@ -85,7 +85,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/catering/cart/add - Add item to cart
+// POST /api/catering/cart - Add item to cart
+// Note: This handles POST to /api/catering/cart (not /api/catering/cart/add)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
     // Fetch menu item to get current price
     const { createPrismaClient } = await import('@/lib/prisma-factory')
     const prisma = createPrismaClient()
+    // Fetch menu item with category (including parent category for subcategories)
     const menuItem = await prisma.cateringMenuItem.findUnique({
       where: { id: menuItemId },
       include: {
@@ -122,6 +124,14 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            parentId: true,
+            level: true,
+            parent: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -244,10 +254,34 @@ export async function POST(request: NextRequest) {
     }
     
     return response
-  } catch (error) {
-    console.error('Error adding to cart:', error)
+  } catch (error: any) {
+    console.error('[Cart API] Error adding to cart:', error)
+    console.error('[Cart API] Error details:', {
+      message: error?.message,
+      code: error?.code,
+      stack: error?.stack?.substring(0, 500),
+    })
+    
+    // Check if it's a Prisma error related to missing columns or relations
+    if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
+      console.error('[Cart API] Database schema error - table or column missing')
+      return NextResponse.json(
+        { error: 'Database schema error. Please check if migrations are up to date.' },
+        { status: 500 }
+      )
+    }
+    
+    // Check if it's a relation error
+    if (error?.code === 'P2016' || error?.message?.includes('relation')) {
+      console.error('[Cart API] Database relation error')
+      return NextResponse.json(
+        { error: 'Database relation error. Please check category relationships.' },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to add item to cart' },
+      { error: error?.message || 'Failed to add item to cart' },
       { status: 500 }
     )
   }

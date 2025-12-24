@@ -38,9 +38,21 @@ export async function GET(request: NextRequest) {
     }
     
     console.log(`[Cart API GET] Found cart cookie, length: ${cartCookie.value.length} bytes`)
+    console.log(`[Cart API GET] Cookie value (first 100 chars):`, cartCookie.value.substring(0, 100))
 
     try {
-      const cart = JSON.parse(cartCookie.value)
+      // Decode URL-encoded cookie value if needed (Safari sometimes URL-encodes)
+      let cookieValue = cartCookie.value
+      // Check if it's URL-encoded (starts with %)
+      if (cookieValue.startsWith('%')) {
+        try {
+          cookieValue = decodeURIComponent(cookieValue)
+          console.log(`[Cart API GET] Decoded URL-encoded cookie`)
+        } catch (decodeError) {
+          console.warn('[Cart API GET] Failed to decode URL-encoded cookie, using as-is:', decodeError)
+        }
+      }
+      const cart = JSON.parse(cookieValue)
       console.log(`[Cart API GET] Retrieved cart with ${cart.items?.length || 0} items, total: ${cart.total || 0}`)
       console.log(`[Cart API GET] Cart items:`, cart.items?.map((item: any) => ({
         name: item.name,
@@ -204,9 +216,35 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const cartCookie = cookieStore.get(CART_COOKIE_NAME)
     
+    // Initialize cart - start with empty, but preserve existing cart if cookie exists
     let cart: { items: any[]; total?: number } = { items: [] }
-    if (cartCookie) {
-      cart = JSON.parse(cartCookie.value)
+    if (cartCookie && cartCookie.value) {
+      try {
+        // Decode URL-encoded cookie value if needed (Safari sometimes URL-encodes)
+        let cookieValue = cartCookie.value
+        // Check if it's URL-encoded (starts with %)
+        if (cookieValue.startsWith('%')) {
+          try {
+            cookieValue = decodeURIComponent(cookieValue)
+          } catch (decodeError) {
+            console.warn('[Cart API] Failed to decode URL-encoded cookie, using as-is:', decodeError)
+          }
+        }
+        const parsedCart = JSON.parse(cookieValue)
+        if (parsedCart && typeof parsedCart === 'object' && Array.isArray(parsedCart.items)) {
+          cart = parsedCart
+          console.log(`[Cart API] Loaded existing cart with ${cart.items.length} items`)
+        } else {
+          console.warn('[Cart API] Invalid cart structure in cookie, starting fresh')
+        }
+      } catch (parseError) {
+        console.error('[Cart API] Error parsing existing cart cookie:', parseError)
+        console.error('[Cart API] Cookie value (first 200 chars):', cartCookie.value?.substring(0, 200))
+        // Start with empty cart if parsing fails
+        cart = { items: [] }
+      }
+    } else {
+      console.log('[Cart API] No existing cart cookie found, starting fresh')
     }
 
     // Check if item already in cart with same options

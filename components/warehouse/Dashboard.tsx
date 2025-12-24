@@ -1212,15 +1212,14 @@ function DashboardContent({
 
   const checkForHouseholdChanges = async () => {
     try {
-      const response = await fetch('/api/realtime')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.hasChanges) {
-          setHouseholdChangeDetected(true)
-        }
-      }
+      // Note: /api/realtime returns SSE stream, not JSON
+      // For now, skip this check or use a different endpoint
+      // The realtime endpoint is for SSE connections, not JSON polling
+      // TODO: Create a separate endpoint for checking changes if needed
+      return
     } catch (error) {
-      console.error('Error checking for household changes:', error)
+      // Silently fail - this is a non-critical check
+      // console.error('Error checking for household changes:', error)
     }
   }
 

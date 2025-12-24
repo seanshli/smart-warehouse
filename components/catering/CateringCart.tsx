@@ -66,14 +66,19 @@ export default function CateringCart() {
 
   const loadCart = async (retryCount = 0) => {
     try {
+      console.log(`[CateringCart] Loading cart (attempt ${retryCount + 1})...`)
       const response = await fetch('/api/catering/cart', {
-        credentials: 'include',
+        method: 'GET',
+        credentials: 'include', // Critical: include cookies
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
         },
       })
+      
+      console.log(`[CateringCart] Response status: ${response.status}, ok: ${response.ok}`)
+      
       if (response.ok) {
         const data = await response.json()
         console.log('[CateringCart] Loaded cart data:', data)
@@ -99,13 +104,14 @@ export default function CateringCart() {
           // Check if any items are pre-orders (outside available time)
           checkPreOrderStatus(items)
           
-          // If cart is empty but we expected items, retry once after a delay
-          if (items.length === 0 && retryCount < 2) {
-            console.warn('[CateringCart] Cart appears empty, retrying in 500ms... (attempt', retryCount + 1, ')')
-            setTimeout(() => {
-              loadCart(retryCount + 1)
-            }, 500)
+          // Retry logic if cart appears empty (but only if we haven't retried too many times)
+          if (items.length === 0 && retryCount < 3) {
+            const delay = (retryCount + 1) * 500 // Increasing delay: 500ms, 1000ms, 1500ms
+            console.warn(`[CateringCart] Cart appears empty, retrying in ${delay}ms... (attempt ${retryCount + 1})`)
+            setTimeout(() => { loadCart(retryCount + 1) }, delay)
             return
+          } else if (items.length === 0 && retryCount >= 3) {
+            console.error('[CateringCart] Cart still empty after 3 retries - cookie may not be persisting')
           }
           
           // Log if cart is empty but we expected items
@@ -117,9 +123,8 @@ export default function CateringCart() {
           setCart({ items: [], total: 0 })
         }
       } else {
-        console.error('[CateringCart] Failed to load cart:', response.status, response.statusText)
         const errorText = await response.text().catch(() => '')
-        console.error('[CateringCart] Error response:', errorText)
+        console.error('[CateringCart] Failed to load cart:', response.status, response.statusText, errorText)
         setCart({ items: [], total: 0 })
       }
     } catch (error) {

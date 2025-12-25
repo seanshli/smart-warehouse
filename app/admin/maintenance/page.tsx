@@ -296,7 +296,7 @@ export default function AdminMaintenancePage() {
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {workOrder.number}
                     </span>
-                    <span className="ml-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(workOrder.status, workOrder.type)}">
+                    <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(workOrder.status, workOrder.type)}`}>
                       {getStatusLabel(workOrder.status, workOrder.type)}
                     </span>
                   </div>

@@ -219,11 +219,41 @@ type MaintenanceTicketStatus = 'open' | 'inProgress' | 'resolved'
 
 interface MaintenanceTicket {
   id: string
+  ticketNumber?: string
   title: string
-  location: string
-  requestedBy: string
-  status: MaintenanceTicketStatus
+  location?: string
+  requestedBy?: string
+  status: MaintenanceTicketStatus | string
   updatedAt: string
+  category?: string
+}
+
+interface CateringOrder {
+  id: string
+  orderNumber: string
+  status: string
+  totalAmount: number
+  deliveryType: string
+  orderedAt: string
+  items: Array<{
+    menuItem: {
+      name: string
+    }
+    quantity: number
+  }>
+}
+
+interface UnifiedWorkOrder {
+  id: string
+  type: 'maintenance' | 'catering'
+  title: string
+  number: string
+  status: string
+  location?: string
+  requestedBy?: string
+  updatedAt: string
+  ticket?: MaintenanceTicket
+  order?: CateringOrder
 }
 
 interface ReservationItem {
@@ -910,32 +940,8 @@ function DashboardContent({
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [householdChangeDetected, setHouseholdChangeDetected] = useState(false)
   const [lastFetchTime, setLastFetchTime] = useState(0)
-  const [maintenanceTickets] = useState<MaintenanceTicket[]>(() => [
-    {
-      id: 'RX-102',
-      title: '浴室漏水維修',
-      location: 'Master Bath',
-      requestedBy: 'Grandma',
-      status: 'open',
-      updatedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-    },
-    {
-      id: 'RX-099',
-      title: '臥室冷氣異常',
-      location: 'Bedroom 2',
-      requestedBy: 'Dad',
-      status: 'inProgress',
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    },
-    {
-      id: 'RX-095',
-      title: '車庫門保養',
-      location: 'Garage',
-      requestedBy: 'System',
-      status: 'resolved',
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    },
-  ])
+  const [workOrders, setWorkOrders] = useState<UnifiedWorkOrder[]>([])
+  const [workOrdersLoading, setWorkOrdersLoading] = useState(true)
   const [reservations] = useState<ReservationItem[]>(() => [
     {
       id: 'EV-301',
@@ -966,11 +972,96 @@ function DashboardContent({
     },
   ])
 
-  const maintenanceStats = useMemo(() => ({
-    open: maintenanceTickets.filter((ticket) => ticket.status === 'open').length,
-    inProgress: maintenanceTickets.filter((ticket) => ticket.status === 'inProgress').length,
-    resolved: maintenanceTickets.filter((ticket) => ticket.status === 'resolved').length,
-  }), [maintenanceTickets])
+  // Fetch work orders (maintenance tickets + catering orders)
+  const fetchWorkOrders = useCallback(async () => {
+    if (!household?.id) {
+      setWorkOrders([])
+      setWorkOrdersLoading(false)
+      return
+    }
+
+    try {
+      setWorkOrdersLoading(true)
+      const [ticketsRes, ordersRes] = await Promise.all([
+        fetch(`/api/maintenance/tickets?householdId=${household.id}`),
+        fetch(`/api/catering/orders?householdId=${household.id}`)
+      ])
+
+      const ticketsData = ticketsRes.ok ? await ticketsRes.json() : { tickets: [] }
+      const ordersData = ordersRes.ok ? await ordersRes.json() : { orders: [] }
+
+      // Convert maintenance tickets to unified format
+      const maintenanceWorkOrders: UnifiedWorkOrder[] = (ticketsData.tickets || []).map((ticket: any) => ({
+        id: ticket.id,
+        type: 'maintenance' as const,
+        title: ticket.title,
+        number: ticket.ticketNumber || ticket.id,
+        status: ticket.status,
+        location: ticket.location,
+        requestedBy: ticket.requestedBy?.name,
+        updatedAt: ticket.requestedAt || ticket.updatedAt || new Date().toISOString(),
+        ticket,
+      }))
+
+      // Convert catering orders to unified format
+      const cateringWorkOrders: UnifiedWorkOrder[] = (ordersData.orders || []).map((order: any) => ({
+        id: order.id,
+        type: 'catering' as const,
+        title: `叫餐訂單 - ${order.items?.map((i: any) => `${i.menuItem?.name || 'Item'} x${i.quantity}`).join(', ') || '訂單'}`,
+        number: order.orderNumber || order.id,
+        status: order.status,
+        updatedAt: order.orderedAt || order.updatedAt || new Date().toISOString(),
+        order,
+      }))
+
+      // Combine and sort by most recent first
+      const unified = [...maintenanceWorkOrders, ...cateringWorkOrders]
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 5) // Show top 5 most recent
+
+      setWorkOrders(unified)
+    } catch (error) {
+      console.error('Error fetching work orders:', error)
+      setWorkOrders([])
+    } finally {
+      setWorkOrdersLoading(false)
+    }
+  }, [household?.id])
+
+  useEffect(() => {
+    fetchWorkOrders()
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchWorkOrders, 30000)
+    return () => clearInterval(interval)
+  }, [fetchWorkOrders])
+
+  const maintenanceStats = useMemo(() => {
+    const maintenanceOnly = workOrders.filter(wo => wo.type === 'maintenance')
+    const open = maintenanceOnly.filter(t => 
+      t.status === 'PENDING_EVALUATION' || t.status === 'open'
+    ).length
+    const inProgress = maintenanceOnly.filter(t => 
+      t.status === 'IN_PROGRESS' || t.status === 'ASSIGNED' || t.status === 'inProgress'
+    ).length
+    const resolved = maintenanceOnly.filter(t => 
+      t.status === 'CLOSED' || t.status === 'SIGNED_OFF_BY_HOUSEHOLD' || t.status === 'resolved'
+    ).length
+    
+    // Also count catering orders
+    const cateringOpen = workOrders.filter(wo => 
+      wo.type === 'catering' && (wo.status === 'submitted' || wo.status === 'accepted')
+    ).length
+    const cateringInProgress = workOrders.filter(wo => 
+      wo.type === 'catering' && (wo.status === 'preparing' || wo.status === 'ready')
+    ).length
+
+    return {
+      open: open + cateringOpen,
+      inProgress: inProgress + cateringInProgress,
+      resolved,
+      total: workOrders.length,
+    }
+  }, [workOrders])
 
   const upcomingReservations = useMemo(() => reservations.length, [reservations])
 
@@ -1009,10 +1100,10 @@ function DashboardContent({
     },
     {
       id: 'maintenance',
-      title: translate('maintenanceTickets', '報修'),
-      subtitle: translate('maintenanceSubtitle', '家庭維修工單中心'),
+      title: translate('workOrders', '工單') || '工單',
+      subtitle: translate('workOrdersSubtitle', '報修與訂餐工單中心') || '報修與訂餐工單中心',
       icon: ExclamationTriangleIcon,
-      tag: 'NEW',
+      tag: 'LIVE',
       metrics: [
         { label: translate('pendingTickets', '待處理'), value: maintenanceStats.open },
         { label: translate('inProgress', '處理中'), value: maintenanceStats.inProgress },
@@ -1089,7 +1180,7 @@ function DashboardContent({
       ],
       onClick: () => onTabChange('chat'),
     },
-  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations, household])
+  ], [loading, maintenanceStats, onTabChange, reservations, stats.lowStockItems, stats.totalItems, translate, upcomingReservations, household, workOrders])
 
   const fetchDashboardStats = async (currentHousehold?: any, currentRefreshTrigger?: number): Promise<void> => {
     try {
@@ -1386,10 +1477,10 @@ function DashboardContent({
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {translate('maintenanceTickets', '報修中心')}
+                  {translate('workOrders', '工單中心') || '工單中心'}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {translate('maintenanceSubtitle', '追蹤家庭維修與保養狀態')}
+                  {translate('workOrdersSubtitle', '追蹤報修與訂餐狀態') || '追蹤報修與訂餐狀態'}
                 </p>
               </div>
               <div className="flex space-x-2 text-xs">
@@ -1403,36 +1494,96 @@ function DashboardContent({
             </div>
 
             <div className="space-y-4">
-              {maintenanceTickets.map((ticket) => (
-                <div key={ticket.id} className="border border-gray-100 dark:border-gray-700/60 rounded-xl p-3 sm:p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{ticket.title}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        #{ticket.id} • {ticket.location} • {t('by')} {ticket.requestedBy}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-[11px] font-semibold rounded-full px-3 py-1 ${
-                        ticket.status === 'open'
-                          ? 'bg-red-50 text-red-600'
-                          : ticket.status === 'inProgress'
-                          ? 'bg-amber-50 text-amber-600'
-                          : 'bg-green-50 text-green-600'
-                      }`}
-                    >
-                      {ticket.status === 'open'
-                        ? translate('pending', '待處理')
-                        : ticket.status === 'inProgress'
-                        ? translate('inProgress', '處理中')
-                        : translate('resolved', '已完成')}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    {translate('lastUpdated', '最近更新')}：{formatDate(ticket.updatedAt)}
-                  </div>
+              {workOrdersLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{translate('loading', '載入中')}</p>
                 </div>
-              ))}
+              ) : workOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p className="text-sm">{translate('noWorkOrders', '目前沒有工單或訂餐')}</p>
+                </div>
+              ) : (
+                workOrders.map((workOrder) => {
+                  const getStatusColor = (status: string, type: 'maintenance' | 'catering') => {
+                    if (type === 'catering') {
+                      switch (status) {
+                        case 'submitted': return 'bg-red-50 text-red-600'
+                        case 'accepted': return 'bg-blue-50 text-blue-600'
+                        case 'preparing': return 'bg-amber-50 text-amber-600'
+                        case 'ready': return 'bg-indigo-50 text-indigo-600'
+                        case 'delivered':
+                        case 'closed': return 'bg-green-50 text-green-600'
+                        case 'cancelled': return 'bg-gray-50 text-gray-600'
+                        default: return 'bg-gray-50 text-gray-600'
+                      }
+                    }
+                    // Maintenance
+                    if (status === 'PENDING_EVALUATION' || status === 'open') return 'bg-red-50 text-red-600'
+                    if (status === 'IN_PROGRESS' || status === 'ASSIGNED' || status === 'inProgress') return 'bg-amber-50 text-amber-600'
+                    if (status === 'CLOSED' || status === 'SIGNED_OFF_BY_HOUSEHOLD' || status === 'resolved') return 'bg-green-50 text-green-600'
+                    return 'bg-gray-50 text-gray-600'
+                  }
+                  
+                  const getStatusLabel = (status: string, type: 'maintenance' | 'catering') => {
+                    if (type === 'catering') {
+                      const labels: Record<string, string> = {
+                        submitted: '已提交',
+                        accepted: '已接受',
+                        preparing: '準備中',
+                        ready: '已就緒',
+                        delivered: '已送達',
+                        closed: '已完成',
+                        cancelled: '已取消',
+                      }
+                      return labels[status] || status
+                    }
+                    // Maintenance
+                    if (status === 'PENDING_EVALUATION' || status === 'open') return translate('pending', '待處理')
+                    if (status === 'IN_PROGRESS' || status === 'ASSIGNED' || status === 'inProgress') return translate('inProgress', '處理中')
+                    if (status === 'CLOSED' || status === 'SIGNED_OFF_BY_HOUSEHOLD' || status === 'resolved') return translate('resolved', '已完成')
+                    return status.replace(/_/g, ' ')
+                  }
+
+                  return (
+                    <div
+                      key={workOrder.id}
+                      onClick={() => {
+                        if (workOrder.type === 'catering' && workOrder.order) {
+                          window.location.href = `/catering/orders/${workOrder.order.id}`
+                        } else if (workOrder.type === 'maintenance' && workOrder.ticket) {
+                          onTabChange('maintenance')
+                        }
+                      }}
+                      className="border border-gray-100 dark:border-gray-700/60 rounded-xl p-3 sm:p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                              {workOrder.type === 'catering' ? '叫餐' : '報修'}
+                            </span>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{workOrder.title}</p>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            #{workOrder.number}
+                            {workOrder.location && ` • ${workOrder.location}`}
+                            {workOrder.requestedBy && ` • ${translate('by', '由')} ${workOrder.requestedBy}`}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold rounded-full px-3 py-1 ${getStatusColor(workOrder.status, workOrder.type)}`}
+                        >
+                          {getStatusLabel(workOrder.status, workOrder.type)}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {translate('lastUpdated', '最近更新')}：{formatDate(workOrder.updatedAt)}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </div>
         </div>

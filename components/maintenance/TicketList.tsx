@@ -86,12 +86,13 @@ export default function TicketList() {
   const [loading, setLoading] = useState(true)
   const [showRequestForm, setShowRequestForm] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const [selectedType, setSelectedType] = useState<'all' | 'maintenance' | 'catering'>('all')
 
   useEffect(() => {
     if (household?.id) {
       fetchWorkOrders()
     }
-  }, [household?.id, selectedStatus])
+  }, [household?.id, selectedStatus, selectedType])
 
   const fetchWorkOrders = async () => {
     if (!household?.id) {
@@ -150,7 +151,7 @@ export default function TicketList() {
       setOrders(ordersData.orders || [])
 
       // Combine into unified work orders
-      const unified: UnifiedWorkOrder[] = [
+      let unified: UnifiedWorkOrder[] = [
         ...(ticketsData.tickets || []).map((ticket: MaintenanceTicket) => ({
           id: ticket.id,
           type: 'maintenance' as const,
@@ -183,6 +184,41 @@ export default function TicketList() {
           }
         }),
       ].sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
+
+      // Apply type filter
+      if (selectedType !== 'all') {
+        unified = unified.filter(wo => wo.type === selectedType)
+      }
+
+      // Apply status filter
+      if (selectedStatus !== 'all') {
+        unified = unified.filter(wo => {
+          const status = wo.status.toLowerCase()
+          const filterStatus = selectedStatus.toLowerCase()
+          
+          // Map filter values to actual statuses
+          if (filterStatus === 'pending' || filterStatus === '待處理') {
+            return wo.type === 'maintenance' 
+              ? (status === 'pending_evaluation' || status === 'open')
+              : (status === 'submitted' || status === 'accepted')
+          }
+          if (filterStatus === 'inprogress' || filterStatus === '處理中' || filterStatus === 'in_progress') {
+            return wo.type === 'maintenance'
+              ? (status === 'in_progress' || status === 'assigned' || status === 'evaluated' || status === 'preparing' || status === 'ready')
+              : (status === 'preparing' || status === 'ready')
+          }
+          if (filterStatus === 'completed' || filterStatus === '已完成') {
+            return wo.type === 'maintenance'
+              ? (status === 'closed' || status === 'signed_off_by_household' || status === 'resolved' || status === 'work_completed')
+              : (status === 'delivered' || status === 'closed')
+          }
+          if (filterStatus === 'cancelled' || filterStatus === '已取消') {
+            return status === 'cancelled'
+          }
+          
+          return status === filterStatus
+        })
+      }
 
       setUnifiedWorkOrders(unified)
     } catch (error: any) {
@@ -266,19 +302,46 @@ export default function TicketList() {
   }
   
   const getStatusLabel = (status: string, type: 'maintenance' | 'catering') => {
-    if (type === 'catering') {
-      const labels: Record<string, string> = {
-        submitted: '已提交',
-        accepted: '已接受',
-        preparing: '準備中',
-        ready: '已就緒',
-        delivered: '已送達',
-        closed: '已完成',
-        cancelled: '已取消',
-      }
-      return labels[status] || status
+    const statusLower = status.toLowerCase()
+    
+    // Map statuses to translation keys - consistent across both types
+    const statusMap: Record<string, string> = {
+      // Common statuses
+      'pending_evaluation': t('pendingEvaluation') || '待評估',
+      'pending': t('pending') || '待處理',
+      'submitted': t('submitted') || '已提交',
+      'accepted': t('accepted') || '已接受',
+      'evaluated': t('evaluated') || '已評估',
+      'assigned': t('assigned') || '已指派',
+      'in_progress': t('inProgress') || '處理中',
+      'preparing': t('preparing') || '準備中',
+      'ready': t('ready') || '已就緒',
+      'work_completed': t('workCompleted') || '工作完成',
+      'delivered': t('delivered') || '已送達',
+      'closed': t('closed') || '已完成',
+      'cancelled': t('cancelled') || '已取消',
+      'signed_off_by_crew': t('signedOffByCrew') || '工作組簽核',
+      'signed_off_by_supplier': t('signedOffBySupplier') || '供應商簽核',
+      'signed_off_by_household': t('signedOffByHousehold') || '住戶簽核',
     }
-    return status.replace(/_/g, ' ')
+    
+    // Try exact match first
+    if (statusMap[statusLower]) {
+      return statusMap[statusLower]
+    }
+    
+    // Try uppercase match for maintenance statuses
+    if (type === 'maintenance') {
+      const upperStatus = status.toUpperCase()
+      if (statusMap[upperStatus.toLowerCase()]) {
+        return statusMap[upperStatus.toLowerCase()]
+      }
+      // Fallback: replace underscores with spaces
+      return status.replace(/_/g, ' ')
+    }
+    
+    // Fallback for catering
+    return statusMap[statusLower] || status
   }
   
   const handleWorkOrderClick = (workOrder: UnifiedWorkOrder) => {
@@ -380,7 +443,7 @@ export default function TicketList() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        {workOrder.type === 'catering' ? '叫餐' : '報修'}
+                        {workOrder.type === 'catering' ? (t('catering') || '叫餐') : (t('maintenance') || '報修')}
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {workOrder.number}

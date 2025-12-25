@@ -248,7 +248,8 @@ interface UnifiedWorkOrder {
   type: 'maintenance' | 'catering'
   title: string
   number: string
-  status: string
+  status: string // Original status from database
+  normalizedStatus?: 'pending' | 'in_progress' | 'completed' | 'cancelled' // Normalized status for filtering
   location?: string
   requestedBy?: string
   updatedAt: string
@@ -923,6 +924,59 @@ function DashboardContent({
     },
     [t]
   )
+
+  // Normalize status to common status categories across all order types
+  const normalizeStatus = useCallback((status: string, type: 'maintenance' | 'catering'): 'pending' | 'in_progress' | 'completed' | 'cancelled' => {
+    const statusLower = status.toLowerCase()
+    
+    // Cancelled status (same for both)
+    if (statusLower === 'cancelled') {
+      return 'cancelled'
+    }
+    
+    if (type === 'maintenance') {
+      // Maintenance pending statuses
+      if (statusLower === 'pending_evaluation' || statusLower === 'open' || statusLower === 'pending') {
+        return 'pending'
+      }
+      // Maintenance in-progress statuses
+      if (statusLower === 'evaluated' || statusLower === 'assigned' || statusLower === 'in_progress' || 
+          statusLower === 'work_completed' || statusLower === 'signed_off_by_crew' || statusLower === 'signed_off_by_supplier') {
+        return 'in_progress'
+      }
+      // Maintenance completed statuses
+      if (statusLower === 'closed' || statusLower === 'signed_off_by_household' || statusLower === 'resolved') {
+        return 'completed'
+      }
+    } else {
+      // Catering pending statuses
+      if (statusLower === 'submitted' || statusLower === 'accepted') {
+        return 'pending'
+      }
+      // Catering in-progress statuses
+      if (statusLower === 'preparing' || statusLower === 'ready') {
+        return 'in_progress'
+      }
+      // Catering completed statuses
+      if (statusLower === 'delivered' || statusLower === 'closed') {
+        return 'completed'
+      }
+    }
+    
+    // Default fallback
+    return 'pending'
+  }, [])
+
+  // Get normalized status label for display (consistent across all types)
+  const getNormalizedStatusLabel = useCallback((normalizedStatus: 'pending' | 'in_progress' | 'completed' | 'cancelled'): string => {
+    const labels: Record<string, string> = {
+      'pending': translate('pending', '待處理'),
+      'in_progress': translate('inProgress', '處理中'),
+      'completed': translate('completed', '已完成'),
+      'cancelled': translate('cancelled', '已取消'),
+    }
+    return labels[normalizedStatus] || normalizedStatus
+  }, [translate])
   const [stats, setStats] = useState<{
     totalItems: number
     totalRooms: number
@@ -992,26 +1046,28 @@ function DashboardContent({
       const ticketsData = ticketsRes.ok ? await ticketsRes.json() : { tickets: [] }
       const ordersData = ordersRes.ok ? await ordersRes.json() : { orders: [] }
 
-      // Convert maintenance tickets to unified format
+      // Convert maintenance tickets to unified format with normalized statuses
       const maintenanceWorkOrders: UnifiedWorkOrder[] = (ticketsData.tickets || []).map((ticket: any) => ({
         id: ticket.id,
         type: 'maintenance' as const,
         title: ticket.title,
         number: ticket.ticketNumber || ticket.id,
-        status: ticket.status,
+        status: ticket.status, // Keep original status
+        normalizedStatus: normalizeStatus(ticket.status, 'maintenance'), // Add normalized status
         location: ticket.location,
         requestedBy: ticket.requestedBy?.name,
         updatedAt: ticket.requestedAt || ticket.updatedAt || new Date().toISOString(),
         ticket,
       }))
 
-      // Convert catering orders to unified format
+      // Convert catering orders to unified format with normalized statuses
       const cateringWorkOrders: UnifiedWorkOrder[] = (ordersData.orders || []).map((order: any) => ({
         id: order.id,
         type: 'catering' as const,
         title: `叫餐訂單 - ${order.items?.map((i: any) => `${i.menuItem?.name || 'Item'} x${i.quantity}`).join(', ') || '訂單'}`,
         number: order.orderNumber || order.id,
-        status: order.status,
+        status: order.status, // Keep original status
+        normalizedStatus: normalizeStatus(order.status, 'catering'), // Add normalized status
         updatedAt: order.orderedAt || order.updatedAt || new Date().toISOString(),
         order,
       }))
@@ -1025,34 +1081,15 @@ function DashboardContent({
         unified = unified.filter(wo => wo.type === workOrderTypeFilter)
       }
 
-      // Apply status filter
+      // Apply status filter using normalized statuses
       if (workOrderStatusFilter !== 'all') {
+        const beforeFilter = unified.length
         unified = unified.filter(wo => {
-          const status = wo.status.toLowerCase()
-          const filterStatus = workOrderStatusFilter.toLowerCase()
-          
-          // Map filter values to actual statuses
-          if (filterStatus === 'pending' || filterStatus === '待處理') {
-            return wo.type === 'maintenance' 
-              ? (status === 'pending_evaluation' || status === 'open')
-              : (status === 'submitted' || status === 'accepted')
-          }
-          if (filterStatus === 'inprogress' || filterStatus === '處理中') {
-            return wo.type === 'maintenance'
-              ? (status === 'in_progress' || status === 'assigned' || status === 'inprogress')
-              : (status === 'preparing' || status === 'ready')
-          }
-          if (filterStatus === 'completed' || filterStatus === '已完成') {
-            return wo.type === 'maintenance'
-              ? (status === 'closed' || status === 'signed_off_by_household' || status === 'resolved')
-              : (status === 'delivered' || status === 'closed')
-          }
-          if (filterStatus === 'cancelled' || filterStatus === '已取消') {
-            return status === 'cancelled'
-          }
-          
-          return status === filterStatus
+          const normalized = wo.normalizedStatus || normalizeStatus(wo.status, wo.type)
+          const matches = normalized === workOrderStatusFilter
+          return matches
         })
+        console.log(`[Dashboard] Filtered work orders: ${beforeFilter} -> ${unified.length} (filter: ${workOrderStatusFilter})`)
       }
 
       unified = unified.slice(0, 5) // Show top 5 most recent
@@ -1064,7 +1101,7 @@ function DashboardContent({
     } finally {
       setWorkOrdersLoading(false)
     }
-  }, [household?.id])
+  }, [household?.id, workOrderTypeFilter, workOrderStatusFilter, normalizeStatus])
 
   useEffect(() => {
     fetchWorkOrders()
@@ -1549,7 +1586,7 @@ function DashboardContent({
               >
                 <option value="all">全部狀態</option>
                 <option value="pending">待處理</option>
-                <option value="inProgress">處理中</option>
+                <option value="in_progress">處理中</option>
                 <option value="completed">已完成</option>
                 <option value="cancelled">已取消</option>
               </select>
@@ -1567,44 +1604,16 @@ function DashboardContent({
                 </div>
               ) : (
                 workOrders.map((workOrder) => {
-                  const getStatusColor = (status: string, type: 'maintenance' | 'catering') => {
-                    if (type === 'catering') {
-                      switch (status) {
-                        case 'submitted': return 'bg-red-50 text-red-600'
-                        case 'accepted': return 'bg-blue-50 text-blue-600'
-                        case 'preparing': return 'bg-amber-50 text-amber-600'
-                        case 'ready': return 'bg-indigo-50 text-indigo-600'
-                        case 'delivered':
-                        case 'closed': return 'bg-green-50 text-green-600'
-                        case 'cancelled': return 'bg-gray-50 text-gray-600'
-                        default: return 'bg-gray-50 text-gray-600'
-                      }
+                  // Use normalized status for consistent display
+                  const normalizedStatus = workOrder.normalizedStatus || normalizeStatus(workOrder.status, workOrder.type)
+                  const getNormalizedStatusColor = (ns: 'pending' | 'in_progress' | 'completed' | 'cancelled'): string => {
+                    switch (ns) {
+                      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                      case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                     }
-                    // Maintenance
-                    if (status === 'PENDING_EVALUATION' || status === 'open') return 'bg-red-50 text-red-600'
-                    if (status === 'IN_PROGRESS' || status === 'ASSIGNED' || status === 'inProgress') return 'bg-amber-50 text-amber-600'
-                    if (status === 'CLOSED' || status === 'SIGNED_OFF_BY_HOUSEHOLD' || status === 'resolved') return 'bg-green-50 text-green-600'
-                    return 'bg-gray-50 text-gray-600'
-                  }
-                  
-                  const getStatusLabel = (status: string, type: 'maintenance' | 'catering') => {
-                    if (type === 'catering') {
-                      const labels: Record<string, string> = {
-                        submitted: '已提交',
-                        accepted: '已接受',
-                        preparing: '準備中',
-                        ready: '已就緒',
-                        delivered: '已送達',
-                        closed: '已完成',
-                        cancelled: '已取消',
-                      }
-                      return labels[status] || status
-                    }
-                    // Maintenance
-                    if (status === 'PENDING_EVALUATION' || status === 'open') return translate('pending', '待處理')
-                    if (status === 'IN_PROGRESS' || status === 'ASSIGNED' || status === 'inProgress') return translate('inProgress', '處理中')
-                    if (status === 'CLOSED' || status === 'SIGNED_OFF_BY_HOUSEHOLD' || status === 'resolved') return translate('resolved', '已完成')
-                    return status.replace(/_/g, ' ')
                   }
 
                   return (
@@ -1634,9 +1643,9 @@ function DashboardContent({
                           </p>
                         </div>
                         <span
-                          className={`text-[11px] font-semibold rounded-full px-3 py-1 ${getStatusColor(workOrder.status, workOrder.type)}`}
+                          className={`text-[11px] font-semibold rounded-full px-3 py-1 ${getNormalizedStatusColor(normalizedStatus)}`}
                         >
-                          {getStatusLabel(workOrder.status, workOrder.type)}
+                          {getNormalizedStatusLabel(normalizedStatus)}
                         </span>
                       </div>
                       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">

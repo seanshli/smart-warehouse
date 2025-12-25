@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useHousehold } from '@/components/HouseholdProvider'
@@ -96,11 +96,11 @@ export default function TicketList() {
   }
 
   // Normalize status to common status categories across all order types
-  const normalizeStatus = (status: string, type: 'maintenance' | 'catering'): 'pending' | 'in_progress' | 'completed' | 'cancelled' => {
+  const normalizeStatus = useCallback((status: string, type: 'maintenance' | 'catering'): 'pending' | 'in_progress' | 'completed' | 'cancelled' => {
     const statusLower = status.toLowerCase()
     
     // Cancelled status (same for both)
-    if (statusLower === 'cancelled' || statusLower === 'cancelled') {
+    if (statusLower === 'cancelled') {
       return 'cancelled'
     }
     
@@ -135,6 +135,33 @@ export default function TicketList() {
     
     // Default fallback
     return 'pending'
+  }, [])
+
+  // Get normalized status label for display (consistent across all types)
+  const getNormalizedStatusLabel = (normalizedStatus: 'pending' | 'in_progress' | 'completed' | 'cancelled'): string => {
+    const labels: Record<string, string> = {
+      'pending': getTranslation('pending', '待處理'),
+      'in_progress': getTranslation('inProgress', '處理中'),
+      'completed': getTranslation('completed', '已完成'),
+      'cancelled': getTranslation('cancelled', '已取消'),
+    }
+    return labels[normalizedStatus] || normalizedStatus
+  }
+
+  // Get normalized status color (consistent across all types)
+  const getNormalizedStatusColor = (normalizedStatus: 'pending' | 'in_progress' | 'completed' | 'cancelled'): string => {
+    switch (normalizedStatus) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+    }
   }
   const [tickets, setTickets] = useState<MaintenanceTicket[]>([])
   const [orders, setOrders] = useState<CateringOrder[]>([])
@@ -148,9 +175,9 @@ export default function TicketList() {
     if (household?.id) {
       fetchWorkOrders()
     }
-  }, [household?.id, selectedStatus, selectedType])
+  }, [household?.id, selectedStatus, selectedType, normalizeStatus])
 
-  const fetchWorkOrders = async () => {
+  const fetchWorkOrders = useCallback(async () => {
     if (!household?.id) {
       setUnifiedWorkOrders([])
       setLoading(false)
@@ -160,10 +187,8 @@ export default function TicketList() {
     setLoading(true)
     try {
       // Fetch both maintenance tickets and catering orders
+      // Don't filter by status on API - we'll filter client-side using normalized statuses
       const params = new URLSearchParams({ householdId: household.id })
-      if (selectedStatus !== 'all') {
-        params.append('status', selectedStatus)
-      }
 
       const [ticketsRes, ordersRes] = await Promise.all([
         fetch(`/api/maintenance/tickets?${params.toString()}`),
@@ -250,10 +275,16 @@ export default function TicketList() {
 
       // Apply status filter using normalized statuses
       if (selectedStatus !== 'all') {
+        const beforeFilter = unified.length
         unified = unified.filter(wo => {
           const normalized = wo.normalizedStatus || normalizeStatus(wo.status, wo.type)
-          return normalized === selectedStatus
+          const matches = normalized === selectedStatus
+          if (!matches) {
+            console.log(`[TicketList] Filtered out: ${wo.number} (status: ${wo.status}, normalized: ${normalized}, filter: ${selectedStatus})`)
+          }
+          return matches
         })
+        console.log(`[TicketList] Filtered work orders: ${beforeFilter} -> ${unified.length} (filter: ${selectedStatus})`)
       }
 
       setUnifiedWorkOrders(unified)
@@ -264,7 +295,7 @@ export default function TicketList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [household?.id, selectedStatus, selectedType, normalizeStatus])
 
   const getStatusColor = (status: string, type: 'maintenance' | 'catering') => {
     if (type === 'catering') {
@@ -498,8 +529,8 @@ export default function TicketList() {
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {workOrder.number}
                       </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(workOrder.status, workOrder.type)}`}>
-                        {getStatusLabel(workOrder.status, workOrder.type)}
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getNormalizedStatusColor(workOrder.normalizedStatus || normalizeStatus(workOrder.status, workOrder.type))}`}>
+                        {getNormalizedStatusLabel(workOrder.normalizedStatus || normalizeStatus(workOrder.status, workOrder.type))}
                       </span>
                       {workOrder.priority && (
                         <span className={`text-xs font-medium ${getPriorityColor(workOrder.priority)}`}>

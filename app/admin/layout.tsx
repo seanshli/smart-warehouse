@@ -17,12 +17,14 @@ import {
   BuildingOfficeIcon,
   BellIcon,
   ShoppingBagIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline'
 
 interface AdminContext {
   isSuperAdmin: boolean
   communityAdmins: Array<{ id: string; name: string }>
   buildingAdmins: Array<{ id: string; name: string; communityId: string; communityName: string }>
+  supplierAdmins: Array<{ id: string; name: string; serviceTypes: string[] }>
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -69,22 +71,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
   }
 
-  const navigation = [
-    { name: t('adminDashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
-    { name: t('adminCommunities'), href: '/admin/communities', icon: BuildingOfficeIcon, current: pathname === '/admin/communities' },
-    { name: t('adminBuildings'), href: '/admin/buildings', icon: BuildingOfficeIcon, current: pathname === '/admin/buildings' },
-    { name: t('adminHouseholds'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
-    { name: t('adminItems'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
-    { name: t('adminAnnouncements'), href: '/admin/announcements', icon: BellIcon, current: pathname === '/admin/announcements' },
-    { name: t('adminChatHistory') || 'Chat History', href: '/admin/chat-history', icon: BellIcon, current: pathname === '/admin/chat-history' },
-    { name: t('adminDuplicateManagement'), href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },
-    { name: t('adminMaintenance'), href: '/admin/maintenance', icon: ExclamationTriangleIcon, current: pathname === '/admin/maintenance' },
-    { name: 'Catering', href: '/admin/catering', icon: ShoppingBagIcon, current: pathname.startsWith('/admin/catering') },
-    { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
-    { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
-    { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },
-    { name: t('adminSettings'), href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },
-  ]
+  // Build navigation based on admin context
+  const navigation: Array<{ name: string; href: string; icon: any; current: boolean }> = []
+  
+  // Super admin and community/building admins see all navigation
+  if (adminContext?.isSuperAdmin || 
+      (adminContext?.communityAdmins && adminContext.communityAdmins.length > 0) ||
+      (adminContext?.buildingAdmins && adminContext.buildingAdmins.length > 0)) {
+    navigation.push(
+      { name: t('adminDashboard'), href: '/admin', icon: HomeIcon, current: pathname === '/admin' },
+      { name: t('adminCommunities'), href: '/admin/communities', icon: BuildingOfficeIcon, current: pathname === '/admin/communities' },
+      { name: t('adminBuildings'), href: '/admin/buildings', icon: BuildingOfficeIcon, current: pathname === '/admin/buildings' },
+      { name: t('adminHouseholds'), href: '/admin/households', icon: UserGroupIcon, current: pathname === '/admin/households' },
+      { name: t('adminItems'), href: '/admin/items', icon: CubeIcon, current: pathname === '/admin/items' },
+      { name: t('adminAnnouncements'), href: '/admin/announcements', icon: BellIcon, current: pathname === '/admin/announcements' },
+      { name: t('adminChatHistory') || 'Chat History', href: '/admin/chat-history', icon: BellIcon, current: pathname === '/admin/chat-history' },
+      { name: t('adminDuplicateManagement'), href: '/admin/duplicates', icon: ExclamationTriangleIcon, current: pathname === '/admin/duplicates' },
+      { name: t('adminMaintenance'), href: '/admin/maintenance', icon: ExclamationTriangleIcon, current: pathname === '/admin/maintenance' },
+      { name: 'Catering', href: '/admin/catering', icon: ShoppingBagIcon, current: pathname.startsWith('/admin/catering') },
+      { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
+      { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
+      { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },
+      { name: t('adminSettings'), href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },
+    )
+  }
+  
+  // Supplier admins only see their supplier-specific maintenance page
+  if (adminContext?.supplierAdmins && adminContext.supplierAdmins.length > 0) {
+    adminContext.supplierAdmins.forEach((supplier) => {
+      navigation.push({
+        name: `${supplier.name} - 工單`,
+        href: `/admin/suppliers/${supplier.id}/maintenance`,
+        icon: TruckIcon,
+        current: pathname === `/admin/suppliers/${supplier.id}/maintenance`,
+      })
+    })
+  }
 
   const handleSignOut = () => {
     // Redirect to admin signout page for proper cleanup
@@ -114,6 +136,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ) : adminContext?.buildingAdmins && adminContext.buildingAdmins.length > 0 ? (
                       <span className="text-green-600 font-semibold">
                         Building Admin: {adminContext.buildingAdmins.map(b => b.name).join(', ')}
+                      </span>
+                    ) : adminContext?.supplierAdmins && adminContext.supplierAdmins.length > 0 ? (
+                      <span className="text-purple-600 font-semibold">
+                        Supplier Admin: {adminContext.supplierAdmins.map(s => s.name).join(', ')}
                       </span>
                     ) : (
                       t('adminManagement') || 'Administrator'

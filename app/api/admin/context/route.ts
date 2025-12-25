@@ -37,10 +37,12 @@ export async function GET(request: NextRequest) {
       isSuperAdmin: boolean
       communityAdmins: Array<{ id: string; name: string }>
       buildingAdmins: Array<{ id: string; name: string; communityId: string; communityName: string }>
+      supplierAdmins: Array<{ id: string; name: string; serviceTypes: string[] }>
     } = {
       isSuperAdmin: user.isAdmin || false,
       communityAdmins: [],
       buildingAdmins: [],
+      supplierAdmins: [],
     }
 
     // Get community admin roles
@@ -122,6 +124,42 @@ export async function GET(request: NextRequest) {
       })
       // Continue with empty array if query fails
       context.buildingAdmins = []
+    }
+
+    // Get supplier admin roles
+    try {
+      const supplierMemberships = await prisma.supplierMember.findMany({
+        where: {
+          userId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+        },
+        select: {
+          id: true,
+          userId: true,
+          supplierId: true,
+          role: true,
+          joinedAt: true,
+          supplier: {
+            select: {
+              id: true,
+              name: true,
+              serviceTypes: true,
+              isActive: true,
+            },
+          },
+        },
+      })
+
+      context.supplierAdmins = supplierMemberships
+        .filter(m => m.role === 'ADMIN' && m.supplier && m.supplier.isActive)
+        .map(m => ({
+          id: m.supplier!.id,
+          name: m.supplier!.name,
+          serviceTypes: m.supplier!.serviceTypes || [],
+        }))
+    } catch (error) {
+      console.error('Error fetching supplier memberships:', error)
+      context.supplierAdmins = []
     }
 
     return NextResponse.json(context)

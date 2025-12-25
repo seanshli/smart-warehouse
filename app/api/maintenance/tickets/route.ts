@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const category = searchParams.get('category')
     const isAdmin = searchParams.get('admin') === 'true'
+    const supplierId = searchParams.get('supplierId') // For supplier admin filtering
 
     // Check if user is admin
     const user = await prisma.user.findUnique({
@@ -26,13 +27,46 @@ export async function GET(request: NextRequest) {
 
     let where: any = {}
 
-    if (isAdmin && user?.isAdmin) {
-      // Admin can see all tickets
+    // Check if user is supplier admin
+    let isSupplierAdmin = false
+    let userSupplierId: string | null = null
+    if (supplierId) {
+      // Verify user is admin for this supplier
+      const supplierMember = await prisma.supplierMember.findUnique({
+        where: {
+          userId_supplierId: {
+            userId,
+            supplierId,
+          },
+        },
+        select: {
+          role: true,
+          supplierId: true,
+        },
+      })
+      if (supplierMember && (supplierMember.role === 'ADMIN' || supplierMember.role === 'MANAGER')) {
+        isSupplierAdmin = true
+        userSupplierId = supplierId
+      }
+    }
+
+    if (isSupplierAdmin && userSupplierId) {
+      // Supplier admin can only see tickets assigned to their supplier
+      where.assignedSupplierId = userSupplierId
+      if (status) where.status = status
+      if (category) where.category = category
+      if (householdId) where.householdId = householdId
+    } else if (isAdmin && user?.isAdmin) {
+      // Super admin can see all tickets
       if (status) where.status = status
       if (category) where.category = category
       // Support householdId filter for admin view
       if (householdId) {
         where.householdId = householdId
+      }
+      // Support supplierId filter for admin view
+      if (supplierId) {
+        where.assignedSupplierId = supplierId
       }
     } else {
       // Household members can only see their household's tickets
@@ -223,15 +257,27 @@ export async function POST(request: NextRequest) {
 
     // Get routing configuration from job-routing API
     // Default routing configuration (matches job-routing API)
+    // Auto-routing rules:
+    // - Mail/package/doorbell/catering -> building/community (local services)
+    // - Supplier services -> specific supplier based on service mapping
     const defaultRoutingConfig: Record<string, string> = {
       BUILDING_MAINTENANCE: 'INTERNAL_BUILDING',
       HOUSE_CLEANING: 'INTERNAL_COMMUNITY',
-      FOOD_ORDER: 'INTERNAL_COMMUNITY',
+      FOOD_ORDER: 'INTERNAL_COMMUNITY', // Catering automatically routed to building/community
+      MAIL_SERVICE: 'INTERNAL_BUILDING', // Mail automatically routed to building
+      PACKAGE_SERVICE: 'INTERNAL_BUILDING', // Package automatically routed to building
+      DOORBELL_SERVICE: 'INTERNAL_BUILDING', // Doorbell automatically routed to building
       CAR_SERVICE: 'EXTERNAL_SUPPLIER',
       APPLIANCE_REPAIR: 'EXTERNAL_SUPPLIER',
-      WATER_FILTER: 'EXTERNAL_SUPPLIER',
+      WATER_FILTER: 'EXTERNAL_SUPPLIER', // Will be mapped to specific supplier (e.g., Smar Engo)
       SMART_HOME: 'EXTERNAL_SUPPLIER',
       OTHER: 'INTERNAL_COMMUNITY'
+    }
+    
+    // Service-to-supplier mapping (e.g., WATER_FILTER -> Smar Engo)
+    const serviceToSupplierMapping: Record<string, string> = {
+      WATER_FILTER: 'Smar Engo', // 智管家
+      // Add more mappings as needed: SERVICE_TYPE: 'Supplier Name'
     }
 
     // Get routing type and supplier assignment from database
@@ -253,10 +299,46 @@ export async function POST(request: NextRequest) {
       if (routingConfig.length > 0) {
         routingType = routingConfig[0].routing_type
         assignedSupplierId = routingConfig[0].supplier_id
+      } else {
+        // If no config found, try to auto-assign supplier based on service mapping
+        if (routingType === 'EXTERNAL_SUPPLIER' && serviceToSupplierMapping[category]) {
+          const supplierName = serviceToSupplierMapping[category]
+          const supplier = await prisma.supplier.findFirst({
+            where: {
+              name: { contains: supplierName, mode: 'insensitive' },
+              isActive: true
+            },
+            select: { id: true }
+          })
+          if (supplier) {
+            assignedSupplierId = supplier.id
+            console.log(`Auto-assigned supplier ${supplierName} (${supplier.id}) for category ${category}`)
+          }
+        }
       }
     } catch (error) {
       // Table may not exist yet, use defaults
       console.log('job_routing_config table not found, using defaults:', error)
+      
+      // Still try to auto-assign supplier if it's an external supplier category
+      if (routingType === 'EXTERNAL_SUPPLIER' && serviceToSupplierMapping[category]) {
+        try {
+          const supplierName = serviceToSupplierMapping[category]
+          const supplier = await prisma.supplier.findFirst({
+            where: {
+              name: { contains: supplierName, mode: 'insensitive' },
+              isActive: true
+            },
+            select: { id: true }
+          })
+          if (supplier) {
+            assignedSupplierId = supplier.id
+            console.log(`Auto-assigned supplier ${supplierName} (${supplier.id}) for category ${category}`)
+          }
+        } catch (supplierError) {
+          console.log('Error auto-assigning supplier:', supplierError)
+        }
+      }
     }
 
     // Ensure routing consistency per database constraint:

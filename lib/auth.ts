@@ -57,9 +57,42 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.isAdmin = (user as any).isAdmin
+        
+        // Check if user is a supplier admin
+        try {
+          const supplierMemberships = await prisma.supplierMember.findMany({
+            where: {
+              userId: user.id,
+              role: { in: ['ADMIN', 'MANAGER'] },
+            },
+            select: {
+              supplierId: true,
+              supplier: {
+                select: {
+                  id: true,
+                  name: true,
+                  isActive: true,
+                },
+              },
+            },
+          })
+          
+          const activeSupplierAdmins = supplierMemberships
+            .filter(m => m.supplier?.isActive)
+            .map(m => m.supplierId)
+          
+          if (activeSupplierAdmins.length > 0) {
+            token.isSupplierAdmin = true
+            token.supplierIds = activeSupplierAdmins
+          }
+        } catch (error) {
+          console.error('Error checking supplier admin status:', error)
+          // Continue without supplier admin status if check fails
+        }
+        
         token.loginTime = Date.now()
         token.sessionId = Date.now().toString() // Unique session ID
-        console.log('[auth] JWT: New session created for', user.email, 'sessionId:', token.sessionId)
+        console.log('[auth] JWT: New session created for', user.email, 'sessionId:', token.sessionId, 'isAdmin:', token.isAdmin, 'isSupplierAdmin:', token.isSupplierAdmin)
         return token
       }
       
@@ -81,6 +114,8 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         (session.user as any).id = token.id as string
         (session.user as any).isAdmin = token.isAdmin as boolean
+        (session.user as any).isSupplierAdmin = token.isSupplierAdmin as boolean
+        (session.user as any).supplierIds = token.supplierIds as string[]
       }
       return session
     },

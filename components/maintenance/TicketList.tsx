@@ -94,7 +94,11 @@ export default function TicketList() {
   }, [household?.id, selectedStatus])
 
   const fetchWorkOrders = async () => {
-    if (!household?.id) return
+    if (!household?.id) {
+      setUnifiedWorkOrders([])
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     try {
@@ -109,11 +113,38 @@ export default function TicketList() {
         fetch(`/api/catering/orders?${params.toString()}`)
       ])
 
-      if (!ticketsRes.ok) throw new Error('Failed to fetch tickets')
-      if (!ordersRes.ok) throw new Error('Failed to fetch orders')
+      // Handle tickets response
+      let ticketsData: any = { tickets: [] }
+      if (ticketsRes.ok) {
+        try {
+          ticketsData = await ticketsRes.json()
+        } catch (e) {
+          console.error('Error parsing tickets JSON:', e)
+          toast.error('Failed to parse tickets data')
+        }
+      } else {
+        const errorText = await ticketsRes.text()
+        console.error('Failed to fetch tickets:', ticketsRes.status, errorText)
+        toast.error(`Failed to fetch tickets: ${ticketsRes.status}`)
+      }
 
-      const ticketsData = await ticketsRes.json()
-      const ordersData = await ordersRes.json()
+      // Handle orders response
+      let ordersData: any = { orders: [] }
+      if (ordersRes.ok) {
+        try {
+          ordersData = await ordersRes.json()
+        } catch (e) {
+          console.error('Error parsing orders JSON:', e)
+          toast.error('Failed to parse orders data')
+        }
+      } else {
+        const errorText = await ordersRes.text()
+        console.error('Failed to fetch orders:', ordersRes.status, errorText)
+        // Don't show error toast for orders if tickets succeeded - just log
+        if (!ticketsRes.ok) {
+          toast.error(`Failed to fetch orders: ${ordersRes.status}`)
+        }
+      }
 
       setTickets(ticketsData.tickets || [])
       setOrders(ordersData.orders || [])
@@ -123,7 +154,7 @@ export default function TicketList() {
         ...(ticketsData.tickets || []).map((ticket: MaintenanceTicket) => ({
           id: ticket.id,
           type: 'maintenance' as const,
-          number: ticket.ticketNumber,
+          number: ticket.ticketNumber || ticket.id,
           title: ticket.title,
           description: ticket.description,
           status: ticket.status,
@@ -136,9 +167,9 @@ export default function TicketList() {
         ...(ordersData.orders || []).map((order: CateringOrder) => ({
           id: order.id,
           type: 'catering' as const,
-          number: order.orderNumber,
-          title: `叫餐訂單 - ${order.items.map(i => `${i.menuItem.name} x${i.quantity}`).join(', ')}`,
-          description: `總金額: $${order.totalAmount.toFixed(2)} | 配送方式: ${order.deliveryType === 'immediate' ? '立即送達' : order.deliveryType === 'scheduled' ? '預約送達' : '餐廳內用'}`,
+          number: order.orderNumber || order.id,
+          title: `叫餐訂單 - ${(order.items || []).map((i: any) => `${i.menuItem?.name || 'Item'} x${i.quantity}`).join(', ') || '訂單'}`,
+          description: `總金額: $${(order.totalAmount || 0).toFixed(2)} | 配送方式: ${order.deliveryType === 'immediate' ? '立即送達' : order.deliveryType === 'scheduled' ? '預約送達' : order.deliveryType === 'dine-in' ? '餐廳內用' : '未知'}`,
           status: order.status,
           requestedAt: order.orderedAt,
           assignedTo: order.workgroup?.name,
@@ -149,7 +180,8 @@ export default function TicketList() {
       setUnifiedWorkOrders(unified)
     } catch (error: any) {
       console.error('Error fetching work orders:', error)
-      toast.error('Failed to load work orders')
+      toast.error(`Failed to load work orders: ${error.message || 'Unknown error'}`)
+      setUnifiedWorkOrders([])
     } finally {
       setLoading(false)
     }

@@ -942,6 +942,8 @@ function DashboardContent({
   const [lastFetchTime, setLastFetchTime] = useState(0)
   const [workOrders, setWorkOrders] = useState<UnifiedWorkOrder[]>([])
   const [workOrdersLoading, setWorkOrdersLoading] = useState(true)
+  const [workOrderTypeFilter, setWorkOrderTypeFilter] = useState<'all' | 'maintenance' | 'catering'>('all')
+  const [workOrderStatusFilter, setWorkOrderStatusFilter] = useState<string>('all')
   const [reservations] = useState<ReservationItem[]>(() => [
     {
       id: 'EV-301',
@@ -1015,9 +1017,45 @@ function DashboardContent({
       }))
 
       // Combine and sort by most recent first
-      const unified = [...maintenanceWorkOrders, ...cateringWorkOrders]
+      let unified = [...maintenanceWorkOrders, ...cateringWorkOrders]
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 5) // Show top 5 most recent
+
+      // Apply type filter
+      if (workOrderTypeFilter !== 'all') {
+        unified = unified.filter(wo => wo.type === workOrderTypeFilter)
+      }
+
+      // Apply status filter
+      if (workOrderStatusFilter !== 'all') {
+        unified = unified.filter(wo => {
+          const status = wo.status.toLowerCase()
+          const filterStatus = workOrderStatusFilter.toLowerCase()
+          
+          // Map filter values to actual statuses
+          if (filterStatus === 'pending' || filterStatus === '待處理') {
+            return wo.type === 'maintenance' 
+              ? (status === 'pending_evaluation' || status === 'open')
+              : (status === 'submitted' || status === 'accepted')
+          }
+          if (filterStatus === 'inprogress' || filterStatus === '處理中') {
+            return wo.type === 'maintenance'
+              ? (status === 'in_progress' || status === 'assigned' || status === 'inprogress')
+              : (status === 'preparing' || status === 'ready')
+          }
+          if (filterStatus === 'completed' || filterStatus === '已完成') {
+            return wo.type === 'maintenance'
+              ? (status === 'closed' || status === 'signed_off_by_household' || status === 'resolved')
+              : (status === 'delivered' || status === 'closed')
+          }
+          if (filterStatus === 'cancelled' || filterStatus === '已取消') {
+            return status === 'cancelled'
+          }
+          
+          return status === filterStatus
+        })
+      }
+
+      unified = unified.slice(0, 5) // Show top 5 most recent
 
       setWorkOrders(unified)
     } catch (error) {
@@ -1491,6 +1529,30 @@ function DashboardContent({
                   {translate('inProgress', '處理中')} {maintenanceStats.inProgress}
                 </span>
               </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <select
+                value={workOrderTypeFilter}
+                onChange={(e) => setWorkOrderTypeFilter(e.target.value as 'all' | 'maintenance' | 'catering')}
+                className="text-xs border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="all">全部類型</option>
+                <option value="maintenance">報修</option>
+                <option value="catering">叫餐</option>
+              </select>
+              <select
+                value={workOrderStatusFilter}
+                onChange={(e) => setWorkOrderStatusFilter(e.target.value)}
+                className="text-xs border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="all">全部狀態</option>
+                <option value="pending">待處理</option>
+                <option value="inProgress">處理中</option>
+                <option value="completed">已完成</option>
+                <option value="cancelled">已取消</option>
+              </select>
             </div>
 
             <div className="space-y-4">

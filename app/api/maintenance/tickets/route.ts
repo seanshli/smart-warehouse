@@ -232,93 +232,177 @@ export async function POST(request: NextRequest) {
     // Generate ticket number
     // Try format MT-YYYYMMDD-XXXX (matches database trigger format) or RX-YYYY-NNNNNN
     let ticketNumber = ''
-    try {
-      const latestTicket = await prisma.maintenanceTicket.findFirst({
-        orderBy: { createdAt: 'desc' },
-        select: { ticketNumber: true },
-      })
-      
-      if (latestTicket?.ticketNumber) {
-        // Try MT-YYYYMMDD-XXXX format first (from database trigger)
-        const mtMatch = latestTicket.ticketNumber.match(/MT-(\d{8})-(\d+)/)
-        if (mtMatch) {
-          const datePart = mtMatch[1]
-          const num = parseInt(mtMatch[2], 10)
-          const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-          
-          if (datePart === today) {
-            // Same day, increment
-            ticketNumber = `MT-${today}-${String(num + 1).padStart(4, '0')}`
-          } else {
-            // New day, start from 1
-            ticketNumber = `MT-${today}-0001`
-          }
-        } else {
-          // Try RX-YYYY-NNNNNN format
-          const rxMatch = latestTicket.ticketNumber.match(/RX-(\d{4})-(\d+)/)
-          if (rxMatch) {
-            const year = rxMatch[1]
-            const num = parseInt(rxMatch[2], 10)
-            const currentYear = new Date().getFullYear().toString()
+    let retries = 0
+    const maxRetries = 5
+    
+    while (retries < maxRetries) {
+      try {
+        const latestTicket = await prisma.maintenanceTicket.findFirst({
+          orderBy: { createdAt: 'desc' },
+          select: { ticketNumber: true },
+        })
+        
+        if (latestTicket?.ticketNumber) {
+          // Try MT-YYYYMMDD-XXXX format first (from database trigger)
+          const mtMatch = latestTicket.ticketNumber.match(/MT-(\d{8})-(\d+)/)
+          if (mtMatch) {
+            const datePart = mtMatch[1]
+            const num = parseInt(mtMatch[2], 10)
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
             
-            if (year === currentYear) {
-              // Same year, increment
-              ticketNumber = `RX-${currentYear}-${String(num + 1).padStart(6, '0')}`
+            if (datePart === today) {
+              // Same day, increment
+              ticketNumber = `MT-${today}-${String(num + 1).padStart(4, '0')}`
             } else {
-              // New year, start from 1
-              ticketNumber = `RX-${currentYear}-000001`
+              // New day, start from 1
+              ticketNumber = `MT-${today}-0001`
             }
           } else {
-            // Unknown format, use MT format (matches database trigger)
-            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-            ticketNumber = `MT-${today}-0001`
+            // Try RX-YYYY-NNNNNN format
+            const rxMatch = latestTicket.ticketNumber.match(/RX-(\d{4})-(\d+)/)
+            if (rxMatch) {
+              const year = rxMatch[1]
+              const num = parseInt(rxMatch[2], 10)
+              const currentYear = new Date().getFullYear().toString()
+              
+              if (year === currentYear) {
+                // Same year, increment
+                ticketNumber = `RX-${currentYear}-${String(num + 1).padStart(6, '0')}`
+              } else {
+                // New year, start from 1
+                ticketNumber = `RX-${currentYear}-000001`
+              }
+            } else {
+              // Unknown format, use MT format (matches database trigger)
+              const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+              ticketNumber = `MT-${today}-0001`
+            }
           }
+        } else {
+          // No tickets yet, use MT format (matches database trigger)
+          const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+          ticketNumber = `MT-${today}-0001`
         }
-      } else {
-        // No tickets yet, use MT format (matches database trigger)
+
+        // Check if ticket number already exists (race condition protection)
+        const existingTicket = await prisma.maintenanceTicket.findUnique({
+          where: { ticketNumber },
+          select: { id: true },
+        })
+
+        if (existingTicket) {
+          // Ticket number collision, retry with incremented number
+          retries++
+          const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+          const timestamp = Date.now().toString().slice(-6)
+          ticketNumber = `MT-${today}-${timestamp}`
+          continue
+        }
+
+        // Ticket number is unique, break out of loop
+        break
+      } catch (error) {
+        // If query fails, generate a simple ticket number
+        console.warn('Failed to get latest ticket number, using simple format:', error)
         const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-        ticketNumber = `MT-${today}-0001`
+        const timestamp = Date.now().toString().slice(-6)
+        ticketNumber = `MT-${today}-${timestamp}`
+        retries++
+        if (retries >= maxRetries) {
+          // Last resort: use timestamp-based number
+          ticketNumber = `MT-${today}-${Date.now().toString().slice(-4)}`
+          break
+        }
       }
-    } catch (error) {
-      // If query fails, generate a simple ticket number
-      console.warn('Failed to get latest ticket number, using simple format:', error)
+    }
+
+    if (!ticketNumber) {
+      // Fallback if all retries failed
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
       ticketNumber = `MT-${today}-${Date.now().toString().slice(-4)}`
     }
 
     // Create ticket with generated ticketNumber
-    const ticket = await prisma.maintenanceTicket.create({
-      data: {
-        ticketNumber, // Generated ticket number
-        householdId,
-        requestedById: userId,
-        title,
-        description,
-        category,
-        priority: priority || 'NORMAL',
-        location: resolvedLocation,
-        photos: photosArray,
-        routingType, // Set routing type based on category
-        assignedSupplierId, // Auto-assign supplier if configured
-        status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION' // Auto-evaluate if supplier is assigned
-      },
-      include: {
-        household: {
-          select: {
-            id: true,
-            name: true,
-            apartmentNo: true
-          }
+    let ticket
+    try {
+      ticket = await prisma.maintenanceTicket.create({
+        data: {
+          ticketNumber, // Generated ticket number
+          householdId,
+          requestedById: userId,
+          title,
+          description,
+          category,
+          priority: priority || 'NORMAL',
+          location: resolvedLocation,
+          photos: photosArray,
+          routingType, // Set routing type based on category
+          assignedSupplierId, // Auto-assign supplier if configured
+          status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION' // Auto-evaluate if supplier is assigned
         },
-        requestedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
+        include: {
+          household: {
+            select: {
+              id: true,
+              name: true,
+              apartmentNo: true
+            }
+          },
+          requestedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
           }
         }
+      })
+    } catch (createError: any) {
+      // Handle unique constraint violation (ticketNumber collision)
+      if (createError.code === 'P2002' && createError.meta?.target?.includes('ticketNumber')) {
+        console.error('Ticket number collision detected, retrying with new number:', ticketNumber)
+        // Generate a new unique ticket number using timestamp
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        ticketNumber = `MT-${today}-${Date.now().toString().slice(-6)}`
+        
+        // Retry once with new ticket number
+        ticket = await prisma.maintenanceTicket.create({
+          data: {
+            ticketNumber,
+            householdId,
+            requestedById: userId,
+            title,
+            description,
+            category,
+            priority: priority || 'NORMAL',
+            location: resolvedLocation,
+            photos: photosArray,
+            routingType,
+            assignedSupplierId,
+            status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION'
+          },
+          include: {
+            household: {
+              select: {
+                id: true,
+                name: true,
+                apartmentNo: true
+              }
+            },
+            requestedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        })
+      } else {
+        // Re-throw other errors
+        throw createError
       }
-    })
+    }
 
     // Create notification for admins
     if (household?.buildingId) {

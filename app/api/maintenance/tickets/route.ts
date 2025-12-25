@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get routing type and supplier assignment from database
-    let routingType = defaultRoutingConfig[category] || 'INTERNAL_COMMUNITY'
+    let routingType: string | null = defaultRoutingConfig[category] || 'INTERNAL_COMMUNITY'
     let assignedSupplierId: string | null = null
 
     try {

@@ -1,8 +1,9 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
+import type { NextRequestWithAuth } from "next-auth/middleware"
 
 export default withAuth(
-  function middleware(req) {
+  function middleware(req: NextRequestWithAuth) {
     // Check if user is trying to access admin routes
     if (req.nextUrl.pathname.startsWith('/admin')) {
       const isSuperAdmin = req.nextauth.token?.isAdmin
@@ -21,6 +22,7 @@ export default withAuth(
         return NextResponse.redirect(new URL('/admin-auth/signin', req.url))
       }
     }
+    return NextResponse.next()
   },
   {
     callbacks: {

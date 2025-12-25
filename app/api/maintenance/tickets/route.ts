@@ -259,6 +259,18 @@ export async function POST(request: NextRequest) {
       console.log('job_routing_config table not found, using defaults:', error)
     }
 
+    // Ensure routing consistency: if EXTERNAL_SUPPLIER, must have supplier; if INTERNAL, must not have supplier
+    if (routingType === 'EXTERNAL_SUPPLIER' && !assignedSupplierId) {
+      // If routing is EXTERNAL_SUPPLIER but no supplier is assigned, change to INTERNAL_COMMUNITY
+      console.warn(`Category ${category} configured for EXTERNAL_SUPPLIER but no supplier assigned, defaulting to INTERNAL_COMMUNITY`)
+      routingType = 'INTERNAL_COMMUNITY'
+      assignedSupplierId = null
+    } else if ((routingType === 'INTERNAL_BUILDING' || routingType === 'INTERNAL_COMMUNITY') && assignedSupplierId) {
+      // If routing is INTERNAL but supplier is assigned, clear supplier
+      console.warn(`Category ${category} configured for ${routingType} but supplier assigned, clearing supplier`)
+      assignedSupplierId = null
+    }
+
     // Generate ticket number
     // Try format MT-YYYYMMDD-XXXX (matches database trigger format) or RX-YYYY-NNNNNN
     let ticketNumber = ''

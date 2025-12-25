@@ -226,11 +226,11 @@ export default function AdminMaintenancePage() {
         >
           <option value="all">{t('all') || 'All'}</option>
           <option value="PENDING_EVALUATION">{t('pendingEvaluation') || 'Pending Evaluation'}</option>
-          <option value="submitted">{'已提交'}</option>
+          <option value="submitted">{t('submitted') || 'Submitted'}</option>
           <option value="EVALUATED">{t('evaluated') || 'Evaluated'}</option>
           <option value="ASSIGNED">{t('assigned') || 'Assigned'}</option>
           <option value="IN_PROGRESS">{t('inProgress') || 'In Progress'}</option>
-          <option value="preparing">{t('preparing') || 'Preparing'}</option>
+          <option value="preparing">{'準備中'}</option>
         </select>
       </div>
 

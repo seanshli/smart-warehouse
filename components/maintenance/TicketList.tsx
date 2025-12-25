@@ -80,6 +80,19 @@ export default function TicketList() {
   const { t } = useLanguage()
   const { household } = useHousehold()
   const { data: session } = useSession()
+  
+  // Helper function to safely get translations with fallback
+  const getTranslation = (key: string, fallback: string): string => {
+    try {
+      const result = (t as any)(key)
+      if (typeof result === 'string' && result !== key) {
+        return result
+      }
+    } catch (e) {
+      // Ignore translation errors
+    }
+    return fallback
+  }
   const [tickets, setTickets] = useState<MaintenanceTicket[]>([])
   const [orders, setOrders] = useState<CateringOrder[]>([])
   const [unifiedWorkOrders, setUnifiedWorkOrders] = useState<UnifiedWorkOrder[]>([])
@@ -385,7 +398,7 @@ export default function TicketList() {
     return (
       <div className="text-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">{t('loading') || 'Loading...'}</p>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">{getTranslation('loading', '載入中')}</p>
       </div>
     )
   }
@@ -395,7 +408,7 @@ export default function TicketList() {
       {/* Header with actions */}
       <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {'工單'} ({t('maintenanceTickets')} & {'叫餐訂單'})
+          {getTranslation('workOrders', '工單')} ({getTranslation('maintenanceTickets', '報修單')} & {getTranslation('cateringOrders', '叫餐訂單')})
         </h2>
         <div className="flex items-center space-x-2">
           <FrontDeskChatButton />
@@ -408,24 +421,33 @@ export default function TicketList() {
         </div>
       </div>
 
-      {/* Status filter */}
-      <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-700 dark:text-gray-300">{t('filter')}:</span>
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white"
-        >
-          <option value="all">{t('all') || 'All'}</option>
-          <option value="PENDING_EVALUATION">{t('pendingEvaluation') || 'Pending Evaluation'}</option>
-          <option value="submitted">{'已提交'}</option>
-          <option value="EVALUATED">{t('evaluated') || 'Evaluated'}</option>
-          <option value="ASSIGNED">{t('assigned') || 'Assigned'}</option>
-          <option value="IN_PROGRESS">{t('inProgress') || 'In Progress'}</option>
-          <option value="preparing">{'準備中'}</option>
-          <option value="WORK_COMPLETED">{t('workCompleted')}</option>
-          <option value="CLOSED">{t('closed')}</option>
-        </select>
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">{getTranslation('filter', '篩選')}:</span>
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value as 'all' | 'maintenance' | 'catering')}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white"
+          >
+            <option value="all">{getTranslation('allTypes', '全部類型')}</option>
+            <option value="maintenance">{getTranslation('maintenance', '報修')}</option>
+            <option value="catering">{getTranslation('catering', '叫餐')}</option>
+          </select>
+        </div>
+        <div className="flex items-center space-x-2">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white"
+          >
+            <option value="all">{getTranslation('allStatus', '全部狀態')}</option>
+            <option value="pending">{getTranslation('pending', '待處理')}</option>
+            <option value="inProgress">{getTranslation('inProgress', '處理中')}</option>
+            <option value="completed">{getTranslation('completed', '已完成')}</option>
+            <option value="cancelled">{getTranslation('cancelled', '已取消')}</option>
+          </select>
+        </div>
       </div>
 
       {/* Unified work orders list */}
@@ -439,7 +461,7 @@ export default function TicketList() {
             onClick={() => setShowRequestForm(true)}
             className="mt-4 text-primary-600 hover:text-primary-700 dark:text-primary-400"
           >
-            {t('createFirstTicket')}
+            {getTranslation('createFirstTicket', '建立您的第一張報修單')}
           </button>
         </div>
       ) : (
@@ -456,7 +478,7 @@ export default function TicketList() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        {workOrder.type === 'catering' ? (t('catering') || '叫餐') : (t('maintenance') || '報修')}
+                        {workOrder.type === 'catering' ? getTranslation('catering', '叫餐') : getTranslation('maintenance', '報修')}
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {workOrder.number}

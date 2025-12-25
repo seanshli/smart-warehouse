@@ -39,28 +39,53 @@ export async function GET(request: NextRequest) {
     }
     
     console.log(`[Cart API GET] Found cart cookie, length: ${cartCookie.value.length} bytes`)
-    console.log(`[Cart API GET] Cookie value (first 200 chars):`, cartCookie.value.substring(0, 200))
+    console.log(`[Cart API GET] Cookie value (first 300 chars):`, cartCookie.value.substring(0, 300))
     console.log(`[Cart API GET] Cookie value starts with % (URL-encoded):`, cartCookie.value.startsWith('%'))
+    console.log(`[Cart API GET] Cookie value contains %:`, cartCookie.value.includes('%'))
 
     try {
       // Decode URL-encoded cookie value if needed (Safari sometimes URL-encodes)
       let cookieValue = cartCookie.value
       
+      // Next.js cookies() should automatically decode, but Safari might double-encode
       // Try to decode URL-encoded value
-      // Safari and some browsers URL-encode cookie values automatically
       if (cookieValue.includes('%')) {
         try {
-          cookieValue = decodeURIComponent(cookieValue)
+          // Try decoding
+          const decoded = decodeURIComponent(cookieValue)
           console.log(`[Cart API GET] Successfully decoded URL-encoded cookie`)
-          console.log(`[Cart API GET] Decoded value (first 200 chars):`, cookieValue.substring(0, 200))
-        } catch (decodeError) {
-          console.warn('[Cart API GET] Failed to decode URL-encoded cookie, trying as-is:', decodeError)
-          // If decode fails, try using the value as-is
+          console.log(`[Cart API GET] Decoded value (first 300 chars):`, decoded.substring(0, 300))
+          cookieValue = decoded
+        } catch (decodeError: any) {
+          console.warn('[Cart API GET] Failed to decode URL-encoded cookie:', decodeError.message)
+          console.warn('[Cart API GET] Using cookie value as-is (might be double-encoded)')
+          // If decode fails, try using the value as-is - it might already be decoded
         }
       }
       
-      const cart = JSON.parse(cookieValue)
-      console.log(`[Cart API GET] Successfully parsed cart JSON, items count:`, cart.items?.length || 0)
+      // Try parsing JSON
+      let cart: any
+      try {
+        cart = JSON.parse(cookieValue)
+        console.log(`[Cart API GET] Successfully parsed cart JSON, items count:`, cart.items?.length || 0)
+      } catch (parseError: any) {
+        console.error('[Cart API GET] JSON parse error:', parseError.message)
+        console.error('[Cart API GET] Cookie value that failed to parse (first 500 chars):', cookieValue.substring(0, 500))
+        // Try one more decode if parse fails
+        if (cookieValue !== cartCookie.value) {
+          // Already tried decoding, parse failed - cookie might be corrupted
+          throw parseError
+        } else {
+          // Try decoding again
+          try {
+            const doubleDecoded = decodeURIComponent(cookieValue)
+            cart = JSON.parse(doubleDecoded)
+            console.log(`[Cart API GET] Successfully parsed after double-decode`)
+          } catch (doubleDecodeError) {
+            throw parseError // Throw original parse error
+          }
+        }
+      }
       console.log(`[Cart API GET] Retrieved cart with ${cart.items?.length || 0} items, total: ${cart.total || 0}`)
       console.log(`[Cart API GET] Cart items:`, cart.items?.map((item: any) => ({
         name: item.name,
@@ -396,29 +421,29 @@ export async function POST(request: NextRequest) {
     console.log(`[Cart API POST] Cookie settings: httpOnly=true, secure=${process.env.NODE_ENV === 'production'}, sameSite=${sameSiteValue}, path=/`)
     console.log(`[Cart API POST] Set-Cookie header present:`, response.headers.get('Set-Cookie') ? 'yes' : 'no')
     
-    // Also set via cookieStore for server-side access (but response.cookies is primary)
-    try {
-      cookieStore.set(CART_COOKIE_NAME, cartJson, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: sameSiteValue,
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: '/',
-      })
-      console.log(`[Cart API POST] Cookie also set via cookieStore`)
-    } catch (cookieStoreError) {
-      console.warn(`[Cart API POST] Warning: Could not set cookie via cookieStore (non-critical):`, cookieStoreError)
+    // CRITICAL: Don't use cookieStore.set() here - it can interfere with response.cookies
+    // The response.cookies.set() above is sufficient and correct for Next.js App Router
+    // Using cookieStore.set() here might cause conflicts or overwrite issues
+    
+    // Verify cookie was set on response
+    const verifyCookie = response.cookies.get(CART_COOKIE_NAME)
+    if (verifyCookie) {
+      console.log(`[Cart API POST] Cookie verified on response: ${verifyCookie.value.substring(0, 50)}...`)
+      console.log(`[Cart API POST] Cookie value length: ${verifyCookie.value.length} bytes`)
+    } else {
+      console.error(`[Cart API POST] ERROR: Cookie NOT found on response after setting!`)
     }
     
-    // Verify cookie was set
-    const verifyCookie = cookieStore.get(CART_COOKIE_NAME)
-    if (verifyCookie) {
-      console.log(`[Cart API POST] Cookie verified in cookieStore: ${verifyCookie.value.substring(0, 50)}...`)
+    // Also check Set-Cookie header
+    const setCookieHeader = response.headers.get('Set-Cookie')
+    if (setCookieHeader) {
+      console.log(`[Cart API POST] Set-Cookie header present, contains ${CART_COOKIE_NAME}:`, setCookieHeader.includes(CART_COOKIE_NAME))
     } else {
-      console.warn(`[Cart API POST] WARNING: Cookie not found in cookieStore after setting!`)
+      console.error(`[Cart API POST] ERROR: Set-Cookie header is MISSING!`)
     }
     
     console.log('[Cart API POST] Successfully returning response with cart, items:', cart.items.length)
+    console.log('[Cart API POST] Response headers:', Object.fromEntries(response.headers.entries()))
     return response
   } catch (error: any) {
     console.error('[Cart API POST] Error adding to cart:', error)

@@ -16,23 +16,86 @@ export async function GET(
 
     const prisma = createPrismaClient()
     // Fetch menu item without options first (to avoid schema errors)
-    let menuItem: any = await prisma.cateringMenuItem.findUnique({
-      where: { id: params.id },
-      include: {
-        category: {
-          include: {
-            timeSlots: true,
+    // Use try-catch to handle schema errors gracefully
+    let menuItem: any
+    try {
+      menuItem = await prisma.cateringMenuItem.findUnique({
+        where: { id: params.id },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          timeSlots: true,
+          service: {
+            include: {
+              building: true,
+              community: true,
+            },
           },
         },
-        timeSlots: true,
-        service: {
-          include: {
-            building: true,
-            community: true,
+      })
+      
+      // Try to include category timeSlots if they exist (for older items)
+      if (menuItem?.category) {
+        try {
+          const categoryWithTimeSlots = await (prisma as any).cateringCategory.findUnique({
+            where: { id: menuItem.category.id },
+            include: {
+              timeSlots: true,
+            },
+          })
+          if (categoryWithTimeSlots?.timeSlots) {
+            menuItem.category.timeSlots = categoryWithTimeSlots.timeSlots
+          }
+        } catch (timeSlotError: any) {
+          // If timeSlots table doesn't exist or query fails, that's okay
+          if (timeSlotError.code !== 'P2021' && !timeSlotError.message?.includes('does not exist')) {
+            console.warn('[Menu Item API] Error fetching category timeSlots (non-critical):', timeSlotError.message)
+          }
+        }
+      }
+    } catch (queryError: any) {
+      console.error('[Menu Item API] Error fetching menu item:', queryError)
+      console.error('[Menu Item API] Error details:', {
+        code: queryError.code,
+        message: queryError.message,
+        meta: queryError.meta,
+      })
+      
+      // If schema error, try simpler query
+      if (queryError.code === 'P2021' || queryError.message?.includes('does not exist')) {
+        console.log('[Menu Item API] Schema error detected, trying simpler query...')
+        try {
+          menuItem = await prisma.cateringMenuItem.findUnique({
+            where: { id: params.id },
+          })
+          if (!menuItem) {
+            return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
+          }
+        } catch (simpleError: any) {
+          console.error('[Menu Item API] Simpler query also failed:', simpleError)
+          return NextResponse.json(
+            { 
+              error: 'Database schema error. Please check if catering_menu_items table exists.',
+              details: simpleError.message 
+            },
+            { status: 500 }
+          )
+        }
+      } else {
+        // Return 500 with error details
+        return NextResponse.json(
+          { 
+            error: 'Failed to fetch menu item',
+            details: queryError.message 
           },
-        },
-      },
-    })
+          { status: 500 }
+        )
+      }
+    }
 
     if (menuItem) {
       // Try to include options if table exists

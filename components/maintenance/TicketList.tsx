@@ -304,25 +304,38 @@ export default function TicketList() {
   const getStatusLabel = (status: string, type: 'maintenance' | 'catering') => {
     const statusLower = status.toLowerCase()
     
+    // Helper function to safely get translations with fallback
+    const getTranslation = (key: string, fallback: string): string => {
+      try {
+        const result = (t as any)(key)
+        if (typeof result === 'string' && result !== key) {
+          return result
+        }
+      } catch (e) {
+        // Ignore translation errors
+      }
+      return fallback
+    }
+    
     // Map statuses to translation keys - consistent across both types
     const statusMap: Record<string, string> = {
       // Common statuses
-      'pending_evaluation': t('pendingEvaluation') || '待評估',
-      'pending': t('pending') || '待處理',
-      'submitted': t('submitted') || '已提交',
-      'accepted': t('accepted') || '已接受',
-      'evaluated': t('evaluated') || '已評估',
-      'assigned': t('assigned') || '已指派',
-      'in_progress': t('inProgress') || '處理中',
-      'preparing': t('preparing') || '準備中',
-      'ready': t('ready') || '已就緒',
-      'work_completed': t('workCompleted') || '工作完成',
-      'delivered': t('delivered') || '已送達',
-      'closed': t('closed') || '已完成',
-      'cancelled': t('cancelled') || '已取消',
-      'signed_off_by_crew': t('signedOffByCrew') || '工作組簽核',
-      'signed_off_by_supplier': t('signedOffBySupplier') || '供應商簽核',
-      'signed_off_by_household': t('signedOffByHousehold') || '住戶簽核',
+      'pending_evaluation': getTranslation('pendingEvaluation', '待評估'),
+      'pending': getTranslation('pending', '待處理'),
+      'submitted': getTranslation('submitted', '已提交'),
+      'accepted': getTranslation('accepted', '已接受'),
+      'evaluated': getTranslation('evaluated', '已評估'),
+      'assigned': getTranslation('assigned', '已指派'),
+      'in_progress': getTranslation('inProgress', '處理中'),
+      'preparing': getTranslation('preparing', '準備中'),
+      'ready': getTranslation('ready', '已就緒'),
+      'work_completed': getTranslation('workCompleted', '工作完成'),
+      'delivered': getTranslation('delivered', '已送達'),
+      'closed': getTranslation('closed', '已完成'),
+      'cancelled': getTranslation('cancelled', '已取消'),
+      'signed_off_by_crew': getTranslation('signedOffByCrew', '工作組簽核'),
+      'signed_off_by_supplier': getTranslation('signedOffBySupplier', '供應商簽核'),
+      'signed_off_by_household': getTranslation('signedOffByHousehold', '住戶簽核'),
     }
     
     // Try exact match first

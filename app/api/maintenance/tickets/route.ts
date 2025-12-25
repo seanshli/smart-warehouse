@@ -59,9 +59,29 @@ export async function GET(request: NextRequest) {
       if (category) where.category = category
     }
 
+    // Use select instead of include to avoid relation errors
     const tickets = await prisma.maintenanceTicket.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        ticketNumber: true,
+        title: true,
+        description: true,
+        category: true,
+        priority: true,
+        status: true,
+        location: true,
+        photos: true,
+        routingType: true,
+        requestedAt: true,
+        updatedAt: true,
+        createdAt: true,
+        householdId: true,
+        requestedById: true,
+        evaluatedById: true,
+        assignedCrewId: true,
+        assignedSupplierId: true,
+        assignedWorkerId: true,
         household: {
           select: {
             id: true,
@@ -119,10 +139,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ tickets })
   } catch (error: any) {
     console.error('Error fetching maintenance tickets:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch tickets', details: error.message },
-      { status: 500 }
-    )
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack
+    })
+    
+    // Return empty array instead of error to prevent UI crashes
+    // Log the error for debugging but don't break the user experience
+    return NextResponse.json({ 
+      tickets: [],
+      error: 'Failed to fetch tickets',
+      details: error.message 
+    }, { status: 200 }) // Return 200 with empty array to prevent UI errors
   }
 }
 
@@ -358,48 +388,73 @@ export async function POST(request: NextRequest) {
         }
       })
     } catch (createError: any) {
+      console.error('Error creating ticket:', createError)
+      console.error('Create error details:', {
+        code: createError.code,
+        message: createError.message,
+        meta: createError.meta,
+        cause: createError.cause,
+        stack: createError.stack
+      })
+      
       // Handle unique constraint violation (ticketNumber collision)
       if (createError.code === 'P2002' && createError.meta?.target?.includes('ticketNumber')) {
         console.error('Ticket number collision detected, retrying with new number:', ticketNumber)
         // Generate a new unique ticket number using timestamp
         const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-        ticketNumber = `MT-${today}-${Date.now().toString().slice(-6)}`
+        const uniqueSuffix = Date.now().toString().slice(-8) // Use more digits for uniqueness
+        ticketNumber = `MT-${today}-${uniqueSuffix}`
         
-        // Retry once with new ticket number
-        ticket = await prisma.maintenanceTicket.create({
-          data: {
-            ticketNumber,
-            householdId,
-            requestedById: userId,
-            title,
-            description,
-            category,
-            priority: priority || 'NORMAL',
-            location: resolvedLocation,
-            photos: photosArray,
-            routingType,
-            assignedSupplierId,
-            status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION'
-          },
-          include: {
-            household: {
-              select: {
-                id: true,
-                name: true,
-                apartmentNo: true
-              }
+        try {
+          // Retry once with new ticket number
+          ticket = await prisma.maintenanceTicket.create({
+            data: {
+              ticketNumber,
+              householdId,
+              requestedById: userId,
+              title,
+              description,
+              category,
+              priority: priority || 'NORMAL',
+              location: resolvedLocation,
+              photos: photosArray,
+              routingType,
+              assignedSupplierId,
+              status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION'
             },
-            requestedBy: {
-              select: {
-                id: true,
-                name: true,
-                email: true
+            select: {
+              id: true,
+              ticketNumber: true,
+              title: true,
+              description: true,
+              category: true,
+              priority: true,
+              status: true,
+              location: true,
+              photos: true,
+              requestedAt: true,
+              household: {
+                select: {
+                  id: true,
+                  name: true,
+                  apartmentNo: true
+                }
+              },
+              requestedBy: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
               }
             }
-          }
-        })
+          })
+        } catch (retryError: any) {
+          console.error('Retry also failed:', retryError)
+          throw retryError
+        }
       } else {
-        // Re-throw other errors
+        // Re-throw other errors with more context
         throw createError
       }
     }
@@ -432,9 +487,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ticket }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating maintenance ticket:', error)
+    console.error('Full error details:', {
+      code: error.code,
+      message: error.message,
+      meta: error.meta,
+      cause: error.cause,
+      stack: error.stack,
+      name: error.name
+    })
+    
+    // Provide more helpful error messages
+    let errorMessage = 'Failed to create ticket'
+    let statusCode = 500
+    
+    if (error.code === 'P2002') {
+      errorMessage = 'Ticket number already exists. Please try again.'
+      statusCode = 409
+    } else if (error.code === 'P2003') {
+      errorMessage = 'Invalid reference. Please check household, user, or other references.'
+      statusCode = 400
+    } else if (error.message?.includes('constraint')) {
+      errorMessage = `Database constraint violation: ${error.message}`
+      statusCode = 400
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create ticket', details: error.message },
-      { status: 500 }
+      { 
+        error: errorMessage, 
+        details: error.message,
+        code: error.code,
+        meta: error.meta
+      },
+      { status: statusCode }
     )
   }
 }

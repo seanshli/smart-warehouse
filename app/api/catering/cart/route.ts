@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs' // Ensure Node.js runtime
 
 // Shopping cart stored in cookies (session-based)
 // Format: { items: [{ menuItemId, quantity, unitPrice }] }
@@ -100,13 +101,33 @@ export async function GET(request: NextRequest) {
 // POST /api/catering/cart - Add item to cart
 // Note: This handles POST to /api/catering/cart (not /api/catering/cart/add)
 export async function POST(request: NextRequest) {
+  console.log('[Cart API POST] ===== POST request received =====')
+  console.log('[Cart API POST] Timestamp:', new Date().toISOString())
+  console.log('[Cart API POST] Request URL:', request.url)
+  console.log('[Cart API POST] Request method:', request.method)
+  
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
+      console.error('[Cart API POST] Unauthorized - no session')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    console.log('[Cart API POST] Session found for:', session.user.email)
+    
+    let body: any
+    try {
+      body = await request.json()
+      console.log('[Cart API POST] Request body parsed:', { 
+        menuItemId: body.menuItemId, 
+        quantity: body.quantity,
+        hasMenuId: !!body.menuItemId 
+      })
+    } catch (jsonError: any) {
+      console.error('[Cart API POST] Error parsing request body:', jsonError)
+      return NextResponse.json({ error: 'Invalid JSON in request body', details: jsonError.message }, { status: 400 })
+    }
+    
     const { menuItemId, quantity = 1, isVegetarian = false, spiceLevel = 'no' } = body
 
     if (!menuItemId) {
@@ -173,15 +194,41 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (queryError: any) {
-      console.error('[Cart API] Error fetching menu item:', queryError)
+      console.error('[Cart API POST] Error fetching menu item:', queryError)
+      console.error('[Cart API POST] Error details:', {
+        code: queryError.code,
+        message: queryError.message,
+        meta: queryError.meta,
+      })
+      
       // If it's a schema error, try a simpler query
       if (queryError.code === 'P2021' || queryError.message?.includes('does not exist')) {
-        console.log('[Cart API] Schema error detected, trying simpler query...')
-        menuItem = await prisma.cateringMenuItem.findUnique({
-          where: { id: menuItemId },
-        })
+        console.log('[Cart API POST] Schema error detected, trying simpler query...')
+        try {
+          menuItem = await prisma.cateringMenuItem.findUnique({
+            where: { id: menuItemId },
+          })
+          console.log('[Cart API POST] Simpler query succeeded, menuItem found:', menuItem ? 'yes' : 'no')
+        } catch (simpleQueryError: any) {
+          console.error('[Cart API POST] Simpler query also failed:', simpleQueryError)
+          return NextResponse.json(
+            { 
+              error: 'Database schema error. Please check if catering_menu_items table exists and has required columns.',
+              details: simpleQueryError.message 
+            },
+            { status: 500 }
+          )
+        }
       } else {
-        throw queryError
+        // Return 500 instead of throwing to avoid 405
+        console.error('[Cart API POST] Non-schema error, returning 500')
+        return NextResponse.json(
+          { 
+            error: 'Failed to fetch menu item',
+            details: queryError.message 
+          },
+          { status: 500 }
+        )
       }
     }
 
@@ -332,35 +379,59 @@ export async function POST(request: NextRequest) {
       console.warn(`[Cart API] Warning: Could not set cookie via cookieStore (non-critical):`, cookieStoreError)
     }
     
+    console.log('[Cart API POST] Successfully returning response with cart')
     return response
   } catch (error: any) {
-    console.error('[Cart API] Error adding to cart:', error)
-    console.error('[Cart API] Error details:', {
+    console.error('[Cart API POST] Error adding to cart:', error)
+    console.error('[Cart API POST] Error type:', error?.constructor?.name)
+    console.error('[Cart API POST] Error details:', {
       message: error?.message,
       code: error?.code,
+      name: error?.name,
       stack: error?.stack?.substring(0, 500),
     })
     
     // Check if it's a Prisma error related to missing columns or relations
     if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
-      console.error('[Cart API] Database schema error - table or column missing')
+      console.error('[Cart API POST] Database schema error - table or column missing')
       return NextResponse.json(
-        { error: 'Database schema error. Please check if migrations are up to date.' },
+        { 
+          error: 'Database schema error. Please check if migrations are up to date.',
+          details: error.message 
+        },
         { status: 500 }
       )
     }
     
     // Check if it's a relation error
     if (error?.code === 'P2016' || error?.message?.includes('relation')) {
-      console.error('[Cart API] Database relation error')
+      console.error('[Cart API POST] Database relation error')
       return NextResponse.json(
-        { error: 'Database relation error. Please check category relationships.' },
+        { 
+          error: 'Database relation error. Please check category relationships.',
+          details: error.message 
+        },
         { status: 500 }
       )
     }
     
+    // Check if it's a JSON parsing error
+    if (error?.name === 'SyntaxError' || error?.message?.includes('JSON')) {
+      console.error('[Cart API POST] JSON parsing error')
+      return NextResponse.json(
+        { 
+          error: 'Invalid request format',
+          details: error.message 
+        },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: error?.message || 'Failed to add item to cart' },
+      { 
+        error: error?.message || 'Failed to add item to cart',
+        details: error?.stack?.substring(0, 200) 
+      },
       { status: 500 }
     )
   }

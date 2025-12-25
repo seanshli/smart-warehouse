@@ -17,22 +17,51 @@ export async function GET(
     const prisma = createPrismaClient()
     // Fetch menu item without options first (to avoid schema errors)
     // Use try-catch to handle schema errors gracefully
+    // IMPORTANT: Use select to explicitly include imageUrl to avoid schema issues with older items
     let menuItem: any
     try {
       menuItem = await prisma.cateringMenuItem.findUnique({
         where: { id: params.id },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          cost: true,
+          quantityAvailable: true,
+          isActive: true,
+          availableAllDay: true,
+          imageUrl: true, // Explicitly select imageUrl
+          categoryId: true,
+          serviceId: true,
           category: {
             select: {
               id: true,
               name: true,
             },
           },
-          timeSlots: true,
+          timeSlots: {
+            select: {
+              id: true,
+              dayOfWeek: true,
+              startTime: true,
+              endTime: true,
+            },
+          },
           service: {
-            include: {
-              building: true,
-              community: true,
+            select: {
+              id: true,
+              building: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              community: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           },
         },
@@ -349,25 +378,36 @@ export async function DELETE(
     // Check if menu item exists
     const menuItem = await prisma.cateringMenuItem.findUnique({
       where: { id: params.id },
-      include: {
-        _count: {
-          select: {
-            orderItems: true,
-          },
-        },
-      },
     })
 
     if (!menuItem) {
       return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
     }
 
-    // Check if item is used in any orders
-    if (menuItem._count.orderItems > 0) {
+    // Check if item is used in any ACTIVE orders (not cancelled or closed)
+    // Only count orders that are still active (submitted, accepted, preparing, ready, delivered)
+    // Cancelled and closed orders should not prevent deletion
+    const activeOrderItems = await prisma.cateringOrderItem.findMany({
+      where: {
+        menuItemId: params.id,
+        order: {
+          status: {
+            notIn: ['cancelled', 'closed'],
+          },
+        },
+      },
+      select: {
+        orderId: true,
+      },
+    })
+
+    const activeOrderCount = new Set(activeOrderItems.map(item => item.orderId)).size
+
+    if (activeOrderCount > 0) {
       return NextResponse.json(
         { 
-          error: `Cannot delete menu item. It is used in ${menuItem._count.orderItems} order(s). Please deactivate it instead.`,
-          orderCount: menuItem._count.orderItems,
+          error: `Cannot delete menu item. It is used in ${activeOrderCount} active order(s). Please cancel those orders first or deactivate the item instead.`,
+          orderCount: activeOrderCount,
         },
         { status: 400 }
       )

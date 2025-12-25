@@ -183,11 +183,19 @@ export async function POST(request: NextRequest) {
     const prisma = createPrismaClient()
     // Fetch menu item with category
     // Try to include parent category info, but handle gracefully if columns don't exist
+    // IMPORTANT: Use select to explicitly include imageUrl to avoid schema issues
     let menuItem: any
     try {
       menuItem = await prisma.cateringMenuItem.findUnique({
         where: { id: menuItemId },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          cost: true,
+          isActive: true,
+          quantityAvailable: true,
+          imageUrl: true, // Explicitly select imageUrl
           category: {
             select: {
               id: true,
@@ -342,10 +350,12 @@ export async function POST(request: NextRequest) {
         cart.items[existingIndex].quantity * cart.items[existingIndex].unitPrice
     } else {
       // Add new item
+      // Handle imageUrl gracefully - it might not exist for older items
+      const imageUrl = (menuItem as any).imageUrl || null
       cart.items.push({
         menuItemId,
         name: menuItem.name,
-        imageUrl: menuItem.imageUrl,
+        imageUrl: imageUrl, // Can be null for items without photos
         quantity,
         unitPrice: parseFloat(menuItem.cost.toString()),
         subtotal: parseFloat(menuItem.cost.toString()) * quantity,

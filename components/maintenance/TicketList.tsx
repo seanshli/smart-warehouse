@@ -307,7 +307,7 @@ export default function TicketList() {
           <option value="EVALUATED">{t('evaluated') || 'Evaluated'}</option>
           <option value="ASSIGNED">{t('assigned') || 'Assigned'}</option>
           <option value="IN_PROGRESS">{t('inProgress') || 'In Progress'}</option>
-          <option value="preparing">{t('preparing') || 'Preparing'}</option>
+          <option value="preparing">{'準備中'}</option>
           <option value="WORK_COMPLETED">{t('workCompleted')}</option>
           <option value="CLOSED">{t('closed')}</option>
         </select>
@@ -394,7 +394,7 @@ export default function TicketList() {
           isOpen={showRequestForm}
           onClose={() => setShowRequestForm(false)}
           onSuccess={() => {
-            fetchTickets()
+            fetchWorkOrders()
             setShowRequestForm(false)
           }}
         />

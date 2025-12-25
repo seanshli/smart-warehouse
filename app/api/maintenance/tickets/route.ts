@@ -229,8 +229,8 @@ export async function POST(request: NextRequest) {
       console.log('job_routing_config table not found, using defaults:', error)
     }
 
-    // Generate ticket number (format: RX-YYYY-NNNNNN)
-    // Try to get the latest ticket number to increment, or start from 1
+    // Generate ticket number
+    // Try format MT-YYYYMMDD-XXXX (matches database trigger format) or RX-YYYY-NNNNNN
     let ticketNumber = ''
     try {
       const latestTicket = await prisma.maintenanceTicket.findFirst({
@@ -239,32 +239,51 @@ export async function POST(request: NextRequest) {
       })
       
       if (latestTicket?.ticketNumber) {
-        // Extract number from format like "RX-2025-001234"
-        const match = latestTicket.ticketNumber.match(/RX-(\d{4})-(\d+)/)
-        if (match) {
-          const year = match[1]
-          const num = parseInt(match[2], 10)
-          const currentYear = new Date().getFullYear().toString()
+        // Try MT-YYYYMMDD-XXXX format first (from database trigger)
+        const mtMatch = latestTicket.ticketNumber.match(/MT-(\d{8})-(\d+)/)
+        if (mtMatch) {
+          const datePart = mtMatch[1]
+          const num = parseInt(mtMatch[2], 10)
+          const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
           
-          if (year === currentYear) {
-            // Same year, increment
-            ticketNumber = `RX-${currentYear}-${String(num + 1).padStart(6, '0')}`
+          if (datePart === today) {
+            // Same day, increment
+            ticketNumber = `MT-${today}-${String(num + 1).padStart(4, '0')}`
           } else {
-            // New year, start from 1
-            ticketNumber = `RX-${currentYear}-000001`
+            // New day, start from 1
+            ticketNumber = `MT-${today}-0001`
           }
         } else {
-          // Fallback: use current year and start from 1
-          ticketNumber = `RX-${new Date().getFullYear()}-000001`
+          // Try RX-YYYY-NNNNNN format
+          const rxMatch = latestTicket.ticketNumber.match(/RX-(\d{4})-(\d+)/)
+          if (rxMatch) {
+            const year = rxMatch[1]
+            const num = parseInt(rxMatch[2], 10)
+            const currentYear = new Date().getFullYear().toString()
+            
+            if (year === currentYear) {
+              // Same year, increment
+              ticketNumber = `RX-${currentYear}-${String(num + 1).padStart(6, '0')}`
+            } else {
+              // New year, start from 1
+              ticketNumber = `RX-${currentYear}-000001`
+            }
+          } else {
+            // Unknown format, use MT format (matches database trigger)
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+            ticketNumber = `MT-${today}-0001`
+          }
         }
       } else {
-        // No tickets yet, start from 1
-        ticketNumber = `RX-${new Date().getFullYear()}-000001`
+        // No tickets yet, use MT format (matches database trigger)
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        ticketNumber = `MT-${today}-0001`
       }
     } catch (error) {
       // If query fails, generate a simple ticket number
       console.warn('Failed to get latest ticket number, using simple format:', error)
-      ticketNumber = `RX-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      ticketNumber = `MT-${today}-${Date.now().toString().slice(-4)}`
     }
 
     // Create ticket with generated ticketNumber

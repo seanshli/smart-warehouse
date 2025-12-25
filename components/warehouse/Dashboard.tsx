@@ -1083,13 +1083,10 @@ function DashboardContent({
 
       // Apply status filter using normalized statuses
       if (workOrderStatusFilter !== 'all') {
-        const beforeFilter = unified.length
         unified = unified.filter(wo => {
           const normalized = wo.normalizedStatus || normalizeStatus(wo.status, wo.type)
-          const matches = normalized === workOrderStatusFilter
-          return matches
+          return normalized === workOrderStatusFilter
         })
-        console.log(`[Dashboard] Filtered work orders: ${beforeFilter} -> ${unified.length} (filter: ${workOrderStatusFilter})`)
       }
 
       unified = unified.slice(0, 5) // Show top 5 most recent

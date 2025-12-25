@@ -169,7 +169,7 @@ export default function TicketList() {
           type: 'catering' as const,
           number: order.orderNumber || order.id,
           title: `叫餐訂單 - ${(order.items || []).map((i: any) => `${i.menuItem?.name || 'Item'} x${i.quantity}`).join(', ') || '訂單'}`,
-          description: `總金額: $${(order.totalAmount || 0).toFixed(2)} | 配送方式: ${order.deliveryType === 'immediate' ? '立即送達' : order.deliveryType === 'scheduled' ? '預約送達' : order.deliveryType === 'dine-in' ? '餐廳內用' : '未知'}`,
+          description: `總金額: $${parseFloat((order.totalAmount?.toString() || '0')).toFixed(2)} | 配送方式: ${order.deliveryType === 'immediate' ? '立即送達' : order.deliveryType === 'scheduled' ? '預約送達' : order.deliveryType === 'dine-in' ? '餐廳內用' : '未知'}`,
           status: order.status,
           requestedAt: order.orderedAt,
           assignedTo: order.workgroup?.name,

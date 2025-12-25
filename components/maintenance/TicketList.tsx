@@ -164,17 +164,24 @@ export default function TicketList() {
           assignedTo: ticket.assignedCrew?.name || ticket.assignedSupplier?.name,
           ticket,
         })),
-        ...(ordersData.orders || []).map((order: CateringOrder) => ({
-          id: order.id,
-          type: 'catering' as const,
-          number: order.orderNumber || order.id,
-          title: `叫餐訂單 - ${(order.items || []).map((i: any) => `${i.menuItem?.name || 'Item'} x${i.quantity}`).join(', ') || '訂單'}`,
-          description: `總金額: $${parseFloat((order.totalAmount?.toString() || '0')).toFixed(2)} | 配送方式: ${order.deliveryType === 'immediate' ? '立即送達' : order.deliveryType === 'scheduled' ? '預約送達' : order.deliveryType === 'dine-in' ? '餐廳內用' : '未知'}`,
-          status: order.status,
-          requestedAt: order.orderedAt,
-          assignedTo: order.workgroup?.name,
-          order,
-        })),
+        ...(ordersData.orders || []).map((order: any) => {
+          // Safely convert totalAmount to number (API should return number, but handle edge cases)
+          const totalAmount = typeof order.totalAmount === 'number' 
+            ? order.totalAmount 
+            : parseFloat(order.totalAmount?.toString() || '0')
+          
+          return {
+            id: order.id,
+            type: 'catering' as const,
+            number: order.orderNumber || order.id,
+            title: `叫餐訂單 - ${(order.items || []).map((i: any) => `${i.menuItem?.name || 'Item'} x${i.quantity}`).join(', ') || '訂單'}`,
+            description: `總金額: $${totalAmount.toFixed(2)} | 配送方式: ${order.deliveryType === 'immediate' ? '立即送達' : order.deliveryType === 'scheduled' ? '預約送達' : order.deliveryType === 'dine-in' ? '餐廳內用' : '未知'}`,
+            status: order.status,
+            requestedAt: order.orderedAt,
+            assignedTo: order.workgroup?.name,
+            order,
+          }
+        }),
       ].sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
 
       setUnifiedWorkOrders(unified)

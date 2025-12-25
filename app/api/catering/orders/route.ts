@@ -110,7 +110,18 @@ export async function GET(request: NextRequest) {
         take: 100,
       })
 
-      return NextResponse.json({ orders })
+      // Convert Decimal totalAmount to number for JSON serialization
+      const ordersWithNumbers = orders.map(order => ({
+        ...order,
+        totalAmount: parseFloat(order.totalAmount?.toString() || '0'),
+        items: order.items.map(item => ({
+          ...item,
+          unitPrice: parseFloat(item.unitPrice?.toString() || '0'),
+          subtotal: parseFloat(item.subtotal?.toString() || '0'),
+        })),
+      }))
+      
+      return NextResponse.json({ orders: ordersWithNumbers })
     }
 
     // Regular users can only see their household's orders
@@ -152,7 +163,18 @@ export async function GET(request: NextRequest) {
       orderBy: { orderedAt: 'desc' },
     })
 
-    return NextResponse.json({ orders })
+    // Convert Decimal totalAmount to number for JSON serialization
+    const ordersWithNumbers = orders.map(order => ({
+      ...order,
+      totalAmount: parseFloat(order.totalAmount?.toString() || '0'),
+      items: order.items.map(item => ({
+        ...item,
+        unitPrice: parseFloat(item.unitPrice?.toString() || '0'),
+        subtotal: parseFloat(item.subtotal?.toString() || '0'),
+      })),
+    }))
+
+    return NextResponse.json({ orders: ordersWithNumbers })
   } catch (error) {
     console.error('Error fetching orders:', error)
     return NextResponse.json(

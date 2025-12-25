@@ -211,7 +211,7 @@ export default function AdminMaintenancePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t('workOrderManagement') || '工單管理'} ({t('maintenanceTickets')} & {t('cateringOrders') || '叫餐訂單'})
+            {'工單管理'} ({t('maintenanceTickets')} & {'叫餐訂單'})
           </h1>
           {householdId && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -226,7 +226,7 @@ export default function AdminMaintenancePage() {
         >
           <option value="all">{t('all') || 'All'}</option>
           <option value="PENDING_EVALUATION">{t('pendingEvaluation') || 'Pending Evaluation'}</option>
-          <option value="submitted">{t('submitted') || 'Submitted'}</option>
+          <option value="submitted">{'已提交'}</option>
           <option value="EVALUATED">{t('evaluated') || 'Evaluated'}</option>
           <option value="ASSIGNED">{t('assigned') || 'Assigned'}</option>
           <option value="IN_PROGRESS">{t('inProgress') || 'In Progress'}</option>

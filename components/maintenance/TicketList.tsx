@@ -279,8 +279,8 @@ export default function TicketList() {
     <div className="p-4 space-y-4">
       {/* Header with actions */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {t('workOrders') || '工單'} ({t('maintenanceTickets')} & {t('cateringOrders') || '叫餐訂單'})
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {'工單'} ({t('maintenanceTickets')} & {'叫餐訂單'})
         </h2>
         <div className="flex items-center space-x-2">
           <FrontDeskChatButton />

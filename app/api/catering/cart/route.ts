@@ -350,17 +350,16 @@ export async function POST(request: NextRequest) {
     // In Next.js App Router, cookies must be set on the response object
     const sameSiteValue = 'lax' // Safari-compatible
     
-    // Create response with cookie set in headers directly
+    // Create response first
     const response = NextResponse.json(cart, {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store, no-cache, must-revalidate',
-        // Set cookie via Set-Cookie header directly (more reliable)
-        'Set-Cookie': `${CART_COOKIE_NAME}=${encodeURIComponent(cartJson)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; HttpOnly; SameSite=${sameSiteValue}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
       }
     })
     
-    // Also set via response.cookies for Next.js compatibility
+    // Set cookie via response.cookies (Next.js App Router way - this is the correct method)
+    // Don't URL-encode here - Next.js handles encoding automatically
     response.cookies.set(CART_COOKIE_NAME, cartJson, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -368,6 +367,13 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     })
+    
+    // Verify Set-Cookie header was added
+    const setCookieHeader = response.headers.get('Set-Cookie')
+    console.log(`[Cart API POST] Set-Cookie header present:`, setCookieHeader ? 'yes' : 'no')
+    if (setCookieHeader) {
+      console.log(`[Cart API POST] Set-Cookie header value (first 200 chars):`, setCookieHeader.substring(0, 200))
+    }
     
     console.log(`[Cart API POST] Cookie set on response: ${CART_COOKIE_NAME}, length: ${cartJson.length} bytes`)
     console.log(`[Cart API POST] Cookie settings: httpOnly=true, secure=${process.env.NODE_ENV === 'production'}, sameSite=${sameSiteValue}, path=/`)

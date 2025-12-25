@@ -260,7 +260,28 @@ export default function CateringCart() {
 
       if (response.ok) {
         const updatedCart = await response.json()
-        setCart(updatedCart)
+        // Fetch imageUrl for updated items
+        const itemsWithImages = await Promise.all(
+          updatedCart.items.map(async (item: CartItem) => {
+            try {
+              const menuResponse = await fetch(`/api/catering/menu/${item.menuItemId}`, {
+                credentials: 'include',
+                cache: 'no-store',
+              })
+              if (menuResponse.ok) {
+                const menuItem = await menuResponse.json()
+                return {
+                  ...item,
+                  imageUrl: menuItem.imageUrl || undefined,
+                }
+              }
+            } catch (error) {
+              console.warn(`[CateringCart] Failed to fetch image for ${item.menuItemId}:`, error)
+            }
+            return item
+          })
+        )
+        setCart({ ...updatedCart, items: itemsWithImages })
         toast.success('Cart updated')
       } else {
         const error = await response.json()
@@ -290,7 +311,28 @@ export default function CateringCart() {
 
       if (response.ok) {
         const updatedCart = await response.json()
-        setCart(updatedCart)
+        // Fetch imageUrl for remaining items
+        const itemsWithImages = await Promise.all(
+          updatedCart.items.map(async (item: CartItem) => {
+            try {
+              const menuResponse = await fetch(`/api/catering/menu/${item.menuItemId}`, {
+                credentials: 'include',
+                cache: 'no-store',
+              })
+              if (menuResponse.ok) {
+                const menuItem = await menuResponse.json()
+                return {
+                  ...item,
+                  imageUrl: menuItem.imageUrl || undefined,
+                }
+              }
+            } catch (error) {
+              console.warn(`[CateringCart] Failed to fetch image for ${item.menuItemId}:`, error)
+            }
+            return item
+          })
+        )
+        setCart({ ...updatedCart, items: itemsWithImages })
         toast.success('Item removed from cart')
       } else {
         const error = await response.json()

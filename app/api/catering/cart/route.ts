@@ -417,9 +417,17 @@ export async function POST(request: NextRequest) {
       console.error(`[Cart API POST] ERROR: Our cookie NOT found in getAll()!`)
     }
     
+    // Verify cookie was set on response
+    const verifyCookie = response.cookies.get(CART_COOKIE_NAME)
+    if (verifyCookie) {
+      console.log(`[Cart API POST] Cookie verified on response: ${verifyCookie.value.substring(0, 50)}...`)
+      console.log(`[Cart API POST] Cookie value length: ${verifyCookie.value.length} bytes`)
+    } else {
+      console.error(`[Cart API POST] ERROR: Cookie NOT found on response after setting!`)
+    }
+    
     console.log(`[Cart API POST] Cookie set on response: ${CART_COOKIE_NAME}, length: ${cartJson.length} bytes`)
     console.log(`[Cart API POST] Cookie settings: httpOnly=true, secure=${process.env.NODE_ENV === 'production'}, sameSite=${sameSiteValue}, path=/`)
-    console.log(`[Cart API POST] Set-Cookie header present:`, response.headers.get('Set-Cookie') ? 'yes' : 'no')
     
     // CRITICAL: Don't use cookieStore.set() here - it can interfere with response.cookies
     // The response.cookies.set() above is sufficient and correct for Next.js App Router

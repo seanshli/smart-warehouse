@@ -226,7 +226,7 @@ export default function AdminMaintenancePage() {
         >
           <option value="all">{t('all') || 'All'}</option>
           <option value="PENDING_EVALUATION">{t('pendingEvaluation') || 'Pending Evaluation'}</option>
-          <option value="submitted">{t('submitted') || 'Submitted'}</option>
+          <option value="submitted">{'已提交'}</option>
           <option value="EVALUATED">{t('evaluated') || 'Evaluated'}</option>
           <option value="ASSIGNED">{t('assigned') || 'Assigned'}</option>
           <option value="IN_PROGRESS">{t('inProgress') || 'In Progress'}</option>
@@ -238,7 +238,7 @@ export default function AdminMaintenancePage() {
         <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <ExclamationTriangleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">
-            {t('noWorkOrders') || 'No work orders found'}
+            {'沒有工單'}
           </p>
         </div>
       ) : (

@@ -259,16 +259,80 @@ export async function POST(request: NextRequest) {
       console.log('job_routing_config table not found, using defaults:', error)
     }
 
-    // Ensure routing consistency: if EXTERNAL_SUPPLIER, must have supplier; if INTERNAL, must not have supplier
-    if (routingType === 'EXTERNAL_SUPPLIER' && !assignedSupplierId) {
-      // If routing is EXTERNAL_SUPPLIER but no supplier is assigned, change to INTERNAL_COMMUNITY
-      console.warn(`Category ${category} configured for EXTERNAL_SUPPLIER but no supplier assigned, defaulting to INTERNAL_COMMUNITY`)
-      routingType = 'INTERNAL_COMMUNITY'
+    // Ensure routing consistency per database constraint:
+    // - EXTERNAL_SUPPLIER: must have assigned_supplier_id, must NOT have assigned_crew_id
+    // - INTERNAL_BUILDING/INTERNAL_COMMUNITY: must have assigned_crew_id, must NOT have assigned_supplier_id
+    // - NULL routing_type: allowed (no constraints)
+    
+    let assignedCrewId: string | null = null
+    
+    if (routingType === 'EXTERNAL_SUPPLIER') {
+      if (!assignedSupplierId) {
+        // If routing is EXTERNAL_SUPPLIER but no supplier is assigned, set routing to NULL
+        console.warn(`Category ${category} configured for EXTERNAL_SUPPLIER but no supplier assigned, setting routing_type to NULL`)
+        routingType = null
+        assignedSupplierId = null
+      } else {
+        // Ensure crew is null for external supplier
+        assignedCrewId = null
+      }
+    } else if (routingType === 'INTERNAL_BUILDING' || routingType === 'INTERNAL_COMMUNITY') {
+      // For internal routing, we MUST assign a crew per constraint
+      // Clear supplier assignment
       assignedSupplierId = null
-    } else if ((routingType === 'INTERNAL_BUILDING' || routingType === 'INTERNAL_COMMUNITY') && assignedSupplierId) {
-      // If routing is INTERNAL but supplier is assigned, clear supplier
-      console.warn(`Category ${category} configured for ${routingType} but supplier assigned, clearing supplier`)
-      assignedSupplierId = null
+      
+      // Try to find an appropriate crew based on building/community and category
+      try {
+        const crewType = category === 'BUILDING_MAINTENANCE' ? 'BUILDING_MAINTENANCE' : 
+                        category === 'HOUSE_CLEANING' ? 'HOUSE_CLEANING' :
+                        category === 'FOOD_ORDER' ? 'FOOD_ORDER' : 'BUILDING_MAINTENANCE'
+        
+        if (routingType === 'INTERNAL_BUILDING' && household?.buildingId) {
+          // Find building crew
+          const buildingCrew = await prisma.workingCrew.findFirst({
+            where: {
+              buildingId: household.buildingId,
+              crewType: crewType,
+              isActive: true
+            },
+            select: { id: true }
+          })
+          
+          if (buildingCrew) {
+            assignedCrewId = buildingCrew.id
+          } else {
+            // No crew found, set routing to NULL to satisfy constraint
+            console.warn(`No ${crewType} crew found for building ${household.buildingId}, setting routing_type to NULL`)
+            routingType = null
+          }
+        } else if (routingType === 'INTERNAL_COMMUNITY' && household?.building?.communityId) {
+          // Find community crew
+          const communityCrew = await prisma.workingCrew.findFirst({
+            where: {
+              communityId: household.building.communityId,
+              crewType: crewType,
+              isActive: true
+            },
+            select: { id: true }
+          })
+          
+          if (communityCrew) {
+            assignedCrewId = communityCrew.id
+          } else {
+            // No crew found, set routing to NULL to satisfy constraint
+            console.warn(`No ${crewType} crew found for community ${household.building.communityId}, setting routing_type to NULL`)
+            routingType = null
+          }
+        } else {
+          // No building/community info, set routing to NULL
+          console.warn(`No building/community info for ${routingType} routing, setting routing_type to NULL`)
+          routingType = null
+        }
+      } catch (error) {
+        console.error('Error finding crew for internal routing:', error)
+        // On error, set routing to NULL to satisfy constraint
+        routingType = null
+      }
     }
 
     // Generate ticket number
@@ -378,8 +442,9 @@ export async function POST(request: NextRequest) {
           priority: priority || 'NORMAL',
           location: resolvedLocation,
           photos: photosArray,
-          routingType, // Set routing type based on category
-          assignedSupplierId, // Auto-assign supplier if configured
+          routingType, // Set routing type based on category (may be null if no crew/supplier found)
+          assignedSupplierId, // Auto-assign supplier if configured (must be null for internal routing)
+          assignedCrewId, // Auto-assign crew for internal routing (must be null for external routing)
           status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION' // Auto-evaluate if supplier is assigned
         },
         include: {
@@ -430,9 +495,10 @@ export async function POST(request: NextRequest) {
               priority: priority || 'NORMAL',
               location: resolvedLocation,
               photos: photosArray,
-              routingType,
-              assignedSupplierId,
-              status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION'
+            routingType,
+            assignedSupplierId,
+            assignedCrewId,
+            status: assignedSupplierId ? 'EVALUATED' : 'PENDING_EVALUATION'
             },
             select: {
               id: true,

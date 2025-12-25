@@ -10,7 +10,7 @@ import { getEffectiveTimeSlots, isItemAvailableNow, getNextAvailableTime, TimeSl
 interface CartItem {
   menuItemId: string
   name: string
-  imageUrl?: string
+  imageUrl?: string // Fetched from menu item API, not stored in cookie
   quantity: number
   unitPrice: number
   subtotal: number

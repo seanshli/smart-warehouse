@@ -350,12 +350,12 @@ export async function POST(request: NextRequest) {
         cart.items[existingIndex].quantity * cart.items[existingIndex].unitPrice
     } else {
       // Add new item
-      // Handle imageUrl gracefully - it might not exist for older items
-      const imageUrl = (menuItem as any).imageUrl || null
+      // IMPORTANT: Don't store imageUrl in cookie to avoid cookie size limits (4096 bytes)
+      // We'll fetch imageUrl from menu item API when displaying cart
       cart.items.push({
         menuItemId,
         name: menuItem.name,
-        imageUrl: imageUrl, // Can be null for items without photos
+        // imageUrl removed - fetch from menu item API instead
         quantity,
         unitPrice: parseFloat(menuItem.cost.toString()),
         subtotal: parseFloat(menuItem.cost.toString()) * quantity,

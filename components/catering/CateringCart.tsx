@@ -96,13 +96,36 @@ export default function CateringCart() {
           const total = typeof data.total === 'number' ? data.total : items.reduce((sum: number, item: any) => sum + (item.subtotal || 0), 0)
           
           console.log('[CateringCart] Setting cart state with', items.length, 'items')
+          
+          // Fetch imageUrl for each item from menu API (not stored in cookie to avoid size limits)
+          const itemsWithImages = await Promise.all(
+            items.map(async (item: CartItem) => {
+              try {
+                const menuResponse = await fetch(`/api/catering/menu/${item.menuItemId}`, {
+                  credentials: 'include',
+                  cache: 'no-store',
+                })
+                if (menuResponse.ok) {
+                  const menuItem = await menuResponse.json()
+                  return {
+                    ...item,
+                    imageUrl: menuItem.imageUrl || undefined,
+                  }
+                }
+              } catch (error) {
+                console.warn(`[CateringCart] Failed to fetch image for ${item.menuItemId}:`, error)
+              }
+              return item
+            })
+          )
+          
           setCart({
-            items,
+            items: itemsWithImages,
             total,
           })
           
           // Check if any items are pre-orders (outside available time)
-          checkPreOrderStatus(items)
+          checkPreOrderStatus(itemsWithImages)
           
           // Retry logic if cart appears empty (but only if we haven't retried too many times)
           if (items.length === 0 && retryCount < 3) {

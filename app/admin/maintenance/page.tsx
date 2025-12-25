@@ -313,7 +313,7 @@ export default function AdminMaintenancePage() {
                     <p>{t('priority')}: {workOrder.priority}</p>
                   )}
                   {workOrder.assignedTo && (
-                    <p>{t('assignedTo') || 'Assigned to'}: {workOrder.assignedTo}</p>
+                    <p>{'指派給'}: {workOrder.assignedTo}</p>
                   )}
                   {workOrder.ticket?.routingType && (
                     <p className="mt-1">

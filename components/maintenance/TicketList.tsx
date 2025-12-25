@@ -368,7 +368,7 @@ export default function TicketList() {
                         <span>{t('category') || 'Category'}: {workOrder.category.replace(/_/g, ' ')}</span>
                       )}
                       {workOrder.assignedTo && (
-                        <span>{t('assignedTo') || 'Assigned to'}: {workOrder.assignedTo}</span>
+                        <span>{'指派給'}: {workOrder.assignedTo}</span>
                       )}
                     </div>
                     <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">

@@ -4,29 +4,13 @@ import type { NextRequestWithAuth } from "next-auth/middleware"
 
 export default withAuth(
   function middleware(req: NextRequestWithAuth) {
-    // Check if user is trying to access admin routes
-    if (req.nextUrl.pathname.startsWith('/admin')) {
-      const isSuperAdmin = req.nextauth.token?.isAdmin
-      const isSupplierAdmin = req.nextauth.token?.isSupplierAdmin
-      const supplierIds = (req.nextauth.token?.supplierIds as string[]) || []
-      
-      // Check if accessing supplier-specific route
-      const supplierRouteMatch = req.nextUrl.pathname.match(/^\/admin\/suppliers\/([^\/]+)/)
-      const requestedSupplierId = supplierRouteMatch ? supplierRouteMatch[1] : null
-      
-      // Allow access if:
-      // 1. User is super admin, OR
-      // 2. User is supplier admin AND accessing their own supplier route
-      if (!isSuperAdmin && !(isSupplierAdmin && requestedSupplierId && supplierIds.includes(requestedSupplierId))) {
-        // Redirect to admin sign-in page
-        return NextResponse.redirect(new URL('/admin-auth/signin', req.url))
-      }
-    }
+    // Middleware function - authorization is handled by the authorized callback
+    // This function only runs if authorized returns true
     return NextResponse.next()
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
+      authorized: ({ token, req }): boolean => {
         // Allow access to admin-auth routes without authentication
         if (req.nextUrl.pathname.startsWith('/admin-auth')) {
           return true
@@ -43,7 +27,7 @@ export default withAuth(
           const requestedSupplierId = supplierRouteMatch ? supplierRouteMatch[1] : null
           
           // Allow if super admin OR supplier admin accessing their supplier
-          return isSuperAdmin || (isSupplierAdmin && requestedSupplierId && supplierIds.includes(requestedSupplierId))
+          return isSuperAdmin || (isSupplierAdmin && !!requestedSupplierId && supplierIds.includes(requestedSupplierId))
         }
         
         return true

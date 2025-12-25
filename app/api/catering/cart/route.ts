@@ -350,6 +350,10 @@ export async function POST(request: NextRequest) {
     // In Next.js App Router, cookies must be set on the response object
     const sameSiteValue = 'lax' // Safari-compatible
     
+    console.log(`[Cart API POST] About to set cookie: ${CART_COOKIE_NAME}`)
+    console.log(`[Cart API POST] Cart JSON to save:`, cartJson.substring(0, 200))
+    console.log(`[Cart API POST] Cart has ${cart.items.length} items`)
+    
     // Create response first
     const response = NextResponse.json(cart, {
       headers: {
@@ -372,7 +376,20 @@ export async function POST(request: NextRequest) {
     const setCookieHeader = response.headers.get('Set-Cookie')
     console.log(`[Cart API POST] Set-Cookie header present:`, setCookieHeader ? 'yes' : 'no')
     if (setCookieHeader) {
-      console.log(`[Cart API POST] Set-Cookie header value (first 200 chars):`, setCookieHeader.substring(0, 200))
+      console.log(`[Cart API POST] Set-Cookie header value (first 300 chars):`, setCookieHeader.substring(0, 300))
+      console.log(`[Cart API POST] Set-Cookie header contains cookie name:`, setCookieHeader.includes(CART_COOKIE_NAME))
+    } else {
+      console.error(`[Cart API POST] ERROR: Set-Cookie header is MISSING!`)
+    }
+    
+    // Also verify via getAll() to see all cookies being set
+    const allSetCookies = response.cookies.getAll()
+    console.log(`[Cart API POST] All cookies being set:`, allSetCookies.map(c => c.name).join(', '))
+    const ourCookie = allSetCookies.find(c => c.name === CART_COOKIE_NAME)
+    if (ourCookie) {
+      console.log(`[Cart API POST] Our cookie found in getAll(), value length:`, ourCookie.value.length)
+    } else {
+      console.error(`[Cart API POST] ERROR: Our cookie NOT found in getAll()!`)
     }
     
     console.log(`[Cart API POST] Cookie set on response: ${CART_COOKIE_NAME}, length: ${cartJson.length} bytes`)

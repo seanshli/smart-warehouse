@@ -286,7 +286,7 @@ export default function BuildingDetailPage() {
 
           {/* Tab Content */}
           <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={setActiveTab} onCateringEnabled={() => setSetupModalOpen(true)} onServiceCheck={checkCateringService} />}
+          {activeTab === 'overview' && <OverviewTab building={building} buildingId={buildingId} onNavigateTab={(tab: any) => setActiveTab(tab)} onCateringEnabled={() => setSetupModalOpen(true)} onServiceCheck={checkCateringService} />}
           {activeTab === 'households' && <HouseholdsTab buildingId={buildingId} />}
           {activeTab === 'frontdoor' && <FrontDoorTab buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}
           {activeTab === 'mailboxes' && <MailboxManager buildingId={buildingId} householdId={searchParams?.get('householdId') || undefined} />}

@@ -25,7 +25,8 @@ import {
   ChatBubbleLeftRightIcon,
   PencilIcon,
   TrashIcon,
-  ShoppingBagIcon
+  ShoppingBagIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import MailboxManager from '@/components/building/MailboxManager'
 import PackageManager from '@/components/building/PackageManager'
@@ -258,6 +259,7 @@ export default function BuildingDetailPage() {
                   { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
                   { id: 'members', name: t('members') || '成員', icon: UserIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups') || 'Working Groups', icon: UserGroupIcon },
+                  { id: 'work-orders', name: '工單', icon: ExclamationTriangleIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
                   // Only show catering tab if service is enabled
                   ...(cateringServiceEnabled ? [{ id: 'catering', name: t('catering'), icon: ShoppingBagIcon }] : []),
@@ -322,6 +324,15 @@ export default function BuildingDetailPage() {
               buildingName={building?.name || ''}
               onShowCreate={() => setShowCreateAnnouncement(true)}
             />
+          )}
+          {activeTab === 'work-orders' && buildingId && (
+            <div className="h-[calc(100vh-300px)]">
+              <iframe
+                src={`/admin/buildings/${buildingId}/maintenance`}
+                className="w-full h-full border-0 rounded-lg"
+                title="Work Orders"
+              />
+            </div>
           )}
           {activeTab === 'catering' && buildingId && (
             isAdmin ? (

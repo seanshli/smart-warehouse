@@ -58,6 +58,18 @@ export default function CommunityDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements' | 'catering' | 'work-orders'>('overview')
+  const [navigatingToWorkOrders, setNavigatingToWorkOrders] = useState(false)
+
+  // Auto-navigate to work-orders page when tab is selected
+  useEffect(() => {
+    if (activeTab === 'work-orders' && communityId && !navigatingToWorkOrders) {
+      setNavigatingToWorkOrders(true)
+      // Use setTimeout to avoid navigation during render
+      setTimeout(() => {
+        router.push(`/admin/communities/${communityId}/maintenance`)
+      }, 100)
+    }
+  }, [activeTab, communityId, router, navigatingToWorkOrders])
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
   const [cateringServiceEnabled, setCateringServiceEnabled] = useState(false)
@@ -279,12 +291,11 @@ export default function CommunityDetailPage() {
             />
           )}
           {activeTab === 'work-orders' && communityId && (
-            <div className="h-[calc(100vh-300px)]">
-              <iframe
-                src={`/admin/communities/${communityId}/maintenance`}
-                className="w-full h-full border-0 rounded-lg"
-                title="Work Orders"
-              />
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">
+                正在跳轉到工單管理頁面...
+              </p>
             </div>
           )}
           {activeTab === 'catering' && communityId && (

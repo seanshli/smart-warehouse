@@ -188,25 +188,56 @@ export default function CommunityMaintenancePage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-2 mb-2">
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Side Menu */}
+      <div className="w-64 flex-shrink-0 bg-white shadow-sm border-r border-gray-200">
+        <div className="h-[calc(100vh-120px)] overflow-y-auto p-2">
+          <nav className="space-y-1">
+            <Link
+              href={`/admin/communities/${communityId}/maintenance`}
+              className="bg-red-50 text-red-600 border-red-500 w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md border-l-2 transition-colors"
+            >
+              <WrenchScrewdriverIcon className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">工單管理</span>
+            </Link>
             <Link
               href="/admin/communities"
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md border-l-2 transition-colors"
             >
-              社區列表
+              <BuildingOfficeIcon className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">社區列表</span>
             </Link>
-            <span className="text-gray-400">/</span>
-            <span className="text-sm font-medium text-gray-900">
-              {community?.name || 'Community'} - 工單管理
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {community?.name || 'Community'} - 工單管理
-          </h1>
+            <Link
+              href="/admin"
+              className="text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-transparent w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md border-l-2 transition-colors"
+            >
+              <HomeIcon className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">管理儀表板</span>
+            </Link>
+          </nav>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <Link
+                href="/admin/communities"
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                社區列表
+              </Link>
+              <span className="text-gray-400">/</span>
+              <span className="text-sm font-medium text-gray-900">
+                {community?.name || 'Community'} - 工單管理
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {community?.name || 'Community'} - 工單管理
+            </h1>
+          </div>
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}

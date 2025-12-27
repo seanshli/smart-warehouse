@@ -89,7 +89,7 @@ export default function BuildingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'catering' | 'members'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'catering' | 'members' | 'work-orders'
   >(initialTabFromQuery)
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)

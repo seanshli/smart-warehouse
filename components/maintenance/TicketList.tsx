@@ -275,16 +275,10 @@ export default function TicketList() {
 
       // Apply status filter using normalized statuses
       if (selectedStatus !== 'all') {
-        const beforeFilter = unified.length
         unified = unified.filter(wo => {
           const normalized = wo.normalizedStatus || normalizeStatus(wo.status, wo.type)
-          const matches = normalized === selectedStatus
-          if (!matches) {
-            console.log(`[TicketList] Filtered out: ${wo.number} (status: ${wo.status}, normalized: ${normalized}, filter: ${selectedStatus})`)
-          }
-          return matches
+          return normalized === selectedStatus
         })
-        console.log(`[TicketList] Filtered work orders: ${beforeFilter} -> ${unified.length} (filter: ${selectedStatus})`)
       }
 
       setUnifiedWorkOrders(unified)

@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const userId = (session.user as any).id
     const { searchParams } = new URL(request.url)
     const householdId = searchParams.get('householdId')
+    const buildingId = searchParams.get('buildingId') // For building-specific filtering
+    const communityId = searchParams.get('communityId') // For community-specific filtering
     const status = searchParams.get('status')
     const category = searchParams.get('category')
     const isAdmin = searchParams.get('admin') === 'true'
@@ -55,9 +57,21 @@ export async function GET(request: NextRequest) {
       where.assignedSupplierId = userSupplierId
       if (status) where.status = status
       if (category) where.category = category
-      if (householdId) where.householdId = householdId
+      if (householdId) {
+        where.householdId = householdId
+      }
+      // Support buildingId and communityId filters for supplier admin
+      if (buildingId || communityId) {
+        where.household = {}
+        if (buildingId) {
+          where.household.buildingId = buildingId
+        }
+        if (communityId) {
+          where.household.building = { communityId }
+        }
+      }
     } else if (isAdmin && user?.isAdmin) {
-      // Super admin can see all tickets
+      // Super admin can see all tickets (no filters = all tickets)
       if (status) where.status = status
       if (category) where.category = category
       // Support householdId filter for admin view
@@ -67,6 +81,17 @@ export async function GET(request: NextRequest) {
       // Support supplierId filter for admin view
       if (supplierId) {
         where.assignedSupplierId = supplierId
+      }
+      // Support buildingId filter for admin view - filter by households in this building
+      if (buildingId) {
+        where.household = { buildingId }
+      }
+      // Support communityId filter for admin view - filter by households in buildings of this community
+      if (communityId) {
+        where.household = {
+          ...where.household,
+          building: { communityId }
+        }
       }
     } else {
       // Household members can only see their household's tickets

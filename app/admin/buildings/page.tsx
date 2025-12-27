@@ -300,7 +300,7 @@ export default function AdminBuildingsPage() {
                             預定
                           </Link>
                           <Link
-                            href={`/admin/maintenance`}
+                            href={`/admin/buildings/${building.id}/maintenance`}
                             className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                           >
                             <WrenchScrewdriverIcon className="h-3 w-3 mr-1" />

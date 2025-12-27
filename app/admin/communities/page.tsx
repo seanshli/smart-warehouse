@@ -11,7 +11,8 @@ import {
   CogIcon,
   ArrowRightIcon,
   PlusIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
 import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
@@ -247,6 +248,13 @@ export default function AdminCommunitiesPage() {
                       >
                         <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
                         {t('messages') || '訊息'}
+                      </Link>
+                      <Link
+                        href={`/admin/communities/${community.id}/maintenance`}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        <WrenchScrewdriverIcon className="h-3 w-3 mr-1" />
+                        報修
                       </Link>
                       <CateringToggle
                         communityId={community.id}

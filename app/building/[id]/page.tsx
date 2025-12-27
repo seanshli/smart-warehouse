@@ -83,6 +83,7 @@ export default function BuildingDetailPage() {
       | 'announcements'
       | 'working-groups'
       | 'catering'
+      | 'work-orders'
       | null) || 'overview'
 
   const [building, setBuilding] = useState<Building | null>(null)

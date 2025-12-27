@@ -57,7 +57,7 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<Community | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements' | 'catering'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements' | 'catering' | 'work-orders'>('overview')
   const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false)
   const [setupModalOpen, setSetupModalOpen] = useState(false)
   const [cateringServiceEnabled, setCateringServiceEnabled] = useState(false)
@@ -240,6 +240,7 @@ export default function CommunityDetailPage() {
                   { id: 'buildings', name: t('adminBuildings'), icon: BuildingOfficeIcon },
                   { id: 'members', name: t('members'), icon: UserGroupIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups'), icon: CogIcon },
+                  { id: 'work-orders', name: '工單', icon: ExclamationTriangleIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
                   // Only show catering tab if service is enabled
                   ...(cateringServiceEnabled ? [{ id: 'catering', name: t('catering'), icon: ShoppingBagIcon }] : []),
@@ -276,6 +277,15 @@ export default function CommunityDetailPage() {
               communityName={community?.name || ''}
               onShowCreate={() => setShowCreateAnnouncement(true)}
             />
+          )}
+          {activeTab === 'work-orders' && communityId && (
+            <div className="h-[calc(100vh-300px)]">
+              <iframe
+                src={`/admin/communities/${communityId}/maintenance`}
+                className="w-full h-full border-0 rounded-lg"
+                title="Work Orders"
+              />
+            </div>
           )}
           {activeTab === 'catering' && communityId && (
             isAdmin ? (

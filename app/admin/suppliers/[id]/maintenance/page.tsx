@@ -9,6 +9,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   TruckIcon,
+  WrenchScrewdriverIcon,
+  HomeIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -371,6 +373,7 @@ export default function SupplierAdminMaintenancePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

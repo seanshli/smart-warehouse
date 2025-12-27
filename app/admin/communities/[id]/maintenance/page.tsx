@@ -9,6 +9,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   BuildingOfficeIcon,
+  WrenchScrewdriverIcon,
+  HomeIcon,
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -309,6 +311,7 @@ export default function CommunityMaintenancePage() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

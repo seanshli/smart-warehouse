@@ -92,11 +92,32 @@ export default function AdminSignIn() {
         return
       }
 
-      // Check if user has admin privileges
+      // Check if user has admin privileges (super admin, community admin, building admin, or supplier admin)
       const session = await getSession()
       
-      // Verify admin privileges in database
-      if (!(session?.user as any)?.isAdmin) {
+      if (!session?.user) {
+        setError('Session not found. Please try again.')
+        return
+      }
+
+      // Check admin context to verify user has any admin privileges
+      const contextResponse = await fetch('/api/admin/context')
+      if (!contextResponse.ok) {
+        setError('Failed to verify admin privileges.')
+        return
+      }
+
+      const adminContext = await contextResponse.json()
+      
+      // Allow if user is super admin, community admin, building admin, or supplier admin
+      const hasAdminAccess = 
+        (session?.user as any)?.isAdmin || 
+        adminContext?.isSuperAdmin ||
+        (adminContext?.communityAdmins && adminContext.communityAdmins.length > 0) ||
+        (adminContext?.buildingAdmins && adminContext.buildingAdmins.length > 0) ||
+        (adminContext?.supplierAdmins && adminContext.supplierAdmins.length > 0)
+
+      if (!hasAdminAccess) {
         setError('Access denied. Admin privileges required.')
         return
       }

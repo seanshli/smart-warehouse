@@ -1098,15 +1098,31 @@ export default function AdminUsersPage() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     User Details: {selectedUser.name}
                   </h3>
-                  {!isEditing && (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-                    >
-                      <PencilIcon className="h-4 w-4 mr-1" />
-                      Edit
-                    </button>
-                  )}
+                  <div className="flex space-x-2">
+                    {!isEditing && isSuperAdmin && (
+                      <button
+                        onClick={() => {
+                          setShowUserDetails(false)
+                          setShowSetPasswordModal(true)
+                          setPasswordToSet('')
+                          setConfirmPassword('')
+                        }}
+                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800"
+                      >
+                        <KeyIcon className="h-4 w-4 mr-1" />
+                        Set Password
+                      </button>
+                    )}
+                    {!isEditing && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -1642,25 +1658,40 @@ export default function AdminUsersPage() {
                   )}
                 </div>
                 
-                <div className="mt-6 flex justify-end space-x-3">
-                  {isEditing ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          setIsEditing(false)
-                          setEditFormData({
-                            name: selectedUser.name,
-                            email: selectedUser.email,
-                            phone: selectedUser.phone || '',
-                            contact: selectedUser.contact || '',
-                            language: selectedUser.language || 'en',
-                            isAdmin: selectedUser.isAdmin
-                          })
-                        }}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-                        disabled={saving}
-                      >
-                        Cancel
+                <div className="mt-6 flex justify-between items-center">
+                  {isSuperAdmin && !isEditing && (
+                    <button
+                      onClick={() => {
+                        setShowUserDetails(false)
+                        setShowSetPasswordModal(true)
+                        setPasswordToSet('')
+                        setConfirmPassword('')
+                      }}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800"
+                    >
+                      <KeyIcon className="h-4 w-4 mr-1" />
+                      Set Password
+                    </button>
+                  )}
+                  <div className="flex justify-end space-x-3 ml-auto">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setIsEditing(false)
+                            setEditFormData({
+                              name: selectedUser.name,
+                              email: selectedUser.email,
+                              phone: selectedUser.phone || '',
+                              contact: selectedUser.contact || '',
+                              language: selectedUser.language || 'en',
+                              isAdmin: selectedUser.isAdmin
+                            })
+                          }}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                          disabled={saving}
+                        >
+                          Cancel
                       </button>
                       <button
                         onClick={handleSaveUser}

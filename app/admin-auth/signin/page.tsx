@@ -88,6 +88,19 @@ export default function AdminSignIn() {
       })
 
       if (result?.error) {
+        // Check if user exists but doesn't have credentials
+        try {
+          const checkResponse = await fetch(`/api/admin/setup-user-credentials?email=${encodeURIComponent(email)}`)
+          if (checkResponse.ok) {
+            const checkData = await checkResponse.json()
+            if (!checkData.user?.hasCredentials) {
+              setError('User exists but credentials not set up. Please contact administrator to set up password.')
+              return
+            }
+          }
+        } catch (err) {
+          // Ignore check errors
+        }
         setError('Invalid credentials')
         return
       }

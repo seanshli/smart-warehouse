@@ -773,7 +773,11 @@ export default function AdminUsersPage() {
   }
 
   const handleSetPassword = async () => {
-    if (!selectedUser) return
+    if (!selectedUser) {
+      console.error('[Set Password] No user selected')
+      toast.error('No user selected')
+      return
+    }
 
     if (!passwordToSet || passwordToSet.length < 6) {
       toast.error('Password must be at least 6 characters')
@@ -785,6 +789,7 @@ export default function AdminUsersPage() {
       return
     }
 
+    console.log('[Set Password] Setting password for user:', selectedUser.email, 'isSuperAdmin:', isSuperAdmin)
     setSettingPassword(true)
     try {
       const response = await fetch(`/api/admin/users/${selectedUser.id}/set-password`, {
@@ -793,15 +798,17 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ password: passwordToSet })
       })
 
+      const responseData = await response.json()
+      console.log('[Set Password] Response:', { status: response.status, data: responseData })
+
       if (response.ok) {
-        const data = await response.json()
-        toast.success('Password set successfully')
+        toast.success('Password set successfully! User can now log in with this password.')
         setShowSetPasswordModal(false)
         setPasswordToSet('')
         setConfirmPassword('')
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to set password')
+        console.error('[Set Password] Error response:', responseData)
+        toast.error(responseData.error || 'Failed to set password')
       }
     } catch (err: any) {
       console.error('[Set Password] Request failed:', err)
@@ -1053,15 +1060,17 @@ export default function AdminUsersPage() {
                       {isSuperAdmin && (
                         <button
                           onClick={() => {
+                            console.log('[Set Password] Button clicked for user:', user.email)
                             setSelectedUser(user)
                             setShowSetPasswordModal(true)
                             setPasswordToSet('')
                             setConfirmPassword('')
                           }}
-                          className="inline-flex items-center px-2 py-1 border border-blue-300 dark:border-blue-600 text-xs font-medium rounded text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900"
-                          title="Set Password (Super Admin)"
+                          className="inline-flex items-center px-2 py-1 border border-blue-300 dark:border-blue-600 text-xs font-medium rounded text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800"
+                          title="Set Password (Super Admin Only)"
                         >
-                          <KeyIcon className="h-4 w-4" />
+                          <KeyIcon className="h-4 w-4 mr-1" />
+                          <span className="hidden sm:inline">Set</span>
                         </button>
                       )}
                       <button
@@ -1730,9 +1739,12 @@ export default function AdminUsersPage() {
               <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowSetPasswordModal(false)}></div>
               
               <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-full sm:max-w-md w-full p-4 sm:p-6 mx-2 sm:mx-4">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
                   Set Password for {selectedUser.name}
                 </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  Email: <span className="font-mono text-xs">{selectedUser.email}</span>
+                </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Set a specific password for this user. They can use this password to log in immediately.
                 </p>

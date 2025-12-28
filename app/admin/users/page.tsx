@@ -1691,6 +1691,81 @@ export default function AdminUsersPage() {
             onSuccess={fetchUsers}
           />
         )}
+
+        {/* Set Password Modal */}
+        {showSetPasswordModal && selectedUser && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-2 sm:p-4">
+              <div className="fixed inset-0 bg-black opacity-30" onClick={() => setShowSetPasswordModal(false)}></div>
+              
+              <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-full sm:max-w-md w-full p-4 sm:p-6 mx-2 sm:mx-4">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                  Set Password for {selectedUser.name}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Set a specific password for this user. They can use this password to log in immediately.
+                </p>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      New Password *
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordToSet}
+                      onChange={(e) => setPasswordToSet(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="Enter new password (min 6 characters)"
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Confirm Password *
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="Confirm new password"
+                      minLength={6}
+                    />
+                  </div>
+
+                  {passwordToSet && confirmPassword && passwordToSet !== confirmPassword && (
+                    <p className="text-sm text-red-600">Passwords do not match</p>
+                  )}
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSetPasswordModal(false)
+                      setPasswordToSet('')
+                      setConfirmPassword('')
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                    disabled={settingPassword}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSetPassword}
+                    disabled={settingPassword || !passwordToSet || passwordToSet.length < 6 || passwordToSet !== confirmPassword}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {settingPassword ? 'Setting...' : 'Set Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

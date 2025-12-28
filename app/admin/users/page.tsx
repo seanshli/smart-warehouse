@@ -445,6 +445,11 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [showSetPasswordModal, setShowSetPasswordModal] = useState(false)
+  const [passwordToSet, setPasswordToSet] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [settingPassword, setSettingPassword] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
@@ -492,6 +497,7 @@ export default function AdminUsersPage() {
       .then(res => res.json())
       .then(data => {
         setIsCurrentUserSuperAdmin(data.isSuperAdmin || false)
+        setIsSuperAdmin(data.isSuperAdmin || false)
       })
       .catch(err => {
         console.error('Error fetching admin context:', err)
@@ -752,14 +758,56 @@ export default function AdminUsersPage() {
 
       if (response.ok) {
         const data = await response.json()
+        toast.success(`Password reset successfully. Temporary password: ${data.tempPassword}`)
         alert(`Password reset successfully. Temporary password: ${data.tempPassword}\n\nPlease communicate this password to the user securely.`)
       } else {
         const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to reset password')
         alert(errorData.error || 'Failed to reset password')
       }
     } catch (err: any) {
       console.error('[Reset Password] Request failed:', err)
+      toast.error(err.message || 'Failed to reset password')
       alert(err.message || 'Failed to reset password. Please check your connection and try again.')
+    }
+  }
+
+  const handleSetPassword = async () => {
+    if (!selectedUser) return
+
+    if (!passwordToSet || passwordToSet.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    if (passwordToSet !== confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    setSettingPassword(true)
+    try {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}/set-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordToSet })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success('Password set successfully')
+        setShowSetPasswordModal(false)
+        setPasswordToSet('')
+        setConfirmPassword('')
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to set password')
+      }
+    } catch (err: any) {
+      console.error('[Set Password] Request failed:', err)
+      toast.error(err.message || 'Failed to set password. Please check your connection and try again.')
+    } finally {
+      setSettingPassword(false)
     }
   }
 
@@ -1002,10 +1050,24 @@ export default function AdminUsersPage() {
                         <EyeIcon className="h-4 w-4" />
                       </button>
                       
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user)
+                            setShowSetPasswordModal(true)
+                            setPasswordToSet('')
+                            setConfirmPassword('')
+                          }}
+                          className="inline-flex items-center px-2 py-1 border border-blue-300 dark:border-blue-600 text-xs font-medium rounded text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900"
+                          title="Set Password (Super Admin)"
+                        >
+                          <KeyIcon className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleResetPassword(user.id)}
                         className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        title="Reset Password"
+                        title="Reset Password (Auto-generate)"
                       >
                         <KeyIcon className="h-4 w-4" />
                       </button>

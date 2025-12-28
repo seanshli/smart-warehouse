@@ -36,11 +36,16 @@ export async function POST(
     const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8)
     const hashedPassword = await bcrypt.hash(tempPassword, 12)
 
-    // Update user password
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        // password and forcePasswordChange will be available after running add-user-fields.sql
+    // Update user credentials
+    await prisma.userCredentials.upsert({
+      where: { userId: user.id },
+      update: { 
+        password: hashedPassword,
+        updatedAt: new Date()
+      },
+      create: {
+        userId: user.id,
+        password: hashedPassword
       }
     })
 
@@ -49,9 +54,15 @@ export async function POST(
     // In a real application, you would send this password securely to the user
     // For now, we'll return it in the response (admin should communicate it securely)
     return NextResponse.json({ 
+      success: true,
       message: 'Password reset successfully',
       tempPassword: tempPassword, // In production, this should be sent via email/SMS
-      note: 'Please communicate this temporary password to the user securely. They will be required to change it on next login.'
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      },
+      note: 'Please communicate this temporary password to the user securely.'
     })
   } catch (error) {
     console.error('Error resetting password:', error)

@@ -58,6 +58,46 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.isAdmin = (user as any).isAdmin
         
+        // Check if user is a community admin
+        try {
+          const communityMemberships = await prisma.communityMember.findMany({
+            where: {
+              userId: user.id,
+              role: 'ADMIN',
+            },
+            select: {
+              communityId: true,
+            },
+          })
+          
+          if (communityMemberships.length > 0) {
+            token.isCommunityAdmin = true
+            token.communityIds = communityMemberships.map(m => m.communityId)
+          }
+        } catch (error) {
+          console.error('Error checking community admin status:', error)
+        }
+        
+        // Check if user is a building admin
+        try {
+          const buildingMemberships = await prisma.buildingMember.findMany({
+            where: {
+              userId: user.id,
+              role: 'ADMIN',
+            },
+            select: {
+              buildingId: true,
+            },
+          })
+          
+          if (buildingMemberships.length > 0) {
+            token.isBuildingAdmin = true
+            token.buildingIds = buildingMemberships.map(m => m.buildingId)
+          }
+        } catch (error) {
+          console.error('Error checking building admin status:', error)
+        }
+        
         // Check if user is a supplier admin
         try {
           const supplierMemberships = await prisma.supplierMember.findMany({
@@ -92,7 +132,7 @@ export const authOptions: NextAuthOptions = {
         
         token.loginTime = Date.now()
         token.sessionId = Date.now().toString() // Unique session ID
-        console.log('[auth] JWT: New session created for', user.email, 'sessionId:', token.sessionId, 'isAdmin:', token.isAdmin, 'isSupplierAdmin:', token.isSupplierAdmin)
+        console.log('[auth] JWT: New session created for', user.email, 'sessionId:', token.sessionId, 'isAdmin:', token.isAdmin, 'isCommunityAdmin:', token.isCommunityAdmin, 'isBuildingAdmin:', token.isBuildingAdmin, 'isSupplierAdmin:', token.isSupplierAdmin)
         return token
       }
       
@@ -114,6 +154,10 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         (session.user as any).id = token.id as string
         (session.user as any).isAdmin = token.isAdmin as boolean
+        (session.user as any).isCommunityAdmin = token.isCommunityAdmin as boolean
+        (session.user as any).communityIds = token.communityIds as string[]
+        (session.user as any).isBuildingAdmin = token.isBuildingAdmin as boolean
+        (session.user as any).buildingIds = token.buildingIds as string[]
         (session.user as any).isSupplierAdmin = token.isSupplierAdmin as boolean
         (session.user as any).supplierIds = token.supplierIds as string[]
       }

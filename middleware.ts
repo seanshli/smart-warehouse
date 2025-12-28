@@ -133,14 +133,30 @@ export async function middleware(request: NextRequest) {
 
   // Handle admin authentication
   if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin-auth')) {
+    const isSuperAdmin = !!(token as any)?.isAdmin
+    const isCommunityAdmin = !!(token as any)?.isCommunityAdmin
+    const isBuildingAdmin = !!(token as any)?.isBuildingAdmin
+    const isSupplierAdmin = !!(token as any)?.isSupplierAdmin
+    const supplierIds = ((token as any)?.supplierIds as string[]) || []
+    
+    // Check if accessing supplier-specific route
+    const supplierRouteMatch = request.nextUrl.pathname.match(/^\/admin\/suppliers\/([^\/]+)/)
+    const requestedSupplierId = supplierRouteMatch ? supplierRouteMatch[1] : null
+    
     console.log('[Middleware] Admin route check:', {
       path: request.nextUrl.pathname,
       hasToken: !!token,
-      isAdmin: (token as any).isAdmin,
+      isSuperAdmin,
+      isCommunityAdmin,
+      isBuildingAdmin,
+      isSupplierAdmin,
       userEmail: (token as any).email
     })
     
-    if (!(token as any).isAdmin) {
+    // Allow if user has any admin privileges
+    const hasAdminAccess = isSuperAdmin || isCommunityAdmin || isBuildingAdmin || (isSupplierAdmin && !!requestedSupplierId && supplierIds.includes(requestedSupplierId))
+    
+    if (!hasAdminAccess) {
       console.log('[Middleware] Redirecting to admin signin - not admin')
       return NextResponse.redirect(new URL('/admin-auth/signin?error=unauthorized', request.url))
     }

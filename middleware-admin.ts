@@ -19,6 +19,8 @@ export default withAuth(
         // For admin routes, check if user has admin privileges
         if (req.nextUrl.pathname.startsWith('/admin')) {
           const isSuperAdmin = !!token?.isAdmin
+          const isCommunityAdmin = !!token?.isCommunityAdmin
+          const isBuildingAdmin = !!token?.isBuildingAdmin
           const isSupplierAdmin = !!token?.isSupplierAdmin
           const supplierIds = (token?.supplierIds as string[]) || []
           
@@ -26,8 +28,12 @@ export default withAuth(
           const supplierRouteMatch = req.nextUrl.pathname.match(/^\/admin\/suppliers\/([^\/]+)/)
           const requestedSupplierId = supplierRouteMatch ? supplierRouteMatch[1] : null
           
-          // Allow if super admin OR supplier admin accessing their supplier
-          return isSuperAdmin || (isSupplierAdmin && !!requestedSupplierId && supplierIds.includes(requestedSupplierId))
+          // Allow if:
+          // 1. Super admin, OR
+          // 2. Community admin, OR
+          // 3. Building admin, OR
+          // 4. Supplier admin accessing their supplier
+          return isSuperAdmin || isCommunityAdmin || isBuildingAdmin || (isSupplierAdmin && !!requestedSupplierId && supplierIds.includes(requestedSupplierId))
         }
         
         return true

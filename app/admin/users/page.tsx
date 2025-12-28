@@ -1701,23 +1701,24 @@ export default function AdminUsersPage() {
                           disabled={saving}
                         >
                           Cancel
-                      </button>
+                        </button>
+                        <button
+                          onClick={handleSaveUser}
+                          disabled={saving}
+                          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                      </>
+                    ) : (
                       <button
-                        onClick={handleSaveUser}
-                        disabled={saving}
-                        className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                        onClick={() => setShowUserDetails(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
                       >
-                        {saving ? 'Saving...' : 'Save Changes'}
+                        Close
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setShowUserDetails(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-                    >
-                      Close
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

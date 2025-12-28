@@ -22,18 +22,51 @@ export default withAuth(
           const isCommunityAdmin = !!token?.isCommunityAdmin
           const isBuildingAdmin = !!token?.isBuildingAdmin
           const isSupplierAdmin = !!token?.isSupplierAdmin
+          const communityIds = (token?.communityIds as string[]) || []
+          const buildingIds = (token?.buildingIds as string[]) || []
           const supplierIds = (token?.supplierIds as string[]) || []
+          
+          // Super admin can access everything
+          if (isSuperAdmin) {
+            return true
+          }
+          
+          // Check if accessing community-specific route
+          const communityRouteMatch = req.nextUrl.pathname.match(/^\/admin\/communities\/([^\/]+)/)
+          const requestedCommunityId = communityRouteMatch ? communityRouteMatch[1] : null
+          
+          // Check if accessing building-specific route
+          const buildingRouteMatch = req.nextUrl.pathname.match(/^\/admin\/buildings\/([^\/]+)/)
+          const requestedBuildingId = buildingRouteMatch ? buildingRouteMatch[1] : null
           
           // Check if accessing supplier-specific route
           const supplierRouteMatch = req.nextUrl.pathname.match(/^\/admin\/suppliers\/([^\/]+)/)
           const requestedSupplierId = supplierRouteMatch ? supplierRouteMatch[1] : null
           
-          // Allow if:
-          // 1. Super admin, OR
-          // 2. Community admin, OR
-          // 3. Building admin, OR
-          // 4. Supplier admin accessing their supplier
-          return isSuperAdmin || isCommunityAdmin || isBuildingAdmin || (isSupplierAdmin && !!requestedSupplierId && supplierIds.includes(requestedSupplierId))
+          // Community admin: can only access their own communities
+          if (requestedCommunityId) {
+            return isCommunityAdmin && communityIds.includes(requestedCommunityId)
+          }
+          
+          // Building admin: can only access their own buildings
+          if (requestedBuildingId) {
+            return isBuildingAdmin && buildingIds.includes(requestedBuildingId)
+          }
+          
+          // Supplier admin: can only access their own suppliers
+          if (requestedSupplierId) {
+            return isSupplierAdmin && supplierIds.includes(requestedSupplierId)
+          }
+          
+          // For general admin routes (like /admin, /admin/households), allow if user has any admin role
+          // But restrict community/building/supplier admins from accessing super admin pages
+          if (isCommunityAdmin || isBuildingAdmin || isSupplierAdmin) {
+            // Allow access to their specific admin pages
+            // Block access to super admin only pages (will be handled by individual API endpoints)
+            return true
+          }
+          
+          return false
         }
         
         return true

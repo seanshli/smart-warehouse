@@ -52,6 +52,44 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Check if user is community admin
+    let isCommunityAdmin = false
+    let userCommunityIds: string[] = []
+    if (userId) {
+      const communityMemberships = await prisma.communityMember.findMany({
+        where: {
+          userId: userId,
+          role: 'ADMIN'
+        },
+        select: {
+          communityId: true
+        }
+      })
+      if (communityMemberships.length > 0) {
+        isCommunityAdmin = true
+        userCommunityIds = communityMemberships.map(m => m.communityId)
+      }
+    }
+
+    // Check if user is building admin
+    let isBuildingAdmin = false
+    let userBuildingIds: string[] = []
+    if (userId) {
+      const buildingMemberships = await prisma.buildingMember.findMany({
+        where: {
+          userId: userId,
+          role: 'ADMIN'
+        },
+        select: {
+          buildingId: true
+        }
+      })
+      if (buildingMemberships.length > 0) {
+        isBuildingAdmin = true
+        userBuildingIds = buildingMemberships.map(m => m.buildingId)
+      }
+    }
+
     if (isSupplierAdmin && userSupplierId) {
       // Supplier admin can only see tickets assigned to their supplier
       where.assignedSupplierId = userSupplierId
@@ -68,6 +106,68 @@ export async function GET(request: NextRequest) {
         }
         if (communityId) {
           where.household.building = { communityId }
+        }
+      }
+    } else if (isCommunityAdmin && userCommunityIds.length > 0) {
+      // Community admin can only see tickets for their communities
+      // If communityId is provided, verify it's one of their communities
+      if (communityId && !userCommunityIds.includes(communityId)) {
+        return NextResponse.json({ error: 'Access denied. You are not an admin for this community.' }, { status: 403 })
+      }
+      
+      // Filter by user's communities
+      where.household = {
+        building: {
+          communityId: { in: userCommunityIds }
+        }
+      }
+      
+      // Apply additional filters if provided
+      if (status) where.status = status
+      if (category) where.category = category
+      if (householdId) {
+        where.household = {
+          ...where.household,
+          id: householdId,
+          building: {
+            communityId: { in: userCommunityIds }
+          }
+        }
+      }
+      // If specific communityId is provided, use it (already verified above)
+      if (communityId && userCommunityIds.includes(communityId)) {
+        where.household = {
+          ...where.household,
+          building: { communityId }
+        }
+      }
+    } else if (isBuildingAdmin && userBuildingIds.length > 0) {
+      // Building admin can only see tickets for their buildings
+      // If buildingId is provided, verify it's one of their buildings
+      if (buildingId && !userBuildingIds.includes(buildingId)) {
+        return NextResponse.json({ error: 'Access denied. You are not an admin for this building.' }, { status: 403 })
+      }
+      
+      // Filter by user's buildings
+      where.household = {
+        buildingId: { in: userBuildingIds }
+      }
+      
+      // Apply additional filters if provided
+      if (status) where.status = status
+      if (category) where.category = category
+      if (householdId) {
+        where.household = {
+          ...where.household,
+          id: householdId,
+          buildingId: { in: userBuildingIds }
+        }
+      }
+      // If specific buildingId is provided, use it (already verified above)
+      if (buildingId && userBuildingIds.includes(buildingId)) {
+        where.household = {
+          ...where.household,
+          buildingId: buildingId
         }
       }
     } else if (isAdmin && user?.isAdmin) {

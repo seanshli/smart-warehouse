@@ -16,14 +16,27 @@ export async function GET(
     const userId = (session.user as any).id
     const buildingId = params.id
 
-    // Check if user is admin
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { isAdmin: true }
     })
 
-    if (!user?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const isSuperAdmin = !!user?.isAdmin
+
+    // If not super admin, check if user is admin for this specific building
+    if (!isSuperAdmin) {
+      const buildingMember = await prisma.buildingMember.findFirst({
+        where: {
+          userId: userId,
+          buildingId: buildingId,
+          role: 'ADMIN'
+        }
+      })
+
+      if (!buildingMember) {
+        return NextResponse.json({ error: 'Access denied. You are not an admin for this building.' }, { status: 403 })
+      }
     }
 
     const building = await prisma.building.findUnique({

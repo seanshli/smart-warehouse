@@ -16,14 +16,27 @@ export async function GET(
     const userId = (session.user as any).id
     const communityId = params.id
 
-    // Check if user is admin
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { isAdmin: true }
     })
 
-    if (!user?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    const isSuperAdmin = !!user?.isAdmin
+
+    // If not super admin, check if user is admin for this specific community
+    if (!isSuperAdmin) {
+      const communityMember = await prisma.communityMember.findFirst({
+        where: {
+          userId: userId,
+          communityId: communityId,
+          role: 'ADMIN'
+        }
+      })
+
+      if (!communityMember) {
+        return NextResponse.json({ error: 'Access denied. You are not an admin for this community.' }, { status: 403 })
+      }
     }
 
     const community = await prisma.community.findUnique({

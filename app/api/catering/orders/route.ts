@@ -28,9 +28,35 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const buildingId = searchParams.get('buildingId')
     const communityId = searchParams.get('communityId')
-    const isAdmin = searchParams.get('admin') === 'true' && user.isAdmin
+    const isSuperAdmin = searchParams.get('admin') === 'true' && user.isAdmin
 
-    if (isAdmin) {
+    // Check if user is community admin
+    const communityMemberships = await prisma.communityMember.findMany({
+      where: {
+        userId: user.id,
+        role: 'ADMIN'
+      },
+      select: {
+        communityId: true
+      }
+    })
+    const isCommunityAdmin = communityMemberships.length > 0
+    const userCommunityIds = communityMemberships.map(m => m.communityId)
+
+    // Check if user is building admin
+    const buildingMemberships = await prisma.buildingMember.findMany({
+      where: {
+        userId: user.id,
+        role: 'ADMIN'
+      },
+      select: {
+        buildingId: true
+      }
+    })
+    const isBuildingAdmin = buildingMemberships.length > 0
+    const userBuildingIds = buildingMemberships.map(m => m.buildingId)
+
+    if (isSuperAdmin || isCommunityAdmin || isBuildingAdmin) {
       // Build where clause for admin filtering
       const whereClause: any = {}
       
@@ -38,15 +64,51 @@ export async function GET(request: NextRequest) {
         whereClause.status = status
       }
 
-      // Filter by building or community if provided
-      if (buildingId || communityId) {
-        whereClause.household = {}
-        if (buildingId) {
+      // Community admin: can only see orders for their communities
+      if (isCommunityAdmin && !isSuperAdmin) {
+        // If communityId is provided, verify it's one of their communities
+        if (communityId && !userCommunityIds.includes(communityId)) {
+          return NextResponse.json({ error: 'Access denied. You are not an admin for this community.' }, { status: 403 })
+        }
+        
+        whereClause.household = {
+          building: {
+            communityId: { in: userCommunityIds }
+          }
+        }
+        
+        // If specific communityId is provided, use it (already verified above)
+        if (communityId && userCommunityIds.includes(communityId)) {
+          whereClause.household.building = { communityId }
+        }
+      }
+      // Building admin: can only see orders for their buildings
+      else if (isBuildingAdmin && !isSuperAdmin) {
+        // If buildingId is provided, verify it's one of their buildings
+        if (buildingId && !userBuildingIds.includes(buildingId)) {
+          return NextResponse.json({ error: 'Access denied. You are not an admin for this building.' }, { status: 403 })
+        }
+        
+        whereClause.household = {
+          buildingId: { in: userBuildingIds }
+        }
+        
+        // If specific buildingId is provided, use it (already verified above)
+        if (buildingId && userBuildingIds.includes(buildingId)) {
           whereClause.household.buildingId = buildingId
         }
-        if (communityId) {
-          whereClause.household.building = {
-            communityId: communityId
+      }
+      // Super admin: can see all orders, filter by building or community if provided
+      else if (isSuperAdmin) {
+        if (buildingId || communityId) {
+          whereClause.household = {}
+          if (buildingId) {
+            whereClause.household.buildingId = buildingId
+          }
+          if (communityId) {
+            whereClause.household.building = {
+              communityId: communityId
+            }
           }
         }
       }

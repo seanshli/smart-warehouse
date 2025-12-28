@@ -496,13 +496,23 @@ export default function AdminUsersPage() {
     fetch('/api/admin/context')
       .then(res => res.json())
       .then(data => {
-        setIsCurrentUserSuperAdmin(data.isSuperAdmin || false)
-        setIsSuperAdmin(data.isSuperAdmin || false)
+        const superAdmin = data.isSuperAdmin || false
+        console.log('[Admin Users] Admin context loaded:', { 
+          isSuperAdmin: superAdmin,
+          email: session?.user?.email 
+        })
+        setIsCurrentUserSuperAdmin(superAdmin)
+        setIsSuperAdmin(superAdmin)
       })
       .catch(err => {
         console.error('Error fetching admin context:', err)
+        // Fallback: check if user is admin from session
+        if ((session?.user as any)?.isAdmin) {
+          setIsSuperAdmin(true)
+          setIsCurrentUserSuperAdmin(true)
+        }
       })
-  }, [])
+  }, [session])
 
   // Fetch users, communities, and buildings
   useEffect(() => {
@@ -1057,28 +1067,31 @@ export default function AdminUsersPage() {
                         <EyeIcon className="h-4 w-4" />
                       </button>
                       
-                      {isSuperAdmin && (
+                      {/* Set Password Button - Manual password setting */}
+                      {(isSuperAdmin || isCurrentUserSuperAdmin) && (
                         <button
                           onClick={() => {
-                            console.log('[Set Password] Button clicked for user:', user.email)
+                            console.log('[Set Password] Button clicked for user:', user.email, 'isSuperAdmin:', isSuperAdmin)
                             setSelectedUser(user)
                             setShowSetPasswordModal(true)
                             setPasswordToSet('')
                             setConfirmPassword('')
                           }}
-                          className="inline-flex items-center px-2 py-1 border border-blue-300 dark:border-blue-600 text-xs font-medium rounded text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800"
-                          title="Set Password (Super Admin Only)"
+                          className="inline-flex items-center px-2 py-1 border-2 border-blue-500 dark:border-blue-400 text-xs font-semibold rounded text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 shadow-sm"
+                          title="Set Password - Manually set a specific password"
                         >
                           <KeyIcon className="h-4 w-4 mr-1" />
-                          <span className="hidden sm:inline">Set</span>
+                          <span>Set</span>
                         </button>
                       )}
+                      {/* Reset Password Button - Auto-generate random password */}
                       <button
                         onClick={() => handleResetPassword(user.id)}
                         className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        title="Reset Password (Auto-generate)"
+                        title="Reset Password - Auto-generate random password"
                       >
                         <KeyIcon className="h-4 w-4" />
+                        <span className="ml-1 hidden sm:inline">Reset</span>
                       </button>
                       
                       <button
@@ -1108,17 +1121,18 @@ export default function AdminUsersPage() {
                     User Details: {selectedUser.name}
                   </h3>
                   <div className="flex space-x-2">
-                    {!isEditing && isSuperAdmin && (
+                    {!isEditing && (isSuperAdmin || isCurrentUserSuperAdmin) && (
                       <button
                         onClick={() => {
+                          console.log('[Set Password] Modal button clicked for user:', selectedUser.email)
                           setShowUserDetails(false)
                           setShowSetPasswordModal(true)
                           setPasswordToSet('')
                           setConfirmPassword('')
                         }}
-                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800"
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
                       >
-                        <KeyIcon className="h-4 w-4 mr-1" />
+                        <KeyIcon className="h-4 w-4 mr-1.5" />
                         Set Password
                       </button>
                     )}
@@ -1668,17 +1682,18 @@ export default function AdminUsersPage() {
                 </div>
                 
                 <div className="mt-6 flex justify-between items-center">
-                  {isSuperAdmin && !isEditing && (
+                  {(isSuperAdmin || isCurrentUserSuperAdmin) && !isEditing && (
                     <button
                       onClick={() => {
+                        console.log('[Set Password] Bottom button clicked for user:', selectedUser.email)
                         setShowUserDetails(false)
                         setShowSetPasswordModal(true)
                         setPasswordToSet('')
                         setConfirmPassword('')
                       }}
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800"
+                      className="inline-flex items-center px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 border-2 border-blue-500 dark:border-blue-400 shadow-sm"
                     >
-                      <KeyIcon className="h-4 w-4 mr-1" />
+                      <KeyIcon className="h-4 w-4 mr-1.5" />
                       Set Password
                     </button>
                   )}

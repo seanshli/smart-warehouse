@@ -13,7 +13,7 @@
 CREATE OR REPLACE FUNCTION public.get_user_email() RETURNS text AS $$
   SELECT COALESCE(
     NULLIF(current_setting('request.jwt.claims', true)::json->>'email', ''),
-    NULLIF(current_setting('request.jwt.claims', true)::json->>'https://supabase.co/user_metadata'->>'email', '')
+    NULLIF((current_setting('request.jwt.claims', true)::json->'https://supabase.co/user_metadata')::json->>'email', '')
   );
 $$ LANGUAGE sql STABLE;
 

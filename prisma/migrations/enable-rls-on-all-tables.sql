@@ -5,20 +5,24 @@
 -- ============================================
 -- Helper Functions
 -- ============================================
+-- Note: Supabase provides built-in auth functions (auth.uid(), auth.email(), etc.)
+-- If those don't exist, we'll create fallback functions
+-- For service role check, we'll use the JWT role claim
 
--- Function to check if current user is authenticated (has valid JWT)
-CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS $$
-  SELECT NULLIF(current_setting('request.jwt.claims', true)::json->>'sub', '')::uuid;
+-- Function to get current user email from JWT (fallback if Supabase's auth.email() doesn't exist)
+CREATE OR REPLACE FUNCTION public.get_user_email() RETURNS text AS $$
+  SELECT COALESCE(
+    NULLIF(current_setting('request.jwt.claims', true)::json->>'email', ''),
+    NULLIF(current_setting('request.jwt.claims', true)::json->>'https://supabase.co/user_metadata'->>'email', '')
+  );
 $$ LANGUAGE sql STABLE;
 
 -- Function to check if current user is service role (bypasses RLS)
-CREATE OR REPLACE FUNCTION auth.is_service_role() RETURNS boolean AS $$
-  SELECT current_setting('request.jwt.claims', true)::json->>'role' = 'service_role';
-$$ LANGUAGE sql STABLE;
-
--- Function to get current user email from JWT
-CREATE OR REPLACE FUNCTION auth.email() RETURNS text AS $$
-  SELECT NULLIF(current_setting('request.jwt.claims', true)::json->>'email', '');
+CREATE OR REPLACE FUNCTION public.is_service_role() RETURNS boolean AS $$
+  SELECT COALESCE(
+    current_setting('request.jwt.claims', true)::json->>'role' = 'service_role',
+    false
+  );
 $$ LANGUAGE sql STABLE;
 
 -- ============================================
@@ -224,12 +228,16 @@ CREATE POLICY IF NOT EXISTS UserCredentials_service_only ON public."UserCredenti
 -- Only service role can write
 
 -- Allow users to read their own user record
+-- Try Supabase's auth.email() first, fallback to custom function
 CREATE POLICY IF NOT EXISTS users_read_own ON public.users
     FOR SELECT TO authenticated
     USING (
         id IN (
             SELECT id FROM public.users 
-            WHERE email = auth.email()
+            WHERE email = COALESCE(
+                (SELECT auth.email()),
+                public.get_user_email()
+            )
         )
     );
 

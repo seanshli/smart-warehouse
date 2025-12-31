@@ -174,34 +174,40 @@ END $$;
 -- Only service role can access NextAuth tables
 
 -- Accounts
-CREATE POLICY IF NOT EXISTS accounts_service_only ON public.accounts
+DROP POLICY IF EXISTS accounts_service_only ON public.accounts;
+CREATE POLICY accounts_service_only ON public.accounts
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
-CREATE POLICY IF NOT EXISTS Account_service_only ON public."Account"
+DROP POLICY IF EXISTS Account_service_only ON public."Account";
+CREATE POLICY Account_service_only ON public."Account"
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
 -- Sessions
-CREATE POLICY IF NOT EXISTS sessions_service_only ON public.sessions
+DROP POLICY IF EXISTS sessions_service_only ON public.sessions;
+CREATE POLICY sessions_service_only ON public.sessions
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
-CREATE POLICY IF NOT EXISTS Session_service_only ON public."Session"
+DROP POLICY IF EXISTS Session_service_only ON public."Session";
+CREATE POLICY Session_service_only ON public."Session"
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
 -- Verification Tokens
-CREATE POLICY IF NOT EXISTS verification_tokens_service_only ON public.verification_tokens
+DROP POLICY IF EXISTS verification_tokens_service_only ON public.verification_tokens;
+CREATE POLICY verification_tokens_service_only ON public.verification_tokens
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
-CREATE POLICY IF NOT EXISTS VerificationToken_service_only ON public."VerificationToken"
+DROP POLICY IF EXISTS VerificationToken_service_only ON public."VerificationToken";
+CREATE POLICY VerificationToken_service_only ON public."VerificationToken"
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
@@ -211,12 +217,14 @@ CREATE POLICY IF NOT EXISTS VerificationToken_service_only ON public."Verificati
 -- ============================================
 -- Only service role can access user credentials
 
-CREATE POLICY IF NOT EXISTS user_credentials_service_only ON public.user_credentials
+DROP POLICY IF EXISTS user_credentials_service_only ON public.user_credentials;
+CREATE POLICY user_credentials_service_only ON public.user_credentials
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
-CREATE POLICY IF NOT EXISTS UserCredentials_service_only ON public."UserCredentials"
+DROP POLICY IF EXISTS UserCredentials_service_only ON public."UserCredentials";
+CREATE POLICY UserCredentials_service_only ON public."UserCredentials"
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
@@ -229,7 +237,8 @@ CREATE POLICY IF NOT EXISTS UserCredentials_service_only ON public."UserCredenti
 
 -- Allow users to read their own user record
 -- Try Supabase's auth.email() first, fallback to custom function
-CREATE POLICY IF NOT EXISTS users_read_own ON public.users
+DROP POLICY IF EXISTS users_read_own ON public.users;
+CREATE POLICY users_read_own ON public.users
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -241,7 +250,8 @@ CREATE POLICY IF NOT EXISTS users_read_own ON public.users
         )
     );
 
-CREATE POLICY IF NOT EXISTS User_read_own ON public."User"
+DROP POLICY IF EXISTS User_read_own ON public."User";
+CREATE POLICY User_read_own ON public."User"
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -251,12 +261,14 @@ CREATE POLICY IF NOT EXISTS User_read_own ON public."User"
     );
 
 -- Block all writes from PostgREST (only service role can write)
-CREATE POLICY IF NOT EXISTS users_no_write ON public.users
+DROP POLICY IF EXISTS users_no_write ON public.users;
+CREATE POLICY users_no_write ON public.users
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
 
-CREATE POLICY IF NOT EXISTS User_no_write ON public."User"
+DROP POLICY IF EXISTS User_no_write ON public."User";
+CREATE POLICY User_no_write ON public."User"
     FOR ALL TO authenticated, anon
     USING (false)
     WITH CHECK (false);
@@ -268,7 +280,8 @@ CREATE POLICY IF NOT EXISTS User_no_write ON public."User"
 -- Admins can access all
 
 -- Households: Members can read their household
-CREATE POLICY IF NOT EXISTS households_read_member ON public.households
+DROP POLICY IF EXISTS households_read_member ON public.households;
+CREATE POLICY households_read_member ON public.households
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -278,7 +291,8 @@ CREATE POLICY IF NOT EXISTS households_read_member ON public.households
         )
     );
 
-CREATE POLICY IF NOT EXISTS Household_read_member ON public."Household"
+DROP POLICY IF EXISTS Household_read_member ON public."Household";
+CREATE POLICY Household_read_member ON public."Household"
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -289,7 +303,8 @@ CREATE POLICY IF NOT EXISTS Household_read_member ON public."Household"
     );
 
 -- Household Members: Users can read their own memberships
-CREATE POLICY IF NOT EXISTS household_members_read_own ON public.household_members
+DROP POLICY IF EXISTS household_members_read_own ON public.household_members;
+CREATE POLICY household_members_read_own ON public.household_members
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -302,7 +317,8 @@ CREATE POLICY IF NOT EXISTS household_members_read_own ON public.household_membe
         )
     );
 
-CREATE POLICY IF NOT EXISTS HouseholdMember_read_own ON public."HouseholdMember"
+DROP POLICY IF EXISTS HouseholdMember_read_own ON public."HouseholdMember";
+CREATE POLICY HouseholdMember_read_own ON public."HouseholdMember"
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -316,7 +332,8 @@ CREATE POLICY IF NOT EXISTS HouseholdMember_read_own ON public."HouseholdMember"
     );
 
 -- Rooms, Cabinets, Categories, Items: Members can access their household's data
-CREATE POLICY IF NOT EXISTS rooms_read_household ON public.rooms
+DROP POLICY IF EXISTS rooms_read_household ON public.rooms;
+CREATE POLICY rooms_read_household ON public.rooms
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -326,7 +343,8 @@ CREATE POLICY IF NOT EXISTS rooms_read_household ON public.rooms
         )
     );
 
-CREATE POLICY IF NOT EXISTS Room_read_household ON public."Room"
+DROP POLICY IF EXISTS Room_read_household ON public."Room";
+CREATE POLICY Room_read_household ON public."Room"
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -336,7 +354,8 @@ CREATE POLICY IF NOT EXISTS Room_read_household ON public."Room"
         )
     );
 
-CREATE POLICY IF NOT EXISTS cabinets_read_household ON public.cabinets
+DROP POLICY IF EXISTS cabinets_read_household ON public.cabinets;
+CREATE POLICY cabinets_read_household ON public.cabinets
     FOR SELECT TO authenticated
     USING (
         room_id IN (
@@ -347,7 +366,8 @@ CREATE POLICY IF NOT EXISTS cabinets_read_household ON public.cabinets
         )
     );
 
-CREATE POLICY IF NOT EXISTS Cabinet_read_household ON public."Cabinet"
+DROP POLICY IF EXISTS Cabinet_read_household ON public."Cabinet";
+CREATE POLICY Cabinet_read_household ON public."Cabinet"
     FOR SELECT TO authenticated
     USING (
         room_id IN (
@@ -358,7 +378,8 @@ CREATE POLICY IF NOT EXISTS Cabinet_read_household ON public."Cabinet"
         )
     );
 
-CREATE POLICY IF NOT EXISTS categories_read_household ON public.categories
+DROP POLICY IF EXISTS categories_read_household ON public.categories;
+CREATE POLICY categories_read_household ON public.categories
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -368,7 +389,8 @@ CREATE POLICY IF NOT EXISTS categories_read_household ON public.categories
         )
     );
 
-CREATE POLICY IF NOT EXISTS Category_read_household ON public."Category"
+DROP POLICY IF EXISTS Category_read_household ON public."Category";
+CREATE POLICY Category_read_household ON public."Category"
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -378,7 +400,8 @@ CREATE POLICY IF NOT EXISTS Category_read_household ON public."Category"
         )
     );
 
-CREATE POLICY IF NOT EXISTS items_read_household ON public.items
+DROP POLICY IF EXISTS items_read_household ON public.items;
+CREATE POLICY items_read_household ON public.items
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -388,7 +411,8 @@ CREATE POLICY IF NOT EXISTS items_read_household ON public.items
         )
     );
 
-CREATE POLICY IF NOT EXISTS Item_read_household ON public."Item"
+DROP POLICY IF EXISTS Item_read_household ON public."Item";
+CREATE POLICY Item_read_household ON public."Item"
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -398,7 +422,8 @@ CREATE POLICY IF NOT EXISTS Item_read_household ON public."Item"
         )
     );
 
-CREATE POLICY IF NOT EXISTS item_history_read_household ON public.item_history
+DROP POLICY IF EXISTS item_history_read_household ON public.item_history;
+CREATE POLICY item_history_read_household ON public.item_history
     FOR SELECT TO authenticated
     USING (
         item_id IN (
@@ -409,7 +434,8 @@ CREATE POLICY IF NOT EXISTS item_history_read_household ON public.item_history
         )
     );
 
-CREATE POLICY IF NOT EXISTS user_activities_read_own ON public.user_activities
+DROP POLICY IF EXISTS user_activities_read_own ON public.user_activities;
+CREATE POLICY user_activities_read_own ON public.user_activities
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -417,7 +443,8 @@ CREATE POLICY IF NOT EXISTS user_activities_read_own ON public.user_activities
         )
     );
 
-CREATE POLICY IF NOT EXISTS Activity_read_own ON public."Activity"
+DROP POLICY IF EXISTS Activity_read_own ON public."Activity";
+CREATE POLICY Activity_read_own ON public."Activity"
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -425,7 +452,8 @@ CREATE POLICY IF NOT EXISTS Activity_read_own ON public."Activity"
         )
     );
 
-CREATE POLICY IF NOT EXISTS barcodes_read_own ON public.barcodes
+DROP POLICY IF EXISTS barcodes_read_own ON public.barcodes;
+CREATE POLICY barcodes_read_own ON public.barcodes
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -433,7 +461,8 @@ CREATE POLICY IF NOT EXISTS barcodes_read_own ON public.barcodes
         )
     );
 
-CREATE POLICY IF NOT EXISTS notifications_read_own ON public.notifications
+DROP POLICY IF EXISTS notifications_read_own ON public.notifications;
+CREATE POLICY notifications_read_own ON public.notifications
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -441,7 +470,8 @@ CREATE POLICY IF NOT EXISTS notifications_read_own ON public.notifications
         )
     );
 
-CREATE POLICY IF NOT EXISTS Notification_read_own ON public."Notification"
+DROP POLICY IF EXISTS Notification_read_own ON public."Notification";
+CREATE POLICY Notification_read_own ON public."Notification"
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -479,7 +509,8 @@ END $$;
 -- Admins can read all
 
 -- Communities: Members can read their community
-CREATE POLICY IF NOT EXISTS communities_read_member ON public.communities
+DROP POLICY IF EXISTS communities_read_member ON public.communities;
+CREATE POLICY communities_read_member ON public.communities
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -490,7 +521,8 @@ CREATE POLICY IF NOT EXISTS communities_read_member ON public.communities
     );
 
 -- Buildings: Members can read their building
-CREATE POLICY IF NOT EXISTS buildings_read_member ON public.buildings
+DROP POLICY IF EXISTS buildings_read_member ON public.buildings;
+CREATE POLICY buildings_read_member ON public.buildings
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -506,7 +538,8 @@ CREATE POLICY IF NOT EXISTS buildings_read_member ON public.buildings
     );
 
 -- Community/Building Members: Users can read their own memberships
-CREATE POLICY IF NOT EXISTS community_members_read_own ON public.community_members
+DROP POLICY IF EXISTS community_members_read_own ON public.community_members;
+CREATE POLICY community_members_read_own ON public.community_members
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -519,7 +552,8 @@ CREATE POLICY IF NOT EXISTS community_members_read_own ON public.community_membe
         )
     );
 
-CREATE POLICY IF NOT EXISTS building_members_read_own ON public.building_members
+DROP POLICY IF EXISTS building_members_read_own ON public.building_members;
+CREATE POLICY building_members_read_own ON public.building_members
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -533,7 +567,8 @@ CREATE POLICY IF NOT EXISTS building_members_read_own ON public.building_members
     );
 
 -- Floors, Mailboxes, Door Bells, Packages, Facilities: Members can read their building's data
-CREATE POLICY IF NOT EXISTS floors_read_building ON public.floors
+DROP POLICY IF EXISTS floors_read_building ON public.floors;
+CREATE POLICY floors_read_building ON public.floors
     FOR SELECT TO authenticated
     USING (
         building_id IN (
@@ -548,27 +583,8 @@ CREATE POLICY IF NOT EXISTS floors_read_building ON public.floors
         )
     );
 
-CREATE POLICY IF NOT EXISTS mailboxes_read_building ON public.mailboxes
-    FOR SELECT TO authenticated
-    USING (
-        building_id IN (
-            SELECT building_id FROM public.building_members bm
-            JOIN public.users u ON bm.user_id = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
-            UNION
-            SELECT building_id FROM public.household_members hm
-            JOIN public.households h ON hm.household_id = h.id
-            JOIN public.users u ON hm.user_id = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
-        )
-        OR household_id IN (
-            SELECT household_id FROM public.household_members hm
-            JOIN public.users u ON hm.user_id = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
-        )
-    );
-
-CREATE POLICY IF NOT EXISTS door_bells_read_building ON public.door_bells
+DROP POLICY IF EXISTS mailboxes_read_building ON public.mailboxes;
+CREATE POLICY mailboxes_read_building ON public.mailboxes
     FOR SELECT TO authenticated
     USING (
         building_id IN (
@@ -588,22 +604,8 @@ CREATE POLICY IF NOT EXISTS door_bells_read_building ON public.door_bells
         )
     );
 
-CREATE POLICY IF NOT EXISTS package_lockers_read_building ON public.package_lockers
-    FOR SELECT TO authenticated
-    USING (
-        building_id IN (
-            SELECT building_id FROM public.building_members bm
-            JOIN public.users u ON bm.user_id = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
-            UNION
-            SELECT building_id FROM public.household_members hm
-            JOIN public.households h ON hm.household_id = h.id
-            JOIN public.users u ON hm.user_id = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
-        )
-    );
-
-CREATE POLICY IF NOT EXISTS packages_read_building ON public.packages
+DROP POLICY IF EXISTS door_bells_read_building ON public.door_bells;
+CREATE POLICY door_bells_read_building ON public.door_bells
     FOR SELECT TO authenticated
     USING (
         building_id IN (
@@ -623,7 +625,8 @@ CREATE POLICY IF NOT EXISTS packages_read_building ON public.packages
         )
     );
 
-CREATE POLICY IF NOT EXISTS facilities_read_building ON public.facilities
+DROP POLICY IF EXISTS package_lockers_read_building ON public.package_lockers;
+CREATE POLICY package_lockers_read_building ON public.package_lockers
     FOR SELECT TO authenticated
     USING (
         building_id IN (
@@ -638,7 +641,45 @@ CREATE POLICY IF NOT EXISTS facilities_read_building ON public.facilities
         )
     );
 
-CREATE POLICY IF NOT EXISTS facility_operating_hours_read_building ON public.facility_operating_hours
+DROP POLICY IF EXISTS packages_read_building ON public.packages;
+CREATE POLICY packages_read_building ON public.packages
+    FOR SELECT TO authenticated
+    USING (
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            UNION
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
+        )
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+        )
+    );
+
+DROP POLICY IF EXISTS facilities_read_building ON public.facilities;
+CREATE POLICY facilities_read_building ON public.facilities
+    FOR SELECT TO authenticated
+    USING (
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            UNION
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
+        )
+    );
+
+DROP POLICY IF EXISTS facility_operating_hours_read_building ON public.facility_operating_hours;
+CREATE POLICY facility_operating_hours_read_building ON public.facility_operating_hours
     FOR SELECT TO authenticated
     USING (
         facility_id IN (
@@ -656,7 +697,8 @@ CREATE POLICY IF NOT EXISTS facility_operating_hours_read_building ON public.fac
         )
     );
 
-CREATE POLICY IF NOT EXISTS facility_reservations_read_own ON public.facility_reservations
+DROP POLICY IF EXISTS facility_reservations_read_own ON public.facility_reservations;
+CREATE POLICY facility_reservations_read_own ON public.facility_reservations
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -701,7 +743,8 @@ END $$;
 -- ============================================
 -- Members can read their working groups
 
-CREATE POLICY IF NOT EXISTS working_groups_read_member ON public.working_groups
+DROP POLICY IF EXISTS working_groups_read_member ON public.working_groups;
+CREATE POLICY working_groups_read_member ON public.working_groups
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -716,7 +759,8 @@ CREATE POLICY IF NOT EXISTS working_groups_read_member ON public.working_groups
         )
     );
 
-CREATE POLICY IF NOT EXISTS working_group_members_read_member ON public.working_group_members
+DROP POLICY IF EXISTS working_group_members_read_member ON public.working_group_members;
+CREATE POLICY working_group_members_read_member ON public.working_group_members
     FOR SELECT TO authenticated
     USING (
         working_group_id IN (
@@ -726,7 +770,8 @@ CREATE POLICY IF NOT EXISTS working_group_members_read_member ON public.working_
         )
     );
 
-CREATE POLICY IF NOT EXISTS working_group_permissions_read_member ON public.working_group_permissions
+DROP POLICY IF EXISTS working_group_permissions_read_member ON public.working_group_permissions;
+CREATE POLICY working_group_permissions_read_member ON public.working_group_permissions
     FOR SELECT TO authenticated
     USING (
         working_group_id IN (
@@ -736,7 +781,8 @@ CREATE POLICY IF NOT EXISTS working_group_permissions_read_member ON public.work
         )
     );
 
-CREATE POLICY IF NOT EXISTS join_requests_read_own ON public.join_requests
+DROP POLICY IF EXISTS join_requests_read_own ON public.join_requests;
+CREATE POLICY join_requests_read_own ON public.join_requests
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -778,7 +824,8 @@ END $$;
 -- ============================================
 -- Users can read their own conversations and messages
 
-CREATE POLICY IF NOT EXISTS conversations_read_own ON public.conversations
+DROP POLICY IF EXISTS conversations_read_own ON public.conversations;
+CREATE POLICY conversations_read_own ON public.conversations
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -791,7 +838,8 @@ CREATE POLICY IF NOT EXISTS conversations_read_own ON public.conversations
         )
     );
 
-CREATE POLICY IF NOT EXISTS call_sessions_read_own ON public.call_sessions
+DROP POLICY IF EXISTS call_sessions_read_own ON public.call_sessions;
+CREATE POLICY call_sessions_read_own ON public.call_sessions
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -804,7 +852,8 @@ CREATE POLICY IF NOT EXISTS call_sessions_read_own ON public.call_sessions
         )
     );
 
-CREATE POLICY IF NOT EXISTS chat_history_read_own ON public.chat_history
+DROP POLICY IF EXISTS chat_history_read_own ON public.chat_history;
+CREATE POLICY chat_history_read_own ON public.chat_history
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -817,7 +866,8 @@ CREATE POLICY IF NOT EXISTS chat_history_read_own ON public.chat_history
         )
     );
 
-CREATE POLICY IF NOT EXISTS door_bell_call_sessions_read_building ON public.door_bell_call_sessions
+DROP POLICY IF EXISTS door_bell_call_sessions_read_building ON public.door_bell_call_sessions;
+CREATE POLICY door_bell_call_sessions_read_building ON public.door_bell_call_sessions
     FOR SELECT TO authenticated
     USING (
         door_bell_id IN (
@@ -835,7 +885,8 @@ CREATE POLICY IF NOT EXISTS door_bell_call_sessions_read_building ON public.door
         )
     );
 
-CREATE POLICY IF NOT EXISTS door_bell_messages_read_building ON public.door_bell_messages
+DROP POLICY IF EXISTS door_bell_messages_read_building ON public.door_bell_messages;
+CREATE POLICY door_bell_messages_read_building ON public.door_bell_messages
     FOR SELECT TO authenticated
     USING (
         call_session_id IN (
@@ -881,7 +932,8 @@ END $$;
 -- Users can read tickets for their household
 -- Admins can read all tickets
 
-CREATE POLICY IF NOT EXISTS maintenance_tickets_read_household ON public.maintenance_tickets
+DROP POLICY IF EXISTS maintenance_tickets_read_household ON public.maintenance_tickets;
+CREATE POLICY maintenance_tickets_read_household ON public.maintenance_tickets
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -903,7 +955,8 @@ CREATE POLICY IF NOT EXISTS maintenance_tickets_read_household ON public.mainten
         )
     );
 
-CREATE POLICY IF NOT EXISTS maintenance_ticket_work_logs_read_ticket ON public.maintenance_ticket_work_logs
+DROP POLICY IF EXISTS maintenance_ticket_work_logs_read_ticket ON public.maintenance_ticket_work_logs;
+CREATE POLICY maintenance_ticket_work_logs_read_ticket ON public.maintenance_ticket_work_logs
     FOR SELECT TO authenticated
     USING (
         ticket_id IN (
@@ -919,7 +972,8 @@ CREATE POLICY IF NOT EXISTS maintenance_ticket_work_logs_read_ticket ON public.m
         )
     );
 
-CREATE POLICY IF NOT EXISTS maintenance_ticket_signoffs_read_ticket ON public.maintenance_ticket_signoffs
+DROP POLICY IF EXISTS maintenance_ticket_signoffs_read_ticket ON public.maintenance_ticket_signoffs;
+CREATE POLICY maintenance_ticket_signoffs_read_ticket ON public.maintenance_ticket_signoffs
     FOR SELECT TO authenticated
     USING (
         ticket_id IN (
@@ -932,7 +986,8 @@ CREATE POLICY IF NOT EXISTS maintenance_ticket_signoffs_read_ticket ON public.ma
         )
     );
 
-CREATE POLICY IF NOT EXISTS working_crews_read_member ON public.working_crews
+DROP POLICY IF EXISTS working_crews_read_member ON public.working_crews;
+CREATE POLICY working_crews_read_member ON public.working_crews
     FOR SELECT TO authenticated
     USING (
         id IN (
@@ -952,7 +1007,8 @@ CREATE POLICY IF NOT EXISTS working_crews_read_member ON public.working_crews
         )
     );
 
-CREATE POLICY IF NOT EXISTS crew_members_read_member ON public.crew_members
+DROP POLICY IF EXISTS crew_members_read_member ON public.crew_members;
+CREATE POLICY crew_members_read_member ON public.crew_members
     FOR SELECT TO authenticated
     USING (
         crew_id IN (
@@ -962,11 +1018,13 @@ CREATE POLICY IF NOT EXISTS crew_members_read_member ON public.crew_members
         )
     );
 
-CREATE POLICY IF NOT EXISTS suppliers_read_active ON public.suppliers
+DROP POLICY IF EXISTS suppliers_read_active ON public.suppliers;
+CREATE POLICY suppliers_read_active ON public.suppliers
     FOR SELECT TO authenticated
     USING (is_active = true);
 
-CREATE POLICY IF NOT EXISTS supplier_members_read_own ON public.supplier_members
+DROP POLICY IF EXISTS supplier_members_read_own ON public.supplier_members;
+CREATE POLICY supplier_members_read_own ON public.supplier_members
     FOR SELECT TO authenticated
     USING (
         user_id IN (
@@ -974,7 +1032,8 @@ CREATE POLICY IF NOT EXISTS supplier_members_read_own ON public.supplier_members
         )
     );
 
-CREATE POLICY IF NOT EXISTS job_routing_config_read_all ON public.job_routing_config
+DROP POLICY IF EXISTS job_routing_config_read_all ON public.job_routing_config;
+CREATE POLICY job_routing_config_read_all ON public.job_routing_config
     FOR SELECT TO authenticated
     USING (true);
 
@@ -1005,7 +1064,8 @@ END $$;
 -- Users can read catering data for their building/community
 -- Users can read their own orders
 
-CREATE POLICY IF NOT EXISTS catering_services_read_building ON public.catering_services
+DROP POLICY IF EXISTS catering_services_read_building ON public.catering_services;
+CREATE POLICY catering_services_read_building ON public.catering_services
     FOR SELECT TO authenticated
     USING (
         building_id IN (
@@ -1025,7 +1085,8 @@ CREATE POLICY IF NOT EXISTS catering_services_read_building ON public.catering_s
         )
     );
 
-CREATE POLICY IF NOT EXISTS catering_categories_read_service ON public.catering_categories
+DROP POLICY IF EXISTS catering_categories_read_service ON public.catering_categories;
+CREATE POLICY catering_categories_read_service ON public.catering_categories
     FOR SELECT TO authenticated
     USING (
         service_id IN (
@@ -1048,7 +1109,8 @@ CREATE POLICY IF NOT EXISTS catering_categories_read_service ON public.catering_
         )
     );
 
-CREATE POLICY IF NOT EXISTS catering_category_time_slots_read_category ON public.catering_category_time_slots
+DROP POLICY IF EXISTS catering_category_time_slots_read_category ON public.catering_category_time_slots;
+CREATE POLICY catering_category_time_slots_read_category ON public.catering_category_time_slots
     FOR SELECT TO authenticated
     USING (
         category_id IN (
@@ -1074,7 +1136,8 @@ CREATE POLICY IF NOT EXISTS catering_category_time_slots_read_category ON public
         )
     );
 
-CREATE POLICY IF NOT EXISTS catering_menu_items_read_service ON public.catering_menu_items
+DROP POLICY IF EXISTS catering_menu_items_read_service ON public.catering_menu_items;
+CREATE POLICY catering_menu_items_read_service ON public.catering_menu_items
     FOR SELECT TO authenticated
     USING (
         service_id IN (
@@ -1097,7 +1160,8 @@ CREATE POLICY IF NOT EXISTS catering_menu_items_read_service ON public.catering_
         )
     );
 
-CREATE POLICY IF NOT EXISTS catering_menu_item_time_slots_read_item ON public.catering_menu_item_time_slots
+DROP POLICY IF EXISTS catering_menu_item_time_slots_read_item ON public.catering_menu_item_time_slots;
+CREATE POLICY catering_menu_item_time_slots_read_item ON public.catering_menu_item_time_slots
     FOR SELECT TO authenticated
     USING (
         menu_item_id IN (
@@ -1123,7 +1187,8 @@ CREATE POLICY IF NOT EXISTS catering_menu_item_time_slots_read_item ON public.ca
         )
     );
 
-CREATE POLICY IF NOT EXISTS catering_orders_read_own ON public.catering_orders
+DROP POLICY IF EXISTS catering_orders_read_own ON public.catering_orders;
+CREATE POLICY catering_orders_read_own ON public.catering_orders
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -1141,7 +1206,8 @@ CREATE POLICY IF NOT EXISTS catering_orders_read_own ON public.catering_orders
         )
     );
 
-CREATE POLICY IF NOT EXISTS catering_order_items_read_order ON public.catering_order_items
+DROP POLICY IF EXISTS catering_order_items_read_order ON public.catering_order_items;
+CREATE POLICY catering_order_items_read_order ON public.catering_order_items
     FOR SELECT TO authenticated
     USING (
         order_id IN (
@@ -1186,7 +1252,8 @@ END $$;
 -- ============================================
 -- Users can read their household's IoT devices
 
-CREATE POLICY IF NOT EXISTS iot_devices_read_household ON public.iot_devices
+DROP POLICY IF EXISTS iot_devices_read_household ON public.iot_devices;
+CREATE POLICY iot_devices_read_household ON public.iot_devices
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -1196,7 +1263,8 @@ CREATE POLICY IF NOT EXISTS iot_devices_read_household ON public.iot_devices
         )
     );
 
-CREATE POLICY IF NOT EXISTS home_assistant_configs_read_household ON public.home_assistant_configs
+DROP POLICY IF EXISTS home_assistant_configs_read_household ON public.home_assistant_configs;
+CREATE POLICY home_assistant_configs_read_household ON public.home_assistant_configs
     FOR SELECT TO authenticated
     USING (
         household_id IN (
@@ -1231,7 +1299,8 @@ END $$;
 -- ============================================
 -- Users can read announcements for their community/building
 
-CREATE POLICY IF NOT EXISTS announcements_read_community ON public.announcements
+DROP POLICY IF EXISTS announcements_read_community ON public.announcements;
+CREATE POLICY announcements_read_community ON public.announcements
     FOR SELECT TO authenticated
     USING (
         target_type = 'ALL_HOUSEHOLDS'
@@ -1257,7 +1326,8 @@ CREATE POLICY IF NOT EXISTS announcements_read_community ON public.announcements
         ))
     );
 
-CREATE POLICY IF NOT EXISTS announcement_reads_read_own ON public.announcement_reads
+DROP POLICY IF EXISTS announcement_reads_read_own ON public.announcement_reads;
+CREATE POLICY announcement_reads_read_own ON public.announcement_reads
     FOR SELECT TO authenticated
     USING (
         user_id IN (

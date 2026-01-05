@@ -49,7 +49,7 @@ ALTER TABLE IF EXISTS public.User ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.households ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.Household ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.household_members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.HouseholdMember ENABLE ROW LEVEL SECURITY;
+-- HouseholdMember is mapped to household_members, already enabled above
 ALTER TABLE IF EXISTS public.rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.Room ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.cabinets ENABLE ROW LEVEL SECURITY;
@@ -132,7 +132,7 @@ DECLARE
         'accounts', 'sessions', 'verification_tokens', 'Account', 'Session', 'VerificationToken',
         'user_credentials', 'UserCredentials',
         'users', 'User',
-        'households', 'Household', 'household_members', 'HouseholdMember',
+        'households', 'Household', 'household_members',
         'rooms', 'Room', 'cabinets', 'Cabinet', 'categories', 'Category',
         'items', 'Item', 'item_history', 'user_activities', 'Activity',
         'barcodes', 'notifications', 'Notification',
@@ -213,21 +213,228 @@ CREATE POLICY VerificationToken_service_only ON public."VerificationToken"
     WITH CHECK (false);
 
 -- ============================================
--- RLS Policies: User Credentials (Very Restrictive)
+-- RLS Policies: User Credentials
 -- ============================================
--- Only service role can access user credentials
+-- Users can read their own credentials
+-- Community/Building admins can update credentials for users in their working groups/crews
 
-DROP POLICY IF EXISTS user_credentials_service_only ON public.user_credentials;
-CREATE POLICY user_credentials_service_only ON public.user_credentials
-    FOR ALL TO authenticated, anon
-    USING (false)
-    WITH CHECK (false);
+-- Users can read their own credentials
+DROP POLICY IF EXISTS user_credentials_read_own ON public.user_credentials;
+CREATE POLICY user_credentials_read_own ON public.user_credentials
+    FOR SELECT TO authenticated
+    USING (
+        user_id IN (
+            SELECT id FROM public.users 
+            WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
+        )
+    );
 
-DROP POLICY IF EXISTS UserCredentials_service_only ON public."UserCredentials";
-CREATE POLICY UserCredentials_service_only ON public."UserCredentials"
-    FOR ALL TO authenticated, anon
-    USING (false)
-    WITH CHECK (false);
+-- Community admins can update credentials for users in working groups of their community
+DROP POLICY IF EXISTS user_credentials_update_community_admin ON public.user_credentials;
+CREATE POLICY user_credentials_update_community_admin ON public.user_credentials
+    FOR UPDATE TO authenticated
+    USING (
+        user_id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR user_id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm2
+                JOIN public.users u ON cm2.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm2.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm2
+                    JOIN public.users u ON cm2.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm2.role = 'ADMIN'
+                )
+            )
+        )
+    )
+    WITH CHECK (
+        user_id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR user_id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm2
+                JOIN public.users u ON cm2.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm2.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm2
+                    JOIN public.users u ON cm2.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm2.role = 'ADMIN'
+                )
+            )
+        )
+    );
+
+-- Building admins can update credentials for users in working crews of their building
+DROP POLICY IF EXISTS user_credentials_update_building_admin ON public.user_credentials;
+CREATE POLICY user_credentials_update_building_admin ON public.user_credentials
+    FOR UPDATE TO authenticated
+    USING (
+        user_id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        user_id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    );
+
+-- Community/Building admins can create credentials for new users in their working groups/crews
+DROP POLICY IF EXISTS user_credentials_create_admin ON public.user_credentials;
+CREATE POLICY user_credentials_create_admin ON public.user_credentials
+    FOR INSERT TO authenticated
+    WITH CHECK (
+        user_id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR user_id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm2
+                JOIN public.users u ON cm2.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm2.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm2
+                    JOIN public.users u ON cm2.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm2.role = 'ADMIN'
+                )
+            )
+            OR wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    );
+
+-- Block all other access (delete, etc.)
+DROP POLICY IF EXISTS user_credentials_no_delete ON public.user_credentials;
+CREATE POLICY user_credentials_no_delete ON public.user_credentials
+    FOR DELETE TO authenticated, anon
+    USING (false);
+
+DROP POLICY IF EXISTS UserCredentials_read_own ON public."UserCredentials";
+CREATE POLICY UserCredentials_read_own ON public."UserCredentials"
+    FOR SELECT TO authenticated
+    USING (
+        "userId" IN (
+            SELECT id FROM public."User" 
+            WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
+        )
+    );
+
+DROP POLICY IF EXISTS UserCredentials_update_admin ON public."UserCredentials";
+CREATE POLICY UserCredentials_update_admin ON public."UserCredentials"
+    FOR UPDATE TO authenticated
+    USING (
+        "userId" IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public."User" u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR "userId" IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public."User" u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        "userId" IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public."User" u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR "userId" IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public."User" u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    );
+
+DROP POLICY IF EXISTS UserCredentials_no_delete ON public."UserCredentials";
+CREATE POLICY UserCredentials_no_delete ON public."UserCredentials"
+    FOR DELETE TO authenticated, anon
+    USING (false);
 
 -- ============================================
 -- RLS Policies: Users Table
@@ -260,18 +467,170 @@ CREATE POLICY User_read_own ON public."User"
         )
     );
 
--- Block all writes from PostgREST (only service role can write)
-DROP POLICY IF EXISTS users_no_write ON public.users;
-CREATE POLICY users_no_write ON public.users
-    FOR ALL TO authenticated, anon
-    USING (false)
+-- Community admins can update user info for users in working groups of their community
+DROP POLICY IF EXISTS users_update_community_admin ON public.users;
+CREATE POLICY users_update_community_admin ON public.users
+    FOR UPDATE TO authenticated
+    USING (
+        id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm2
+                JOIN public.users u ON cm2.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm2.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm2
+                    JOIN public.users u ON cm2.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm2.role = 'ADMIN'
+                )
+            )
+        )
+    )
+    WITH CHECK (
+        id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm2
+                JOIN public.users u ON cm2.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm2.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm2
+                    JOIN public.users u ON cm2.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm2.role = 'ADMIN'
+                )
+            )
+        )
+    );
+
+-- Building admins can update user info for users in working crews of their building
+DROP POLICY IF EXISTS users_update_building_admin ON public.users;
+CREATE POLICY users_update_building_admin ON public.users
+    FOR UPDATE TO authenticated
+    USING (
+        id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    );
+
+-- Block all other writes (insert, delete) from PostgREST (only service role can write)
+DROP POLICY IF EXISTS users_no_insert ON public.users;
+CREATE POLICY users_no_insert ON public.users
+    FOR INSERT TO authenticated, anon
     WITH CHECK (false);
 
-DROP POLICY IF EXISTS User_no_write ON public."User";
-CREATE POLICY User_no_write ON public."User"
-    FOR ALL TO authenticated, anon
-    USING (false)
+DROP POLICY IF EXISTS users_no_delete ON public.users;
+CREATE POLICY users_no_delete ON public.users
+    FOR DELETE TO authenticated, anon
+    USING (false);
+
+DROP POLICY IF EXISTS User_update_community_admin ON public."User";
+CREATE POLICY User_update_community_admin ON public."User"
+    FOR UPDATE TO authenticated
+    USING (
+        id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public."User" u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public."User" u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        id IN (
+            SELECT DISTINCT wgm.user_id FROM public.working_group_members wgm
+            JOIN public.working_groups wg ON wgm.working_group_id = wg.id
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public."User" u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+        OR id IN (
+            SELECT DISTINCT cm.user_id FROM public.crew_members cm
+            JOIN public.working_crews wc ON cm.crew_id = wc.id
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public."User" u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    );
+
+DROP POLICY IF EXISTS User_no_insert ON public."User";
+CREATE POLICY User_no_insert ON public."User"
+    FOR INSERT TO authenticated, anon
     WITH CHECK (false);
+
+DROP POLICY IF EXISTS User_no_delete ON public."User";
+CREATE POLICY User_no_delete ON public."User"
+    FOR DELETE TO authenticated, anon
+    USING (false);
 
 -- ============================================
 -- RLS Policies: Household Tables
@@ -285,8 +644,8 @@ CREATE POLICY households_read_member ON public.households
     FOR SELECT TO authenticated
     USING (
         id IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -296,8 +655,8 @@ CREATE POLICY Household_read_member ON public."Household"
     FOR SELECT TO authenticated
     USING (
         id IN (
-            SELECT "householdId" FROM public."HouseholdMember" hm
-            JOIN public."User" u ON hm."userId" = u.id
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -307,26 +666,26 @@ DROP POLICY IF EXISTS household_members_read_own ON public.household_members;
 CREATE POLICY household_members_read_own ON public.household_members
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
 
-DROP POLICY IF EXISTS HouseholdMember_read_own ON public."HouseholdMember";
-CREATE POLICY HouseholdMember_read_own ON public."HouseholdMember"
+DROP POLICY IF EXISTS HouseholdMember_read_own ON public.household_members;
+CREATE POLICY HouseholdMember_read_own ON public.household_members
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public."User" WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR householdId IN (
-            SELECT "householdId" FROM public."HouseholdMember" hm
-            JOIN public."User" u ON hm."userId" = u.id
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -336,9 +695,9 @@ DROP POLICY IF EXISTS rooms_read_household ON public.rooms;
 CREATE POLICY rooms_read_household ON public.rooms
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -347,7 +706,7 @@ DROP POLICY IF EXISTS Room_read_household ON public."Room";
 CREATE POLICY Room_read_household ON public."Room"
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
+        "householdId" IN (
             SELECT "householdId" FROM public."HouseholdMember" hm
             JOIN public."User" u ON hm."userId" = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
@@ -358,10 +717,10 @@ DROP POLICY IF EXISTS cabinets_read_household ON public.cabinets;
 CREATE POLICY cabinets_read_household ON public.cabinets
     FOR SELECT TO authenticated
     USING (
-        roomId IN (
+        room_id IN (
             SELECT r.id FROM public.rooms r
-            JOIN public.household_members hm ON r."householdId" = hm."householdId"
-            JOIN public.users u ON hm."userId" = u.id
+            JOIN public.household_members hm ON r.household_id = hm.household_id
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -370,7 +729,7 @@ DROP POLICY IF EXISTS Cabinet_read_household ON public."Cabinet";
 CREATE POLICY Cabinet_read_household ON public."Cabinet"
     FOR SELECT TO authenticated
     USING (
-        roomId IN (
+        "roomId" IN (
             SELECT r.id FROM public."Room" r
             JOIN public."HouseholdMember" hm ON r."householdId" = hm."householdId"
             JOIN public."User" u ON hm."userId" = u.id
@@ -382,9 +741,9 @@ DROP POLICY IF EXISTS categories_read_household ON public.categories;
 CREATE POLICY categories_read_household ON public.categories
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -393,7 +752,7 @@ DROP POLICY IF EXISTS Category_read_household ON public."Category";
 CREATE POLICY Category_read_household ON public."Category"
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
+        "householdId" IN (
             SELECT "householdId" FROM public."HouseholdMember" hm
             JOIN public."User" u ON hm."userId" = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
@@ -404,9 +763,9 @@ DROP POLICY IF EXISTS items_read_household ON public.items;
 CREATE POLICY items_read_household ON public.items
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -415,7 +774,7 @@ DROP POLICY IF EXISTS Item_read_household ON public."Item";
 CREATE POLICY Item_read_household ON public."Item"
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
+        "householdId" IN (
             SELECT "householdId" FROM public."HouseholdMember" hm
             JOIN public."User" u ON hm."userId" = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
@@ -426,10 +785,10 @@ DROP POLICY IF EXISTS item_history_read_household ON public.item_history;
 CREATE POLICY item_history_read_household ON public.item_history
     FOR SELECT TO authenticated
     USING (
-        itemId IN (
+        item_id IN (
             SELECT i.id FROM public.items i
-            JOIN public.household_members hm ON i."householdId" = hm."householdId"
-            JOIN public.users u ON hm."userId" = u.id
+            JOIN public.household_members hm ON i.household_id = hm.household_id
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -438,7 +797,7 @@ DROP POLICY IF EXISTS user_activities_read_own ON public.user_activities;
 CREATE POLICY user_activities_read_own ON public.user_activities
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -447,7 +806,7 @@ DROP POLICY IF EXISTS Activity_read_own ON public."Activity";
 CREATE POLICY Activity_read_own ON public."Activity"
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        "performedBy" IN (
             SELECT id FROM public."User" WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -456,7 +815,7 @@ DROP POLICY IF EXISTS barcodes_read_own ON public.barcodes;
 CREATE POLICY barcodes_read_own ON public.barcodes
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -465,7 +824,7 @@ DROP POLICY IF EXISTS notifications_read_own ON public.notifications;
 CREATE POLICY notifications_read_own ON public.notifications
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -474,7 +833,7 @@ DROP POLICY IF EXISTS Notification_read_own ON public."Notification";
 CREATE POLICY Notification_read_own ON public."Notification"
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        "userId" IN (
             SELECT id FROM public."User" WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -484,7 +843,7 @@ DO $$
 DECLARE
     table_name text;
     tables text[] := ARRAY[
-        'households', 'Household', 'household_members', 'HouseholdMember',
+        'households', 'Household', 'household_members',
         'rooms', 'Room', 'cabinets', 'Cabinet', 'categories', 'Category',
         'items', 'Item', 'item_history', 'user_activities', 'Activity',
         'barcodes', 'notifications', 'Notification'
@@ -492,13 +851,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 
@@ -514,8 +874,8 @@ CREATE POLICY communities_read_member ON public.communities
     FOR SELECT TO authenticated
     USING (
         id IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -526,14 +886,14 @@ CREATE POLICY buildings_read_member ON public.buildings
     FOR SELECT TO authenticated
     USING (
         id IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
     );
 
@@ -542,12 +902,12 @@ DROP POLICY IF EXISTS community_members_read_own ON public.community_members;
 CREATE POLICY community_members_read_own ON public.community_members
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR communityId IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        OR community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -556,12 +916,12 @@ DROP POLICY IF EXISTS building_members_read_own ON public.building_members;
 CREATE POLICY building_members_read_own ON public.building_members
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        OR building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -571,15 +931,15 @@ DROP POLICY IF EXISTS floors_read_building ON public.floors;
 CREATE POLICY floors_read_building ON public.floors
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
     );
 
@@ -587,19 +947,19 @@ DROP POLICY IF EXISTS mailboxes_read_building ON public.mailboxes;
 CREATE POLICY mailboxes_read_building ON public.mailboxes
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
-        OR householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -608,19 +968,19 @@ DROP POLICY IF EXISTS door_bells_read_building ON public.door_bells;
 CREATE POLICY door_bells_read_building ON public.door_bells
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
-        OR householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -629,15 +989,15 @@ DROP POLICY IF EXISTS package_lockers_read_building ON public.package_lockers;
 CREATE POLICY package_lockers_read_building ON public.package_lockers
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
     );
 
@@ -645,19 +1005,19 @@ DROP POLICY IF EXISTS packages_read_building ON public.packages;
 CREATE POLICY packages_read_building ON public.packages
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
-        OR householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -666,15 +1026,15 @@ DROP POLICY IF EXISTS facilities_read_building ON public.facilities;
 CREATE POLICY facilities_read_building ON public.facilities
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
     );
 
@@ -682,17 +1042,17 @@ DROP POLICY IF EXISTS facility_operating_hours_read_building ON public.facility_
 CREATE POLICY facility_operating_hours_read_building ON public.facility_operating_hours
     FOR SELECT TO authenticated
     USING (
-        facilityId IN (
+        facility_id IN (
             SELECT f.id FROM public.facilities f
-            WHERE f."buildingId" IN (
-                SELECT "buildingId" FROM public.building_members bm
-                JOIN public.users u ON bm."userId" = u.id
+            WHERE f.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                 UNION
-                SELECT "buildingId" FROM public.household_members hm
-                JOIN public.households h ON hm."householdId" = h.id
-                JOIN public.users u ON hm."userId" = u.id
-                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+                SELECT building_id FROM public.household_members hm
+                JOIN public.households h ON hm.household_id = h.id
+                JOIN public.users u ON hm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
             )
         )
     );
@@ -701,16 +1061,16 @@ DROP POLICY IF EXISTS facility_reservations_read_own ON public.facility_reservat
 CREATE POLICY facility_reservations_read_own ON public.facility_reservations
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR facilityId IN (
+        OR facility_id IN (
             SELECT f.id FROM public.facilities f
-            WHERE f."buildingId" IN (
-                SELECT "buildingId" FROM public.building_members bm
-                JOIN public.users u ON bm."userId" = u.id
+            WHERE f.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -728,13 +1088,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 
@@ -748,13 +1109,13 @@ CREATE POLICY working_groups_read_member ON public.working_groups
     FOR SELECT TO authenticated
     USING (
         id IN (
-            SELECT "workingGroupId" FROM public.working_group_members wgm
-            JOIN public.users u ON wgm."userId" = u.id
+            SELECT working_group_id FROM public.working_group_members wgm
+            JOIN public.users u ON wgm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR communityId IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        OR community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -763,9 +1124,9 @@ DROP POLICY IF EXISTS working_group_members_read_member ON public.working_group_
 CREATE POLICY working_group_members_read_member ON public.working_group_members
     FOR SELECT TO authenticated
     USING (
-        workingGroupId IN (
-            SELECT "workingGroupId" FROM public.working_group_members wgm
-            JOIN public.users u ON wgm."userId" = u.id
+        working_group_id IN (
+            SELECT working_group_id FROM public.working_group_members wgm
+            JOIN public.users u ON wgm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -774,9 +1135,9 @@ DROP POLICY IF EXISTS working_group_permissions_read_member ON public.working_gr
 CREATE POLICY working_group_permissions_read_member ON public.working_group_permissions
     FOR SELECT TO authenticated
     USING (
-        workingGroupId IN (
-            SELECT "workingGroupId" FROM public.working_group_members wgm
-            JOIN public.users u ON wgm."userId" = u.id
+        working_group_id IN (
+            SELECT working_group_id FROM public.working_group_members wgm
+            JOIN public.users u ON wgm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -785,39 +1146,301 @@ DROP POLICY IF EXISTS join_requests_read_own ON public.join_requests;
 CREATE POLICY join_requests_read_own ON public.join_requests
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR targetId IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        OR target_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND cm.role = 'ADMIN'
             UNION
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND bm.role = 'ADMIN'
         )
     );
 
--- Block all writes from PostgREST
-DO $$ 
-DECLARE
-    table_name text;
-    tables text[] := ARRAY[
-        'working_groups', 'working_group_members', 'working_group_permissions', 'join_requests'
-    ];
-BEGIN
-    FOREACH table_name IN ARRAY tables
-    LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
-    END LOOP;
-END $$;
+-- ============================================
+-- RLS Policies: Working Group Management (Admin Access)
+-- ============================================
+-- Community admins can manage working groups and members in their community
+-- Building admins can manage working crews in their building
+
+-- Working Groups: Community admins can manage working groups in their community
+DROP POLICY IF EXISTS working_groups_manage_community_admin ON public.working_groups;
+CREATE POLICY working_groups_manage_community_admin ON public.working_groups
+    FOR ALL TO authenticated
+    USING (
+        community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+    )
+    WITH CHECK (
+        community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+    );
+
+-- Working Group Members: Community admins can manage members of working groups in their community
+DROP POLICY IF EXISTS working_group_members_manage_community_admin ON public.working_group_members;
+CREATE POLICY working_group_members_manage_community_admin ON public.working_group_members
+    FOR ALL TO authenticated
+    USING (
+        working_group_id IN (
+            SELECT wg.id FROM public.working_groups wg
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        working_group_id IN (
+            SELECT wg.id FROM public.working_groups wg
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+    );
+
+-- Working Group Permissions: Community admins can manage permissions for working groups in their community
+DROP POLICY IF EXISTS working_group_permissions_manage_community_admin ON public.working_group_permissions;
+CREATE POLICY working_group_permissions_manage_community_admin ON public.working_group_permissions
+    FOR ALL TO authenticated
+    USING (
+        working_group_id IN (
+            SELECT wg.id FROM public.working_groups wg
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        working_group_id IN (
+            SELECT wg.id FROM public.working_groups wg
+            WHERE wg.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+    );
+
+-- Working Crews: Community admins can manage crews for buildings in their community
+-- Building admins can manage crews for their building
+DROP POLICY IF EXISTS working_crews_manage_community_admin ON public.working_crews;
+CREATE POLICY working_crews_manage_community_admin ON public.working_crews
+    FOR ALL TO authenticated
+    USING (
+        community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+        OR building_id IN (
+            SELECT b.id FROM public.buildings b
+            WHERE b.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+        OR building_id IN (
+            SELECT b.id FROM public.buildings b
+            WHERE b.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+        )
+    );
+
+DROP POLICY IF EXISTS working_crews_manage_building_admin ON public.working_crews;
+CREATE POLICY working_crews_manage_building_admin ON public.working_crews
+    FOR ALL TO authenticated
+    USING (
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND bm.role = 'ADMIN'
+        )
+    )
+    WITH CHECK (
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND bm.role = 'ADMIN'
+        )
+    );
+
+-- Crew Members: Community admins can manage crew members for crews in their community
+-- Building admins can manage crew members for crews in their building
+DROP POLICY IF EXISTS crew_members_manage_community_admin ON public.crew_members;
+CREATE POLICY crew_members_manage_community_admin ON public.crew_members
+    FOR ALL TO authenticated
+    USING (
+        crew_id IN (
+            SELECT wc.id FROM public.working_crews wc
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm
+                    JOIN public.users u ON cm.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm.role = 'ADMIN'
+                )
+            )
+        )
+    )
+    WITH CHECK (
+        crew_id IN (
+            SELECT wc.id FROM public.working_crews wc
+            WHERE wc.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND cm.role = 'ADMIN'
+            )
+            OR wc.building_id IN (
+                SELECT b.id FROM public.buildings b
+                WHERE b.community_id IN (
+                    SELECT community_id FROM public.community_members cm
+                    JOIN public.users u ON cm.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                    AND cm.role = 'ADMIN'
+                )
+            )
+        )
+    );
+
+DROP POLICY IF EXISTS crew_members_manage_building_admin ON public.crew_members;
+CREATE POLICY crew_members_manage_building_admin ON public.crew_members
+    FOR ALL TO authenticated
+    USING (
+        crew_id IN (
+            SELECT wc.id FROM public.working_crews wc
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    )
+    WITH CHECK (
+        crew_id IN (
+            SELECT wc.id FROM public.working_crews wc
+            WHERE wc.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+                AND bm.role = 'ADMIN'
+            )
+        )
+    );
+
+-- Join Requests: Keep existing read policy, but allow community/building admins to manage requests
+DROP POLICY IF EXISTS join_requests_manage_admin_insert ON public.join_requests;
+CREATE POLICY join_requests_manage_admin_insert ON public.join_requests
+    FOR INSERT TO authenticated
+    WITH CHECK (
+        target_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+        OR target_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND bm.role = 'ADMIN'
+        )
+    );
+
+DROP POLICY IF EXISTS join_requests_manage_admin_update ON public.join_requests;
+CREATE POLICY join_requests_manage_admin_update ON public.join_requests
+    FOR UPDATE TO authenticated
+    USING (
+        target_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+        OR target_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND bm.role = 'ADMIN'
+        )
+    )
+    WITH CHECK (
+        target_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+        OR target_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND bm.role = 'ADMIN'
+        )
+    );
+
+DROP POLICY IF EXISTS join_requests_manage_admin_delete ON public.join_requests;
+CREATE POLICY join_requests_manage_admin_delete ON public.join_requests
+    FOR DELETE TO authenticated
+    USING (
+        target_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND cm.role = 'ADMIN'
+        )
+        OR target_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
+            AND bm.role = 'ADMIN'
+        )
+    );
 
 -- ============================================
 -- RLS Policies: Communication Tables
@@ -828,12 +1451,12 @@ DROP POLICY IF EXISTS conversations_read_own ON public.conversations;
 CREATE POLICY conversations_read_own ON public.conversations
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR createdBy IN (
+        OR created_by IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -842,12 +1465,12 @@ DROP POLICY IF EXISTS call_sessions_read_own ON public.call_sessions;
 CREATE POLICY call_sessions_read_own ON public.call_sessions
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR initiatorId IN (
+        OR initiator_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -856,12 +1479,12 @@ DROP POLICY IF EXISTS chat_history_read_own ON public.chat_history;
 CREATE POLICY chat_history_read_own ON public.chat_history
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR senderId IN (
+        OR sender_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -870,16 +1493,16 @@ DROP POLICY IF EXISTS door_bell_call_sessions_read_building ON public.door_bell_
 CREATE POLICY door_bell_call_sessions_read_building ON public.door_bell_call_sessions
     FOR SELECT TO authenticated
     USING (
-        doorBellId IN (
+        door_bell_id IN (
             SELECT db.id FROM public.door_bells db
-            WHERE db."householdId" IN (
-                SELECT "householdId" FROM public.household_members hm
-                JOIN public.users u ON hm."userId" = u.id
+            WHERE db.household_id IN (
+                SELECT household_id FROM public.household_members hm
+                JOIN public.users u ON hm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
-            OR db."buildingId" IN (
-                SELECT "buildingId" FROM public.building_members bm
-                JOIN public.users u ON bm."userId" = u.id
+            OR db.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -889,17 +1512,17 @@ DROP POLICY IF EXISTS door_bell_messages_read_building ON public.door_bell_messa
 CREATE POLICY door_bell_messages_read_building ON public.door_bell_messages
     FOR SELECT TO authenticated
     USING (
-        callSessionId IN (
+        call_session_id IN (
             SELECT dbs.id FROM public.door_bell_call_sessions dbs
-            JOIN public.door_bells db ON dbs."doorBellId" = db.id
-            WHERE db."householdId" IN (
-                SELECT "householdId" FROM public.household_members hm
-                JOIN public.users u ON hm."userId" = u.id
+            JOIN public.door_bells db ON dbs.door_bell_id = db.id
+            WHERE db.household_id IN (
+                SELECT household_id FROM public.household_members hm
+                JOIN public.users u ON hm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
-            OR db."buildingId" IN (
-                SELECT "buildingId" FROM public.building_members bm
-                JOIN public.users u ON bm."userId" = u.id
+            OR db.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -916,13 +1539,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 
@@ -936,21 +1560,21 @@ DROP POLICY IF EXISTS maintenance_tickets_read_household ON public.maintenance_t
 CREATE POLICY maintenance_tickets_read_household ON public.maintenance_tickets
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR requestedById IN (
+        OR requested_by_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR assignedWorkerId IN (
+        OR assigned_worker_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR assignedCrewId IN (
+        OR assigned_crew_id IN (
             SELECT wc.id FROM public.working_crews wc
-            JOIN public.crew_members cm ON wc.id = cm."crewId"
-            JOIN public.users u ON cm."userId" = u.id
+            JOIN public.crew_members cm ON wc.id = cm.crew_id
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -959,14 +1583,14 @@ DROP POLICY IF EXISTS maintenance_ticket_work_logs_read_ticket ON public.mainten
 CREATE POLICY maintenance_ticket_work_logs_read_ticket ON public.maintenance_ticket_work_logs
     FOR SELECT TO authenticated
     USING (
-        ticketId IN (
+        ticket_id IN (
             SELECT id FROM public.maintenance_tickets mt
-            WHERE mt."householdId" IN (
-                SELECT "householdId" FROM public.household_members hm
-                JOIN public.users u ON hm."userId" = u.id
+            WHERE mt.household_id IN (
+                SELECT household_id FROM public.household_members hm
+                JOIN public.users u ON hm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
-            OR mt."assignedWorkerId" IN (
+            OR mt.assigned_worker_id IN (
                 SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -976,11 +1600,11 @@ DROP POLICY IF EXISTS maintenance_ticket_signoffs_read_ticket ON public.maintena
 CREATE POLICY maintenance_ticket_signoffs_read_ticket ON public.maintenance_ticket_signoffs
     FOR SELECT TO authenticated
     USING (
-        ticketId IN (
+        ticket_id IN (
             SELECT id FROM public.maintenance_tickets mt
-            WHERE mt."householdId" IN (
-                SELECT "householdId" FROM public.household_members hm
-                JOIN public.users u ON hm."userId" = u.id
+            WHERE mt.household_id IN (
+                SELECT household_id FROM public.household_members hm
+                JOIN public.users u ON hm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -991,18 +1615,18 @@ CREATE POLICY working_crews_read_member ON public.working_crews
     FOR SELECT TO authenticated
     USING (
         id IN (
-            SELECT "crewId" FROM public.crew_members cm
-            JOIN public.users u ON cm."userId" = u.id
+            SELECT crew_id FROM public.crew_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        OR building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR communityId IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        OR community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1011,9 +1635,9 @@ DROP POLICY IF EXISTS crew_members_read_member ON public.crew_members;
 CREATE POLICY crew_members_read_member ON public.crew_members
     FOR SELECT TO authenticated
     USING (
-        crewId IN (
-            SELECT "crewId" FROM public.crew_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        crew_id IN (
+            SELECT crew_id FROM public.crew_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1027,7 +1651,7 @@ DROP POLICY IF EXISTS supplier_members_read_own ON public.supplier_members;
 CREATE POLICY supplier_members_read_own ON public.supplier_members
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1048,13 +1672,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 
@@ -1068,19 +1693,19 @@ DROP POLICY IF EXISTS catering_services_read_building ON public.catering_service
 CREATE POLICY catering_services_read_building ON public.catering_services
     FOR SELECT TO authenticated
     USING (
-        buildingId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        building_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         )
-        OR communityId IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        OR community_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1089,21 +1714,21 @@ DROP POLICY IF EXISTS catering_categories_read_service ON public.catering_catego
 CREATE POLICY catering_categories_read_service ON public.catering_categories
     FOR SELECT TO authenticated
     USING (
-        serviceId IN (
+        service_id IN (
             SELECT id FROM public.catering_services cs
-            WHERE cs."buildingId" IN (
-                SELECT "buildingId" FROM public.building_members bm
-                JOIN public.users u ON bm."userId" = u.id
+            WHERE cs.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                 UNION
-                SELECT "buildingId" FROM public.household_members hm
-                JOIN public.households h ON hm."householdId" = h.id
-                JOIN public.users u ON hm."userId" = u.id
-                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+                SELECT building_id FROM public.household_members hm
+                JOIN public.households h ON hm.household_id = h.id
+                JOIN public.users u ON hm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
             )
-            OR cs."communityId" IN (
-                SELECT "communityId" FROM public.community_members cm
-                JOIN public.users u ON cm."userId" = u.id
+            OR cs.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -1113,23 +1738,23 @@ DROP POLICY IF EXISTS catering_category_time_slots_read_category ON public.cater
 CREATE POLICY catering_category_time_slots_read_category ON public.catering_category_time_slots
     FOR SELECT TO authenticated
     USING (
-        categoryId IN (
+        category_id IN (
             SELECT id FROM public.catering_categories cc
-            WHERE cc."serviceId" IN (
+            WHERE cc.service_id IN (
                 SELECT id FROM public.catering_services cs
-                WHERE cs."buildingId" IN (
-                    SELECT "buildingId" FROM public.building_members bm
-                    JOIN public.users u ON bm."userId" = u.id
+                WHERE cs.building_id IN (
+                    SELECT building_id FROM public.building_members bm
+                    JOIN public.users u ON bm.user_id = u.id
                     WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                     UNION
-                    SELECT "buildingId" FROM public.household_members hm
-                    JOIN public.households h ON hm."householdId" = h.id
-                    JOIN public.users u ON hm."userId" = u.id
-                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+                    SELECT building_id FROM public.household_members hm
+                    JOIN public.households h ON hm.household_id = h.id
+                    JOIN public.users u ON hm.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
                 )
-                OR cs."communityId" IN (
-                    SELECT "communityId" FROM public.community_members cm
-                    JOIN public.users u ON cm."userId" = u.id
+                OR cs.community_id IN (
+                    SELECT community_id FROM public.community_members cm
+                    JOIN public.users u ON cm.user_id = u.id
                     WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                 )
             )
@@ -1140,21 +1765,21 @@ DROP POLICY IF EXISTS catering_menu_items_read_service ON public.catering_menu_i
 CREATE POLICY catering_menu_items_read_service ON public.catering_menu_items
     FOR SELECT TO authenticated
     USING (
-        serviceId IN (
+        service_id IN (
             SELECT id FROM public.catering_services cs
-            WHERE cs."buildingId" IN (
-                SELECT "buildingId" FROM public.building_members bm
-                JOIN public.users u ON bm."userId" = u.id
+            WHERE cs.building_id IN (
+                SELECT building_id FROM public.building_members bm
+                JOIN public.users u ON bm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                 UNION
-                SELECT "buildingId" FROM public.household_members hm
-                JOIN public.households h ON hm."householdId" = h.id
-                JOIN public.users u ON hm."userId" = u.id
-                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+                SELECT building_id FROM public.household_members hm
+                JOIN public.households h ON hm.household_id = h.id
+                JOIN public.users u ON hm.user_id = u.id
+                WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
             )
-            OR cs."communityId" IN (
-                SELECT "communityId" FROM public.community_members cm
-                JOIN public.users u ON cm."userId" = u.id
+            OR cs.community_id IN (
+                SELECT community_id FROM public.community_members cm
+                JOIN public.users u ON cm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -1164,23 +1789,23 @@ DROP POLICY IF EXISTS catering_menu_item_time_slots_read_item ON public.catering
 CREATE POLICY catering_menu_item_time_slots_read_item ON public.catering_menu_item_time_slots
     FOR SELECT TO authenticated
     USING (
-        menuItemId IN (
+        menu_item_id IN (
             SELECT id FROM public.catering_menu_items cmi
-            WHERE cmi."serviceId" IN (
+            WHERE cmi.service_id IN (
                 SELECT id FROM public.catering_services cs
-                WHERE cs."buildingId" IN (
-                    SELECT "buildingId" FROM public.building_members bm
-                    JOIN public.users u ON bm."userId" = u.id
+                WHERE cs.building_id IN (
+                    SELECT building_id FROM public.building_members bm
+                    JOIN public.users u ON bm.user_id = u.id
                     WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                     UNION
-                    SELECT "buildingId" FROM public.household_members hm
-                    JOIN public.households h ON hm."householdId" = h.id
-                    JOIN public.users u ON hm."userId" = u.id
-                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+                    SELECT building_id FROM public.household_members hm
+                    JOIN public.households h ON hm.household_id = h.id
+                    JOIN public.users u ON hm.user_id = u.id
+                    WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
                 )
-                OR cs."communityId" IN (
-                    SELECT "communityId" FROM public.community_members cm
-                    JOIN public.users u ON cm."userId" = u.id
+                OR cs.community_id IN (
+                    SELECT community_id FROM public.community_members cm
+                    JOIN public.users u ON cm.user_id = u.id
                     WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
                 )
             )
@@ -1191,17 +1816,17 @@ DROP POLICY IF EXISTS catering_orders_read_own ON public.catering_orders;
 CREATE POLICY catering_orders_read_own ON public.catering_orders
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR orderedById IN (
+        OR ordered_by_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
         OR workgroup_id IN (
-            SELECT "workingGroupId" FROM public.working_group_members wgm
-            JOIN public.users u ON wgm."userId" = u.id
+            SELECT working_group_id FROM public.working_group_members wgm
+            JOIN public.users u ON wgm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1210,16 +1835,16 @@ DROP POLICY IF EXISTS catering_order_items_read_order ON public.catering_order_i
 CREATE POLICY catering_order_items_read_order ON public.catering_order_items
     FOR SELECT TO authenticated
     USING (
-        orderId IN (
+        order_id IN (
             SELECT id FROM public.catering_orders co
-            WHERE co."householdId" IN (
-                SELECT "householdId" FROM public.household_members hm
-                JOIN public.users u ON hm."userId" = u.id
+            WHERE co.household_id IN (
+                SELECT household_id FROM public.household_members hm
+                JOIN public.users u ON hm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
             OR co.workgroup_id IN (
-                SELECT "workingGroupId" FROM public.working_group_members wgm
-                JOIN public.users u ON wgm."userId" = u.id
+                SELECT working_group_id FROM public.working_group_members wgm
+                JOIN public.users u ON wgm.user_id = u.id
                 WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             )
         )
@@ -1237,13 +1862,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 
@@ -1256,9 +1882,9 @@ DROP POLICY IF EXISTS iot_devices_read_household ON public.iot_devices;
 CREATE POLICY iot_devices_read_household ON public.iot_devices
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1267,9 +1893,9 @@ DROP POLICY IF EXISTS home_assistant_configs_read_household ON public.home_assis
 CREATE POLICY home_assistant_configs_read_household ON public.home_assistant_configs
     FOR SELECT TO authenticated
     USING (
-        householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1284,13 +1910,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 
@@ -1304,24 +1931,24 @@ CREATE POLICY announcements_read_community ON public.announcements
     FOR SELECT TO authenticated
     USING (
         target_type = 'ALL_HOUSEHOLDS'
-        OR (target_type = 'COMMUNITY' AND targetId IN (
-            SELECT "communityId" FROM public.community_members cm
-            JOIN public.users u ON cm."userId" = u.id
+        OR (target_type = 'COMMUNITY' AND target_id IN (
+            SELECT community_id FROM public.community_members cm
+            JOIN public.users u ON cm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         ))
-        OR (target_type = 'BUILDING' AND targetId IN (
-            SELECT "buildingId" FROM public.building_members bm
-            JOIN public.users u ON bm."userId" = u.id
+        OR (target_type = 'BUILDING' AND target_id IN (
+            SELECT building_id FROM public.building_members bm
+            JOIN public.users u ON bm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
             UNION
-            SELECT "buildingId" FROM public.household_members hm
-            JOIN public.households h ON hm."householdId" = h.id
-            JOIN public.users u ON hm."userId" = u.id
-            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h."buildingId" IS NOT NULL
+            SELECT building_id FROM public.household_members hm
+            JOIN public.households h ON hm.household_id = h.id
+            JOIN public.users u ON hm.user_id = u.id
+            WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email()) AND h.building_id IS NOT NULL
         ))
-        OR (target_type = 'SPECIFIC_HOUSEHOLD' AND targetId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        OR (target_type = 'SPECIFIC_HOUSEHOLD' AND target_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         ))
     );
@@ -1330,12 +1957,12 @@ DROP POLICY IF EXISTS announcement_reads_read_own ON public.announcement_reads;
 CREATE POLICY announcement_reads_read_own ON public.announcement_reads
     FOR SELECT TO authenticated
     USING (
-        userId IN (
+        user_id IN (
             SELECT id FROM public.users WHERE email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
-        OR householdId IN (
-            SELECT "householdId" FROM public.household_members hm
-            JOIN public.users u ON hm."userId" = u.id
+        OR household_id IN (
+            SELECT household_id FROM public.household_members hm
+            JOIN public.users u ON hm.user_id = u.id
             WHERE u.email = COALESCE((SELECT auth.email()), public.get_user_email())
         )
     );
@@ -1350,13 +1977,14 @@ DECLARE
 BEGIN
     FOREACH table_name IN ARRAY tables
     LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I_no_write ON public.%I', table_name, table_name);
-        EXECUTE format('
-            CREATE POLICY %I_no_write ON public.%I
-            FOR INSERT, UPDATE, DELETE TO authenticated, anon
-            USING (false)
-            WITH CHECK (false)
-        ', table_name, table_name);
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_insert', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR INSERT TO authenticated, anon WITH CHECK (false)', table_name || '_no_insert', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_update', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR UPDATE TO authenticated, anon USING (false) WITH CHECK (false)', table_name || '_no_update', table_name);
+        
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', table_name || '_no_delete', table_name);
+        EXECUTE format('CREATE POLICY %I ON public.%I FOR DELETE TO authenticated, anon USING (false)', table_name || '_no_delete', table_name);
     END LOOP;
 END $$;
 

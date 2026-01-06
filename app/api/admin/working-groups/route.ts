@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
     // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true, adminRole: true },
+      select: { isAdmin: true },
     })
 
-    if (!user?.isAdmin || user.adminRole !== 'SUPERUSER') {
+    if (!user?.isAdmin) {
       return NextResponse.json({ error: 'Super admin access required' }, { status: 403 })
     }
 
@@ -141,10 +141,10 @@ export async function POST(request: NextRequest) {
     // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true, adminRole: true },
+      select: { isAdmin: true },
     })
 
-    if (!user?.isAdmin || user.adminRole !== 'SUPERUSER') {
+    if (!user?.isAdmin) {
       return NextResponse.json({ error: 'Super admin access required' }, { status: 403 })
     }
 

@@ -207,8 +207,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ template }, { status: 201 })
   } catch (error) {
     console.error('[Workflow Templates] Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    } : {}
+    
+    // Log full error details for debugging
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('[Workflow Templates] Prisma Error Code:', (error as any).code)
+      console.error('[Workflow Templates] Prisma Error Meta:', (error as any).meta)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create workflow template', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to create workflow template', 
+        details: errorMessage,
+        ...errorDetails,
+      },
       { status: 500 }
     )
   }

@@ -481,14 +481,33 @@ export default function AdminUsersPage() {
     ? buildings.filter(b => b.communityId === selectedCommunityId)
     : buildings
 
-  // Check admin access
+  // Check admin access - allow super admin, community admin, and building admin
   useEffect(() => {
     if (status === 'loading') return
     
-    if (!session?.user || !(session.user as any)?.isAdmin) {
+    if (!session?.user) {
       router.push('/admin-auth/signin')
       return
     }
+
+    // Check admin context to see if user has any admin privileges
+    fetch('/api/admin/context')
+      .then(res => res.json())
+      .then(data => {
+        const hasAdminAccess = data.isSuperAdmin || 
+                              (data.communityAdmins && data.communityAdmins.length > 0) ||
+                              (data.buildingAdmins && data.buildingAdmins.length > 0)
+        
+        if (!hasAdminAccess && !(session.user as any)?.isAdmin) {
+          router.push('/admin-auth/signin')
+        }
+      })
+      .catch(() => {
+        // Fallback: check isAdmin flag
+        if (!(session.user as any)?.isAdmin) {
+          router.push('/admin-auth/signin')
+        }
+      })
   }, [session, status, router])
 
   // Fetch admin context to check if current user is super admin

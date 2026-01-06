@@ -26,11 +26,13 @@ interface SystemStatus {
   totalItems: number
   mqtt?: {
     brokerUrl: string
-    globalConnected: boolean
-    totalConnections: number
-    activeConnections: number
-    totalHouseholds: number
-    activeHouseholds: number
+    globalConnected?: boolean
+    totalConnections?: number
+    activeConnections?: number
+    totalHouseholds?: number
+    activeHouseholds?: number
+    connected?: boolean
+    error?: string
   }
 }
 
@@ -201,8 +203,11 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {getStatusIcon(status.mqtt.globalConnected)}
-                  {getStatusText(status.mqtt.globalConnected)}
+                  {getStatusIcon(status.mqtt.globalConnected || status.mqtt.connected || false)}
+                  {getStatusText(status.mqtt.globalConnected || status.mqtt.connected || false)}
+                  {status.mqtt.error && (
+                    <span className="text-xs text-red-600 ml-2">({status.mqtt.error})</span>
+                  )}
                 </div>
               </div>
             )}

@@ -80,9 +80,12 @@ export default function WorkflowsTab({ communityId, buildingId }: { communityId:
   const fetchData = async () => {
     try {
       setLoading(true)
+      // Super admin can access all workflows (empty communityId)
       const workflowsUrl = buildingId 
         ? `/api/workflows?buildingId=${buildingId}`
-        : `/api/workflows?communityId=${communityId}`
+        : communityId
+        ? `/api/workflows?communityId=${communityId}`
+        : '/api/workflows' // Super admin - no filter
       
       const [workflowsRes, templatesRes, typesRes] = await Promise.all([
         fetch(workflowsUrl),

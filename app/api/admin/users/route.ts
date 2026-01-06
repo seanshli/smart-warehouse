@@ -17,18 +17,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 })
     }
 
-    const userId = (session.user as any).id
     const { searchParams } = new URL(request.url)
     const communityId = searchParams.get('communityId')
     const buildingId = searchParams.get('buildingId')
-
-    // Check if user is super admin
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { isAdmin: true, adminRole: true }
-    })
-
-    const isSuperAdmin = currentUser?.isAdmin && currentUser?.adminRole === 'SUPERUSER'
 
     // Build query conditions
     let whereClause: any = {}

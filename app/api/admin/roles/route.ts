@@ -10,18 +10,43 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Check if user is superuser
+    // Check if user has admin access
+    const userId = (session.user as any).id
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
       select: { isAdmin: true, adminRole: true }
     })
 
-    if (!user?.isAdmin || user.adminRole !== 'SUPERUSER') {
-      return NextResponse.json({ error: 'Superuser privileges required' }, { status: 403 })
+    const isSuperAdmin = user?.isAdmin && user.adminRole === 'SUPERUSER'
+    
+    // Check if user is community or building admin
+    const [communityMemberships, buildingMemberships] = await Promise.all([
+      prisma.communityMember.findMany({
+        where: {
+          userId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+        },
+        select: { communityId: true },
+      }),
+      prisma.buildingMember.findMany({
+        where: {
+          userId,
+          role: { in: ['ADMIN', 'MANAGER'] },
+        },
+        select: { buildingId: true },
+      }),
+    ])
+
+    const hasAdminAccess = isSuperAdmin || 
+                          communityMemberships.length > 0 || 
+                          buildingMemberships.length > 0
+
+    if (!hasAdminAccess) {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
     }
 
     // Get all admin users with their roles
@@ -76,18 +101,19 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Check if user is superuser
+    // Only super admins can modify roles
+    const userId = (session.user as any).id
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
       select: { isAdmin: true, adminRole: true }
     })
 
     if (!user?.isAdmin || user.adminRole !== 'SUPERUSER') {
-      return NextResponse.json({ error: 'Superuser privileges required' }, { status: 403 })
+      return NextResponse.json({ error: 'Superuser privileges required to modify roles' }, { status: 403 })
     }
 
     const { userId, adminRole, language } = await request.json()
@@ -144,14 +170,14 @@ export async function DELETE(request: NextRequest) {
 
     const currentUserId = (session.user as any).id
 
-    // Check if user is superuser
+    // Only super admins can delete admin users
     const currentUser = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: currentUserId },
       select: { id: true, isAdmin: true, adminRole: true }
     })
 
     if (!currentUser?.isAdmin || currentUser.adminRole !== 'SUPERUSER') {
-      return NextResponse.json({ error: 'Superuser privileges required' }, { status: 403 })
+      return NextResponse.json({ error: 'Superuser privileges required to delete admin users' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)

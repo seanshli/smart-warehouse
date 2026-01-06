@@ -168,6 +168,27 @@ export async function POST(request: NextRequest) {
       templateData.workflowTypeId = workflowTypeId
     }
 
+    // Build include object conditionally
+    const includeObj: any = {
+      steps: {
+        orderBy: { stepOrder: 'asc' },
+        include: {
+          workingGroup: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+        },
+      },
+    }
+    
+    // Only include workflowType if workflowTypeId is provided
+    if (templateData.workflowTypeId) {
+      includeObj.workflowType = true
+    }
+
     const template = await prisma.workflowTemplate.create({
       data: {
         ...templateData,
@@ -187,21 +208,7 @@ export async function POST(request: NextRequest) {
             }
           : undefined,
       },
-      include: {
-        workflowType: templateData.workflowTypeId ? true : false,
-        steps: {
-          orderBy: { stepOrder: 'asc' },
-          include: {
-            workingGroup: {
-              select: {
-                id: true,
-                name: true,
-                type: true,
-              },
-            },
-          },
-        },
-      },
+      include: includeObj,
     })
 
     return NextResponse.json({ template }, { status: 201 })

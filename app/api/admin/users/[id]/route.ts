@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { canManageUser } from '@/lib/middleware/admin-user-permissions'
 
 export const dynamic = 'force-dynamic'
 
@@ -229,15 +230,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin
-    const currentUser = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
-      select: { isAdmin: true }
-    })
-
-    if (!currentUser?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const currentUserId = (session.user as any).id
 
     // Handle both Promise and direct params (Next.js 14 vs 15)
     const resolvedParams = params instanceof Promise ? await params : params
@@ -252,8 +245,30 @@ export async function PUT(
       }, { status: 400 })
     }
 
+    // Check permissions
+    const permissionCheck = await canManageUser(currentUserId, userId)
+    if (!permissionCheck.allowed) {
+      return NextResponse.json({ 
+        error: 'Insufficient permissions',
+        details: permissionCheck.reason || 'You can only update users in your working groups'
+      }, { status: 403 })
+    }
+
     const body = await request.json()
     const { name, email, phone, contact, language, isAdmin } = body
+
+    // Only super admins can change isAdmin flag
+    if (isAdmin !== undefined) {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: currentUserId },
+        select: { isAdmin: true }
+      })
+      if (!currentUser?.isAdmin) {
+        return NextResponse.json({ 
+          error: 'Only super admins can change admin status' 
+        }, { status: 403 })
+      }
+    }
 
     console.log('[Update User] Request:', { userId, updates: { name, email, phone, contact, language, isAdmin } })
 
@@ -342,15 +357,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin
-    const currentUser = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
-      select: { isAdmin: true }
-    })
-
-    if (!currentUser?.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+    const currentUserId = (session.user as any).id
 
     // Handle both Promise and direct params (Next.js 14 vs 15)
     const resolvedParams = params instanceof Promise ? await params : params
@@ -365,7 +372,16 @@ export async function DELETE(
       }, { status: 400 })
     }
 
-    console.log('[Delete User] Request:', { userId, deletedBy: (session.user as any).id })
+    // Check permissions
+    const permissionCheck = await canManageUser(currentUserId, userId)
+    if (!permissionCheck.allowed) {
+      return NextResponse.json({ 
+        error: 'Insufficient permissions',
+        details: permissionCheck.reason || 'You can only delete users in your working groups'
+      }, { status: 403 })
+    }
+
+    console.log('[Delete User] Request:', { userId, deletedBy: currentUserId })
 
     // Check if user exists
     const user = await prisma.user.findUnique({

@@ -3,13 +3,15 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { canManageUser } from '@/lib/middleware/admin-user-permissions'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/admin/users/[id]/set-password
- * Set password for a user (super admin only)
- * Allows super admin to manually set any password for any user
+ * Set password for a user
+ * - Super admins can set password for anyone
+ * - Community/building admins can set password for users in their working groups/crews
  */
 export async function POST(
   request: NextRequest,
@@ -18,18 +20,20 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is super admin
-    const currentUser = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { isAdmin: true }
-    })
+    const currentUserId = (session.user as any).id
+    const { id: targetUserId } = params
 
-    if (!currentUser?.isAdmin) {
-      return NextResponse.json({ error: 'Super admin access required' }, { status: 403 })
+    // Check permissions
+    const permissionCheck = await canManageUser(currentUserId, targetUserId)
+    if (!permissionCheck.allowed) {
+      return NextResponse.json({ 
+        error: 'Insufficient permissions',
+        details: permissionCheck.reason || 'You can only manage users in your working groups'
+      }, { status: 403 })
     }
 
     const { id: userId } = params
@@ -67,7 +71,11 @@ export async function POST(
       }
     })
 
-    console.log(`[Admin] Password set for user: ${user.email} by ${session.user.email}`)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { email: true }
+    })
+    console.log(`[Admin] Password set for user: ${user.email} by ${currentUser?.email}`)
 
     return NextResponse.json({ 
       success: true,

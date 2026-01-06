@@ -297,6 +297,7 @@ model Household {
   homeAssistantConfig  HomeAssistantConfig? // Home Assistant configuration for this household
   maintenanceTickets   MaintenanceTicket[] // Maintenance tickets requested by this household
   cateringOrders       CateringOrder[] // Catering orders for this household
+  workflows            Workflow[] // Workflows created by this household
 
   @@map("households")
 }

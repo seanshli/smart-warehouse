@@ -252,7 +252,7 @@ export default function CommunityDetailPage() {
                   { id: 'overview', name: t('communityOverview'), icon: BuildingOfficeIcon },
                   { id: 'buildings', name: t('adminBuildings'), icon: BuildingOfficeIcon },
                   { id: 'members', name: t('members'), icon: UserGroupIcon },
-                  { id: 'working-groups', name: t('communityWorkingGroups'), icon: CogIcon },
+                  { id: 'working-groups', name: t('communityWorkingGroups'), icon: UserGroupIcon },
                   { id: 'workflows', name: 'Workflows', icon: ClipboardDocumentIcon },
                   { id: 'work-orders', name: '工單', icon: ExclamationTriangleIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },

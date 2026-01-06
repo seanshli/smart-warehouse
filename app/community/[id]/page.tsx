@@ -29,6 +29,7 @@ import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
 import CateringMenu from '@/components/catering/CateringMenu'
 import CateringAdminManager from '@/components/admin/CateringAdminManager'
+import WorkflowsTab from './WorkflowsTab'
 
 interface Community {
   id: string
@@ -57,7 +58,7 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<Community | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'announcements' | 'catering' | 'work-orders'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'members' | 'working-groups' | 'workflows' | 'announcements' | 'catering' | 'work-orders'>('overview')
   const [navigatingToWorkOrders, setNavigatingToWorkOrders] = useState(false)
 
   // Auto-navigate to work-orders page when tab is selected
@@ -252,6 +253,7 @@ export default function CommunityDetailPage() {
                   { id: 'buildings', name: t('adminBuildings'), icon: BuildingOfficeIcon },
                   { id: 'members', name: t('members'), icon: UserGroupIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups'), icon: CogIcon },
+                  { id: 'workflows', name: 'Workflows', icon: ClipboardDocumentIcon },
                   { id: 'work-orders', name: '工單', icon: ExclamationTriangleIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
                   // Only show catering tab if service is enabled
@@ -283,6 +285,7 @@ export default function CommunityDetailPage() {
           {activeTab === 'buildings' && communityId && <BuildingsTab communityId={communityId} />}
           {activeTab === 'members' && communityId && <MembersTab communityId={communityId} />}
           {activeTab === 'working-groups' && communityId && <WorkingGroupsTab communityId={communityId} />}
+          {activeTab === 'workflows' && communityId && <WorkflowsTab communityId={communityId} />}
           {activeTab === 'announcements' && communityId && (
             <AnnouncementsTab 
               communityId={communityId} 

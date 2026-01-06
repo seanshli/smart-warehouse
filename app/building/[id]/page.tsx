@@ -41,6 +41,7 @@ import CateringToggle from '@/components/admin/CateringToggle'
 import CateringSetupModal from '@/components/admin/CateringSetupModal'
 import CateringMenu from '@/components/catering/CateringMenu'
 import CateringAdminManager from '@/components/admin/CateringAdminManager'
+import WorkflowsTab from '@/app/community/[id]/WorkflowsTab'
 
 interface Building {
   id: string
@@ -90,7 +91,7 @@ export default function BuildingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'catering' | 'members' | 'work-orders'
+    'overview' | 'households' | 'mailboxes' | 'frontdoor' | 'packages' | 'messages' | 'facilities' | 'announcements' | 'working-groups' | 'workflows' | 'catering' | 'members' | 'work-orders'
   >(initialTabFromQuery)
   const [navigatingToWorkOrders, setNavigatingToWorkOrders] = useState(false)
 
@@ -272,6 +273,7 @@ export default function BuildingDetailPage() {
                   { id: 'facilities', name: t('buildingFacilities'), icon: CogIcon },
                   { id: 'members', name: t('members') || '成員', icon: UserIcon },
                   { id: 'working-groups', name: t('communityWorkingGroups') || 'Working Groups', icon: UserGroupIcon },
+                  { id: 'workflows', name: 'Workflows', icon: ClipboardDocumentIcon },
                   { id: 'work-orders', name: '工單', icon: ExclamationTriangleIcon },
                   { id: 'announcements', name: t('announcements'), icon: BellIcon },
                   // Only show catering tab if service is enabled
@@ -328,6 +330,15 @@ export default function BuildingDetailPage() {
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示工作組</p>
+              </div>
+            )
+          )}
+          {activeTab === 'workflows' && buildingId && building && (
+            building.community ? (
+              <WorkflowsTab buildingId={buildingId} communityId={building.community.id} />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-400">此建築尚未關聯到社區，無法顯示工作流程</p>
               </div>
             )
           )}

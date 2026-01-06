@@ -159,19 +159,19 @@ export async function POST(request: NextRequest) {
     // Create template with steps
     const templateData: any = {
       name,
-      description,
+      description: description || null,
       isDefault: isDefault || false,
     }
 
-    // Only add workflowTypeId if provided (now optional)
-    if (workflowTypeId) {
+    // Only add workflowTypeId if provided and not empty (now optional)
+    if (workflowTypeId && workflowTypeId.trim() !== '') {
       templateData.workflowTypeId = workflowTypeId
     }
 
     const template = await prisma.workflowTemplate.create({
       data: {
         ...templateData,
-        steps: steps
+        steps: steps && steps.length > 0
           ? {
               create: steps.map((step: any, index: number) => ({
                 stepOrder: index + 1,
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       },
       include: {
-        workflowType: true,
+        workflowType: templateData.workflowTypeId ? true : false,
         steps: {
           orderBy: { stepOrder: 'asc' },
           include: {

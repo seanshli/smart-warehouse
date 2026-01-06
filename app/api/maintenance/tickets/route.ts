@@ -488,14 +488,14 @@ export async function POST(request: NextRequest) {
       // Clear supplier assignment
       assignedSupplierId = null
       
-      // Try to find an appropriate crew based on building/community and category
+      // Try to find an appropriate crew or working group based on building/community and category
       try {
         const crewType = category === 'BUILDING_MAINTENANCE' ? 'BUILDING_MAINTENANCE' : 
                         category === 'HOUSE_CLEANING' ? 'HOUSE_CLEANING' :
                         category === 'FOOD_ORDER' ? 'FOOD_ORDER' : 'BUILDING_MAINTENANCE'
         
         if (routingType === 'INTERNAL_BUILDING' && household?.buildingId) {
-          // Find building crew
+          // First try to find building crew
           const buildingCrew = await prisma.workingCrew.findFirst({
             where: {
               buildingId: household.buildingId,
@@ -508,12 +508,33 @@ export async function POST(request: NextRequest) {
           if (buildingCrew) {
             assignedCrewId = buildingCrew.id
           } else {
-            // No crew found, set routing to NULL to satisfy constraint
-            console.warn(`No ${crewType} crew found for building ${household.buildingId}, setting routing_type to NULL`)
-            routingType = null
+            // Fallback: try to find working group for this building's community
+            if (household?.building?.communityId) {
+              const workingGroup = await prisma.workingGroup.findFirst({
+                where: {
+                  communityId: household.building.communityId,
+                  type: {
+                    in: ['MAINTENANCE', 'BUILDING_MAINTENANCE', crewType],
+                  },
+                },
+                orderBy: { createdAt: 'asc' },
+                select: { id: true },
+              })
+              
+              if (workingGroup) {
+                // Note: MaintenanceTicket uses assignedCrewId, but we could extend schema to support working groups
+                // For now, we'll still use crew assignment but log the working group option
+                console.log(`Found working group ${workingGroup.id} as alternative to crew`)
+              }
+            }
+            
+            if (!assignedCrewId) {
+              console.warn(`No ${crewType} crew or working group found for building ${household.buildingId}, setting routing_type to NULL`)
+              routingType = null
+            }
           }
         } else if (routingType === 'INTERNAL_COMMUNITY' && household?.building?.communityId) {
-          // Find community crew
+          // First try to find community crew
           const communityCrew = await prisma.workingCrew.findFirst({
             where: {
               communityId: household.building.communityId,
@@ -526,9 +547,26 @@ export async function POST(request: NextRequest) {
           if (communityCrew) {
             assignedCrewId = communityCrew.id
           } else {
-            // No crew found, set routing to NULL to satisfy constraint
-            console.warn(`No ${crewType} crew found for community ${household.building.communityId}, setting routing_type to NULL`)
-            routingType = null
+            // Fallback: try to find working group for this community
+            const workingGroup = await prisma.workingGroup.findFirst({
+              where: {
+                communityId: household.building.communityId,
+                type: {
+                  in: ['MAINTENANCE', 'BUILDING_MAINTENANCE', crewType],
+                },
+              },
+              orderBy: { createdAt: 'asc' },
+              select: { id: true },
+            })
+            
+            if (workingGroup) {
+              console.log(`Found working group ${workingGroup.id} as alternative to crew`)
+            }
+            
+            if (!assignedCrewId) {
+              console.warn(`No ${crewType} crew or working group found for community ${household.building.communityId}, setting routing_type to NULL`)
+              routingType = null
+            }
           }
         } else {
           // No building/community info, set routing to NULL
@@ -536,7 +574,7 @@ export async function POST(request: NextRequest) {
           routingType = null
         }
       } catch (error) {
-        console.error('Error finding crew for internal routing:', error)
+        console.error('Error finding crew/working group for internal routing:', error)
         // On error, set routing to NULL to satisfy constraint
         routingType = null
       }

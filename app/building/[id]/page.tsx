@@ -2953,7 +2953,7 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
   const [editingGroup, setEditingGroup] = useState<any | null>(null)
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupDescription, setNewGroupDescription] = useState('')
-  const [newGroupType, setNewGroupType] = useState<'MANAGEMENT' | 'MAINTENANCE' | 'FRONTDESK'>('FRONTDESK')
+  const [newGroupType, setNewGroupType] = useState<string>('')
   const [creatingGroup, setCreatingGroup] = useState(false)
 
   const handleCreateGroup = async () => {
@@ -2970,7 +2970,7 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
         body: JSON.stringify({
           name: newGroupName.trim(),
           description: newGroupDescription.trim() || undefined,
-          type: newGroupType,
+          type: newGroupType.toUpperCase().replace(/\s+/g, '_') || 'CUSTOM',
         }),
       })
 
@@ -2983,7 +2983,7 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
       setShowCreateGroup(false)
       setNewGroupName('')
       setNewGroupDescription('')
-      setNewGroupType('FRONTDESK')
+      setNewGroupType('')
       fetchWorkingGroups()
     } catch (error) {
       console.error('Error creating working group:', error)
@@ -3023,7 +3023,7 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
       setEditingGroup(null)
       setNewGroupName('')
       setNewGroupDescription('')
-      setNewGroupType('FRONTDESK')
+      setNewGroupType('')
       fetchWorkingGroups()
     } catch (error) {
       console.error('Error updating working group:', error)
@@ -3325,6 +3325,78 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create/Edit Working Group Modal */}
+      {(showCreateGroup || editingGroup) && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-4">
+              {editingGroup ? (t('editWorkingGroup') || 'Edit Working Group') : (t('createWorkingGroup') || 'Create new working group')}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  {t('name') || 'Name'}
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={e => setNewGroupName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  {t('type') || 'Type'}
+                </label>
+                <input
+                  type="text"
+                  value={newGroupType}
+                  onChange={e =>
+                    setNewGroupType(e.target.value.toUpperCase().replace(/\s+/g, '_'))
+                  }
+                  placeholder="e.g., MANAGEMENT, MAINTENANCE, CATERING, SECURITY"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('enterCustomType') || 'Enter custom type (will be converted to UPPER_CASE)'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  {t('description') || 'Description'}
+                </label>
+                <textarea
+                  rows={3}
+                  value={newGroupDescription}
+                  onChange={e =>
+                    setNewGroupDescription(e.target.value)
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCreateGroup(false)
+                  closeEditGroup()
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                {t('cancel') || 'Cancel'}
+              </button>
+              <button
+                onClick={editingGroup ? handleEditGroup : handleCreateGroup}
+                disabled={creatingGroup || !newGroupName.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+              >
+                {creatingGroup ? (t('saving') || 'Saving...') : editingGroup ? (t('update') || 'Update') : (t('create') || 'Create')}
+              </button>
             </div>
           </div>
         </div>

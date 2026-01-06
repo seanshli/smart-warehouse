@@ -1466,7 +1466,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Name
+                  {t('name') || 'Name'}
                 </label>
                 <input
                   type="text"
@@ -1477,23 +1477,24 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Type
+                  {t('type') || 'Type'}
                 </label>
-                <select
+                <input
+                  type="text"
                   value={newGroup.type}
                   onChange={e =>
-                    setNewGroup({ ...newGroup, type: e.target.value })
+                    setNewGroup({ ...newGroup, type: e.target.value.toUpperCase().replace(/\s+/g, '_') })
                   }
+                  placeholder="e.g., MANAGEMENT, MAINTENANCE, CATERING, SECURITY"
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="MANAGEMENT">MANAGEMENT</option>
-                  <option value="MAINTENANCE">MAINTENANCE</option>
-                  <option value="FRONT_DOOR">FRONT_DOOR</option>
-                </select>
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('enterCustomType') || 'Enter custom type (will be converted to UPPER_CASE)'}
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Description
+                  {t('description') || 'Description'}
                 </label>
                 <textarea
                   rows={3}
@@ -1511,14 +1512,14 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 disabled={creating}
               >
-                Cancel
+                {t('cancel') || 'Cancel'}
               </button>
               <button
                 onClick={handleCreateGroup}
                 disabled={creating}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
               >
-                {creating ? 'Creating...' : 'Create'}
+                {creating ? (t('creating') || 'Creating...') : (t('create') || 'Create')}
               </button>
             </div>
           </div>

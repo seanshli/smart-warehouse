@@ -106,9 +106,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Only super admins can modify roles
-    const userId = (session.user as any).id
+    const currentUserId = (session.user as any).id
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: currentUserId },
       select: { isAdmin: true, adminRole: true }
     })
 
@@ -116,9 +116,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Superuser privileges required to modify roles' }, { status: 403 })
     }
 
-    const { userId, adminRole, language } = await request.json()
+    const { userId: targetUserId, adminRole, language } = await request.json()
 
-    if (!userId || !adminRole) {
+    if (!targetUserId || !adminRole) {
       return NextResponse.json({ error: 'User ID and admin role are required' }, { status: 400 })
     }
 
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user role
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: targetUserId },
       data: {
         adminRole,
         ...(language && { language })

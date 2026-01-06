@@ -92,6 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       { name: 'Catering', href: '/admin/catering', icon: ShoppingBagIcon, current: pathname.startsWith('/admin/catering') },
       { name: t('adminUsers'), href: '/admin/users', icon: ShieldCheckIcon, current: pathname === '/admin/users' },
       { name: t('adminRoles'), href: '/admin/roles', icon: ShieldCheckIcon, current: pathname === '/admin/roles' },
+      { name: 'Working Groups', href: '/admin/working-groups', icon: UserGroupIcon, current: pathname === '/admin/working-groups' },
       { name: 'Workflows', href: '/admin/workflows', icon: ClipboardDocumentIcon, current: pathname === '/admin/workflows' },
       { name: t('adminAnalytics'), href: '/admin/analytics', icon: ChartBarIcon, current: pathname === '/admin/analytics' },
       { name: t('adminSettings'), href: '/admin/settings', icon: CogIcon, current: pathname === '/admin/settings' },

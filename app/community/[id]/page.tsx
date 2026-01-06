@@ -1515,7 +1515,7 @@ function WorkingGroupsTab({ communityId }: { communityId: string }) {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 disabled={creating}
               >
-                {t('cancel') || 'Cancel'}
+                Cancel
               </button>
               <button
                 onClick={handleCreateGroup}

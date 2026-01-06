@@ -13,18 +13,91 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.email) {
+    if (!session?.user || !(session.user as any)?.id) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Check if user is admin
+    const userId = (session.user as any).id
+
+    // Check if user is admin (super admin, community admin, or building admin)
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { isAdmin: true }
+      where: { id: userId },
+      select: { 
+        isAdmin: true,
+        email: true,
+      }
     })
 
-    if (!user?.isAdmin) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Get community admin roles
+    const communityMemberships = await prisma.communityMember.findMany({
+      where: {
+        userId,
+        role: { in: ['ADMIN', 'MANAGER'] },
+      },
+      select: {
+        communityId: true,
+      },
+    })
+
+    // Get building admin roles
+    const buildingMemberships = await prisma.buildingMember.findMany({
+      where: {
+        userId,
+        role: { in: ['ADMIN', 'MANAGER'] },
+      },
+      select: {
+        buildingId: true,
+      },
+    })
+
+    const isSuperAdmin = user.isAdmin || false
+    const isCommunityAdmin = communityMemberships.length > 0
+    const isBuildingAdmin = buildingMemberships.length > 0
+    const communityIds = communityMemberships.map(m => m.communityId)
+    const buildingIds = buildingMemberships.map(m => m.buildingId)
+
+    // Check if user has any admin privileges
+    if (!isSuperAdmin && !isCommunityAdmin && !isBuildingAdmin) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 })
+    }
+
+    // Get household IDs that belong to user's communities/buildings for filtering
+    let allowedHouseholdIds: string[] | null = null
+    if (!isSuperAdmin) {
+      const householdQueries: any[] = []
+      
+      if (isCommunityAdmin && communityIds.length > 0) {
+        // Get households in user's communities
+        const communityHouseholds = await prisma.household.findMany({
+          where: {
+            communityId: { in: communityIds },
+          },
+          select: { id: true },
+        })
+        householdQueries.push(...communityHouseholds.map(h => h.id))
+      }
+      
+      if (isBuildingAdmin && buildingIds.length > 0) {
+        // Get households in user's buildings
+        const buildingHouseholds = await prisma.household.findMany({
+          where: {
+            buildingId: { in: buildingIds },
+          },
+          select: { id: true },
+        })
+        householdQueries.push(...buildingHouseholds.map(h => h.id))
+      }
+      
+      if (householdQueries.length > 0) {
+        allowedHouseholdIds = [...new Set(householdQueries)] // Remove duplicates
+      } else {
+        // No households found, return empty stats
+        allowedHouseholdIds = []
+      }
     }
 
     // Parse query parameters for filtering
@@ -51,8 +124,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (householdId && householdId !== 'all') {
+      // Verify user has access to this household
+      if (allowedHouseholdIds !== null && !allowedHouseholdIds.includes(householdId)) {
+        return NextResponse.json({ error: 'Access denied to this household' }, { status: 403 })
+      }
       whereClause.item = {
         householdId: householdId
+      }
+    } else if (allowedHouseholdIds !== null) {
+      // Filter by allowed households
+      whereClause.item = {
+        householdId: { in: allowedHouseholdIds }
       }
     }
 
@@ -74,11 +156,34 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get basic counts
+    // Build base where clauses for filtering by admin permissions
+    const householdWhere = allowedHouseholdIds !== null 
+      ? { id: { in: allowedHouseholdIds } }
+      : undefined
+    
+    const itemWhere = allowedHouseholdIds !== null
+      ? { householdId: { in: allowedHouseholdIds } }
+      : undefined
+
+    // Get basic counts (filtered by admin permissions)
     const [users, households, items] = await Promise.all([
-      prisma.user.count(),
-      prisma.household.count(),
-      prisma.item.count(),
+      // For users, if not super admin, count only users in allowed households
+      isSuperAdmin 
+        ? prisma.user.count()
+        : allowedHouseholdIds && allowedHouseholdIds.length > 0
+          ? prisma.householdMember.count({
+              where: { householdId: { in: allowedHouseholdIds } },
+              distinct: ['userId']
+            })
+          : 0,
+      // Households filtered by admin permissions
+      allowedHouseholdIds !== null
+        ? prisma.household.count({ where: householdWhere })
+        : prisma.household.count(),
+      // Items filtered by admin permissions
+      allowedHouseholdIds !== null
+        ? prisma.item.count({ where: itemWhere })
+        : prisma.item.count(),
     ])
 
     // Get activity events with filtering
@@ -111,12 +216,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Get items by category with aggregation
+    const categoryWhere: any = {}
+    if (householdId && householdId !== 'all') {
+      categoryWhere.householdId = householdId
+    } else if (allowedHouseholdIds !== null) {
+      categoryWhere.householdId = { in: allowedHouseholdIds }
+    }
+    
     const itemsByCategory = await prisma.item.groupBy({
       by: ['categoryId'],
       _count: {
         id: true
       },
-      where: householdId && householdId !== 'all' ? { householdId } : undefined
+      where: Object.keys(categoryWhere).length > 0 ? categoryWhere : undefined
     })
 
     const categoryData: Record<string, number> = {}
@@ -140,12 +252,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Get items by room with aggregation
+    const roomWhere: any = {}
+    if (householdId && householdId !== 'all') {
+      roomWhere.householdId = householdId
+    } else if (allowedHouseholdIds !== null) {
+      roomWhere.householdId = { in: allowedHouseholdIds }
+    }
+    
     const itemsByRoom = await prisma.item.groupBy({
       by: ['roomId'],
       _count: {
         id: true
       },
-      where: householdId && householdId !== 'all' ? { householdId } : undefined
+      where: Object.keys(roomWhere).length > 0 ? roomWhere : undefined
     })
 
     const roomData: Record<string, number> = {}
@@ -168,12 +287,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get users by household
+    // Get users by household (filtered by admin permissions)
+    const householdMemberWhere = allowedHouseholdIds !== null
+      ? { householdId: { in: allowedHouseholdIds } }
+      : undefined
+    
     const usersByHousehold = await prisma.householdMember.groupBy({
       by: ['householdId'],
       _count: {
         userId: true
-      }
+      },
+      where: householdMemberWhere
     })
 
     const householdData: Record<string, number> = {}
@@ -185,17 +309,25 @@ export async function GET(request: NextRequest) {
       householdData[household?.name || 'Unknown'] = member._count.userId
     }
 
-    // Get activity by user
+    // Get activity by user (filtered by admin permissions)
+    const activityWhere: any = {
+      createdAt: {
+        gte: since
+      }
+    }
+    
+    if (allowedHouseholdIds !== null) {
+      activityWhere.item = {
+        householdId: { in: allowedHouseholdIds }
+      }
+    }
+    
     const activityByUser = await prisma.itemHistory.groupBy({
       by: ['performedBy'],
       _count: {
         id: true
       },
-      where: {
-        createdAt: {
-          gte: since
-        }
-      }
+      where: activityWhere
     })
 
     const userActivityData: Record<string, number> = {}

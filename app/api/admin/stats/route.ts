@@ -167,15 +167,19 @@ export async function GET(request: NextRequest) {
 
     // Get basic counts (filtered by admin permissions)
     const [users, households, items] = await Promise.all([
-      // For users, if not super admin, count only users in allowed households
+      // For users, if not super admin, count unique users in allowed households
       isSuperAdmin 
         ? prisma.user.count()
         : allowedHouseholdIds && allowedHouseholdIds.length > 0
-          ? prisma.householdMember.count({
-              where: { householdId: { in: allowedHouseholdIds } },
-              distinct: ['userId']
-            })
-          : 0,
+          ? (async () => {
+              const uniqueUserIds = await prisma.householdMember.findMany({
+                where: { householdId: { in: allowedHouseholdIds } },
+                select: { userId: true },
+                distinct: ['userId']
+              })
+              return uniqueUserIds.length
+            })()
+          : Promise.resolve(0),
       // Households filtered by admin permissions
       allowedHouseholdIds !== null
         ? prisma.household.count({ where: householdWhere })

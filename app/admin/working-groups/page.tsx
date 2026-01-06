@@ -64,6 +64,7 @@ export default function AdminWorkingGroupsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCommunityId, setFilterCommunityId] = useState<string>('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<WorkingGroup | null>(null)
   const [showGroupDetails, setShowGroupDetails] = useState(false)
 
@@ -148,6 +149,32 @@ export default function AdminWorkingGroupsPage() {
     } catch (error) {
       console.error('Error creating working group:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to create working group')
+    }
+  }
+
+  const handleUpdateGroup = async (groupId: string, groupData: any) => {
+    try {
+      const group = workingGroups.find(g => g.id === groupId)
+      if (!group) return
+
+      const res = await fetch(`/api/community/${group.communityId}/working-groups/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(groupData),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to update working group')
+      }
+
+      toast.success('Working group updated successfully')
+      setShowEditModal(false)
+      setSelectedGroup(null)
+      fetchWorkingGroups()
+    } catch (error) {
+      console.error('Error updating working group:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update working group')
     }
   }
 
@@ -334,6 +361,15 @@ export default function AdminWorkingGroupsPage() {
                         View
                       </button>
                       <button
+                        onClick={() => {
+                          setSelectedGroup(group)
+                          setShowEditModal(true)
+                        }}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button
                         onClick={() => handleDeleteGroup(group.id)}
                         className="text-red-600 hover:text-red-900"
                       >
@@ -354,6 +390,19 @@ export default function AdminWorkingGroupsPage() {
           communities={communities}
           onClose={() => setShowCreateModal(false)}
           onCreate={handleCreateGroup}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedGroup && (
+        <EditWorkingGroupModal
+          group={selectedGroup}
+          communities={communities}
+          onClose={() => {
+            setShowEditModal(false)
+            setSelectedGroup(null)
+          }}
+          onUpdate={handleUpdateGroup}
         />
       )}
 
@@ -491,6 +540,126 @@ function CreateWorkingGroupModal({
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
             >
               {creating ? 'Creating...' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EditWorkingGroupModal({
+  group,
+  communities,
+  onClose,
+  onUpdate,
+}: {
+  group: WorkingGroup
+  communities: Community[]
+  onClose: () => void
+  onUpdate: (groupId: string, data: any) => void
+}) {
+  const [name, setName] = useState(group.name)
+  const [description, setDescription] = useState(group.description || '')
+  const [type, setType] = useState(group.type)
+  const [updating, setUpdating] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !type) {
+      toast.error('Name and type are required')
+      return
+    }
+
+    setUpdating(true)
+    try {
+      await onUpdate(group.id, {
+        name,
+        description,
+        type: type.toUpperCase().replace(/\s+/g, '_'),
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Edit Working Group</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1">
+              Community
+            </label>
+            <input
+              type="text"
+              value={group.community.name}
+              disabled
+              className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1">
+              Name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1">
+              Type *
+            </label>
+            <input
+              type="text"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              placeholder="e.g., MANAGEMENT, MAINTENANCE, FRONT_DOOR"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              required
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Enter custom type (will be converted to UPPER_CASE)
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            />
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={updating}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+            >
+              {updating ? 'Updating...' : 'Update'}
             </button>
           </div>
         </form>

@@ -166,6 +166,7 @@ export async function POST(request: NextRequest) {
       relatedType,
       communityId,
       buildingId,
+      householdId,
       assignedToId,
       steps,
     } = body
@@ -246,6 +247,7 @@ export async function POST(request: NextRequest) {
         relatedType,
         communityId,
         buildingId,
+        householdId,
         createdById: currentUserId,
         assignedToId,
         steps: {

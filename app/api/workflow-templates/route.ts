@@ -149,17 +149,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { workflowTypeId, name, description, isDefault, steps } = body
 
-    if (!workflowTypeId || !name) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Workflow type ID and name are required' },
+        { error: 'Name is required' },
         { status: 400 }
       )
     }
 
     // Create template with steps
+    const templateData: any = {
+      name,
+      description,
+      isDefault: isDefault || false,
+    }
+
+    // Only add workflowTypeId if provided (now optional)
+    if (workflowTypeId) {
+      templateData.workflowTypeId = workflowTypeId
+    }
+
     const template = await prisma.workflowTemplate.create({
       data: {
-        workflowTypeId,
+        ...templateData,
         name,
         description,
         isDefault: isDefault || false,

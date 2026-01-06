@@ -159,8 +159,8 @@ function CreateTemplateModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!name || !workflowTypeId) {
-      toast.error('Name and workflow type are required')
+    if (!name) {
+      toast.error('Name is required')
       return
     }
 
@@ -187,7 +187,7 @@ function CreateTemplateModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workflowTypeId,
+          workflowTypeId: workflowTypeId || undefined,
           name,
           description,
           isDefault: false,
@@ -250,20 +250,19 @@ function CreateTemplateModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-1">
-                Workflow Type *
+                Workflow Type (Optional)
               </label>
               {workflowTypes.length === 0 ? (
-                <div className="w-full border border-yellow-300 bg-yellow-50 rounded-md px-3 py-2 text-sm text-yellow-800">
-                  No workflow types available. Please create a workflow type first.
+                <div className="w-full border border-gray-300 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-600">
+                  No workflow types available. Template can be created without a type.
                 </div>
               ) : (
                 <select
                   value={workflowTypeId}
                   onChange={(e) => setWorkflowTypeId(e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  required
                 >
-                  <option value="">Select type...</option>
+                  <option value="">None (Optional)</option>
                   {workflowTypes.map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name}

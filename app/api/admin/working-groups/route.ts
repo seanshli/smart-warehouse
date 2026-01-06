@@ -60,17 +60,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        permissions: {
-          include: {
-            building: buildingId ? {
-              where: { id: buildingId },
-              select: {
-                id: true,
-                name: true,
-              },
-            } : undefined,
-          },
-        },
+        permissions: true,
         _count: {
           select: {
             members: true,

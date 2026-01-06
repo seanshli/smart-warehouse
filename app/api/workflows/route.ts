@@ -258,6 +258,7 @@ export async function POST(request: NextRequest) {
                 taskDescription: step.taskDescription || templateSteps[index]?.taskDescription,
                 estimatedMinutes: step.estimatedMinutes || templateSteps[index]?.estimatedMinutes,
                 workingGroupId: step.workingGroupId || templateSteps[index]?.workingGroupId,
+                assignedToId: step.assignedToId || templateSteps[index]?.assignedToId || null,
                 status: 'PENDING',
               }))
             : templateSteps.map((templateStep, index) => ({
@@ -268,6 +269,7 @@ export async function POST(request: NextRequest) {
                 taskDescription: templateStep.taskDescription,
                 estimatedMinutes: templateStep.estimatedMinutes,
                 workingGroupId: templateStep.workingGroupId,
+                assignedToId: templateStep.assignedToId || null,
                 status: 'PENDING',
               })),
         },

@@ -148,7 +148,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { name, description, taskDescription, estimatedMinutes, workingGroupId, stepOrder } = body
+    const { name, description, taskDescription, estimatedMinutes, workingGroupId, assignedToId, stepOrder } = body
 
     if (!name) {
       return NextResponse.json(
@@ -177,6 +177,7 @@ export async function POST(
         taskDescription,
         estimatedMinutes,
         workingGroupId,
+        assignedToId: assignedToId || null,
         status: 'PENDING',
       },
       include: {

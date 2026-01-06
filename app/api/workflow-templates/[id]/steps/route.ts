@@ -97,7 +97,7 @@ export async function POST(
     const { id: templateId } = resolvedParams
 
     const body = await request.json()
-    const { name, description, taskDescription, estimatedMinutes, workingGroupId, isRequired, canSkip, stepOrder } = body
+    const { name, description, taskDescription, estimatedMinutes, workingGroupId, assignedToId, isRequired, canSkip, stepOrder } = body
 
     if (!name) {
       return NextResponse.json(
@@ -126,6 +126,7 @@ export async function POST(
         taskDescription,
         estimatedMinutes,
         workingGroupId,
+        assignedToId: assignedToId || null,
         isRequired: isRequired !== false,
         canSkip: canSkip || false,
       },

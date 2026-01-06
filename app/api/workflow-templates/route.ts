@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
                 taskDescription: step.taskDescription,
                 estimatedMinutes: step.estimatedMinutes,
                 workingGroupId: step.workingGroupId,
+                assignedToId: step.assignedToId || null,
                 isRequired: step.isRequired !== false,
                 canSkip: step.canSkip || false,
               })),

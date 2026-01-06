@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { PlusIcon, ClockIcon, CheckCircleIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import CreateTemplateModal from './CreateTemplateModal'
 
 interface WorkflowType {
   id: string
@@ -398,6 +399,20 @@ export default function WorkflowsTab({ communityId, buildingId }: { communityId:
           workflowTypes={workflowTypes}
           onClose={() => setShowCreateModal(false)}
           onCreate={handleCreateWorkflow}
+        />
+      )}
+
+      {/* Create Template Modal */}
+      {showTemplateModal && (
+        <CreateTemplateModal
+          communityId={communityId}
+          buildingId={buildingId}
+          workflowTypes={workflowTypes}
+          onClose={() => setShowTemplateModal(false)}
+          onCreate={() => {
+            setShowTemplateModal(false)
+            fetchData()
+          }}
         />
       )}
 

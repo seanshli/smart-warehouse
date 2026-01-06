@@ -61,6 +61,8 @@ model User {
   createdWorkflows        Workflow[]                 @relation("WorkflowCreator")
   assignedWorkflows       Workflow[]                 @relation("WorkflowAssignee")
   assignedWorkflowTasks   WorkflowTask[]             @relation("WorkflowTaskAssignee")
+  assignedWorkflowSteps   WorkflowStep[]             @relation("WorkflowStepAssignee")
+  assignedWorkflowTemplateSteps WorkflowTemplateStep[] @relation("WorkflowTemplateStepAssignee")
   workflowTaskLogs        WorkflowTaskLog[]          @relation("WorkflowTaskLogPerformer")
 
   @@map("users")
@@ -1451,6 +1453,7 @@ model WorkflowTemplateStep {
   taskDescription  String?   @map("task_description") // What needs to be done
   estimatedMinutes Int?      @map("estimated_minutes") // Estimated time required
   workingGroupId   String?   @map("working_group_id") // Which working group should handle this step
+  assignedToId     String?   @map("assigned_to_id") // User ID assigned to this step (optional, can be assigned later)
   isRequired       Boolean   @default(true) @map("is_required")
   canSkip          Boolean   @default(false) @map("can_skip")
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1458,9 +1461,11 @@ model WorkflowTemplateStep {
 
   template      WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   workingGroup  WorkingGroup?    @relation(fields: [workingGroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assignedTo    User?             @relation("WorkflowTemplateStepAssignee", fields: [assignedToId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   workflowSteps WorkflowStep[] // Steps created from this template
 
   @@unique([templateId, stepOrder])
+  @@index([assignedToId])
   @@map("workflow_template_steps")
 }
 
@@ -1511,6 +1516,7 @@ model WorkflowStep {
   taskDescription  String?   @map("task_description")
   estimatedMinutes Int?      @map("estimated_minutes")
   workingGroupId   String?   @map("working_group_id")
+  assignedToId     String?   @map("assigned_to_id") // User ID assigned to this step
   status           String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, SKIPPED
   startedAt        DateTime? @map("started_at") @db.Timestamptz(6)
   completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
@@ -1523,11 +1529,13 @@ model WorkflowStep {
   workflow     Workflow              @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   templateStep WorkflowTemplateStep? @relation(fields: [templateStepId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   workingGroup WorkingGroup?         @relation(fields: [workingGroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assignedTo   User?                  @relation("WorkflowStepAssignee", fields: [assignedToId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   tasks        WorkflowTask[]
 
   @@unique([workflowId, stepOrder])
   @@index([workflowId])
   @@index([status])
+  @@index([assignedToId])
   @@map("workflow_steps")
 }
 

@@ -3335,12 +3335,12 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-semibold mb-4">
-              {editingGroup ? (t('editWorkingGroup') || 'Edit Working Group') : (t('createWorkingGroup') || 'Create new working group')}
+              {editingGroup ? 'Edit Working Group' : 'Create new working group'}
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  {t('name') || 'Name'}
+                  Name
                 </label>
                 <input
                   type="text"
@@ -3351,7 +3351,7 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  {t('type') || 'Type'}
+                  Type
                 </label>
                 <input
                   type="text"
@@ -3363,12 +3363,12 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  {t('enterCustomType') || 'Enter custom type (will be converted to UPPER_CASE)'}
+                  Enter custom type (will be converted to UPPER_CASE)
                 </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
-                  {t('description') || 'Description'}
+                  Description
                 </label>
                 <textarea
                   rows={3}
@@ -3395,7 +3395,7 @@ function WorkingGroupsTab({ buildingId, communityId, building }: { buildingId: s
                 disabled={creatingGroup || !newGroupName.trim()}
                 className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
               >
-                {creatingGroup ? (t('saving') || 'Saving...') : editingGroup ? (t('update') || 'Update') : (t('create') || 'Create')}
+                {creatingGroup ? (t('saving') || 'Saving...') : editingGroup ? 'Update' : 'Create'}
               </button>
             </div>
           </div>

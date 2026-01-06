@@ -75,15 +75,11 @@ export default function AdminWorkingGroupsPage() {
       return
     }
 
-    // Check admin access
+    // Check admin access - only super admin can access this page
     fetch('/api/admin/context')
       .then(res => res.json())
       .then(data => {
-        const hasAdminAccess = data.isSuperAdmin || 
-                              (data.communityAdmins && data.communityAdmins.length > 0) ||
-                              (data.buildingAdmins && data.buildingAdmins.length > 0)
-        
-        if (!hasAdminAccess && !(session.user as any)?.isAdmin) {
+        if (!data.isSuperAdmin && !(session.user as any)?.isAdmin) {
           router.push('/admin-auth/signin')
         }
       })

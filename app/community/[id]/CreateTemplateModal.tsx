@@ -16,6 +16,7 @@ interface WorkingGroup {
   id: string
   name: string
   type: string
+  communityId?: string
   members?: Array<{
     id: string
     user: {

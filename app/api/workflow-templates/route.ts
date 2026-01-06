@@ -171,18 +171,15 @@ export async function POST(request: NextRequest) {
     const template = await prisma.workflowTemplate.create({
       data: {
         ...templateData,
-        name,
-        description,
-        isDefault: isDefault || false,
         steps: steps
           ? {
               create: steps.map((step: any, index: number) => ({
                 stepOrder: index + 1,
                 name: step.name,
-                description: step.description,
-                taskDescription: step.taskDescription,
-                estimatedMinutes: step.estimatedMinutes,
-                workingGroupId: step.workingGroupId,
+                description: step.description || null,
+                taskDescription: step.taskDescription || null,
+                estimatedMinutes: step.estimatedMinutes || null,
+                workingGroupId: step.workingGroupId || null,
                 assignedToId: step.assignedToId || null,
                 isRequired: step.isRequired !== false,
                 canSkip: step.canSkip || false,

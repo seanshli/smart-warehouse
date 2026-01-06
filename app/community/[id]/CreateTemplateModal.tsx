@@ -76,6 +76,39 @@ function CreateTemplateModal({
   const fetchWorkingGroups = async () => {
     try {
       setLoadingGroups(true)
+      
+      // Super admin: fetch all working groups from admin API
+      if (!communityId) {
+        const response = await fetch('/api/admin/working-groups')
+        if (response.ok) {
+          const data = await response.json()
+          const groups = data.workingGroups || []
+          
+          // Fetch members for each group
+          const groupsWithMembers = await Promise.all(
+            groups.map(async (group: WorkingGroup) => {
+              if (!group.communityId) return { ...group, members: [] }
+              
+              const membersUrl = `/api/community/${group.communityId}/working-groups/${group.id}/members`
+              try {
+                const membersRes = await fetch(membersUrl)
+                if (membersRes.ok) {
+                  const membersData = await membersRes.json()
+                  return { ...group, members: membersData.members || [] }
+                }
+              } catch (error) {
+                console.error(`Error fetching members for group ${group.id}:`, error)
+              }
+              return { ...group, members: [] }
+            })
+          )
+          
+          setWorkingGroups(groupsWithMembers)
+        }
+        return
+      }
+      
+      // Community/building admin: fetch from community/building API
       const url = buildingId
         ? `/api/building/${buildingId}/working-groups`
         : `/api/community/${communityId}/working-groups`

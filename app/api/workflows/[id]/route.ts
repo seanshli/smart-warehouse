@@ -125,6 +125,7 @@ export async function PUT(
         createdById: true,
         communityId: true,
         buildingId: true,
+        startedAt: true,
       },
     })
 

@@ -1146,6 +1146,7 @@ function AnnouncementsTab({
 }
 
 function WorkingGroupsTab({ communityId }: { communityId: string }) {
+  const { t } = useLanguage()
   const [workingGroups, setWorkingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

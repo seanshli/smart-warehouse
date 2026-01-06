@@ -52,16 +52,17 @@ export async function POST(
         workflowId,
         stepOrder: { lt: step.stepOrder },
       },
-      select: { status: true, isRequired: true },
+      select: { status: true },
     })
 
-    const incompleteRequiredSteps = previousSteps.filter(
-      s => s.isRequired && s.status !== 'COMPLETED' && s.status !== 'SKIPPED'
+    // Check if any previous steps are incomplete (all steps are required by default)
+    const incompleteSteps = previousSteps.filter(
+      s => s.status !== 'COMPLETED' && s.status !== 'SKIPPED'
     )
 
-    if (incompleteRequiredSteps.length > 0) {
+    if (incompleteSteps.length > 0) {
       return NextResponse.json(
-        { error: 'Previous required steps must be completed first' },
+        { error: 'Previous steps must be completed first' },
         { status: 400 }
       )
     }

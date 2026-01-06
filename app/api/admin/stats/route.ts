@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }
       
       if (householdQueries.length > 0) {
-        allowedHouseholdIds = [...new Set(householdQueries)] // Remove duplicates
+        allowedHouseholdIds = Array.from(new Set(householdQueries)) // Remove duplicates
       } else {
         // No households found, return empty stats
         allowedHouseholdIds = []

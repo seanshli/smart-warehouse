@@ -34,6 +34,13 @@ export async function GET(
             type: true,
           },
         },
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         tasks: {
           include: {
             assignedTo: {

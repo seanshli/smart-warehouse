@@ -7,56 +7,61 @@ datasource db {
 }
 
 model User {
-  id                   String               @id @default(dbgenerated("(gen_random_uuid())::text"))
-  email                String               @unique
-  name                 String?
-  image                String?
-  phone                String?
-  contact              String?
-  language             String?              @default("en")
-  isAdmin              Boolean              @default(false)
-  adminRole            String?              @default("SUPERUSER") @map("admin_role") // SUPERUSER, USER_MANAGEMENT, ITEM_MANAGEMENT, HOUSEHOLD_MODIFICATION
-  preferences          Json? // User preferences: theme, fontSize, language
-  forcePasswordChange  Boolean?             @default(false) @map("force_password_change")
+  id                      String                     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  email                   String                     @unique
+  name                    String?
+  image                   String?
+  phone                   String?
+  contact                 String?
+  language                String?                    @default("en")
+  isAdmin                 Boolean                    @default(false)
+  adminRole               String?                    @default("SUPERUSER") @map("admin_role") // SUPERUSER, USER_MANAGEMENT, ITEM_MANAGEMENT, HOUSEHOLD_MODIFICATION
+  preferences             Json? // User preferences: theme, fontSize, language
+  forcePasswordChange     Boolean?                   @default(false) @map("force_password_change")
   // Tuya account integration (per member)
-  tuyaAccount          String?              @map("tuya_account") // Tuya account (email or phone number)
-  tuyaPassword         String?              @map("tuya_password") // Encrypted Tuya password
-  tuyaCountryCode      String?              @default("886") @map("tuya_country_code") // Country code for Tuya login (e.g., "886" for Taiwan, "86" for China)
-  tuyaAccessToken      String?              @map("tuya_access_token") // Tuya access token (encrypted, temporary)
-  tuyaTokenExpiresAt   DateTime?            @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time
-  createdAt            DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime?            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  accounts             Account[]
-  barcodes             Barcode[]
-  householdMemberships HouseholdMember[]
-  communityMemberships CommunityMember[]
-  buildingMemberships  BuildingMember[]
-  supplierMemberships  SupplierMember[]
-  workingGroupMembers  WorkingGroupMember[]
-  joinRequests         JoinRequest[]
-  itemHistory          ItemHistory[]
-  items                Item[]
-  notifications        Notification[]
-  sessions             Session[]
-  credentials          UserCredentials?
-  activities           UserActivity[]
-  announcements        Announcement[]
-  announcementReads    AnnouncementRead[]
-  conversationsCreated Conversation[]       @relation("ConversationCreator")
-  messagesSent         Message[]            @relation("MessageSender")
-  callsInitiated       CallSession[]        @relation("CallInitiator")
-  chatHistorySent      ChatHistory[]        @relation("ChatHistorySender")
-  crewLeads            WorkingCrew[]        @relation("CrewLead")
-  crewMemberships      CrewMember[]
-  ticketsRequested     MaintenanceTicket[]  @relation("TicketRequester")
-  ticketsEvaluated     MaintenanceTicket[]  @relation("TicketEvaluator")
-  ticketsAssigned       MaintenanceTicket[]  @relation("TicketWorker")
-  ticketsCrewSignoff    MaintenanceTicket[]  @relation("CrewSignoff")
-  ticketsSupplierSignoff MaintenanceTicket[] @relation("SupplierSignoff")
-  ticketsHouseholdSignoff MaintenanceTicket[] @relation("HouseholdSignoff")
-  workLogs              MaintenanceTicketWorkLog[] @relation("WorkLogAuthor")
-  signoffs              MaintenanceTicketSignoff[] @relation("SignoffAuthor")
-  cateringOrders        CateringOrder[] @relation("CateringOrderUser")
+  tuyaAccount             String?                    @map("tuya_account") // Tuya account (email or phone number)
+  tuyaPassword            String?                    @map("tuya_password") // Encrypted Tuya password
+  tuyaCountryCode         String?                    @default("886") @map("tuya_country_code") // Country code for Tuya login (e.g., "886" for Taiwan, "86" for China)
+  tuyaAccessToken         String?                    @map("tuya_access_token") // Tuya access token (encrypted, temporary)
+  tuyaTokenExpiresAt      DateTime?                  @map("tuya_token_expires_at") @db.Timestamptz(6) // Token expiration time
+  createdAt               DateTime?                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime?                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  accounts                Account[]
+  barcodes                Barcode[]
+  householdMemberships    HouseholdMember[]
+  communityMemberships    CommunityMember[]
+  buildingMemberships     BuildingMember[]
+  supplierMemberships     SupplierMember[]
+  workingGroupMembers     WorkingGroupMember[]
+  joinRequests            JoinRequest[]
+  itemHistory             ItemHistory[]
+  items                   Item[]
+  notifications           Notification[]
+  sessions                Session[]
+  credentials             UserCredentials?
+  activities              UserActivity[]
+  announcements           Announcement[]
+  announcementReads       AnnouncementRead[]
+  conversationsCreated    Conversation[]             @relation("ConversationCreator")
+  messagesSent            Message[]                  @relation("MessageSender")
+  callsInitiated          CallSession[]              @relation("CallInitiator")
+  chatHistorySent         ChatHistory[]              @relation("ChatHistorySender")
+  crewLeads               WorkingCrew[]              @relation("CrewLead")
+  crewMemberships         CrewMember[]
+  ticketsRequested        MaintenanceTicket[]        @relation("TicketRequester")
+  ticketsEvaluated        MaintenanceTicket[]        @relation("TicketEvaluator")
+  ticketsAssigned         MaintenanceTicket[]        @relation("TicketWorker")
+  ticketsCrewSignoff      MaintenanceTicket[]        @relation("CrewSignoff")
+  ticketsSupplierSignoff  MaintenanceTicket[]        @relation("SupplierSignoff")
+  ticketsHouseholdSignoff MaintenanceTicket[]        @relation("HouseholdSignoff")
+  workLogs                MaintenanceTicketWorkLog[] @relation("WorkLogAuthor")
+  signoffs                MaintenanceTicketSignoff[] @relation("SignoffAuthor")
+  cateringOrders          CateringOrder[]            @relation("CateringOrderUser")
+  // Workflow relations
+  createdWorkflows        Workflow[]                 @relation("WorkflowCreator")
+  assignedWorkflows       Workflow[]                 @relation("WorkflowAssignee")
+  assignedWorkflowTasks   WorkflowTask[]             @relation("WorkflowTaskAssignee")
+  workflowTaskLogs        WorkflowTaskLog[]          @relation("WorkflowTaskLogPerformer")
 
   @@map("users")
 }
@@ -113,12 +118,13 @@ model Community {
   createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  buildings     Building[]
-  members       CommunityMember[]
-  workingGroups WorkingGroup[]
-  workingCrews  WorkingCrew[] // Working crews for this community
-  conversations Conversation[]
+  buildings       Building[]
+  members         CommunityMember[]
+  workingGroups   WorkingGroup[]
+  workingCrews    WorkingCrew[] // Working crews for this community
+  conversations   Conversation[]
   cateringService CateringService? // Catering service for this community
+  workflows       Workflow[] // Workflows for this community
 
   @@map("communities")
 }
@@ -138,19 +144,20 @@ model Building {
   createdAt              DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  community      Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  households     Household[]
-  members        BuildingMember[]
-  floors         Floor[]
-  mailboxes      Mailbox[]
-  doorBells      DoorBell[]
-  packageLockers PackageLocker[]
-  packages       Package[]
-  facilities     Facility[]
-  doorUnlockLogs DoorUnlockLog[]
-  conversations  Conversation[]
-  workingCrews   WorkingCrew[] // Working crews for this building
+  community       Community        @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  households      Household[]
+  members         BuildingMember[]
+  floors          Floor[]
+  mailboxes       Mailbox[]
+  doorBells       DoorBell[]
+  packageLockers  PackageLocker[]
+  packages        Package[]
+  facilities      Facility[]
+  doorUnlockLogs  DoorUnlockLog[]
+  conversations   Conversation[]
+  workingCrews    WorkingCrew[] // Working crews for this building
   cateringService CateringService? // Catering service for this building
+  workflows       Workflow[] // Workflows for this building
 
   @@map("buildings")
 }
@@ -198,10 +205,12 @@ model WorkingGroup {
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  community   Community                @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  members     WorkingGroupMember[]
-  permissions WorkingGroupPermission[]
-  cateringOrders CateringOrder[]
+  community             Community                @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  members               WorkingGroupMember[]
+  permissions           WorkingGroupPermission[]
+  cateringOrders        CateringOrder[]
+  workflowTemplateSteps WorkflowTemplateStep[] // Steps that can be assigned to this working group
+  workflowSteps         WorkflowStep[] // Steps assigned to this working group
 
   @@map("working_groups")
 }
@@ -486,7 +495,7 @@ model Notification {
   read                  Boolean?             @default(false)
   createdAt             DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
   item                  Item?                @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  mailbox               Mailbox?            @relation(fields: [mailboxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  mailbox               Mailbox?             @relation(fields: [mailboxId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   doorBell              DoorBell?            @relation(fields: [doorBellId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   maintenanceTicket     MaintenanceTicket?   @relation(fields: [maintenanceTicketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   package               Package?             @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -1019,16 +1028,16 @@ model HomeAssistantConfig {
 // Maintenance Ticket System Models
 
 model Supplier {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name        String
-  description String?
-  contactName String?   @map("contact_name")
-  contactPhone String?  @map("contact_phone")
-  contactEmail String?  @map("contact_email")
-  serviceTypes String[] @map("service_types") // Array of service types
-  isActive    Boolean?  @default(true) @map("is_active")
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name         String
+  description  String?
+  contactName  String?   @map("contact_name")
+  contactPhone String?   @map("contact_phone")
+  contactEmail String?   @map("contact_email")
+  serviceTypes String[]  @map("service_types") // Array of service types
+  isActive     Boolean?  @default(true) @map("is_active")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   tickets MaintenanceTicket[]
   members SupplierMember[]
@@ -1037,11 +1046,11 @@ model Supplier {
 }
 
 model SupplierMember {
-  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  userId       String    @map("user_id")
-  supplierId   String    @map("supplier_id")
-  role         String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
-  joinedAt     DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId     String    @map("user_id")
+  supplierId String    @map("supplier_id")
+  role       String?   @default("MEMBER") // ADMIN, MANAGER, MEMBER, VIEWER
+  joinedAt   DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
 
   supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -1062,21 +1071,21 @@ model WorkingCrew {
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  building    Building?            @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  community   Community?           @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  crewLead    User?                @relation("CrewLead", fields: [crewLeadId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  members     CrewMember[]
-  tickets     MaintenanceTicket[]
+  building  Building?           @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  community Community?          @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  crewLead  User?               @relation("CrewLead", fields: [crewLeadId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  members   CrewMember[]
+  tickets   MaintenanceTicket[]
 
   @@map("working_crews")
 }
 
 model CrewMember {
-  id        String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  crewId    String    @map("crew_id")
-  userId    String    @map("user_id")
-  role      String?   @default("MEMBER") // LEAD, MEMBER
-  joinedAt  DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
+  id       String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  crewId   String    @map("crew_id")
+  userId   String    @map("user_id")
+  role     String?   @default("MEMBER") // LEAD, MEMBER
+  joinedAt DateTime? @default(now()) @map("joined_at") @db.Timestamptz(6)
 
   crew WorkingCrew @relation(fields: [crewId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -1086,58 +1095,58 @@ model CrewMember {
 }
 
 model MaintenanceTicket {
-  id                   String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  ticketNumber         String    @unique @map("ticket_number")
-  householdId          String    @map("household_id")
-  requestedById        String    @map("requested_by_id")
-  
-  // Ticket details
-  title                 String
-  description           String?
-  category              String // BUILDING_MAINTENANCE, HOUSE_CLEANING, FOOD_ORDER, CAR_SERVICE, APPLIANCE, WATER_FILTER, SMART_HOME, etc.
-  priority              String?  @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
-  location              String?
-  photos                String[]  // Array of photo URLs or base64 strings
-  
-  // Workflow state
-  status                String?  @default("PENDING_EVALUATION") // PENDING_EVALUATION, EVALUATED, ASSIGNED, IN_PROGRESS, WORK_COMPLETED, SIGNED_OFF_BY_CREW, SIGNED_OFF_BY_SUPPLIER, SIGNED_OFF_BY_HOUSEHOLD, CLOSED, CANCELLED
-  
-  // Routing
-  routingType           String?  @map("routing_type") // INTERNAL_BUILDING, INTERNAL_COMMUNITY, EXTERNAL_SUPPLIER
-  assignedCrewId        String?  @map("assigned_crew_id")
-  assignedSupplierId    String?  @map("assigned_supplier_id")
-  assignedWorkerId      String?  @map("assigned_worker_id")
-  
-  // Timestamps
-  requestedAt           DateTime? @default(now()) @map("requested_at") @db.Timestamptz(6)
-  evaluatedAt           DateTime? @map("evaluated_at") @db.Timestamptz(6)
-  evaluatedById         String?  @map("evaluated_by_id")
-  assignedAt            DateTime? @map("assigned_at") @db.Timestamptz(6)
-  workStartedAt         DateTime? @map("work_started_at") @db.Timestamptz(6)
-  workCompletedAt       DateTime? @map("work_completed_at") @db.Timestamptz(6)
-  crewSignoffAt         DateTime? @map("crew_signoff_at") @db.Timestamptz(6)
-  crewSignoffById       String?  @map("crew_signoff_by_id")
-  supplierSignoffAt     DateTime? @map("supplier_signoff_at") @db.Timestamptz(6)
-  supplierSignoffById   String?  @map("supplier_signoff_by_id")
-  householdSignoffAt    DateTime? @map("household_signoff_at") @db.Timestamptz(6)
-  householdSignoffById  String?  @map("household_signoff_by_id")
-  closedAt              DateTime? @map("closed_at") @db.Timestamptz(6)
-  
-  createdAt             DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id            String @id @default(dbgenerated("(gen_random_uuid())::text"))
+  ticketNumber  String @unique @map("ticket_number")
+  householdId   String @map("household_id")
+  requestedById String @map("requested_by_id")
 
-  household             Household              @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  requestedBy           User                   @relation("TicketRequester", fields: [requestedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  evaluatedBy           User?                  @relation("TicketEvaluator", fields: [evaluatedById], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  assignedCrew          WorkingCrew?           @relation(fields: [assignedCrewId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  assignedSupplier      Supplier?             @relation(fields: [assignedSupplierId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  assignedWorker        User?                  @relation("TicketWorker", fields: [assignedWorkerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  crewSignoffBy         User?                  @relation("CrewSignoff", fields: [crewSignoffById], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  supplierSignoffBy     User?                  @relation("SupplierSignoff", fields: [supplierSignoffById], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  householdSignoffBy    User?                  @relation("HouseholdSignoff", fields: [householdSignoffById], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  workLogs              MaintenanceTicketWorkLog[]
-  signoffs              MaintenanceTicketSignoff[]
-  notifications         Notification[]
+  // Ticket details
+  title       String
+  description String?
+  category    String // BUILDING_MAINTENANCE, HOUSE_CLEANING, FOOD_ORDER, CAR_SERVICE, APPLIANCE, WATER_FILTER, SMART_HOME, etc.
+  priority    String?  @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  location    String?
+  photos      String[] // Array of photo URLs or base64 strings
+
+  // Workflow state
+  status String? @default("PENDING_EVALUATION") // PENDING_EVALUATION, EVALUATED, ASSIGNED, IN_PROGRESS, WORK_COMPLETED, SIGNED_OFF_BY_CREW, SIGNED_OFF_BY_SUPPLIER, SIGNED_OFF_BY_HOUSEHOLD, CLOSED, CANCELLED
+
+  // Routing
+  routingType        String? @map("routing_type") // INTERNAL_BUILDING, INTERNAL_COMMUNITY, EXTERNAL_SUPPLIER
+  assignedCrewId     String? @map("assigned_crew_id")
+  assignedSupplierId String? @map("assigned_supplier_id")
+  assignedWorkerId   String? @map("assigned_worker_id")
+
+  // Timestamps
+  requestedAt          DateTime? @default(now()) @map("requested_at") @db.Timestamptz(6)
+  evaluatedAt          DateTime? @map("evaluated_at") @db.Timestamptz(6)
+  evaluatedById        String?   @map("evaluated_by_id")
+  assignedAt           DateTime? @map("assigned_at") @db.Timestamptz(6)
+  workStartedAt        DateTime? @map("work_started_at") @db.Timestamptz(6)
+  workCompletedAt      DateTime? @map("work_completed_at") @db.Timestamptz(6)
+  crewSignoffAt        DateTime? @map("crew_signoff_at") @db.Timestamptz(6)
+  crewSignoffById      String?   @map("crew_signoff_by_id")
+  supplierSignoffAt    DateTime? @map("supplier_signoff_at") @db.Timestamptz(6)
+  supplierSignoffById  String?   @map("supplier_signoff_by_id")
+  householdSignoffAt   DateTime? @map("household_signoff_at") @db.Timestamptz(6)
+  householdSignoffById String?   @map("household_signoff_by_id")
+  closedAt             DateTime? @map("closed_at") @db.Timestamptz(6)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  household          Household                  @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  requestedBy        User                       @relation("TicketRequester", fields: [requestedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  evaluatedBy        User?                      @relation("TicketEvaluator", fields: [evaluatedById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assignedCrew       WorkingCrew?               @relation(fields: [assignedCrewId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assignedSupplier   Supplier?                  @relation(fields: [assignedSupplierId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assignedWorker     User?                      @relation("TicketWorker", fields: [assignedWorkerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  crewSignoffBy      User?                      @relation("CrewSignoff", fields: [crewSignoffById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  supplierSignoffBy  User?                      @relation("SupplierSignoff", fields: [supplierSignoffById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  householdSignoffBy User?                      @relation("HouseholdSignoff", fields: [householdSignoffById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  workLogs           MaintenanceTicketWorkLog[]
+  signoffs           MaintenanceTicketSignoff[]
+  notifications      Notification[]
 
   @@index([householdId])
   @@index([status])
@@ -1157,11 +1166,11 @@ model MaintenanceTicketWorkLog {
   hoursWorked     Decimal?  @map("hours_worked") @db.Decimal(5, 2)
   materialsUsed   String?   @map("materials_used")
   notes           String?
-  attachments     String[]  // Array of attachment URLs
+  attachments     String[] // Array of attachment URLs
   createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
   ticket   MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  loggedBy User               @relation("WorkLogAuthor", fields: [loggedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  loggedBy User              @relation("WorkLogAuthor", fields: [loggedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([ticketId])
   @@map("maintenance_ticket_work_logs")
@@ -1174,11 +1183,11 @@ model MaintenanceTicketSignoff {
   signedById  String    @map("signed_by_id")
   signedAt    DateTime? @default(now()) @map("signed_at") @db.Timestamptz(6)
   comments    String?
-  rating      Int?      // 1-5 rating
-  attachments String[]  // Array of attachment URLs
+  rating      Int? // 1-5 rating
+  attachments String[] // Array of attachment URLs
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  ticket  MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ticket   MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   signedBy User              @relation("SignoffAuthor", fields: [signedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([ticketId])
@@ -1197,34 +1206,34 @@ model CateringService {
   isActive    Boolean   @default(true) @map("is_active")
   createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  building    Building?  @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  community   Community? @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  categories  CateringCategory[]
-  menuItems   CateringMenuItem[]
-  
+
+  building   Building?          @relation(fields: [buildingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  community  Community?         @relation(fields: [communityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories CateringCategory[]
+  menuItems  CateringMenuItem[]
+
   @@map("catering_services")
 }
 
 // Catering Category - Categories for organizing menu items (supports 2-level hierarchy)
 model CateringCategory {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  serviceId   String    @map("service_id")
-  name        String
-  description String?
-  displayOrder Int?     @default(0) @map("display_order")
-  isActive    Boolean   @default(true) @map("is_active")
-  parentId    String?   @map("parent_id") // For hierarchical structure (sub-categories)
-  level       Int       @default(1) // 1 = top-level category, 2 = sub-category
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  service     CateringService @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  parent       CateringCategory? @relation("CateringCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  children     CateringCategory[] @relation("CateringCategoryHierarchy")
-  menuItems    CateringMenuItem[]
-  timeSlots    CateringCategoryTimeSlot[] // Time slots for this category (inherited by items)
-  
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  serviceId    String    @map("service_id")
+  name         String
+  description  String?
+  displayOrder Int?      @default(0) @map("display_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  parentId     String?   @map("parent_id") // For hierarchical structure (sub-categories)
+  level        Int       @default(1) // 1 = top-level category, 2 = sub-category
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  service   CateringService            @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  parent    CateringCategory?          @relation("CateringCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  children  CateringCategory[]         @relation("CateringCategoryHierarchy")
+  menuItems CateringMenuItem[]
+  timeSlots CateringCategoryTimeSlot[] // Time slots for this category (inherited by items)
+
   @@index([serviceId])
   @@index([isActive])
   @@index([parentId])
@@ -1234,29 +1243,29 @@ model CateringCategory {
 
 // Catering Menu Item - Individual menu items
 model CateringMenuItem {
-  id                String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  serviceId         String    @map("service_id")
-  categoryId        String?   @map("category_id")
+  id                String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  serviceId         String  @map("service_id")
+  categoryId        String? @map("category_id")
   name              String
-  description       String?   // Short description
-  imageUrl          String?   @map("image_url")
-  cost              Decimal   @db.Decimal(10, 2) // Price
-  quantityAvailable Int       @default(0) @map("quantity_available")
-  isActive          Boolean   @default(true) @map("is_active")
-  
+  description       String? // Short description
+  imageUrl          String? @map("image_url")
+  cost              Decimal @db.Decimal(10, 2) // Price
+  quantityAvailable Int     @default(0) @map("quantity_available")
+  isActive          Boolean @default(true) @map("is_active")
+
   // Availability time settings
-  availableAllDay   Boolean   @default(true) @map("available_all_day") // If true, available all day
+  availableAllDay Boolean @default(true) @map("available_all_day") // If true, available all day
   // If availableAllDay is false, use time slots from CateringMenuItemTimeSlot
-  
-  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  service           CateringService @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  category          CateringCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  timeSlots         CateringMenuItemTimeSlot[] // Time slots when item is available
-  options           CateringMenuItemOption[] // Configurable options for this menu item (e.g., Vegetarian, Spice Level)
-  orderItems        CateringOrderItem[]
-  
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  service    CateringService            @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category   CateringCategory?          @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  timeSlots  CateringMenuItemTimeSlot[] // Time slots when item is available
+  options    CateringMenuItemOption[] // Configurable options for this menu item (e.g., Vegetarian, Spice Level)
+  orderItems CateringOrderItem[]
+
   @@index([serviceId])
   @@index([categoryId])
   @@index([isActive])
@@ -1265,16 +1274,16 @@ model CateringMenuItem {
 
 // Catering Menu Item Time Slot - Specific time slots when item is available
 model CateringMenuItemTimeSlot {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  menuItemId  String    @map("menu_item_id")
-  dayOfWeek   Int       @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday, -1 = All days
-  startTime   String    @map("start_time") // Time in HH:mm format (e.g., "09:00")
-  endTime     String    @map("end_time") // Time in HH:mm format (e.g., "17:00")
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  menuItem    CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  menuItemId String    @map("menu_item_id")
+  dayOfWeek  Int       @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday, -1 = All days
+  startTime  String    @map("start_time") // Time in HH:mm format (e.g., "09:00")
+  endTime    String    @map("end_time") // Time in HH:mm format (e.g., "17:00")
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  menuItem CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
   @@index([menuItemId])
   @@index([dayOfWeek])
   @@map("catering_menu_item_time_slots")
@@ -1282,17 +1291,17 @@ model CateringMenuItemTimeSlot {
 
 // Catering Category Time Slot - Time slots for categories (inherited by all items in the category)
 model CateringCategoryTimeSlot {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  categoryId  String    @map("category_id")
-  dayOfWeek   Int       @default(-1) @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday, -1 = All days
-  startTime   String    @map("start_time") // Time in HH:mm format (e.g., "09:00")
-  endTime     String    @map("end_time") // Time in HH:mm format (e.g., "17:00")
-  isWeekend   Boolean?  @map("is_weekend") // true for weekend (Sat/Sun), false for weekday (Mon-Fri), null for all days
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  category    CateringCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  categoryId String    @map("category_id")
+  dayOfWeek  Int       @default(-1) @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday, -1 = All days
+  startTime  String    @map("start_time") // Time in HH:mm format (e.g., "09:00")
+  endTime    String    @map("end_time") // Time in HH:mm format (e.g., "17:00")
+  isWeekend  Boolean?  @map("is_weekend") // true for weekend (Sat/Sun), false for weekday (Mon-Fri), null for all days
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  category CateringCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
   @@index([categoryId])
   @@index([dayOfWeek])
   @@index([isWeekend])
@@ -1301,18 +1310,18 @@ model CateringCategoryTimeSlot {
 
 // Catering Menu Item Option - Configurable options for menu items (e.g., Vegetarian, Spice Level)
 model CateringMenuItemOption {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  menuItemId  String    @map("menu_item_id")
-  optionName  String    @map("option_name") // e.g., "Vegetarian", "Spice Level"
-  optionType  String    @default("select") @map("option_type") // 'select', 'radio', 'checkbox'
-  isRequired  Boolean   @default(false) @map("is_required")
-  displayOrder Int     @default(0) @map("display_order")
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  menuItem    CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  selections  CateringMenuItemOptionSelection[] // Available selections for this option
-  
+  id           String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  menuItemId   String    @map("menu_item_id")
+  optionName   String    @map("option_name") // e.g., "Vegetarian", "Spice Level"
+  optionType   String    @default("select") @map("option_type") // 'select', 'radio', 'checkbox'
+  isRequired   Boolean   @default(false) @map("is_required")
+  displayOrder Int       @default(0) @map("display_order")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  menuItem   CateringMenuItem                  @relation(fields: [menuItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  selections CateringMenuItemOptionSelection[] // Available selections for this option
+
   @@index([menuItemId])
   @@index([displayOrder])
   @@map("catering_menu_item_options")
@@ -1320,16 +1329,16 @@ model CateringMenuItemOption {
 
 // Catering Menu Item Option Selection - Available selections/values for each option
 model CateringMenuItemOptionSelection {
-  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  optionId      String    @map("option_id")
-  selectionName String    @map("selection_name") // Display name, e.g., "Yes", "No", "1x pepper"
-  selectionValue String  @map("selection_value") // Value for API use, e.g., "yes", "no", "1x pepper"
-  displayOrder  Int      @default(0) @map("display_order")
-  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  option        CateringMenuItemOption @relation(fields: [optionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  optionId       String    @map("option_id")
+  selectionName  String    @map("selection_name") // Display name, e.g., "Yes", "No", "1x pepper"
+  selectionValue String    @map("selection_value") // Value for API use, e.g., "yes", "no", "1x pepper"
+  displayOrder   Int       @default(0) @map("display_order")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  option CateringMenuItemOption @relation(fields: [optionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
   @@index([optionId])
   @@index([displayOrder])
   @@map("catering_menu_item_option_selections")
@@ -1337,37 +1346,37 @@ model CateringMenuItemOptionSelection {
 
 // Catering Order - Orders placed by households
 model CateringOrder {
-  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  householdId     String    @map("household_id")
-  orderedById     String    @map("ordered_by_id")
-  orderNumber     String    @unique @map("order_number") // e.g., "ORD-2025-001234"
-  workgroupId     String?   @map("workgroup_id") // Workgroup assigned to handle this order
-  
+  id          String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  householdId String  @map("household_id")
+  orderedById String  @map("ordered_by_id")
+  orderNumber String  @unique @map("order_number") // e.g., "ORD-2025-001234"
+  workgroupId String? @map("workgroup_id") // Workgroup assigned to handle this order
+
   // Delivery options
-  deliveryType    String    @default("immediate") @map("delivery_type") // "immediate" | "scheduled"
-  scheduledTime   DateTime? @map("scheduled_time") @db.Timestamptz(6) // For scheduled orders
-  
+  deliveryType  String    @default("immediate") @map("delivery_type") // "immediate" | "scheduled"
+  scheduledTime DateTime? @map("scheduled_time") @db.Timestamptz(6) // For scheduled orders
+
   // Order details
-  totalAmount     Decimal   @map("total_amount") @db.Decimal(10, 2)
-  status          String    @default("submitted") // "submitted", "accepted", "preparing", "ready", "delivered", "closed", "cancelled"
-  notes           String?   // Special instructions
-  
+  totalAmount Decimal @map("total_amount") @db.Decimal(10, 2)
+  status      String  @default("submitted") // "submitted", "accepted", "preparing", "ready", "delivered", "closed", "cancelled"
+  notes       String? // Special instructions
+
   // Timestamps
-  orderedAt       DateTime? @default(now()) @map("ordered_at") @db.Timestamptz(6)
-  confirmedAt     DateTime? @map("confirmed_at") @db.Timestamptz(6)
-  preparedAt      DateTime? @map("prepared_at") @db.Timestamptz(6)
-  deliveredAt     DateTime? @map("delivered_at") @db.Timestamptz(6)
-  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(6)
-  
-  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  
-  household       Household         @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  orderedBy       User              @relation("CateringOrderUser", fields: [orderedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  workgroup       WorkingGroup?     @relation(fields: [workgroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  items           CateringOrderItem[]
-  notifications   Notification[]
-  
+  orderedAt   DateTime? @default(now()) @map("ordered_at") @db.Timestamptz(6)
+  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  preparedAt  DateTime? @map("prepared_at") @db.Timestamptz(6)
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(6)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  household     Household           @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orderedBy     User                @relation("CateringOrderUser", fields: [orderedById], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workgroup     WorkingGroup?       @relation(fields: [workgroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  items         CateringOrderItem[]
+  notifications Notification[]
+
   @@index([householdId])
   @@index([orderedById])
   @@index([status])
@@ -1377,21 +1386,197 @@ model CateringOrder {
 
 // Catering Order Item - Items in each order
 model CateringOrderItem {
-  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
-  orderId     String    @map("order_id")
-  menuItemId String    @map("menu_item_id")
-  quantity    Int       @default(1)
-  unitPrice   Decimal   @map("unit_price") @db.Decimal(10, 2) // Price at time of order
-  subtotal    Decimal   @db.Decimal(10, 2) // quantity * unitPrice
-  
+  id         String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  orderId    String  @map("order_id")
+  menuItemId String  @map("menu_item_id")
+  quantity   Int     @default(1)
+  unitPrice  Decimal @map("unit_price") @db.Decimal(10, 2) // Price at time of order
+  subtotal   Decimal @db.Decimal(10, 2) // quantity * unitPrice
+
   // Selection options
-  isVegetarian Boolean?  @default(false) @map("is_vegetarian") // Vegetarian option: yes/no
-  spiceLevel   String?   @default("no") @map("spice_level") // Spice level: no, 1x pepper, 2x pepper, 3x pepper
-  
-  order       CateringOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  menuItem    CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  
+  isVegetarian Boolean? @default(false) @map("is_vegetarian") // Vegetarian option: yes/no
+  spiceLevel   String?  @default("no") @map("spice_level") // Spice level: no, 1x pepper, 2x pepper, 3x pepper
+
+  order    CateringOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  menuItem CateringMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
   @@index([orderId])
   @@index([menuItemId])
   @@map("catering_order_items")
+}
+
+// ============================================
+// Workflow System Models
+// ============================================
+
+// WorkflowType - Defines types of workflows (catering, maintenance, etc.)
+model WorkflowType {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String // e.g., "Catering Order", "Maintenance Request"
+  description String?
+  category    String // CATERING, MAINTENANCE, SECURITY, ADMINISTRATION, etc.
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workflows Workflow[]
+  templates WorkflowTemplate[]
+
+  @@map("workflow_types")
+}
+
+// WorkflowTemplate - Template for creating workflows with predefined steps
+model WorkflowTemplate {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workflowTypeId String    @map("workflow_type_id")
+  name           String
+  description    String?
+  isDefault      Boolean   @default(false) @map("is_default")
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workflowType WorkflowType           @relation(fields: [workflowTypeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  steps        WorkflowTemplateStep[]
+
+  @@map("workflow_templates")
+}
+
+// WorkflowTemplateStep - Steps in a workflow template
+model WorkflowTemplateStep {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  templateId       String    @map("template_id")
+  stepOrder        Int       @map("step_order") // Order of the step (1, 2, 3, ...)
+  name             String
+  description      String?
+  taskDescription  String?   @map("task_description") // What needs to be done
+  estimatedMinutes Int?      @map("estimated_minutes") // Estimated time required
+  workingGroupId   String?   @map("working_group_id") // Which working group should handle this step
+  isRequired       Boolean   @default(true) @map("is_required")
+  canSkip          Boolean   @default(false) @map("can_skip")
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  template      WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workingGroup  WorkingGroup?    @relation(fields: [workingGroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  workflowSteps WorkflowStep[] // Steps created from this template
+
+  @@unique([templateId, stepOrder])
+  @@map("workflow_template_steps")
+}
+
+// Workflow - An instance of a workflow (e.g., a specific catering order workflow)
+model Workflow {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workflowTypeId String    @map("workflow_type_id")
+  templateId     String?   @map("template_id") // Optional: if created from template
+  name           String
+  description    String?
+  status         String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  priority       String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  relatedId      String?   @map("related_id") // Related entity ID (e.g., catering order ID, maintenance ticket ID)
+  relatedType    String?   @map("related_type") // Related entity type (e.g., "CATERING_ORDER", "MAINTENANCE_TICKET")
+  communityId    String?   @map("community_id")
+  buildingId     String?   @map("building_id")
+  createdById    String    @map("created_by_id")
+  assignedToId   String?   @map("assigned_to_id") // User ID assigned to oversee this workflow
+  startedAt      DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workflowType WorkflowType   @relation(fields: [workflowTypeId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  community    Community?     @relation(fields: [communityId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  building     Building?      @relation(fields: [buildingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  createdBy    User           @relation("WorkflowCreator", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  assignedTo   User?          @relation("WorkflowAssignee", fields: [assignedToId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  steps        WorkflowStep[]
+  tasks        WorkflowTask[]
+
+  @@index([workflowTypeId])
+  @@index([status])
+  @@index([communityId])
+  @@index([buildingId])
+  @@index([relatedId, relatedType])
+  @@map("workflows")
+}
+
+// WorkflowStep - Steps in a workflow instance
+model WorkflowStep {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workflowId       String    @map("workflow_id")
+  templateStepId   String?   @map("template_step_id") // If created from template
+  stepOrder        Int       @map("step_order")
+  name             String
+  description      String?
+  taskDescription  String?   @map("task_description")
+  estimatedMinutes Int?      @map("estimated_minutes")
+  workingGroupId   String?   @map("working_group_id")
+  status           String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, SKIPPED
+  startedAt        DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  waitTimeMinutes  Int?      @map("wait_time_minutes") // Time waited before this step started
+  durationMinutes  Int?      @map("duration_minutes") // Actual time taken to complete
+  notes            String? // Notes about the step
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workflow     Workflow              @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  templateStep WorkflowTemplateStep? @relation(fields: [templateStepId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  workingGroup WorkingGroup?         @relation(fields: [workingGroupId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  tasks        WorkflowTask[]
+
+  @@unique([workflowId, stepOrder])
+  @@index([workflowId])
+  @@index([status])
+  @@map("workflow_steps")
+}
+
+// WorkflowTask - Individual tasks within a workflow step
+model WorkflowTask {
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workflowId       String    @map("workflow_id")
+  stepId           String    @map("step_id")
+  assignedToId     String?   @map("assigned_to_id") // User ID assigned to this task
+  name             String
+  description      String?
+  status           String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  estimatedMinutes Int?      @map("estimated_minutes")
+  actualMinutes    Int?      @map("actual_minutes")
+  startedAt        DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  workDone         String?   @map("work_done") // Actual work completed
+  notes            String?
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workflow   Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  step       WorkflowStep      @relation(fields: [stepId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  assignedTo User?             @relation("WorkflowTaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  logs       WorkflowTaskLog[]
+
+  @@index([workflowId])
+  @@index([stepId])
+  @@index([assignedToId])
+  @@index([status])
+  @@map("workflow_tasks")
+}
+
+// WorkflowTaskLog - Time tracking logs for tasks
+model WorkflowTaskLog {
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  taskId          String   @map("task_id")
+  action          String // START, PAUSE, RESUME, COMPLETE, UPDATE
+  performedById   String   @map("performed_by_id")
+  description     String?
+  durationMinutes Int?     @map("duration_minutes") // Duration since last action
+  timestamp       DateTime @default(now()) @db.Timestamptz(6)
+  metadata        Json? // Additional metadata (JSON)
+
+  task        WorkflowTask @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  performedBy User         @relation("WorkflowTaskLogPerformer", fields: [performedById], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([taskId])
+  @@index([performedById])
+  @@index([timestamp])
+  @@map("workflow_task_logs")
 }

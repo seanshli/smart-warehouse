@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     // Parse query parameters for filtering
     const url = new URL(request.url)
     const householdId = url.searchParams.get('householdId')
-    const userId = url.searchParams.get('userId')
+    const filterUserId = url.searchParams.get('userId')
     const categoryId = url.searchParams.get('categoryId')
     const roomId = url.searchParams.get('roomId')
     const timeRange = url.searchParams.get('timeRange') || '7d'
@@ -138,8 +138,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (userId && userId !== 'all') {
-      whereClause.performedBy = userId
+    if (filterUserId && filterUserId !== 'all') {
+      whereClause.performedBy = filterUserId
     }
 
     if (categoryId && categoryId !== 'all') {

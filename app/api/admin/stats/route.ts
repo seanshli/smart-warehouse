@@ -71,10 +71,12 @@ export async function GET(request: NextRequest) {
       const householdQueries: any[] = []
       
       if (isCommunityAdmin && communityIds.length > 0) {
-        // Get households in user's communities
+        // Get households in user's communities (through building relationship)
         const communityHouseholds = await prisma.household.findMany({
           where: {
-            communityId: { in: communityIds },
+            building: {
+              communityId: { in: communityIds },
+            },
           },
           select: { id: true },
         })

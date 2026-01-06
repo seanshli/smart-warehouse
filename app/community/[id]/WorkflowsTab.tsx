@@ -63,7 +63,7 @@ interface WorkflowStep {
   durationMinutes?: number
 }
 
-export default function WorkflowsTab({ communityId }: { communityId: string }) {
+export default function WorkflowsTab({ communityId, buildingId }: { communityId: string; buildingId?: string }) {
   const [workflows, setWorkflows] = useState<Workflow[]>([])
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([])
   const [workflowTypes, setWorkflowTypes] = useState<WorkflowType[]>([])
@@ -75,7 +75,7 @@ export default function WorkflowsTab({ communityId }: { communityId: string }) {
 
   useEffect(() => {
     fetchData()
-  }, [communityId])
+  }, [communityId, buildingId])
 
   const fetchData = async () => {
     try {

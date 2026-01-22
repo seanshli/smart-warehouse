@@ -26,7 +26,7 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: true,
     // Tablet and phone support - updated version
-    appendUserAgent: 'SmartWarehouse/1.0.63',
+    appendUserAgent: 'SmartWarehouse/1.0.72',
     // Enable responsive design for all screen sizes
     // Support for phones (small, normal) and tablets (large, xlarge)
     // Viewport meta tag handled by Next.js for responsive design
@@ -44,6 +44,34 @@ const config: CapacitorConfig = {
     },
     GoogleMaps: {
       apiKey: process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyAHSc802preQitVIaas3o0k8RbLxteSlQQ'
+    },
+    Keyboard: {
+      resize: 'body',
+      style: 'dark',
+      resizeOnFullScreen: true
+    },
+    StatusBar: {
+      style: 'dark',
+      backgroundColor: '#ffffff'
+    },
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#ffffff',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      iosSpinnerStyle: 'small',
+      spinnerColor: '#999999'
+    },
+    App: {
+      // Native app lifecycle events
+    },
+    Network: {
+      // Network status monitoring
+    },
+    Share: {
+      // Native sharing capabilities
     },
     // Microphone permissions are handled via WebRTC getUserMedia API
     // iOS: NSMicrophoneUsageDescription in Info.plist

@@ -1,6 +1,6 @@
 {
   "name": "smart-warehouse",
-  "version": "1.0.71",
+  "version": "1.0.72",
   "private": true,
   "scripts": {
     "verify:all": "tsx scripts/verify-all-connections.ts",

@@ -3,11 +3,12 @@
 import { useState, useRef } from 'react'
 import { useLanguage } from '@/components/LanguageProvider'
 import ItemsList from '@/components/warehouse/ItemsList'
+import AddItemModal from '@/components/warehouse/AddItemModal'
 import EditItemModal from '@/components/warehouse/EditItemModal'
 import MoveItemModal from '@/components/warehouse/MoveItemModal'
 import CheckoutModal from '@/components/warehouse/CheckoutModal'
 import QuantityAdjustModal from '@/components/warehouse/QuantityAdjustModal'
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, FunnelIcon, PlusIcon } from '@heroicons/react/24/outline'
 
 interface Item {
   id: string
@@ -63,6 +64,13 @@ export default function ItemsPage() {
                 </p>
               </div>
               <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
+                <button
+                  onClick={() => setShowAddItem(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  {t('addItem') || 'Add Item'}
+                </button>
                 <button
                   onClick={async () => {
                     try {
@@ -269,6 +277,17 @@ export default function ItemsPage() {
           onSuccess={() => {
             setShowQuantityAdjust(false)
             setSelectedItem(null)
+            if (refreshItemsListRef.current) {
+              refreshItemsListRef.current()
+            }
+          }}
+        />
+      )}
+      
+      {showAddItem && (
+        <AddItemModal
+          onClose={() => {
+            setShowAddItem(false)
             if (refreshItemsListRef.current) {
               refreshItemsListRef.current()
             }

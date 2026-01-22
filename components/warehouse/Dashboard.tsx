@@ -28,6 +28,7 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import SearchModal from './SearchModal'
+import AddItemModal from './AddItemModal'
 import EditItemModal from './EditItemModal'
 import MoveItemModal from './MoveItemModal'
 import CheckoutModal from './CheckoutModal'
@@ -294,6 +295,7 @@ export default function Dashboard() {
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'all'>('today')
   const [showSearch, setShowSearch] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [showAddItem, setShowAddItem] = useState(false)
   const [showEditItem, setShowEditItem] = useState(false)
   const [showMoveItem, setShowMoveItem] = useState(false)
   const [showCheckoutItem, setShowCheckoutItem] = useState(false)
@@ -664,6 +666,16 @@ export default function Dashboard() {
               {activeTab === 'mqtt' && <MQTTPanel />}
                {activeTab === 'items' && (
                  <div className="px-4 py-6 sm:px-0">
+                   <div className="mb-4 flex justify-between items-center">
+                     <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('items')}</h2>
+                     <button
+                       onClick={() => setShowAddItem(true)}
+                       className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                     >
+                       <PlusIcon className="h-4 w-4 mr-2" />
+                       {t('addItem') || 'Add Item'}
+                     </button>
+                   </div>
                    <ItemsList 
                      showCategory={true}
                      showLocation={true}
@@ -833,6 +845,16 @@ export default function Dashboard() {
             setShowItemHistory(false)
             setSelectedItem(null)
           }} 
+        />
+      )}
+      {showAddItem && (
+        <AddItemModal
+          onClose={() => {
+            setShowAddItem(false)
+            if (refreshItemsList && typeof refreshItemsList === 'function') {
+              refreshItemsList()
+            }
+          }}
         />
       )}
 
